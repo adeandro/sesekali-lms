@@ -1,0 +1,68 @@
+<?php
+
+namespace App\Http\Requests;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+class UpdateExamRequest extends FormRequest
+{
+    /**
+     * Determine if the user is authorized to make this request.
+     */
+    public function authorize(): bool
+    {
+        return auth()->check() && in_array(auth()->user()->role, ['admin', 'superadmin']);
+    }
+
+    /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        // Convert datetime-local format (YYYY-MM-DDTHH:mm) to Y-m-d H:i
+        if ($this->start_time) {
+            $this->merge([
+                'start_time' => str_replace('T', ' ', $this->start_time),
+            ]);
+        }
+
+        if ($this->end_time) {
+            $this->merge([
+                'end_time' => str_replace('T', ' ', $this->end_time),
+            ]);
+        }
+    }
+
+    /**
+     * Get the validation rules that apply to the request.
+     */
+    public function rules(): array
+    {
+        return [
+            'title' => 'required|string|max:255',
+            'subject_id' => 'required|exists:subjects,id',
+            'jenjang' => 'required|in:10,11,12',
+            'duration_minutes' => 'required|integer|min:1|max:480',
+            'total_questions' => 'required|integer|min:1|max:500',
+            'start_time' => 'required|date_format:Y-m-d H:i',
+            'end_time' => 'required|date_format:Y-m-d H:i|after:start_time',
+            'randomize_questions' => 'boolean',
+            'randomize_options' => 'boolean',
+            'show_score_after_submit' => 'boolean',
+            'allow_review_results' => 'boolean',
+            'status' => 'required|in:draft,published',
+        ];
+    }
+
+    /**
+     * Get the error messages for the defined validation rules.
+     */
+    public function messages(): array
+    {
+        return [
+            'end_time.after' => 'End time must be after start time.',
+            'total_questions.min' => 'Total questions must be at least 1.',
+            'duration_minutes.max' => 'Duration cannot exceed 8 hours (480 minutes).',
+        ];
+    }
+}

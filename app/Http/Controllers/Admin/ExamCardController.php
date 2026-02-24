@@ -1,0 +1,85 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Models\Exam;
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+
+class ExamCardController extends Controller
+{
+    /**
+     * Display exam card for printing
+     */
+    public function printCard(Exam $exam)
+    {
+        // Get all active students
+        $allStudents = \App\Models\User::where('role', 'student')
+            ->where('is_active', true)
+            ->orderBy('grade', 'asc')
+            ->orderBy('class_group', 'asc')
+            ->orderBy('name', 'asc')
+            ->get();
+
+        // Get exam attempts keyed by student_id for quick lookup
+        $attemptsMap = $exam->attempts()
+            ->with('student')
+            ->get()
+            ->keyBy('student_id');
+
+        // Map all students with their attempts (if any)
+        $students = $allStudents->map(function ($student) use ($exam, $attemptsMap) {
+            $attempt = $attemptsMap->get($student->id);
+            return [
+                'student' => $student,
+                'score' => $attempt?->final_score ?? 0,
+                'status' => $attempt
+                    ? ($attempt->final_score >= 70 ? 'Lulus' : 'Tidak Lulus')
+                    : 'Belum Dinilai',
+                'is_submitted' => $attempt ? true : false,
+            ];
+        });
+
+        return view('admin.exams.print-card', compact('exam', 'students'));
+    }
+
+    /**
+     * Display exam cards for all students
+     */
+    public function printAllCards(Request $request)
+    {
+        // Get all published exams
+        $exams = Exam::where('status', 'published')
+            ->with('subject')
+            ->orderBy('start_time')
+            ->get();
+
+        return view('admin.exams.print-all-cards', compact('exams'));
+    }
+
+    /**
+     * Print student credentials for exam login
+     */
+    public function printStudentCredentials(Exam $exam)
+    {
+        // Get active students matching the exam's grade level (jenjang)
+        $students = \App\Models\User::where('role', 'student')
+            ->where('is_active', true)
+            ->where('grade', $exam->jenjang)
+            ->orderBy('grade', 'asc')
+            ->orderBy('class_group', 'asc')
+            ->orderBy('nis', 'asc')
+            ->get()
+            ->map(function ($student) use ($exam) {
+                return [
+                    'nis' => $student->nis,
+                    'name' => $student->name,
+                    'class' => "Grade {$student->grade} - {$student->class_group}",
+                    'password' => $student->password_display ?? '-',
+                    'exam' => $exam,
+                ];
+            });
+
+        return view('admin.exams.print-credentials', compact('exam', 'students'));
+    }
+}
