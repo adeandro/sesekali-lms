@@ -16,7 +16,7 @@
                     Selamat datang di SesekaliCBT! Ini adalah dasbor siswa Anda untuk mengakses ujian.
                 </p>
                 <div class="space-y-2">
-                    <p class="text-sm text-gray-600"><strong>Email:</strong> {{ Auth::user()->email }}</p>
+                    <p class="text-sm text-gray-600"><strong>NIS:</strong> {{ Auth::user()->nis }}</p>
                     <p class="text-sm text-gray-600"><strong>Peran:</strong> {{ Auth::user()->role === 'student' ? 'Siswa' : ucfirst(Auth::user()->role) }}</p>
                     <p class="text-sm text-gray-600"><strong>Kelas:</strong> Grade {{ Auth::user()->grade ?? '-' }} - {{ Auth::user()->class_group ?? '-' }}</p>
                 </div>

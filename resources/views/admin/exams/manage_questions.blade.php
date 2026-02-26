@@ -3,6 +3,41 @@
 @section('title', 'Manage Questions - SesekaliCBT')
 
 @section('content')
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <style>
+        .alert-notification {
+            animation: slideInDown 0.3s ease-out;
+        }
+        
+        .alert-notification.dismissing {
+            animation: slideOutUp 0.3s ease-in forwards;
+        }
+        
+        @keyframes slideInDown {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOutUp {
+            from {
+                transform: translateY(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+        }
+    </style>
+
     <div>
         <div class="mb-8">
             <a href="{{ route('admin.exams.index') }}" class="text-blue-600 hover:text-blue-800">← Back to Exams</a>
@@ -10,16 +45,16 @@
         </div>
 
         @if ($message = Session::get('success'))
-            <div class="mb-4 p-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex justify-between">
+            <div class="mb-4 p-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex justify-between alert-notification" id="successAlert">
                 <span>{{ $message }}</span>
-                <button type="button" class="text-green-800 hover:text-green-600" onclick="this.parentElement.style.display='none';">×</button>
+                <button type="button" class="alert-close-btn text-green-800 hover:text-green-600 font-bold">×</button>
             </div>
         @endif
 
         @if ($message = Session::get('error'))
-            <div class="mb-4 p-4 bg-red-50 border border-red-200 text-red-800 rounded-lg flex justify-between">
+            <div class="mb-4 p-4 bg-red-50 border border-red-200 text-red-800 rounded-lg flex justify-between alert-notification" id="errorAlert">
                 <span>{{ $message }}</span>
-                <button type="button" class="text-red-800 hover:text-red-600" onclick="this.parentElement.style.display='none';">×</button>
+                <button type="button" class="alert-close-btn text-red-800 hover:text-red-600 font-bold">×</button>
             </div>
         @endif
 
@@ -162,7 +197,7 @@
                         <p class="text-sm text-gray-600 mt-1">{{ $questionCount }} of {{ $exam->total_questions }} questions</p>
                     </div>
                     @if($questionCount > 0)
-                        <form action="{{ route('admin.exams.detach-all-questions', $exam) }}" method="POST" style="display:inline;" onsubmit="return confirmBulkDelete();">
+                        <form action="{{ route('admin.exams.detach-all-questions', $exam) }}" method="POST" style="display:inline;" class="bulk-delete-form">
                             @csrf
                             <button type="submit" class="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-xs font-medium">
                                 🗑️ Remove All
@@ -182,10 +217,10 @@
                                         Difficulty: <span class="px-2 py-0.5 bg-gray-100 rounded text-xs">{{ ucfirst($question->difficulty_level) }}</span>
                                     </p>
                                 </div>
-                                <form action="{{ route('admin.exams.detach-question', $exam) }}" method="POST" style="display:inline;">
+                                <form action="{{ route('admin.exams.detach-question', $exam) }}" method="POST" style="display:inline;" class="question-delete-form">
                                     @csrf
                                     <input type="hidden" name="question_id" value="{{ $question->id }}">
-                                    <button type="submit" class="text-red-600 hover:text-red-800 text-xs" onclick="return confirm('Remove this question?')">
+                                    <button type="submit" class="text-red-600 hover:text-red-800 text-xs question-delete-btn">
                                         Remove
                                     </button>
                                 </form>
@@ -204,6 +239,30 @@
         const totalQuestionsNeeded = {{ $exam->total_questions }};
         const currentQuestionCount = {{ $questionCount }};
         const questionsNeeded = Math.max(0, totalQuestionsNeeded - currentQuestionCount);
+
+        // Alert dismissal handlers
+        document.querySelectorAll('.alert-close-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const alert = this.closest('.alert-notification');
+                alert.classList.add('dismissing');
+                setTimeout(() => {
+                    alert.remove();
+                }, 300);
+            });
+        });
+
+        // Auto-dismiss alerts after 5 seconds
+        document.querySelectorAll('.alert-notification').forEach(alert => {
+            setTimeout(() => {
+                if (document.body.contains(alert)) {
+                    alert.classList.add('dismissing');
+                    setTimeout(() => {
+                        alert.remove();
+                    }, 300);
+                }
+            }, 5000);
+        });
 
         // Search functionality
         document.getElementById('questionSearch').addEventListener('keyup', function(e) {
@@ -238,8 +297,15 @@
                 checkbox.checked = true;
             });
             
-            // Show feedback and scroll to submit button
-            alert(`Selected ${checkboxes.length} questions. Click "Add Selected Questions" to proceed.`);
+            // Show feedback with SweetAlert
+            Swal.fire({
+                title: '✓ Berhasil Dipilih',
+                text: `${checkboxes.length} soal telah dipilih. Klik tombol "Add Selected Questions" untuk menambahkan.`,
+                icon: 'success',
+                confirmButtonColor: '#3b82f6',
+                confirmButtonText: 'Oke'
+            });
+            
             document.getElementById('addBtn').scrollIntoView({ behavior: 'smooth' });
         });
 
@@ -248,32 +314,90 @@
             e.preventDefault();
             
             if (questionsNeeded <= 0) {
-                alert('✓ Exam sudah memiliki semua soal yang diperlukan!');
+                Swal.fire({
+                    title: '✓ Sudah Lengkap',
+                    text: 'Ujian sudah memiliki semua soal yang diperlukan!',
+                    icon: 'success',
+                    confirmButtonColor: '#3b82f6',
+                    confirmButtonText: 'Oke'
+                });
                 return;
             }
             
-            // Show confirmation modal
-            if (confirm('Apakah Anda yakin ingin menambahkan soal secara otomatis sesuai kuota ujian? Sistem akan memilih soal secara acak dari soal yang tersedia.')) {
-                // Submit to auto-add endpoint
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = '{{ route('admin.exams.auto-add-questions', $exam) }}';
-                
-                const csrfInput = document.createElement('input');
-                csrfInput.type = 'hidden';
-                csrfInput.name = '_token';
-                csrfInput.value = document.querySelector('input[name="_token"]').value;
-                
-                form.appendChild(csrfInput);
-                document.body.appendChild(form);
-                form.submit();
-            }
+            // Show confirmation with SweetAlert
+            Swal.fire({
+                title: '⚡ Tambah Soal Otomatis',
+                html: `<p>Sistem akan menambahkan <strong>${questionsNeeded}</strong> soal secara acak dari soal yang tersedia.</p><p style="color: #6b7280; font-size: 0.875rem; margin-top: 0.5rem;">Apakah Anda yakin?</p>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#a855f7',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Ya, Lanjutkan',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Submit to auto-add endpoint
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = '{{ route('admin.exams.auto-add-questions', $exam) }}';
+                    
+                    const csrfInput = document.createElement('input');
+                    csrfInput.type = 'hidden';
+                    csrfInput.name = '_token';
+                    csrfInput.value = document.querySelector('input[name="_token"]').value;
+                    
+                    form.appendChild(csrfInput);
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            });
         });
 
         // Bulk delete confirmation
-        function confirmBulkDelete() {
-            return confirm('🚨 DANGER ZONE 🚨\n\nApakah Anda yakin ingin menghapus SEMUA soal dari ujian ini?\n\nTindakan ini tidak dapat dibatalkan!');
-        }
+        document.querySelectorAll('.bulk-delete-form').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                Swal.fire({
+                    title: '⚠️ Hapus Semua Soal?',
+                    html: '<p>Apakah Anda yakin ingin menghapus <strong>SEMUA</strong> soal dari ujian ini?</p><p style="color: #ef4444; font-size: 0.875rem; margin-top: 0.5rem;">Tindakan ini tidak dapat dibatalkan!</p>',
+                    icon: 'error',
+                    showCancelButton: true,
+                    confirmButtonColor: '#ef4444',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'Ya, Hapus Semua',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+            });
+        });
+
+        // Individual question delete
+        document.querySelectorAll('.question-delete-form').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const questionText = this.closest('.p-3').querySelector('.text-sm.font-medium').textContent.trim();
+                
+                Swal.fire({
+                    title: '🗑️ Hapus Soal?',
+                    html: `<p>Apakah Anda yakin ingin menghapus soal berikut:</p><p style="color: #3b82f6; font-weight: 500; margin-top: 0.5rem;"><strong>${questionText}</strong></p>`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#ef4444',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'Ya, Hapus',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+            });
+        });
 
         // Add button validation
         document.getElementById('addBtn').addEventListener('click', function(e) {
@@ -282,7 +406,13 @@
             
             if (checked.length === 0) {
                 e.preventDefault();
-                alert('Please select at least one question');
+                Swal.fire({
+                    title: '⚠️ Pilih Soal Terlebih Dahulu',
+                    text: 'Silakan pilih minimal satu soal untuk ditambahkan.',
+                    icon: 'warning',
+                    confirmButtonColor: '#3b82f6',
+                    confirmButtonText: 'Oke'
+                });
             }
         });
     </script>

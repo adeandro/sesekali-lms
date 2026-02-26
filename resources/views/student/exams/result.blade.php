@@ -124,7 +124,7 @@
             @endif
 
             <!-- Answer Review -->
-            @if($attempt->exam->show_score_after_submit || $attempt->exam->allow_review_results)
+            @if($attempt->exam->allow_review_results)
             <div class="bg-white rounded-lg shadow-lg overflow-hidden">
                 <div class="bg-gray-900 text-white p-6">
                     <h2 class="text-xl font-bold">Review Jawaban</h2>

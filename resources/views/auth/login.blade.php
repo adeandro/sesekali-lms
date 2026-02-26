@@ -11,8 +11,8 @@
         <div class="w-full max-w-md">
             <div class="bg-white shadow-lg rounded-lg p-8">
                 <div class="text-center mb-8">
-                    <h1 class="text-3xl font-bold text-blue-600">SesekaliCBT</h1>
-                    <p class="text-gray-600 mt-2">Login to your account</p>
+                    <h1 class="text-3xl font-bold text-blue-600">ExamFlow</h1>
+                    <p class="text-gray-600 mt-2">Masuk ke akunmu</p>
                 </div>
 
                 @if ($errors->any())
@@ -28,7 +28,7 @@
 
                     <div class="mb-4">
                         <label for="username" class="block text-sm font-medium text-gray-700 mb-2">
-                            NIS or Email Address
+                            NIS
                         </label>
                         <input 
                             type="text" 
@@ -36,7 +36,7 @@
                             name="username" 
                             value="{{ old('username') }}"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Enter your NIS or email address"
+                            placeholder="Masukkan NIS Anda"
                             required
                         >
                     </div>
@@ -89,10 +89,12 @@
                 </form>
 
                 <div class="mt-6 text-center text-sm text-gray-600">
-                    <p>Demo Credentials:</p>
-                    <p class="mt-2"><strong>SuperAdmin:</strong> superadmin@localhost / password</p>
-                    <p><strong>Admin:</strong> admin@localhost / password</p>
-                    <p><strong>Student:</strong> student1@localhost / password</p>
+
+                    <p>
+                        <ol>
+                            Gunakan NIS dan password yang tertera di kartu ujian. Jika login bermasalah, hubungi guru atau administrator sekolah untuk mendapatkan informasi lebih lanjut.
+                        </ol>
+                    </p>
                 </div>
             </div>
         </div>

@@ -60,4 +60,36 @@ class User extends Authenticatable
     {
         return $this->hasMany(ExamAttempt::class, 'student_id');
     }
+
+    /**
+     * Get exam sessions for this student.
+     */
+    public function examSessions()
+    {
+        return $this->hasMany(ExamSession::class, 'student_id');
+    }
+
+    /**
+     * Get tokens used by this student.
+     */
+    public function usedTokens()
+    {
+        return $this->hasMany(ExamToken::class, 'used_by');
+    }
+
+    /**
+     * Get action logs performed by this admin.
+     */
+    public function actionLogs()
+    {
+        return $this->hasMany(ActionLog::class, 'admin_id');
+    }
+
+    /**
+     * Check if user is admin or superadmin.
+     */
+    public function isAdmin(): bool
+    {
+        return in_array($this->role, ['admin', 'superadmin']);
+    }
 }

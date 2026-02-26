@@ -14,16 +14,15 @@ class StudentExport implements FromCollection, WithHeadings
     public function collection()
     {
         return User::where('role', 'student')
-            ->select('nis', 'name', 'email', 'grade', 'class_group', 'is_active')
+            ->select('nis', 'name', 'grade', 'class_group', 'is_active')
             ->orderBy('nis')
             ->get()
             ->map(function ($student) {
-                $gradeDisplay = "Grade {$student->grade} - {$student->class_group}";
                 return [
                     'nis' => $student->nis,
                     'name' => $student->name,
-                    'class' => $gradeDisplay,
-                    'email' => $student->email ?? 'N/A',
+                    'grade' => $student->grade,
+                    'class_group' => $student->class_group,
                     'status' => $student->is_active ? 'Active' : 'Inactive',
                 ];
             });
@@ -34,8 +33,8 @@ class StudentExport implements FromCollection, WithHeadings
         return [
             'NIS',
             'Name',
-            'Class',
-            'Email',
+            'Grade',
+            'Class Group',
             'Status',
         ];
     }

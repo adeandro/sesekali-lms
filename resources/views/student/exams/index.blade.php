@@ -45,18 +45,22 @@
                         </div>
                     </div>
 
-                    <!-- Status Badge -->
-                    <div class="pt-2">
+                    <!-- Status Badge -->\n                    <div class=\"pt-2\">
                         @php
                             $now = now();
-                            if(in_array($exam->id, $submittedExams)) {
+                            $attemptStatus = isset($attempts[$exam->id]) ? $attempts[$exam->id]->status : null;
+                            
+                            // Determine status based on attempt and time
+                            if($attemptStatus === 'submitted') {
                                 $status = 'submitted';
+                            } elseif($attemptStatus === 'active' || $attemptStatus === 'in_progress') {
+                                $status = 'in_progress'; // Can resume
                             } elseif($exam->start_time > $now) {
                                 $status = 'upcoming';
                             } elseif($exam->end_time < $now) {
                                 $status = 'ended';
                             } else {
-                                $status = 'active';
+                                $status = 'available';
                             }
                         @endphp
                         
@@ -64,7 +68,11 @@
                             <span class="inline-block px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
                                 <i class="fas fa-check-circle mr-1"></i>Sudah Kirim
                             </span>
-                        @elseif($status === 'active')
+                        @elseif($status === 'in_progress')
+                            <span class="inline-block px-3 py-1 bg-orange-100 text-orange-800 text-xs font-semibold rounded-full">
+                                <i class="fas fa-spinner mr-1"></i>Dapat Dilanjutkan
+                            </span>
+                        @elseif($status === 'available')
                             <span class="inline-block px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-semibold rounded-full">
                                 <i class="fas fa-hourglass-start mr-1"></i>Tersedia
                             </span>
@@ -86,6 +94,12 @@
                         <button disabled class="w-full px-4 py-2 bg-gray-300 text-gray-700 rounded-lg font-semibold cursor-not-allowed">
                             <i class="fas fa-ban mr-2"></i>Sudah Dikerjakan
                         </button>
+                    @elseif($status === 'in_progress')
+                        <a href="{{ route('student.exams.start', $exam->id) }}" class="w-full">
+                            <button type="button" class="w-full px-4 py-2 bg-orange-600 text-white rounded-lg font-semibold hover:bg-orange-700 transition">
+                                <i class="fas fa-arrow-right mr-2"></i>Lanjutkan Ujian
+                            </button>
+                        </a>
                     @elseif($status === 'upcoming')
                         <button disabled class="w-full px-4 py-2 bg-gray-300 text-gray-700 rounded-lg font-semibold cursor-not-allowed">
                             <i class="fas fa-clock mr-2"></i>Dimulai {{ $exam->start_time->format('d M H:i') }}
@@ -95,12 +109,11 @@
                             <i class="fas fa-times-circle mr-2"></i>Ujian Berakhir
                         </button>
                     @else
-                        <form action="{{ route('student.exams.start', $exam->id) }}" method="POST" style="margin: 0;">
-                            @csrf
-                            <button type="submit" class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition">
+                        <a href="{{ route('student.exams.start', $exam->id) }}" class="w-full">
+                            <button type="button" class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition">
                                 <i class="fas fa-play-circle mr-2"></i>Mulai Ujian
                             </button>
-                        </form>
+                        </a>
                     @endif
                 </div>
             </div>
@@ -118,15 +131,31 @@
         @endforelse
     </div>
 
-    <!-- Recently Submitted Exams (if any) -->
-    @if($submittedExams)
+    <!-- Exam Status Info (if any submissions) -->
+    @php
+        $submittedCount = $attempts->where('status', 'submitted')->count();
+        $activeCount = $attempts->where('status', 'active')->count() + $attempts->where('status', 'in_progress')->count();
+    @endphp
+    @if($submittedCount > 0 || $activeCount > 0)
         <div class="mt-8">
-            <h2 class="text-2xl font-bold text-gray-900 mb-4">Ujian Anda</h2>
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
-                <p class="text-gray-700">
-                    <i class="fas fa-check-circle text-green-600 mr-2"></i>
-                    Anda telah mengerjakan {{ count($submittedExams) }} ujian. Anda tidak dapat mengerjakan ulang ujian yang sudah dikerjakan.
-                </p>
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">Status Ujian Anda</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                @if($submittedCount > 0)
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-6">
+                        <p class="text-gray-700">
+                            <i class="fas fa-check-circle text-green-600 mr-2"></i>
+                            <strong>{{ $submittedCount }} ujian</strong> sudah Anda kirim.
+                        </p>
+                    </div>
+                @endif
+                @if($activeCount > 0)
+                    <div class="bg-orange-50 border border-orange-200 rounded-lg p-6">
+                        <p class="text-gray-700">
+                            <i class="fas fa-spinner text-orange-600 mr-2"></i>
+                            <strong>{{ $activeCount }} ujian</strong> dapat dilanjutkan dari posisi terakhir.
+                        </p>
+                    </div>
+                @endif
             </div>
         </div>
     @endif

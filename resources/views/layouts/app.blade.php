@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Dashboard - SesekaliCBT')</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -99,8 +100,8 @@
             <!-- Sidebar Header -->
             <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 flex items-center justify-between sticky top-0 z-10">
                 <div>
-                    <h2 class="text-2xl font-bold">SesekaliCBT</h2>
-                    <p class="text-xs text-blue-100">Computer Based Test</p>
+                    <h2 class="text-2xl font-bold">ExamFlow</h2>
+                    <p class="text-xs text-blue-100">Learning Managemen System</p>
                 </div>
                 <button id="closeSidebarBtn" class="lg:hidden text-white hover:bg-blue-800 p-2 rounded transition">
                     <i class="fas fa-times"></i>
@@ -203,6 +204,32 @@
                         <i class="fas fa-chart-line w-5 text-lg mr-3"></i>
                         <span class="font-medium">Hasil</span>
                         @if(request()->routeIs('admin.results.*'))
+                            <i class="fas fa-chevron-right ml-auto"></i>
+                        @endif
+                    </a>
+
+                    <!-- Divider -->
+                    <div class="my-4 border-t border-gray-200"></div>
+
+                    <!-- Monitoring & Security Section (Module - Monitoring) -->
+                    <div class="pb-2">
+                        <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">🔒 Pengawasan & Keamanan</p>
+                    </div>
+
+                    <!-- Kelola Token - Generate & Manage tokens -->
+                    <a href="{{ route('admin.tokens.index') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition {{ request()->routeIs('admin.tokens.*') ? 'menu-item-active' : '' }}">
+                        <i class="fas fa-key w-5 text-lg mr-3"></i>
+                        <span class="font-medium">Kelola Token</span>
+                        @if(request()->routeIs('admin.tokens.*'))
+                            <i class="fas fa-chevron-right ml-auto"></i>
+                        @endif
+                    </a>
+
+                    <!-- Pantau Ujian - Links to monitoring exams list -->
+                    <a href="{{ route('admin.monitor-exams.index') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition {{ request()->routeIs('admin.monitor-exams.*') ? 'menu-item-active' : '' }}">
+                        <i class="fas fa-video w-5 text-lg mr-3"></i>
+                        <span class="font-medium">Pantau Ujian</span>
+                        @if(request()->routeIs('admin.monitor-exams.*'))
                             <i class="fas fa-chevron-right ml-auto"></i>
                         @endif
                     </a>

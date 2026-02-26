@@ -40,6 +40,27 @@ class StudentController extends Controller
     }
 
     /**
+     * Delete all students
+     */
+    public function deleteAllStudents()
+    {
+        try {
+            $students = User::where('role', 'student')->get();
+            $count = $students->count();
+
+            foreach ($students as $student) {
+                $student->delete();
+            }
+
+            return redirect()->route('admin.students.index')
+                ->with('success', "All {$count} students have been permanently deleted.");
+        } catch (\Exception $e) {
+            return redirect()->route('admin.students.index')
+                ->with('error', 'Error deleting students: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Display a listing of students
      */
     public function index(Request $request)
@@ -121,7 +142,13 @@ class StudentController extends Controller
     {
         $this->authorize('update', $student);
 
-        $student->update($request->validated());
+        $data = $request->validated();
+        
+        // Only update fields that are not email-related
+        // Email is auto-generated and shouldn't be updated
+        unset($data['email']);
+        
+        $student->update($data);
 
         return redirect()->route('admin.students.index')
             ->with('success', 'Student updated successfully');
@@ -159,9 +186,11 @@ class StudentController extends Controller
 
         return redirect()->route('admin.students.importResult')->with('import_data', [
             'success_count' => $importer->successCount,
+            'skipped_count' => $importer->skippedCount,
             'failure_count' => $importer->failureCount,
             'errors' => $importer->errors,
             'students' => $importer->students,
+            'skipped' => $importer->skipped,
         ]);
     }
 

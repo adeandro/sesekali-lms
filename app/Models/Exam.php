@@ -25,11 +25,14 @@ class Exam extends Model
         'allow_review_results',
         'status',
         'jenjang',
+        'token',
+        'token_last_updated',
     ];
 
     protected $casts = [
         'start_time' => 'datetime',
         'end_time' => 'datetime',
+        'token_last_updated' => 'datetime',
         'randomize_questions' => 'boolean',
         'randomize_options' => 'boolean',
         'show_score_after_submit' => 'boolean',
@@ -72,6 +75,22 @@ class Exam extends Model
     }
 
     /**
+     * Get the tokens for this exam.
+     */
+    public function tokens(): HasMany
+    {
+        return $this->hasMany(ExamToken::class);
+    }
+
+    /**
+     * Get the active sessions for this exam.
+     */
+    public function sessions(): HasMany
+    {
+        return $this->hasMany(ExamSession::class);
+    }
+
+    /**
      * Get the count of questions attached to this exam.
      */
     public function getQuestionCountAttribute(): int
@@ -94,5 +113,44 @@ class Exam extends Model
     public function canEdit(): bool
     {
         return $this->status !== 'finished';
+    }
+
+    /**
+     * Check if token needs to be refreshed (20 minutes old).
+     */
+    public function tokenNeedsRefresh(): bool
+    {
+        if (!$this->token_last_updated || $this->status !== 'published') {
+            return false;
+        }
+
+        return $this->token_last_updated->diffInMinutes(now()) >= 20;
+    }
+
+    /**
+     * Get minutes until next token refresh.
+     */
+    public function minutesUntilTokenRefresh(): int
+    {
+        if (!$this->token_last_updated || $this->status !== 'published') {
+            return 0;
+        }
+
+        $minutesPassed = (int)$this->token_last_updated->diffInMinutes(now());
+        $minutesUntilRefresh = 20 - $minutesPassed;
+
+        return max(0, $minutesUntilRefresh);
+    }
+
+    /**
+     * Get the time when token will be refreshed.
+     */
+    public function tokenRefreshTime()
+    {
+        if (!$this->token_last_updated || $this->status !== 'published') {
+            return null;
+        }
+
+        return $this->token_last_updated->addMinutes(20);
     }
 }

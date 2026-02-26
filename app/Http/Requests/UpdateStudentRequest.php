@@ -21,13 +21,10 @@ class UpdateStudentRequest extends FormRequest
      */
     public function rules(): array
     {
-        $student = $this->route('student');
-
         return [
             'name' => 'required|string|max:255',
             'grade' => 'required|string|in:10,11,12',
             'class_group' => 'required|string|max:10',
-            'email' => 'nullable|email|unique:users,email,' . $student->id,
             'is_active' => 'required|boolean',
         ];
     }

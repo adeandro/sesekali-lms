@@ -21,14 +21,41 @@
                 <button type="button" id="bulkDeleteBtn" class="inline-block px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition" style="display: none;">
                     🗑 Delete Selected
                 </button>
+                <form id="deleteAllForm" action="{{ route('admin.questions.deleteAll') }}" method="POST" style="display:inline;">
+                    @csrf
+                    @method('DELETE')
+                    <button type="button" onclick="confirmDeleteAllQuestions()" class="inline-block px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-900 transition font-bold">
+                        🗑️ Hapus Semua Soal
+                    </button>
+                </form>
             </div>
         </div>
 
         @if ($message = Session::get('success'))
-            <div class="mb-4 p-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex justify-between">
-                <span>{{ $message }}</span>
-                <button type="button" class="text-green-800 hover:text-green-600" onclick="this.parentElement.style.display='none';">×</button>
+            <div class="mb-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 rounded-lg shadow-sm flex items-start justify-between animate-slideDown">
+                <div class="flex items-start gap-3">
+                    <div class="flex-shrink-0 mt-0.5">
+                        <svg class="h-5 w-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="font-semibold text-green-800">Berhasil!</p>
+                        <p class="text-sm text-green-700 mt-1">{{ $message }}</p>
+                    </div>
+                </div>
+                <button type="button" class="text-green-500 hover:text-green-700 transition" onclick="this.parentElement.remove();">
+                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </button>
             </div>
+            <script>
+                setTimeout(() => {
+                    const alert = document.querySelector('[class*="animate-slideDown"]');
+                    if (alert) alert.remove();
+                }, 5000);
+            </script>
         @endif
 
         <!-- Search and Filter -->
@@ -202,4 +229,86 @@
             }
         });
     </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        function confirmDeleteAllQuestions() {
+            Swal.fire({
+                title: '⚠️ PERHATIAN SERIUS!',
+                html: `
+                    <div class="text-left">
+                        <p class="font-bold text-red-700 mb-4">Hapus SEMUA data soal? Tindakan ini TIDAK BISA DIBATALKAN.</p>
+                        <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded mb-4">
+                            <p class="font-semibold text-red-900 mb-2">Data yang akan dihapus:</p>
+                            <ul class="text-sm text-red-800 space-y-1">
+                                <li>✗ Semua soal dan konten</li>
+                                <li>✗ Semua gambar/file soal</li>
+                                <li>✗ Semua jawaban yang telah dibuat</li>
+                                <li>✗ Semua exam yang menggunakan soal ini</li>
+                                <li>✗ Data tidak dapat dipulihkan setelah penghapusan</li>
+                            </ul>
+                        </div>
+                        <p class="text-sm text-gray-700 mb-4">Jika Anda yakin ingin melanjutkan, ketik <span class="font-mono font-bold bg-gray-200 px-2 py-1 rounded">HAPUS SEMUA</span> di bawah:</p>
+                        <input type="text" id="confirmTextQuestions" placeholder="Ketik: HAPUS SEMUA" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500">
+                    </div>
+                `,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#991b1b',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Ya, Hapus Semua',
+                cancelButtonText: 'Batal',
+                didOpen: () => {
+                    document.getElementById('confirmTextQuestions').focus();
+                },
+                preConfirm: () => {
+                    const input = document.getElementById('confirmTextQuestions').value;
+                    if (input !== 'HAPUS SEMUA') {
+                        Swal.showValidationMessage('Ketik "HAPUS SEMUA" dengan benar untuk konfirmasi');
+                        return false;
+                    }
+                    return true;
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Show final confirmation
+                    Swal.fire({
+                        title: 'Konfirmasi Terakhir',
+                        html: '<p class="text-gray-800">Ini adalah konfirmasi terakhir. Klik "Hapus Selamanya" untuk menghapus semua soal.</p>',
+                        icon: 'error',
+                        showCancelButton: true,
+                        confirmButtonColor: '#7f1d1d',
+                        cancelButtonColor: '#6b7280',
+                        confirmButtonText: 'Hapus Selamanya',
+                        cancelButtonText: 'Batal',
+                        buttonsStyling: false,
+                        customClass: {
+                            confirmButton: 'inline-block px-6 py-2 bg-red-900 text-white rounded-lg font-bold hover:bg-red-950 transition',
+                            cancelButton: 'inline-block px-6 py-2 bg-gray-500 text-white rounded-lg font-bold hover:bg-gray-600 transition ml-2'
+                        }
+                    }).then((finalResult) => {
+                        if (finalResult.isConfirmed) {
+                            document.getElementById('deleteAllForm').submit();
+                        }
+                    });
+                }
+            });
+        }
+    </script>
+
+    <style>
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .animate-slideDown {
+            animation: slideDown 0.3s ease-out;
+        }
+    </style>
 @endsection

@@ -17,6 +17,7 @@ class ExamAttempt extends Model
         'score_mc',
         'score_essay',
         'final_score',
+        'token',
     ];
 
     protected $casts = [
@@ -49,6 +50,22 @@ class ExamAttempt extends Model
     public function answers(): HasMany
     {
         return $this->hasMany(ExamAnswer::class, 'attempt_id');
+    }
+
+    /**
+     * Get the exam session for this attempt.
+     */
+    public function session(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(ExamSession::class, 'exam_attempt_id');
+    }
+
+    /**
+     * Get violations for this attempt.
+     */
+    public function violations(): HasMany
+    {
+        return $this->hasMany(ExamViolation::class, 'exam_id');
     }
 
     /**

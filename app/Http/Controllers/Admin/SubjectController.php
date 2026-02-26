@@ -79,4 +79,25 @@ class SubjectController extends Controller
         return redirect()->route('admin.subjects.index')
             ->with('success', 'Subject deleted successfully');
     }
+
+    /**
+     * Delete all subjects
+     */
+    public function deleteAllSubjects()
+    {
+        try {
+            $subjects = Subject::all();
+            $count = $subjects->count();
+
+            foreach ($subjects as $subject) {
+                $subject->delete();
+            }
+
+            return redirect()->route('admin.subjects.index')
+                ->with('success', "All {$count} subjects have been permanently deleted.");
+        } catch (\Exception $e) {
+            return redirect()->route('admin.subjects.index')
+                ->with('error', 'Error deleting subjects: ' . $e->getMessage());
+        }
+    }
 }

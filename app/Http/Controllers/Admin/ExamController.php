@@ -51,6 +51,14 @@ class ExamController extends Controller
     }
 
     /**
+     * Display the specified exam.
+     */
+    public function show(Exam $exam)
+    {
+        return redirect()->route('admin.exams.edit', $exam);
+    }
+
+    /**
      * Show the form for editing the specified exam.
      */
     public function edit(Exam $exam)
@@ -235,8 +243,12 @@ class ExamController extends Controller
     {
         try {
             ExamService::publishExam($exam);
+
+            // Auto-generate token when exam is published
+            $this->generateTokenForExam($exam);
+
             return redirect()->route('admin.exams.index')
-                ->with('success', 'Exam published successfully');
+                ->with('success', 'Ujian dipublikasikan dan token telah dibuat');
         } catch (\Exception $e) {
             return redirect()->back()
                 ->with('error', $e->getMessage());
@@ -250,11 +262,119 @@ class ExamController extends Controller
     {
         try {
             ExamService::setToDraft($exam);
+
+            // Clear token when exam is unpublished
+            $exam->update([
+                'token' => null,
+                'token_last_updated' => null,
+            ]);
+
             return redirect()->route('admin.exams.index')
-                ->with('success', 'Exam set to draft successfully');
+                ->with('success', 'Ujian dikembalikan ke draft dan token dihapus');
         } catch (\Exception $e) {
             return redirect()->back()
                 ->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Generate a new token for exam and update timestamp.
+     * This is the internal method called by publish() and refreshToken()
+     */
+    private function generateTokenForExam(Exam $exam): void
+    {
+        // Generate random 6-character alphanumeric token
+        $token = strtoupper(substr(bin2hex(random_bytes(4)), 0, 6));
+
+        $exam->update([
+            'token' => $token,
+            'token_last_updated' => now(),
+        ]);
+    }
+
+    /**
+     * Generate a new token for exam (Admin endpoint).
+     */
+    public function generateToken(Exam $exam)
+    {
+        try {
+            if ($exam->status !== 'published') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ujian harus dipublikasikan terlebih dahulu untuk membuat token.',
+                ], 400);
+            }
+
+            $this->generateTokenForExam($exam);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Token berhasil dibuat.',
+                'token' => $exam->token,
+                'token_last_updated' => $exam->token_last_updated,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal membuat token: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Refresh token manually (with immediate effect).
+     */
+    public function refreshToken(Exam $exam)
+    {
+        try {
+            if ($exam->status !== 'published') {
+                return redirect()->route('admin.tokens.index')
+                    ->with('error', 'Hanya ujian yang dipublikasikan yang dapat diperbarui tokennya.');
+            }
+
+            $this->generateTokenForExam($exam);
+
+            return redirect()->route('admin.tokens.index')
+                ->with('success', 'Token berhasil diperbarui: ' . $exam->token);
+        } catch (\Exception $e) {
+            return redirect()->route('admin.tokens.index')
+                ->with('error', 'Gagal memperbarui token: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Update exam token (manual override).
+     */
+    public function updateToken(Request $request, Exam $exam)
+    {
+        $request->validate([
+            'token' => 'required|string|max:10|unique:exams,token,' . $exam->id,
+        ]);
+
+        try {
+            if ($exam->status !== 'published') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ujian harus dipublikasikan terlebih dahulu.',
+                ], 400);
+            }
+
+            $exam->update([
+                'token' => strtoupper($request->token),
+                'token_last_updated' => now(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Token berhasil diperbarui.',
+                'token' => $exam->token,
+                'token_last_updated' => $exam->token_last_updated,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui token: ' . $e->getMessage(),
+            ], 500);
         }
     }
 }

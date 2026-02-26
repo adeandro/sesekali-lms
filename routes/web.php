@@ -13,6 +13,10 @@ use App\Http\Controllers\Admin\ResultController;
 use App\Http\Controllers\Admin\ExamCardController;
 use App\Http\Controllers\Student\StudentExamController;
 use App\Http\Controllers\Student\StudentResultController;
+use App\Http\Controllers\Student\HeartbeatController;
+use App\Http\Controllers\Api\ExamProgressController;
+use App\Http\Controllers\Admin\TokenController;
+use App\Http\Controllers\Admin\MonitoringController;
 
 // Public routes
 Route::get('/', function () {
@@ -60,14 +64,33 @@ Route::middleware('auth')->group(function () {
         // Student Exam routes
         Route::prefix('student/exams')->name('student.exams.')->group(function () {
             Route::get('/', [StudentExamController::class, 'index'])->name('index');
-            Route::post('{exam}/start', [StudentExamController::class, 'start'])->name('start');
-            Route::get('{attempt}', [StudentExamController::class, 'take'])->name('take');
-            Route::post('{attempt}/autosave', [StudentExamController::class, 'autosave'])->name('autosave');
-            Route::post('{attempt}/submit', [StudentExamController::class, 'submit'])->name('submit');
-            Route::get('{attempt}/result', [StudentExamController::class, 'result'])->name('result');
-            Route::get('{attempt}/remaining-time', [StudentExamController::class, 'getRemainingTime'])->name('remaining-time');
-            Route::post('{attempt}/save-violation', [StudentExamController::class, 'saveViolation'])->name('save-violation');
-            Route::post('{attempt}/force-submit', [StudentExamController::class, 'forceSubmit'])->name('force-submit');
+            Route::get('{exam}/start', [StudentExamController::class, 'start'])->name('start');
+            Route::post('{exam}/start', function ($exam) {
+                return redirect()->route('student.exams.start', $exam)->with('error', 'Gunakan tombol submit pada form validasi token.');
+            });
+            Route::post('{exam}/validate-and-start', [StudentExamController::class, 'validateAndStart'])->name('validate-and-start');
+
+            // Protected routes - require exam session validation
+            Route::middleware('verify.exam.session')->group(function () {
+                Route::get('{attempt}', [StudentExamController::class, 'take'])->name('take');
+                Route::post('{attempt}/autosave', [StudentExamController::class, 'autosave'])->name('autosave');
+                Route::post('{attempt}/submit', [StudentExamController::class, 'submit'])->name('submit');
+                Route::get('{attempt}/result', [StudentExamController::class, 'result'])->name('result');
+                Route::get('{attempt}/remaining-time', [StudentExamController::class, 'getRemainingTime'])->name('remaining-time');
+                Route::post('{attempt}/save-violation', [StudentExamController::class, 'saveViolation'])->name('save-violation');
+                Route::post('{attempt}/force-submit', [StudentExamController::class, 'forceSubmit'])->name('force-submit');
+
+                // Heartbeat & Session Management Routes (New)
+                Route::post('{attempt}/heartbeat', [HeartbeatController::class, 'recordHeartbeat'])->name('heartbeat');
+                Route::get('{attempt}/session-status', [HeartbeatController::class, 'getSessionStatus'])->name('session-status');
+                Route::post('{attempt}/sync-offline', [HeartbeatController::class, 'syncOfflineAnswers'])->name('sync-offline');
+                Route::post('{attempt}/disconnect', [HeartbeatController::class, 'disconnectSession'])->name('disconnect');
+
+                // Real-Time Progress Tracking Routes (New)
+                Route::post('{attempt}/record-answer', [ExamProgressController::class, 'recordAnswer'])->name('record-answer');
+                Route::post('{attempt}/report-violation', [ExamProgressController::class, 'reportViolation'])->name('report-violation');
+                Route::get('{attempt}/progress', [ExamProgressController::class, 'getSessionProgress'])->name('progress');
+            });
         });
 
         // Student Results routes
@@ -77,6 +100,7 @@ Route::middleware('auth')->group(function () {
     // Subject & Question Management routes (Admin & Superadmin only)
     Route::middleware('role:admin,superadmin')->prefix('admin')->name('admin.')->group(function () {
         // Subject routes
+        Route::delete('subjects/delete-all', [SubjectController::class, 'deleteAllSubjects'])->name('subjects.deleteAll');
         Route::resource('subjects', SubjectController::class);
 
         // Question routes with import/export
@@ -85,11 +109,15 @@ Route::middleware('auth')->group(function () {
         Route::get('questions/import/result', [QuestionController::class, 'importResult'])->name('questions.importResult');
         Route::get('questions/export', [QuestionController::class, 'export'])->name('questions.export');
         Route::delete('questions/bulk-delete', [QuestionController::class, 'bulkDelete'])->name('questions.bulkDelete');
+        Route::delete('questions/delete-all', [QuestionController::class, 'deleteAllQuestions'])->name('questions.deleteAll');
         Route::resource('questions', QuestionController::class);
 
         // Exam Management routes
         Route::post('exams/{exam}/publish', [ExamController::class, 'publish'])->name('exams.publish');
         Route::post('exams/{exam}/set-to-draft', [ExamController::class, 'setToDraft'])->name('exams.set-to-draft');
+        Route::post('exams/{exam}/generate-token', [ExamController::class, 'generateToken'])->name('exams.generate-token');
+        Route::post('exams/{exam}/refresh-token', [ExamController::class, 'refreshToken'])->name('exams.refresh-token');
+        Route::post('exams/{exam}/update-token', [ExamController::class, 'updateToken'])->name('exams.update-token');
         Route::get('exams/{exam}/questions', [ExamController::class, 'manageQuestions'])->name('exams.manage-questions');
         Route::post('exams/{exam}/questions/attach', [ExamController::class, 'attachQuestions'])->name('exams.attach-questions');
         Route::post('exams/{exam}/questions/auto-add', [ExamController::class, 'autoAddQuestions'])->name('exams.auto-add-questions');
@@ -113,6 +141,23 @@ Route::middleware('auth')->group(function () {
             Route::get('{exam}/export', [ResultController::class, 'export'])->name('export');
         });
 
+        // Token Management Routes (New Module - Monitoring & Security)
+        Route::prefix('tokens')->name('tokens.')->group(function () {
+            Route::get('/', [TokenController::class, 'index'])->name('index');
+            Route::post('exams/{exam}/generate', [TokenController::class, 'generateTokens'])->name('generate');
+            Route::get('exams/{exam}/list', [TokenController::class, 'listTokens'])->name('list');
+            Route::delete('{token}/revoke', [TokenController::class, 'revokeToken'])->name('revoke');
+        });
+
+        // Monitoring Exams List Route
+        Route::get('monitor-exams', [MonitoringController::class, 'listExams'])->name('monitor-exams.index');
+
+        // Monitoring & Real-Time Dashboard Routes (New Module)
+        Route::prefix('monitor')->name('monitor.')->group(function () {
+            Route::get('exams/{exam}', [MonitoringController::class, 'index'])->name('exams.index');
+            Route::post('attempts/{attempt}/reopen', [MonitoringController::class, 'reopenSession'])->name('attempts.reopen');
+        });
+
         // Student Management routes
         // Explicit routes must come before resource()
         Route::get('students/import/form', [StudentController::class, 'importForm'])->name('students.importForm');
@@ -121,6 +166,7 @@ Route::middleware('auth')->group(function () {
         Route::get('students/export', [StudentController::class, 'export'])->name('students.export');
         Route::post('students/{student}/reset-password', [StudentController::class, 'resetPassword'])->name('students.resetPassword');
         Route::post('students/reset-all-passwords', [StudentController::class, 'resetAllPasswords'])->name('students.resetAllPasswords');
+        Route::delete('students/delete-all', [StudentController::class, 'deleteAllStudents'])->name('students.deleteAll');
         Route::post('students/{student}/toggle-active', [StudentController::class, 'toggleActive'])->name('students.toggleActive');
 
         // Resource routes last

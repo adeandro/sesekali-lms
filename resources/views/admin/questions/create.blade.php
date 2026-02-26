@@ -111,7 +111,7 @@
                     @foreach(['A' => 'option_a', 'B' => 'option_b', 'C' => 'option_c', 'D' => 'option_d', 'E' => 'option_e'] as $label => $name)
                         <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
                             <label for="{{ $name }}" class="block text-sm font-medium text-gray-900 mb-2">
-                                Option {{ $label }} {{ in_array($name, ['option_a', 'option_b', 'option_c', 'option_d']) ? '<span class="text-red-500">*</span>' : '' }}
+                                Option {{ $label }} {{ in_array($name, ['option_a', 'option_b', 'option_c', 'option_d']) ? `<span class="text-red-500">*</span>` : '' }}
                             </label>
                             <input type="text" id="{{ $name }}" name="{{ $name }}" value="{{ old($name) }}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3" placeholder="Text for option {{ $label }}">
                             

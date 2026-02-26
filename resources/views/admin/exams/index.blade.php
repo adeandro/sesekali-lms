@@ -107,8 +107,9 @@
                                     <div class="flex gap-1 flex-wrap justify-center">
                                         <a href="{{ route('admin.exams.edit', $exam) }}" class="text-yellow-600 hover:text-yellow-800 text-xs" title="Ubah">✏️</a>
                                         <a href="{{ route('admin.exams.manage-questions', $exam) }}" class="text-blue-600 hover:text-blue-800 text-xs" title="Soal">📋</a>
+                                        <a href="{{ route('admin.exams.print-credentials', $exam) }}" target="_blank" class="text-green-600 hover:text-green-800 text-xs" title="Kredensial">🎓</a>
                                         @if($exam->status === 'published')
-                                            <a href="{{ route('admin.exams.print-credentials', $exam) }}" target="_blank" class="text-green-600 hover:text-green-800 text-xs" title="Kredensial">🎓</a>
+                                            <a href="{{ route('admin.monitor.exams.index', $exam) }}" class="text-orange-600 hover:text-orange-800 text-xs font-bold" title="Monitor">📹</a>
                                         @endif
                                         @if($exam->status !== 'published' && $exam->canPublish())
                                             <form action="{{ route('admin.exams.publish', $exam) }}" method="POST" style="display:inline;">
@@ -166,9 +167,7 @@
                         <div class="flex gap-2 flex-wrap justify-start">
                             <a href="{{ route('admin.exams.edit', $exam) }}" class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs hover:bg-yellow-200">✏️ Ubah</a>
                             <a href="{{ route('admin.exams.manage-questions', $exam) }}" class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200">📋 Soal</a>
-                            @if($exam->status === 'published')
-                                <a href="{{ route('admin.exams.print-credentials', $exam) }}" target="_blank" class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs hover:bg-green-200">🎓</a>
-                            @endif
+                            <a href="{{ route('admin.exams.print-credentials', $exam) }}" target="_blank" class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs hover:bg-green-200">🎓 Kredensial</a>
                             @if($exam->status !== 'published' && $exam->canPublish())
                                 <form action="{{ route('admin.exams.publish', $exam) }}" method="POST" style="display:inline;">
                                     @csrf

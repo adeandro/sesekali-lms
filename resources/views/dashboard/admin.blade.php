@@ -55,19 +55,76 @@
             </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Panel Admin</h3>
-            <p class="text-gray-600 mb-4">Selamat datang di dasbor admin Anda. Anda dapat mengelola siswa, mata pelajaran, dan soal di sini.</p>
+        <!-- Management Panel -->
+        <div class="bg-white rounded-lg shadow p-6 mb-8">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">📚 Kelola Ujian</h3>
+            <p class="text-gray-600 mb-4">Buat, edit, kelola soal, dan atur ujian.</p>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <a href="{{ route('admin.students.index') }}" class="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-center">
+                <a href="{{ route('admin.students.index') }}" class="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-center font-semibold">
                     👥 Kelola Siswa
                 </a>
-                <a href="{{ route('admin.subjects.index') }}" class="inline-block px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-center">
+                <a href="{{ route('admin.subjects.index') }}" class="inline-block px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-center font-semibold">
                     📚 Kelola Mata Pelajaran
                 </a>
-                <a href="{{ route('admin.questions.index') }}" class="inline-block px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-center">
+                <a href="{{ route('admin.questions.index') }}" class="inline-block px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-center font-semibold">
                     ❓ Kelola Soal
                 </a>
+            </div>
+        </div>
+
+        <!-- Exam Management -->
+        <div class="bg-white rounded-lg shadow p-6 mb-8">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">📝 Manajemen Ujian</h3>
+            <p class="text-gray-600 mb-4">Buat ujian, kelola soal, dan tentukan jadwal ujian.</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <a href="{{ route('admin.exams.index') }}" class="inline-block px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-center font-semibold">
+                    <i class="fas fa-list mr-2"></i>Daftar Ujian
+                </a>
+                <a href="{{ route('admin.exams.create') }}" class="inline-block px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-center font-semibold">
+                    <i class="fas fa-plus mr-2"></i>Buat Ujian Baru
+                </a>
+            </div>
+        </div>
+
+        <!-- Token & Monitoring Section -->
+        <div class="bg-white rounded-lg shadow p-6 mb-8">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">🔒 Pengawasan & Keamanan</h3>
+            <p class="text-gray-600 mb-4">Kelola token akses dan pantau ujian yang sedang berlangsung.</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <a href="{{ route('admin.tokens.index') }}" class="block px-4 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition text-center font-semibold">
+                    <i class="fas fa-key mr-2"></i>Kelola Token
+                </a>
+                <a href="{{ route('admin.exams.index') }}?tab=monitoring" class="block px-4 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition text-center font-semibold">
+                    <i class="fas fa-video mr-2"></i>Pantau Ujian
+                </a>
+                <a href="{{ route('admin.results.index') }}" class="block px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-center font-semibold">
+                    <i class="fas fa-chart-line mr-2"></i>Lihat Hasil
+                </a>
+            </div>
+        </div>
+
+        <!-- Quick Info -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                <h4 class="font-semibold text-blue-900 mb-3">💡 Cara Memulai Ujian</h4>
+                <ol class="text-sm text-blue-800 space-y-2 list-decimal list-inside">
+                    <li><strong>Buat Ujian</strong> di "Daftar Ujian"</li>
+                    <li><strong>Generate Token</strong> di "Kelola Token"</li>
+                    <li><strong>Bagikan Token</strong> kepada siswa sebelum ujian</li>
+                    <li><strong>Pantau Ujian</strong> real-time di "Pantau Ujian"</li>
+                    <li><strong>Lihat Hasil</strong> setelah ujian selesai</li>
+                </ol>
+            </div>
+
+            <div class="bg-green-50 border border-green-200 rounded-lg p-6">
+                <h4 class="font-semibold text-green-900 mb-3">🎯 Fitur Pengawasan</h4>
+                <ul class="text-sm text-green-800 space-y-2">
+                    <li>✅ Monitoring real-time siswa yang ujian</li>
+                    <li>✅ Deteksi koneksi offline</li>
+                    <li>✅ Hentikan ujian siswa kapan saja</li>
+                    <li>✅ Logout paksa siswa jika curang</li>
+                    <li>✅ Audit log semua aksi admin</li>
+                </ul>
             </div>
         </div>
     </div>

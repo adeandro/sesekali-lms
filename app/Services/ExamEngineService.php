@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Exam;
 use App\Models\ExamAttempt;
 use App\Models\ExamAnswer;
+use App\Models\ExamSession;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
@@ -12,15 +13,30 @@ class ExamEngineService
 {
     /**
      * Get available exams for a student.
+     * Shows:
+     * - All published exams within time window
+     * - Excludes only exams where student has active/in-progress attempt
+     * - Includes exams with submitted attempts (for admin reopen case)
      */
     public static function getAvailableExams(User $student)
     {
         $now = now();
 
         return Exam::where('status', 'published')
-            ->where('end_time', '>=', $now)  // Show exams that haven't ended yet (includes upcoming exams)
             ->where('jenjang', $student->grade)  // Filter by student's grade level
+            ->where(function ($query) use ($student, $now) {
+                // Show exams that haven't ended yet
+                $query->where('end_time', '>=', $now)
+                    // OR show exams with in_progress attempts (reopened exams)
+                    ->orWhereIn('id', function ($subquery) use ($student) {
+                        $subquery->select('exam_id')
+                            ->from('exam_attempts')
+                            ->where('student_id', $student->id)
+                            ->where('status', 'in_progress');
+                    });
+            })
             ->whereNotIn('id', function ($query) use ($student) {
+                // Exclude exams with submitted attempts (fully completed)
                 $query->select('exam_id')
                     ->from('exam_attempts')
                     ->where('student_id', $student->id)
@@ -34,7 +50,7 @@ class ExamEngineService
     /**
      * Start an exam for a student.
      */
-    public static function startExam(Exam $exam, User $student)
+    public static function startExam(Exam $exam, User $student, $token = null)
     {
         // Check if already has active attempt
         $activeAttempt = ExamAttempt::where('exam_id', $exam->id)
@@ -56,11 +72,12 @@ class ExamEngineService
             throw new \Exception('You have already submitted this exam.');
         }
 
-        // Create new attempt
+        // Create new attempt (with token if provided)
         $attempt = ExamAttempt::create([
             'exam_id' => $exam->id,
             'student_id' => $student->id,
             'started_at' => now(),
+            'token' => $token, // Save token used for validation
         ]);
 
         // Initialize exam answers
@@ -235,6 +252,12 @@ class ExamEngineService
                 'submitted_at' => now(),
                 'status' => 'submitted',
             ]);
+
+            // End the exam session when exam is submitted
+            $session = ExamSession::where('exam_attempt_id', $attempt->id)->first();
+            if ($session) {
+                $session->end();
+            }
 
             return $attempt;
         });

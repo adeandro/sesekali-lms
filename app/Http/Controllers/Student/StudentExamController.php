@@ -7,6 +7,7 @@ use App\Http\Requests\AutosaveRequest;
 use App\Models\Exam;
 use App\Models\ExamAttempt;
 use App\Models\ExamViolation;
+use App\Models\ExamSession;
 use App\Services\ExamEngineService;
 use Illuminate\Http\Request;
 
@@ -17,17 +18,21 @@ class StudentExamController extends Controller
      */
     public function index()
     {
-        $exams = ExamEngineService::getAvailableExams(auth()->user());
-        $submittedExams = ExamAttempt::where('student_id', auth()->id())
-            ->where('status', 'submitted')
-            ->pluck('exam_id')
-            ->toArray();
+        $student = auth()->user();
+        $exams = ExamEngineService::getAvailableExams($student);
+        
+        // Get all attempts keyed by exam_id for quick lookup
+        // Includes submitted, active, and in_progress attempts
+        $attempts = ExamAttempt::where('student_id', auth()->id())
+            ->whereIn('status', ['submitted', 'active', 'in_progress'])
+            ->get()  // Get collection first
+            ->keyBy('exam_id');  // Then keyBy on the collection
 
-        return view('student.exams.index', compact('exams', 'submittedExams'));
+        return view('student.exams.index', compact('exams', 'attempts'));
     }
 
     /**
-     * Start an exam.
+     * Start an exam - show token validation form.
      */
     public function start(Exam $exam)
     {
@@ -36,23 +41,21 @@ class StudentExamController extends Controller
             $now = now();
             if ($exam->status !== 'published') {
                 return redirect()->route('student.exams.index')
-                    ->with('error', 'This exam is not available.');
+                    ->with('error', 'Ujian ini tidak tersedia.');
             }
 
             if ($exam->start_time > $now) {
                 return redirect()->route('student.exams.index')
-                    ->with('error', 'This exam has not started yet.');
+                    ->with('error', 'Ujian ini belum dimulai.');
             }
 
             if ($exam->end_time < $now) {
                 return redirect()->route('student.exams.index')
-                    ->with('error', 'This exam has ended.');
+                    ->with('error', 'Ujian ini telah berakhir.');
             }
 
-            // Start exam
-            $attempt = ExamEngineService::startExam($exam, auth()->user());
-
-            return redirect()->route('student.exams.take', $attempt->id);
+            // Show token validation form
+            return view('student.exams.token-validation', compact('exam'));
         } catch (\Exception $e) {
             return redirect()->route('student.exams.index')
                 ->with('error', $e->getMessage());
@@ -74,11 +77,38 @@ class StudentExamController extends Controller
             return redirect()->route('student.exams.result', $attempt->id);
         }
 
+        // Check if session is locked (force logged out)
+        if ($attempt->is_session_locked) {
+            return redirect()->route('student.exams.index')
+                ->with('error', 'Sesi ujian anda telah dikunci oleh pengawas.');
+        }
+
         // Check if time expired
         if ($attempt->hasTimeExpired()) {
             ExamEngineService::autoSubmitIfExpired($attempt);
             return redirect()->route('student.exams.result', $attempt->id);
         }
+
+        // Verify valid token was used
+        if (!$attempt->token) {
+            return redirect()->route('student.exams.index')
+                ->with('error', 'Token ujian tidak valid.');
+        }
+
+        // Create or update session
+        $session = ExamSession::firstOrCreate(
+            ['exam_attempt_id' => $attempt->id],
+            [
+                'exam_id' => $attempt->exam_id,
+                'student_id' => auth()->id(),
+                'session_id' => 'session_' . md5($attempt->id . auth()->id() . time()),
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->header('User-Agent'),
+                'started_at' => $attempt->started_at,
+                'last_heartbeat' => now(),
+                'status' => 'active',
+            ]
+        );
 
         // Get exam with questions
         $attempt = ExamEngineService::getAttemptWithQuestions($attempt);
@@ -270,5 +300,101 @@ class StudentExamController extends Controller
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
+    }
+
+    /**
+     * Validate token and start exam.
+     */
+    public function validateAndStart(Request $request, Exam $exam)
+    {
+        $request->validate([
+            'token' => 'required|string|max:20',
+        ]);
+
+        try {
+            // Verify exam status
+            if ($exam->status !== 'published') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ujian ini tidak tersedia untuk diikuti.',
+                ], 400);
+            }
+
+            $now = now();
+            if ($exam->start_time > $now) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ujian belum dimulai. Waktu mulai: ' . $exam->start_time->format('d M Y H:i'),
+                ], 400);
+            }
+
+            if ($exam->end_time < $now) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ujian telah berakhir.',
+                ], 400);
+            }
+
+            // Refresh token if it's older than 20 minutes
+            if ($exam->tokenNeedsRefresh()) {
+                $this->regenerateExamToken($exam);
+                // Reload exam from database to get fresh token value
+                $exam->refresh();
+            }
+
+            // Verify token against exam's static token
+            $inputToken = strtoupper(trim($request->token));
+            $examToken = strtoupper($exam->token ?? '');
+
+            if (!$examToken) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Token ujian belum ditetapkan oleh admin. Silakan hubungi pengawas.',
+                ], 400);
+            }
+
+            if ($inputToken !== $examToken) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Token salah atau sudah kadaluwarsa. Silakan hubungi pengawas.',
+                ], 400);
+            }
+
+            // Token valid! Save session to remember this student is authorized for this exam
+            session(['authorized_exam_' . $exam->id => true]);
+
+            // Create exam attempt to track student progress (with token)
+            $attempt = ExamEngineService::startExam($exam, auth()->user(), $inputToken);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Token valid! Ujian dimulai...',
+                'attempt_id' => $attempt->id,
+                'redirect_url' => route('student.exams.take', $attempt->id),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Regenerate token for exam (internal method).
+     */
+    private function regenerateExamToken(Exam $exam): void
+    {
+        if ($exam->status !== 'published') {
+            return;
+        }
+
+        // Generate random 6-character alphanumeric token
+        $token = strtoupper(substr(bin2hex(random_bytes(4)), 0, 6));
+
+        $exam->update([
+            'token' => $token,
+            'token_last_updated' => now(),
+        ]);
     }
 }

@@ -1,0 +1,41 @@
+=== COMPREHENSIVE TOKEN SYSTEM TEST ===
+
+Test Exam: js (ID: 8)
+Current Status: draft
+
+--- TEST 1: Publish Exam (Auto-Generate Token) ---
+Set to published
+✅ Auto-Generated Token: B8606A
+✅ Token Last Updated: 2026-02-24 22:36:56
+
+--- TEST 2: Token Validation ---
+Input Token: B8606A
+DB Token: B8606A
+Match: ✅ YES
+
+--- TEST 3: Fresh Token (0 minutes old) ---
+Token Needs Refresh: NO
+Minutes Until Refresh: 20 min
+Next Refresh Time: 2026-02-24 22:56:56
+
+--- TEST 4: Old Token (25 minutes ago) ---
+Token Needs Refresh: ✅ YES
+Minutes Until Refresh: 0 min
+
+--- TEST 5: Session Key Format ---
+Session Key: authorized_exam_8
+Session Value: true
+Format: ✅ CORRECT (authorized_exam_{id})
+
+--- TEST 6: Unpublish Exam (Clear Token) ---
+Status: draft
+Old Token: B8606A → NULL
+Token is NULL: ✅ YES
+
+--- TEST 7: Token Methods with NULL Token ---
+Token Needs Refresh (unpublished): NO
+Minutes Until Refresh (unpublished): 0 min
+Token Refresh Time (unpublished): NULL
+
+=== ALL TESTS PASSED ✅ ===
+Refactored token system is ready for production!

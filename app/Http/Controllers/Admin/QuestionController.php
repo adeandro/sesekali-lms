@@ -223,4 +223,27 @@ class QuestionController extends Controller
                 ->with('error', 'Failed to delete questions: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Delete all questions
+     */
+    public function deleteAllQuestions()
+    {
+        try {
+            $questions = Question::all();
+            $count = $questions->count();
+
+            foreach ($questions as $question) {
+                // Delete image if exists
+                QuestionService::deleteImageIfExists($question->question_image);
+                $question->delete();
+            }
+
+            return redirect()->route('admin.questions.index')
+                ->with('success', "All {$count} questions have been permanently deleted.");
+        } catch (\Exception $e) {
+            return redirect()->route('admin.questions.index')
+                ->with('error', 'Error deleting questions: ' . $e->getMessage());
+        }
+    }
 }

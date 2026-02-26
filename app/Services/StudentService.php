@@ -19,9 +19,8 @@ class StudentService
         $uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
         $lowercase = 'abcdefghijklmnopqrstuvwxyz';
         $numbers = '0123456789';
-        $special = '!@#$%^&*';
 
-        $allChars = $uppercase . $lowercase . $numbers . $special;
+        $allChars = $uppercase . $lowercase . $numbers;
         $password = '';
 
         // Ensure at least one of each type
@@ -41,7 +40,7 @@ class StudentService
     }
 
     /**
-     * Create a new student with auto-generated password
+     * Create a new student with auto-generated password and email
      *
      * @param array $data
      * @return array ['student' => User, 'password' => string]
@@ -53,10 +52,17 @@ class StudentService
         // Extract grade and class_group if class is provided in old format
         $grade = $data['grade'] ?? null;
         $classGroup = $data['class_group'] ?? null;
+        
+        // Auto-generate email if not provided
+        $email = $data['email'] ?? null;
+        if (empty($email)) {
+            // Generate email based on NIS
+            $email = 'student_' . $data['nis'] . '@sesekalicbt.local';
+        }
 
         $student = User::create([
             'name' => $data['name'],
-            'email' => $data['email'] ?? null,
+            'email' => $email,
             'password' => Hash::make($password),
             'password_display' => $password,
             'nis' => $data['nis'],
