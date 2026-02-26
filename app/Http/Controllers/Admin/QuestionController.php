@@ -146,8 +146,10 @@ class QuestionController extends Controller
 
         return redirect()->route('admin.questions.importResult')->with('import_data', [
             'success_count' => $importer->successCount,
+            'skipped_count' => $importer->skippedCount,
             'failure_count' => $importer->failureCount,
             'errors' => $errors,
+            'skipped' => $importer->skipped,
         ]);
     }
 
