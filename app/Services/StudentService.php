@@ -53,11 +53,15 @@ class StudentService
         $grade = $data['grade'] ?? null;
         $classGroup = $data['class_group'] ?? null;
         
+        // IMPORTANT: Ensure NIS is always a string to prevent integer overflow
+        // Excel or other sources might read numbers as integers
+        $nis = (string) $data['nis'];
+        
         // Auto-generate email if not provided
         $email = $data['email'] ?? null;
         if (empty($email)) {
             // Generate email based on NIS
-            $email = 'student_' . $data['nis'] . '@sesekalicbt.local';
+            $email = 'student_' . $nis . '@sesekalicbt.local';
         }
 
         $student = User::create([
@@ -65,7 +69,7 @@ class StudentService
             'email' => $email,
             'password' => Hash::make($password),
             'password_display' => $password,
-            'nis' => $data['nis'],
+            'nis' => $nis,
             'grade' => $grade,
             'class_group' => $classGroup,
             'role' => 'student',
@@ -75,6 +79,48 @@ class StudentService
         return [
             'student' => $student,
             'password' => $password,
+        ];
+    }
+
+    /**
+     * Create or update a student (idempotent for re-imports)
+     * Uses updateOrCreate pattern to handle duplicates gracefully
+     *
+     * @param array $data
+     * @return array ['student' => User, 'password' => string, 'created' => bool]
+     */
+    public static function createOrUpdateStudent(array $data): array
+    {
+        $grade = $data['grade'] ?? null;
+        $classGroup = $data['class_group'] ?? null;
+        
+        // IMPORTANT: Ensure NIS is always a string to prevent integer overflow issues
+        // from Excel or other sources that might read numbers
+        $nis = (string) $data['nis'];
+        $email = $data['email'] ?? 'student_' . $nis . '@sesekalicbt.local';
+        
+        // Generate password for new students
+        $password = static::generatePassword();
+        
+        // Use updateOrCreate: if NIS exists, update; otherwise create
+        $student = User::updateOrCreate(
+            ['nis' => $nis],  // Search condition - uses string NIS
+            [                          // Update/create attributes
+                'name' => $data['name'],
+                'email' => $email,
+                'password' => Hash::make($password),
+                'password_display' => $password,
+                'grade' => $grade,
+                'class_group' => $classGroup,
+                'role' => 'student',
+                'is_active' => true,
+            ]
+        );
+
+        return [
+            'student' => $student,
+            'password' => $password,
+            'created' => $student->wasRecentlyCreated,
         ];
     }
 
@@ -106,11 +152,9 @@ class StudentService
     {
         $errors = [];
 
-        // NIS validation
+        // NIS validation (uniqueness check removed - handled in import with updateOrCreate)
         if (empty($data['nis'])) {
             $errors['nis'] = 'NIS is required';
-        } elseif (User::where('nis', $data['nis'])->exists()) {
-            $errors['nis'] = 'NIS already exists';
         }
 
         // Name validation
