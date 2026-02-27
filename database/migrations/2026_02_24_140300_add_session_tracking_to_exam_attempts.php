@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -29,17 +30,43 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('exam_attempts', function (Blueprint $table) {
-            $table->dropIndex(['session_id']);
-            $table->dropIndex(['heartbeat_last_seen']);
-            $table->dropColumn([
-                'session_id',
-                'token',
-                'heartbeat_last_seen',
-                'is_session_locked',
-                'force_submitted',
-                'force_submit_reason',
-                'force_submitted_at',
-            ]);
+            // Safely drop unique constraint on session_id
+            try {
+                $table->dropUnique(['session_id']);
+            } catch (\Exception $e) {
+                // Constraint doesn't exist, continue
+            }
+            
+            // Safely drop regular index on heartbeat_last_seen
+            try {
+                $table->dropIndex(['heartbeat_last_seen']);
+            } catch (\Exception $e) {
+                // Index doesn't exist, continue
+            }
+            
+            // Drop all columns (only drop if they exist)
+            if (Schema::hasColumn('exam_attempts', 'session_id')) {
+                $table->dropColumn('session_id');
+            }
+            if (Schema::hasColumn('exam_attempts', 'token')) {
+                $table->dropColumn('token');
+            }
+            if (Schema::hasColumn('exam_attempts', 'heartbeat_last_seen')) {
+                $table->dropColumn('heartbeat_last_seen');
+            }
+            if (Schema::hasColumn('exam_attempts', 'is_session_locked')) {
+                $table->dropColumn('is_session_locked');
+            }
+            if (Schema::hasColumn('exam_attempts', 'force_submitted')) {
+                $table->dropColumn('force_submitted');
+            }
+            if (Schema::hasColumn('exam_attempts', 'force_submit_reason')) {
+                $table->dropColumn('force_submit_reason');
+            }
+            if (Schema::hasColumn('exam_attempts', 'force_submitted_at')) {
+                $table->dropColumn('force_submitted_at');
+            }
         });
     }
 };
+
