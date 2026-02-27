@@ -56,7 +56,7 @@ class QuestionController extends Controller
         }
 
         $subjects = Subject::orderBy('name')->get();
-        $questions = $query->paginate(15);
+        $questions = $query->paginate(15)->appends($request->query());
 
         return view('admin.questions.index', compact('questions', 'subjects'));
     }
@@ -115,6 +115,8 @@ class QuestionController extends Controller
     public function destroy(Question $question)
     {
         QuestionService::deleteQuestion($question);
+        // Force delete permanently (including soft-deleted records)
+        $question->forceDelete();
 
         return redirect()->route('admin.questions.index')
             ->with('success', 'Question deleted successfully');
@@ -146,10 +148,12 @@ class QuestionController extends Controller
 
         return redirect()->route('admin.questions.importResult')->with('import_data', [
             'success_count' => $importer->successCount,
+            'updated_count' => $importer->updatedCount,
             'skipped_count' => $importer->skippedCount,
             'failure_count' => $importer->failureCount,
             'errors' => $errors,
             'skipped' => $importer->skipped,
+            'updated' => $importer->updated,
         ]);
     }
 
@@ -206,14 +210,15 @@ class QuestionController extends Controller
         }
 
         try {
-            // Delete questions and their images
+            // Delete questions and their images permanently
             $deleted = 0;
             foreach ($questionIds as $id) {
-                $question = Question::find($id);
+                $question = Question::withTrashed()->find($id);
                 if ($question) {
-                    // Delete image if exists
-                    QuestionService::deleteImageIfExists($question->question_image);
-                    $question->delete();
+                    // Delete all images (question image + all option images)
+                    QuestionService::deleteQuestion($question);
+                    // Permanently delete (force delete soft deleted records)
+                    $question->forceDelete();
                     $deleted++;
                 }
             }
@@ -232,13 +237,15 @@ class QuestionController extends Controller
     public function deleteAllQuestions()
     {
         try {
-            $questions = Question::all();
+            // Get all questions including soft deleted ones
+            $questions = Question::withTrashed()->get();
             $count = $questions->count();
 
             foreach ($questions as $question) {
-                // Delete image if exists
-                QuestionService::deleteImageIfExists($question->question_image);
-                $question->delete();
+                // Delete all images (question image + all option images)
+                QuestionService::deleteQuestion($question);
+                // Permanently delete (force delete soft deleted records too)
+                $question->forceDelete();
             }
 
             return redirect()->route('admin.questions.index')

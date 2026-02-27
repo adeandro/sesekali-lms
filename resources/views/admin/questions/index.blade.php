@@ -159,7 +159,7 @@
                             <td class="px-6 py-4 text-sm text-gray-600">{{ substr($question->question_text, 0, 50) }}...</td>
                             <td class="px-6 py-4 text-sm space-x-2">
                                 <a href="{{ route('admin.questions.edit', $question) }}" class="text-blue-600 hover:text-blue-800">Edit</a>
-                                <form action="{{ route('admin.questions.destroy', $question) }}" method="POST" style="display: inline;" onclick="return confirm('Delete question?');">
+                                <form action="{{ route('admin.questions.destroy', $question) }}" method="POST" style="display: inline;" class="delete-single-form">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="text-red-600 hover:text-red-800">Delete</button>
@@ -224,9 +224,42 @@
         // Handle bulk delete button click
         bulkDeleteBtn.addEventListener('click', () => {
             const checkedCount = Array.from(questionCheckboxes).filter(cb => cb.checked).length;
-            if (confirm(`Delete ${checkedCount} selected question(s)? This action cannot be undone.`)) {
-                bulkDeleteForm.submit();
-            }
+            Swal.fire({
+                icon: 'warning',
+                title: 'Hapus Pertanyaan Terpilih?',
+                text: `Apakah Anda yakin ingin menghapus ${checkedCount} pertanyaan yang dipilih? Tindakan ini tidak dapat dibatalkan.`,
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Ya, Hapus',
+                cancelButtonText: 'Batal',
+                showCancelButton: true,
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    bulkDeleteForm.submit();
+                }
+            });
+        });
+
+        // Handle individual delete form submissions
+        document.querySelectorAll('.delete-single-form').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const submitForm = this;
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Hapus Pertanyaan?',
+                    text: 'Apakah Anda yakin ingin menghapus pertanyaan ini? Tindakan ini tidak dapat dibatalkan.',
+                    confirmButtonColor: '#dc2626',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'Ya, Hapus',
+                    cancelButtonText: 'Batal',
+                    showCancelButton: true,
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        submitForm.submit();
+                    }
+                });
+            });
         });
     </script>
 

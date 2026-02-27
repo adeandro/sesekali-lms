@@ -860,7 +860,12 @@
                                 console.log('✅ Fullscreen activated - exam started and flagged in session');
                             })
                             .catch((err) => {
-                                alert('⚠️ Browser tidak mendukung mode layar penuh. Ujian tidak dapat dimulai.');
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: '⚠️ Mode Layar Penuh Tidak Didukung',
+                                    text: 'Ujian memerlukan mode layar penuh (fullscreen). Browser Anda tidak mendukung fitur ini.',
+                                    confirmButtonText: 'OK',
+                                });
                                 console.warn('Fullscreen request failed:', err.message);
                             });
                         return;

@@ -13,10 +13,10 @@
                 <a href="{{ route('admin.questions.edit', $question) }}" class="inline-block px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition">
                     ✏️ Edit
                 </a>
-                <form action="{{ route('admin.questions.destroy', $question) }}" method="POST" style="display:inline;">
+                <form action="{{ route('admin.questions.destroy', $question) }}" method="POST" style="display:inline;" class="delete-form">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition" onclick="return confirm('Are you sure?')">
+                    <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition" data-confirm="true" data-confirm-title="Hapus Pertanyaan?" data-confirm-text="Apakah Anda yakin ingin menghapus pertanyaan ini? Tindakan ini tidak dapat dibatalkan.">
                         🗑️ Delete
                     </button>
                 </form>
@@ -85,4 +85,33 @@
             </p>
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle delete form confirmation
+            const deleteForm = document.querySelector('.delete-form');
+            if (deleteForm) {
+                deleteForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const form = this;
+                    
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Hapus Pertanyaan?',
+                        text: 'Apakah Anda yakin ingin menghapus pertanyaan ini? Tindakan ini tidak dapat dibatalkan.',
+                        confirmButtonColor: '#dc2626',
+                        cancelButtonColor: '#6b7280',
+                        confirmButtonText: 'Ya, Hapus',
+                        cancelButtonText: 'Batal',
+                        showCancelButton: true,
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            form.submit();
+                        }
+                    });
+                });
+            }
+        });
+    </script>
 @endsection

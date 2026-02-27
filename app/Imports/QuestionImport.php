@@ -12,10 +12,12 @@ use Illuminate\Support\Collection;
 class QuestionImport implements ToCollection, WithHeadingRow
 {
     public $successCount = 0;
+    public $updatedCount = 0;
     public $skippedCount = 0;
     public $failureCount = 0;
     public $errors = [];
     public $skipped = [];
+    public $updated = [];
     private $seenQuestions = [];
 
     /**
@@ -56,7 +58,7 @@ class QuestionImport implements ToCollection, WithHeadingRow
                     'option_c' => $row['option_c'] ?? null,
                     'option_d' => $row['option_d'] ?? null,
                     'option_e' => $row['option_e'] ?? null,
-                    'correct_answer' => $row['correct_answer'] ?? null,
+                    'correct_answer' => strtoupper($row['correct_answer'] ?? null),
                     'explanation' => $row['explanation'] ?? null,
                 ];
 
@@ -82,13 +84,31 @@ class QuestionImport implements ToCollection, WithHeadingRow
                     ->first();
 
                 if ($existingQuestion) {
-                    $this->skippedCount++;
-                    $this->skipped[] = [
-                        'row' => $rowNumber,
-                        'subject' => $subject->name,
-                        'question' => substr($questionText, 0, 100) . (strlen($questionText) > 100 ? '...' : ''),
-                        'reason' => 'Question already exists in database',
-                    ];
+                    // Check if data has changed
+                    $hasChanges = $this->hasDataChanged($existingQuestion, $data);
+
+                    if ($hasChanges) {
+                        // Update the question with new data
+                        $existingQuestion->update($data);
+                        
+                        $this->updatedCount++;
+                        $this->updated[] = [
+                            'row' => $rowNumber,
+                            'subject' => $subject->name,
+                            'question' => substr($questionText, 0, 100) . (strlen($questionText) > 100 ? '...' : ''),
+                            'reason' => 'Question updated with new data',
+                        ];
+                    } else {
+                        // No changes detected, skip
+                        $this->skippedCount++;
+                        $this->skipped[] = [
+                            'row' => $rowNumber,
+                            'subject' => $subject->name,
+                            'question' => substr($questionText, 0, 100) . (strlen($questionText) > 100 ? '...' : ''),
+                            'reason' => 'Question already exists (no changes detected)',
+                        ];
+                    }
+                    
                     $rowNumber++;
                     continue;
                 }
@@ -122,5 +142,40 @@ class QuestionImport implements ToCollection, WithHeadingRow
 
             $rowNumber++;
         }
+    }
+
+    /**
+     * Check if imported data has changed compared to existing question
+     * @param Question $existingQuestion
+     * @param array $newData
+     * @return bool
+     */
+    private function hasDataChanged(Question $existingQuestion, array $newData): bool
+    {
+        // Fields to compare for changes
+        $fieldsToCompare = [
+            'jenjang',
+            'topic',
+            'difficulty_level',
+            'question_type',
+            'option_a',
+            'option_b',
+            'option_c',
+            'option_d',
+            'option_e',
+            'correct_answer',
+            'explanation',
+        ];
+
+        foreach ($fieldsToCompare as $field) {
+            $existingValue = (string) ($existingQuestion->$field ?? '');
+            $newValue = (string) ($newData[$field] ?? '');
+
+            if ($existingValue !== $newValue) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

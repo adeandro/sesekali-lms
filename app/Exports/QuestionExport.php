@@ -33,7 +33,7 @@ class QuestionExport implements FromCollection, WithHeadings
                 'option_c' => $question->option_c,
                 'option_d' => $question->option_d,
                 'option_e' => $question->option_e,
-                'correct_answer' => $question->correct_answer,
+                'correct_answer' => strtoupper($question->correct_answer),
                 'explanation' => $question->explanation,
             ];
         });

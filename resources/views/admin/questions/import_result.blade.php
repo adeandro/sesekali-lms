@@ -9,7 +9,7 @@
             <h2 class="text-3xl font-bold text-gray-900 mt-2">Import Results</h2>
         </div>
 
-        <div class="grid grid-cols-3 gap-6 mb-8">
+        <div class="grid grid-cols-4 gap-6 mb-8">
             <div class="bg-white rounded-lg shadow p-6">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
@@ -18,8 +18,22 @@
                         </div>
                     </div>
                     <div class="ml-4">
-                        <p class="text-sm text-gray-600">Successful Imports</p>
+                        <p class="text-sm text-gray-600">New Questions</p>
                         <p class="text-2xl font-bold text-green-600">{{ $success_count }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+                            <span class="text-2xl">🔄</span>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-600">Updated</p>
+                        <p class="text-2xl font-bold text-blue-600">{{ $updated_count ?? 0 }}</p>
                     </div>
                 </div>
             </div>
@@ -32,7 +46,7 @@
                         </div>
                     </div>
                     <div class="ml-4">
-                        <p class="text-sm text-gray-600">Skipped (Duplicates)</p>
+                        <p class="text-sm text-gray-600">Skipped</p>
                         <p class="text-2xl font-bold text-yellow-600">{{ $skipped_count ?? 0 }}</p>
                     </div>
                 </div>
@@ -46,16 +60,44 @@
                         </div>
                     </div>
                     <div class="ml-4">
-                        <p class="text-sm text-gray-600">Failed Imports</p>
+                        <p class="text-sm text-gray-600">Failed</p>
                         <p class="text-2xl font-bold text-red-600">{{ $failure_count }}</p>
                     </div>
                 </div>
             </div>
         </div>
 
+        @if(($updated_count ?? 0) > 0 && !empty($updated))
+            <div class="bg-white rounded-lg shadow p-6 mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">🔄 Updated Questions</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-blue-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Row</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Subject</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Question Preview</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            @foreach($updated as $item)
+                                <tr class="bg-blue-50 hover:bg-blue-100">
+                                    <td class="px-6 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{{ $item['row'] }}</td>
+                                    <td class="px-6 py-3 text-sm text-gray-700">{{ $item['subject'] ?? 'N/A' }}</td>
+                                    <td class="px-6 py-3 text-sm text-gray-700">{{ $item['question'] ?? 'N/A' }}</td>
+                                    <td class="px-6 py-3 text-sm text-blue-700">{{ $item['reason'] }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        @endif
+
         @if(($skipped_count ?? 0) > 0 && !empty($skipped))
             <div class="bg-white rounded-lg shadow p-6 mb-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">⊘ Skipped Questions (Duplicates)</h3>
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">⊘ Skipped Questions</h3>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-yellow-50">
