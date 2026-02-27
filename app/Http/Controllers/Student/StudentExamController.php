@@ -20,7 +20,7 @@ class StudentExamController extends Controller
     {
         $student = auth()->user();
         $exams = ExamEngineService::getAvailableExams($student);
-        
+
         // Get all attempts keyed by exam_id for quick lookup
         // Includes submitted, active, and in_progress attempts
         $attempts = ExamAttempt::where('student_id', auth()->id())
@@ -362,7 +362,7 @@ class StudentExamController extends Controller
 
             // 4. CREATE EXAM ATTEMPT (with status = in_progress)
             $attempt = ExamEngineService::startExam($exam, auth()->user(), $inputToken);
-            
+
             if (!$attempt || !$attempt->id) {
                 throw new \Exception('Gagal membuat attempt ujian. Silakan coba lagi.');
             }

@@ -10,6 +10,7 @@ Before importing, verify your CSV file meets all requirements.
 - [ ] **class_group** - Class group (A, B, C, etc.)
 
 ### Example Valid CSV:
+
 ```csv
 nis,full_name,grade,class_group
 2324100698,AHMAD AKHIT MAULANA,12,B
@@ -23,25 +24,29 @@ nis,full_name,grade,class_group
 ## Data Validation Checklist
 
 ### ✓ NIS Field
+
 - [ ] No empty values
 - [ ] No duplicates within CSV
 - [ ] Appears only ONCE per student
 - [ ] Must be numeric or alphanumeric
 - [ ] Example: `2324100698`
 
-### ✓ Name Field  
+### ✓ Name Field
+
 - [ ] No empty values
 - [ ] Contains student's full name
 - [ ] No special characters (mainly letters and spaces)
 - [ ] Example: `AHMAD AKHIT MAULANA`
 
 ### ✓ Grade Field
-- [ ] No empty values  
+
+- [ ] No empty values
 - [ ] Valid values: `10`, `11`, `12` (or your school's grades)
 - [ ] One value per student
 - [ ] Example: `12`
 
 ### ✓ Class Group Field
+
 - [ ] No empty values
 - [ ] Valid values: `A`, `B`, `C`, `D`, etc.
 - [ ] Must be single letter or designation
@@ -52,18 +57,21 @@ nis,full_name,grade,class_group
 ## How to Find Duplicates in Excel
 
 ### Method 1: Sort and Find Manually
+
 1. Select all data
 2. **Data → Sort** by NIS column
 3. Scan visually for same NIS appearing twice
 4. Delete duplicate rows
 
 ### Method 2: Use Conditional Formatting
+
 1. Select NIS column
 2. **Home → Conditional Formatting → Highlight Cell Rules → Duplicate Values**
 3. Duplicates appear highlighted in red
 4. Delete highlighted rows
 
 ### Method 3: Use Filter
+
 1. Select NIS column
 2. **Data → Filter**
 3. Click filter dropdown
@@ -115,20 +123,24 @@ nis,full_name,grade,class_group
 ## Quick Validation in Spreadsheet
 
 ### Step 1: Count Total Rows
+
 - Should match: (# of unique students) + 1 header row
 - Example: 200 students = 201 rows total
 
 ### Step 2: Count Unique NIS
+
 - **Excel**: `=SUMPRODUCT(1/COUNTIF(A2:A1000,A2:A1000))`
 - **Google Sheets**: Add formula `=COUNTA(UNIQUE(A2:A999))`
 - Result should equal: (Total rows - 1)
 
 ### Step 3: Check for Empty Cells
+
 - **Excel**: **Find & Replace → Find Empty cells**
 - **Google Sheets**: Use filter to show blanks
 - Should find: 0 empty cells
 
 ### Step 4: Verify Column Order
+
 - Column 1: nis
 - Column 2: full_name (or name)
 - Column 3: grade
@@ -139,15 +151,18 @@ nis,full_name,grade,class_group
 ## File Format Requirements
 
 ### Save As
+
 - [ ] CSV (Comma Separated Values)
 - [ ] NOT Excel format (.xlsx)
 - [ ] If using Excel: **File → Save As... → CSV UTF-8**
 
 ### Encoding
+
 - [ ] UTF-8 encoding (default for most systems)
 - [ ] NOT ANSI or Windows-1252
 
 ### Line Endings
+
 - [ ] Unix/Mac format (if you get weird characters)
 - [ ] Use text editor to verify
 
@@ -170,22 +185,27 @@ Before uploading to admin panel, verify:
 ## If You See Import Errors
 
 ### Error: "Duplicate entry for NIS"
+
 → Your CSV has this NIS twice
 → Solution: Delete duplicate row from CSV
 
-### Error: "Duplicate email"  
+### Error: "Duplicate email"
+
 → Email generated from NIS is duplicate
 → Solution: Check NIS uniqueness (see above)
 
 ### Error: "Lock wait timeout"
+
 → Database is slow (rare now with fix)
 → Solution: Try again in a few minutes
 
 ### Error: "Grade is required" (Row X)
+
 → Grade field is empty for that row
 → Solution: Add grade value to that row
 
 ### Error: "Class group is required" (Row X)
+
 → Class_group field is empty for that row
 → Solution: Add class group to that row
 
@@ -219,6 +239,7 @@ Then upload the cleaned file.
 ## Support
 
 If CSV validation fails:
+
 1. Check against this checklist
 2. Use duplicate finder to identify issues
 3. Review example CSVs for correct format

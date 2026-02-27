@@ -27,7 +27,7 @@ class QuestionImport implements ToCollection, WithHeadingRow
     {
         // Increase execution time for large imports
         set_time_limit(300);
-        
+
         $rowNumber = 2;
 
         foreach ($collection as $row) {
@@ -39,7 +39,7 @@ class QuestionImport implements ToCollection, WithHeadingRow
                 );
 
                 $questionText = trim($row['question_text'] ?? '');
-                
+
                 // Skip empty rows
                 if (empty($questionText)) {
                     $rowNumber++;
@@ -90,7 +90,7 @@ class QuestionImport implements ToCollection, WithHeadingRow
                     if ($hasChanges) {
                         // Update the question with new data
                         $existingQuestion->update($data);
-                        
+
                         $this->updatedCount++;
                         $this->updated[] = [
                             'row' => $rowNumber,
@@ -108,7 +108,7 @@ class QuestionImport implements ToCollection, WithHeadingRow
                             'reason' => 'Question already exists (no changes detected)',
                         ];
                     }
-                    
+
                     $rowNumber++;
                     continue;
                 }

@@ -3,6 +3,7 @@
 ## Changes Made
 
 ### 1. **StudentImport.php** - Improved Import Handler
+
 - **Reduced batch size** from 50 to 10 to prevent database lock timeouts
 - **Individual error handling** per student instead of batch rollback
 - **Duplicate detection** within import file for both NIS and email
@@ -10,6 +11,7 @@
 - **Small delays** between batches to reduce database pressure
 
 ### 2. **StudentService.php** - New Import Method
+
 - **Added `createOrUpdateStudent()`** method that uses Eloquent's `updateOrCreate()` pattern
 - This allows **re-importing the same data** without constraint violations
 - **Removed NIS uniqueness validation** from `validateStudentData()` since it's now handled at import time
@@ -17,23 +19,29 @@
 ## Root Causes of Your Errors
 
 ### Lock Wait Timeout (Rows 2-51)
+
 **Cause**: Batch transactions holding locks too long on hosted MySQL
+
 - Large batch sizes (50 records) in single transaction
 - Long transaction duration causing other requests to wait
 
-**Solution**: 
+**Solution**:
+
 - Reduced batch size to 10
 - Each student processed individually to release locks quickly
 - 0.1s delay between batches to reduce contention
 
 ### Duplicate Entry Errors (Rows 52+)
+
 **Cause**: Your CSV file has duplicate student records
+
 ```
 Row 2-51: AHMAD AKHIT MAULANA (2324100698) repeated 50 times
 Row 52+: YANDI FEBRIYAN, MUHAMMAD ZIDAN, FILQIYA NARVALISNA repeated multiple times
 ```
 
 **Solution**:
+
 1. **Clean your CSV file**: Remove duplicate rows
 2. **Use updateOrCreate**: New import code handles re-imports gracefully
 3. **Internal duplicate detection**: Prevents duplicates within single import
@@ -41,23 +49,26 @@ Row 52+: YANDI FEBRIYAN, MUHAMMAD ZIDAN, FILQIYA NARVALISNA repeated multiple ti
 ## How to Fix Your Current Situation
 
 ### Option 1: Clean CSV and Re-import (RECOMMENDED)
+
 1. **Remove all duplicate rows from your CSV**
-   - Check for students appearing multiple times
-   - Keep only one row per student NIS
-   
+    - Check for students appearing multiple times
+    - Keep only one row per student NIS
 2. **Clear existing students** (if corrupted):
-   ```bash
-   php artisan tinker
-   # Then run:
-   App\Models\User::where('role', 'student')->delete();
-   exit
-   ```
+
+    ```bash
+    php artisan tinker
+    # Then run:
+    App\Models\User::where('role', 'student')->delete();
+    exit
+    ```
 
 3. **Re-import the cleaned CSV**
-   - The new code will handle it gracefully
+    - The new code will handle it gracefully
 
 ### Option 2: Fix While Keeping Existing Data
+
 If you've already imported some students successfully:
+
 1. **Identify which students are already in database** by checking NIS
 2. **Remove those rows from CSV**
 3. **Import only the new students**
@@ -103,6 +114,7 @@ SHOW INDEX FROM users;
 ```
 
 If NIS unique constraint is missing, create it:
+
 ```sql
 ALTER TABLE users ADD UNIQUE KEY users_nis_unique (nis);
 ```
@@ -110,6 +122,7 @@ ALTER TABLE users ADD UNIQUE KEY users_nis_unique (nis);
 ## Debugging Tips
 
 ### Check for Existing Duplicate NIS:
+
 ```bash
 php artisan tinker
 
@@ -129,6 +142,7 @@ App\Models\User::selectRaw('email, COUNT(*) as count')
 ```
 
 ### Remove Duplicate Students (keep first, delete rest):
+
 ```bash
 php artisan tinker
 
@@ -152,15 +166,18 @@ exit
 ## Expected Import Results After Fix
 
 ✅ **Lock timeout errors**: GONE
+
 - Batch sizes reduced, individual transaction handling
 - Delays added between batches
 
 ✅ **Duplicate constraint errors**: Much better
+
 - Detects duplicates within import file
 - Updates existing students if re-importing
 - Shows which rows had issues
 
 ⚠️ **Your CSV still might have duplicates**
+
 - The system now reports them clearly
 - You should clean your CSV source
 

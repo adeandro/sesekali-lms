@@ -9,13 +9,17 @@
 ## 🐛 ROOT CAUSE ANALYSIS
 
 ### Problem
+
 Students successfully validate token but get redirected to `/student/exams` with error:
+
 ```
 Kesalahan: Anda tidak memiliki akses ke ujian ini.
 ```
 
 ### Root Cause
+
 **ExamEngineService::startExam()** was creating ExamAttempt WITHOUT setting the `status` field:
+
 ```php
 // ❌ BEFORE (status = NULL)
 $attempt = ExamAttempt::create([
@@ -34,6 +38,7 @@ $attempt = ExamAttempt::create([
 ## ✅ FIXES IMPLEMENTED
 
 ### 1. **ExamEngineService::startExam()** [CRITICAL]
+
 **File**: `app/Services/ExamEngineService.php` (Line 75)
 
 ```php
@@ -52,16 +57,18 @@ $attempt = ExamAttempt::create([
 ---
 
 ### 2. **studentExamController::validateAndStart()** [HARDENING]
+
 **File**: `app/Http/Controllers/Student/StudentExamController.php` (Lines 306-385)
 
 **Improvements**:
+
 - ✅ Added explicit validation checks (exam status + timing)
 - ✅ Added error logging for debugging production issues
 - ✅ Improved exception handling & error messages
 - ✅ Added validation that attempt was created successfully
 - ✅ Set multiple session keys for extra safety:
-  - `authorized_exam_{exam_id}` → Primary authorization
-  - `exam_attempt_{exam_id}` → Fallback attempt ID tracking
+    - `authorized_exam_{exam_id}` → Primary authorization
+    - `exam_attempt_{exam_id}` → Fallback attempt ID tracking
 
 ```php
 // Validate attempt creation
@@ -80,6 +87,7 @@ session(['exam_attempt_' . $exam->id => $attempt->id]);
 ---
 
 ### 3. **VerifyExamSession Middleware** [MULTI-LAYER PROTECTION]
+
 **File**: `app/Http/Middleware/VerifyExamSession.php`
 
 **Three-Layer Authorization**:
@@ -99,6 +107,7 @@ Layer 3: Database Fallback Check
 ```
 
 **Benefits**:
+
 - ✅ Robust against session driver issues (file vs database vs redis)
 - ✅ Fallback authorization if session expires mid-exam
 - ✅ Enhanced logging for production debugging
@@ -119,7 +128,9 @@ if ($hasSessionAuth || $hasValidAttempt || $hasDbFallback) {
 ## 📋 SYSTEM ARCHITECTURE VERIFICATION
 
 ### Database Schema
+
 **exam_attempts table**:
+
 ```sql
 CREATE TABLE exam_attempts (
     id BIGINT PRIMARY KEY,
@@ -148,6 +159,7 @@ CREATE TABLE exam_attempts (
 ```
 
 ### Route Protection
+
 ```php
 ✅ Protected Routes (all have verify.exam.session middleware):
 ├── GET  /student/exams/{attempt}              → take()
@@ -167,7 +179,9 @@ CREATE TABLE exam_attempts (
 ```
 
 ### Middleware Registration
+
 **File**: `bootstrap/app.php` (Line 16)
+
 ```php
 ✅ 'verify.exam.session' => \App\Http\Middleware\VerifyExamSession::class
 ```
@@ -222,6 +236,7 @@ CREATE TABLE exam_attempts (
 ## 🧪 VERIFICATION CHECKLIST
 
 ### Code Quality ✅
+
 - [x] ExamEngineService.php - Syntax: PASS
 - [x] StudentExamController.php - Syntax: PASS
 - [x] VerifyExamSession.php - Syntax: PASS
@@ -230,6 +245,7 @@ CREATE TABLE exam_attempts (
 - [x] Middleware registration - OK
 
 ### Runtime Checks ✅
+
 - [x] ExamAttempt status field populated (not NULL)
 - [x] Token field properly saved
 - [x] Session persistence (multi-layer fallback)
@@ -238,6 +254,7 @@ CREATE TABLE exam_attempts (
 - [x] Time window validation
 
 ### Production-Specific Issues ✅
+
 - [x] Session driver compatibility (file/redis/database)
 - [x] Load balancer session issues (multi-layer auth)
 - [x] Database connection errors (try-catch + logging)
@@ -249,22 +266,24 @@ CREATE TABLE exam_attempts (
 
 ## 📊 SUMMARY OF CHANGES
 
-| File | Lines | Changes | Impact |
-|------|-------|---------|--------|
-| ExamEngineService.php | 75 | Add `status => 'in_progress'` | 🔴 CRITICAL |
-| StudentExamController.php | 306-385 | Enhanced error handling & logging | 🟠 HIGH |
-| VerifyExamSession.php | Full rewrite | 3-layer multi-check auth | 🟠 HIGH |
+| File                      | Lines        | Changes                           | Impact      |
+| ------------------------- | ------------ | --------------------------------- | ----------- |
+| ExamEngineService.php     | 75           | Add `status => 'in_progress'`     | 🔴 CRITICAL |
+| StudentExamController.php | 306-385      | Enhanced error handling & logging | 🟠 HIGH     |
+| VerifyExamSession.php     | Full rewrite | 3-layer multi-check auth          | 🟠 HIGH     |
 
 ---
 
 ## 🚀 DEPLOYMENT INSTRUCTIONS
 
 ### Pre-Deployment
+
 1. Backup database
 2. Review these changes one more time
 3. Test on staging environment
 
 ### During Deployment
+
 ```bash
 # 1. Pull latest code
 git pull origin main
@@ -285,28 +304,30 @@ tail -f storage/logs/laravel.log
 ```
 
 ### Post-Deployment
+
 1. Test token validation flow:
-   - Navigate to exam list
-   - Click "Mulai Ujian"
-   - Enter token
-   - Verify redirects to exam page (NOT /student/exams with error)
-   
+    - Navigate to exam list
+    - Click "Mulai Ujian"
+    - Enter token
+    - Verify redirects to exam page (NOT /student/exams with error)
 2. Monitor logs for 30 minutes:
-   - Check for any authorization errors
-   - Verify students can answer questions
-   - Check for any database errors
+    - Check for any authorization errors
+    - Verify students can answer questions
+    - Check for any database errors
 
 3. If issues found:
-   - Review log entries with timestamps
-   - Check session storage (file/redis/database)
-   - Verify database columns exist
+    - Review log entries with timestamps
+    - Check session storage (file/redis/database)
+    - Verify database columns exist
 
 ---
 
 ## 📝 TROUBLESHOOTING
 
 ### Student Still Gets 403 Error
+
 **Diagnostic Steps**:
+
 1. Check `storage/logs/laravel.log` for detailed error messages
 2. Verify database migrations ran: `php artisan migrate:status`
 3. Confirm exam is 'published' and within time window
@@ -314,6 +335,7 @@ tail -f storage/logs/laravel.log
 5. Verify session driver is configured (especially on production)
 
 **Common Causes**:
+
 - Session driver not configured → Edit `.env` SESSION_DRIVER
 - Database migrations incomplete → Run `php artisan migrate`
 - Exam not published → Admin needs to publish exam
@@ -321,11 +343,13 @@ tail -f storage/logs/laravel.log
 - Student ID mismatch → Rare, but check auth
 
 ### Student Can Enter Token But Exam Not Loading
+
 **Check**:
+
 1. JavaScript console for frontend errors
 2. Network tab → POST /validate-and-start response
 3. Database → exam_attempts record created?
-4. Session → authorized_exam_{id} set?
+4. Session → authorized*exam*{id} set?
 5. Logs → Any create() exceptions?
 
 ---
@@ -337,7 +361,7 @@ tail -f storage/logs/laravel.log
 **Database Schema**: ✅ VALID  
 **Route Protection**: ✅ COMPLETE  
 **Error Handling**: ✅ ENHANCED  
-**Logging**: ✅ ADDED  
+**Logging**: ✅ ADDED
 
 **Ready for Production Deployment**: YES ✅
 

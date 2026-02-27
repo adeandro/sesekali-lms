@@ -143,11 +143,11 @@ class StudentController extends Controller
         $this->authorize('update', $student);
 
         $data = $request->validated();
-        
+
         // Only update fields that are not email-related
         // Email is auto-generated and shouldn't be updated
         unset($data['email']);
-        
+
         $student->update($data);
 
         return redirect()->route('admin.students.index')

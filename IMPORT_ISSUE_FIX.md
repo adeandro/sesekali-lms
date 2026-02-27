@@ -5,28 +5,35 @@
 Your import errors were caused by **TWO separate issues**:
 
 ### Issue 1: Database Lock Timeouts (Rows 2-51)
+
 ```
 Error: Lock wait timeout exceeded; try restarting transaction
 ```
+
 **Root Cause**: Batch import of 50 students in single transaction holding locks too long on hosted MySQL
 
 **Fixed By**:
+
 - Batch size reduced from 50 to 10
 - Individual error handling per student (no batch rollback)
 - 100ms delays between batches
 - Smaller transaction scope
 
 ### Issue 2: Duplicate Records (Rows 52-197)
+
 ```
-Error: Duplicate entry '2324100698' for key 'users.users_nis_unique' 
+Error: Duplicate entry '2324100698' for key 'users.users_nis_unique'
 Error: Duplicate entry 'student_2324100698@sesekalicbt.local' for key 'users_email_unique'
 ```
+
 **Root Cause**: Your CSV file has the **same student repeated multiple times**
+
 - Student AHMAD AKHIT MAULANA: Rows 2-51 (50 duplicate rows!)
 - Student YANDI FEBRIYAN: Rows 52-101 (50 duplicate rows)
 - And more...
 
 **Fixed By**:
+
 - Duplicate detection within import file
 - New `createOrUpdateStudent()` method handles re-imports
 - Better error messages identifying exact issues
@@ -36,12 +43,15 @@ Error: Duplicate entry 'student_2324100698@sesekalicbt.local' for key 'users_ema
 ## Action Plan: IMMEDIATE STEPS
 
 ### Step 1: Check Your CSV File
+
 Open your student data CSV file and:
+
 1. **Look for duplicates** - Students appearing multiple times
 2. **Keep only 1 row per student NIS**
 3. **Save the cleaned CSV**
 
 **How to find duplicates in Excel/Google Sheets:**
+
 ```
 1. Sort by NIS column
 2. Look for same NIS appearing multiple times
@@ -49,6 +59,7 @@ Open your student data CSV file and:
 ```
 
 ### Step 2: Clear Existing Corrupted Data (Optional but Recommended)
+
 If you've already imported the corrupted data, clear it first:
 
 ```bash
@@ -70,6 +81,7 @@ exit
 ```
 
 ### Step 3: Upload Cleaned CSV
+
 1. Go to: **Admin Dashboard → Students → Import Students**
 2. Select your **cleaned CSV file** (no duplicates)
 3. Submit the form
@@ -80,13 +92,16 @@ exit
 ## Expected Results After Fix
 
 ### Success Indicators ✓
+
 - No lock timeout errors
 - All valid students imported
 - Report shows: "X students imported successfully"
 
 ### If You Still See Errors
+
 The error messages will now be **much more specific**:
-- "Duplicate email in import (previously seen in row 5)" 
+
+- "Duplicate email in import (previously seen in row 5)"
 - "NIS already exists in database"
 - "Database lock - try again later"
 
@@ -97,6 +112,7 @@ These tell you exactly what to fix in your CSV.
 ## Database Verification
 
 ### Quick Health Check
+
 ```bash
 php artisan tinker
 
@@ -112,6 +128,7 @@ exit
 ```
 
 ### If Duplicates Found, Clean Them
+
 ```bash
 php artisan tinker
 
@@ -139,13 +156,15 @@ exit
 ## What Changed in Your Code
 
 ### `app/Imports/StudentImport.php`
+
 - ✓ Smaller batch size (10 instead of 50)
 - ✓ Individual transaction handling per student
 - ✓ Duplicate detection within import (NIS + Email)
 - ✓ Better error messages
 - ✓ Delays between batches
 
-### `app/Services/StudentService.php`  
+### `app/Services/StudentService.php`
+
 - ✓ New `createOrUpdateStudent()` method
 - ✓ Uses `updateOrCreate()` for idempotent imports
 - ✓ Removed NIS uniqueness validation (handled differently)
@@ -155,13 +174,17 @@ exit
 ## MySQL Hosting Tips
 
 ### For Future Large Imports
+
 Add to `.env`:
+
 ```env
 DB_WAIT_TIMEOUT=28800
 ```
 
 ### Monitor Imports
+
 Watch these in cPanel/hosting control panel:
+
 - Current database connections
 - Query times (should be < 1 second each)
 - Lock waits (should be 0)
@@ -171,12 +194,13 @@ Watch these in cPanel/hosting control panel:
 ## Full Code Changes Reference
 
 ### New Method Added to StudentService
+
 ```php
 public static function createOrUpdateStudent(array $data): array
 {
     // Updates if NIS exists, creates if new
     $student = User::updateOrCreate(
-        ['nis' => $data['nis']],  
+        ['nis' => $data['nis']],
         [
             'name' => $data['name'],
             'email' => 'student_' . $data['nis'] . '@sesekalicbt.local',
@@ -200,24 +224,25 @@ public static function createOrUpdateStudent(array $data): array
 Prevent this in future imports:
 
 1. **Always validate CSV first**
-   - Check for duplicates before upload
-   - Use spreadsheet tools to identify
+    - Check for duplicates before upload
+    - Use spreadsheet tools to identify
 
 2. **Test with small batch first**
-   - Import 10 students first
-   - Check results
-   - If OK, proceed with full import
+    - Import 10 students first
+    - Check results
+    - If OK, proceed with full import
 
 3. **Keep a backup**
-   - Save original CSV
-   - Save imported list
-   - Compare to find issues
+    - Save original CSV
+    - Save imported list
+    - Compare to find issues
 
 ---
 
 ## Still Having Issues?
 
 Run this diagnostic command:
+
 ```bash
 cd /home/adeandro/developments/sesekaliCBT
 
@@ -247,7 +272,7 @@ If any return non-zero, you have data integrity issues to address.
 ## Support Resources
 
 - Migration file: `database/migrations/2026_02_13_130917_add_student_fields_to_users_table.php`
-- Guide document: `IMPORT_FIX_GUIDE.md`  
+- Guide document: `IMPORT_FIX_GUIDE.md`
 - Controller: `app/Http/Controllers/Admin/StudentController.php`
 - Service: `app/Services/StudentService.php`
 - Importer: `app/Imports/StudentImport.php`

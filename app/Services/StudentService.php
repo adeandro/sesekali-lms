@@ -52,11 +52,11 @@ class StudentService
         // Extract grade and class_group if class is provided in old format
         $grade = $data['grade'] ?? null;
         $classGroup = $data['class_group'] ?? null;
-        
+
         // IMPORTANT: Ensure NIS is always a string to prevent integer overflow
         // Excel or other sources might read numbers as integers
         $nis = (string) $data['nis'];
-        
+
         // Auto-generate email if not provided
         $email = $data['email'] ?? null;
         if (empty($email)) {
@@ -93,15 +93,15 @@ class StudentService
     {
         $grade = $data['grade'] ?? null;
         $classGroup = $data['class_group'] ?? null;
-        
+
         // IMPORTANT: Ensure NIS is always a string to prevent integer overflow issues
         // from Excel or other sources that might read numbers
         $nis = (string) $data['nis'];
         $email = $data['email'] ?? 'student_' . $nis . '@sesekalicbt.local';
-        
+
         // Generate password for new students
         $password = static::generatePassword();
-        
+
         // Use updateOrCreate: if NIS exists, update; otherwise create
         $student = User::updateOrCreate(
             ['nis' => $nis],  // Search condition - uses string NIS

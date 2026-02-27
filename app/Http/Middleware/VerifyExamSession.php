@@ -24,19 +24,20 @@ class VerifyExamSession
         // Get exam ID and attempt from route parameters
         $attempt = $request->route('attempt');
         $examId = null;
-        
+
         // If we have an attempt parameter (ExamAttempt model), get exam_id from it
         if ($attempt instanceof ExamAttempt) {
             $examId = $attempt->exam_id;
-            
+
             // First check: verify student owns this attempt
-            if ($attempt->student_id !== auth()->id()) {
+            // CRITICAL: Use explicit type casting to handle PHP type juggling in production
+            if ((int)$attempt->student_id !== (int)auth()->id()) {
                 \Log::warning('Access denied: Student ' . auth()->id() . ' attempting to access attempt ' . $attempt->id . ' (owns student ' . $attempt->student_id . ')');
                 return redirect()->route('student.exams.index')
                     ->with('error', 'Anda tidak memiliki akses ke ujian ini.');
             }
         }
-        
+
         // Fallback to exam route parameter if available
         if (!$examId && $request->route('exam')) {
             $examId = $request->route('exam')->id;
@@ -57,27 +58,33 @@ class VerifyExamSession
         }
 
         // Check MULTIPLE LAYERS of authorization for robustness:
-        
+
         // Layer 1: Check if student has authorization session for this exam
         $hasSessionAuth = session()->has('authorized_exam_' . $examId);
-        
+
         // Layer 2: Check if attempt exists and is in_progress/submitted
         $hasValidAttempt = false;
         if ($attempt instanceof ExamAttempt) {
             $hasValidAttempt = in_array($attempt->status, ['in_progress', 'submitted']);
-            
+
             if (!$hasValidAttempt) {
-                \Log::warning('Access denied: Attempt ' . $attempt->id . ' has invalid status "' . ($attempt->status ?? 'NULL') . '"');
+                \Log::warning('Access denied: Attempt ' . $attempt->id . ' has invalid status "' . ($attempt->status ?? 'NULL') . '"', [
+                    'student_id' => auth()->id(),
+                    'attempt_id' => $attempt->id,
+                    'status' => $attempt->status,
+                    'attempt_student_id' => $attempt->student_id,
+                    'auth_student_id' => auth()->id(),
+                ]);
             }
         }
-        
+
         // Layer 3: Fallback check - verify attempt exists in DB
         $dbAttempt = ExamAttempt::where('exam_id', $examId)
             ->where('student_id', auth()->id())
             ->whereIn('status', ['in_progress', 'submitted'])
             ->latest('id')
             ->first();
-        
+
         $hasDbFallback = $dbAttempt !== null;
 
         // APPROVED if ANY layer succeeds
@@ -87,7 +94,7 @@ class VerifyExamSession
 
         // All layers failed - redirect to token validation
         \Log::warning('Access denied: No valid authorization found for student ' . auth()->id() . ' exam ' . $examId . ' (session: ' . ($hasSessionAuth ? 'yes' : 'no') . ', attempt: ' . ($hasValidAttempt ? 'yes' : 'no') . ', db: ' . ($hasDbFallback ? 'yes' : 'no') . ')');
-        
+
         return redirect()->route('student.exams.start', ['exam' => $examId])
             ->with('error', 'Sesi ujian tidak valid. Silakan validasi token terlebih dahulu.');
     }

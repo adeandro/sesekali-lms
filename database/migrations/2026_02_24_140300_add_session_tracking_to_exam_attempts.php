@@ -36,14 +36,14 @@ return new class extends Migration
             } catch (\Exception $e) {
                 // Constraint doesn't exist, continue
             }
-            
+
             // Safely drop regular index on heartbeat_last_seen
             try {
                 $table->dropIndex(['heartbeat_last_seen']);
             } catch (\Exception $e) {
                 // Index doesn't exist, continue
             }
-            
+
             // Drop all columns (only drop if they exist)
             if (Schema::hasColumn('exam_attempts', 'session_id')) {
                 $table->dropColumn('session_id');
@@ -69,4 +69,3 @@ return new class extends Migration
         });
     }
 };
-

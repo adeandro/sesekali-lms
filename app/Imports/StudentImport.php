@@ -27,11 +27,11 @@ class StudentImport implements ToCollection, WithHeadingRow
     {
         // Increase execution time for large imports
         set_time_limit(300); // 5 minutes for imports
-        
+
         $rowNumber = 2; // Start from 2 because of header
         $batch = [];
         $batchSize = 10; // Smaller batch size for hosted MySQL to avoid lock waits
-        
+
         foreach ($collection as $row) {
             try {
                 // Prepare data - expects separate columns for grade and class_group
@@ -39,7 +39,7 @@ class StudentImport implements ToCollection, WithHeadingRow
                 // Excel reads large numbers as integers which can overflow, converting them to negative
                 $nisValue = $row['nis'] ?? '';
                 $nisString = trim((string) $nisValue); // Explicit string conversion
-                
+
                 $data = [
                     'nis' => $nisString,
                     'name' => trim($row['full_name'] ?? $row['name'] ?? ''),
@@ -150,7 +150,7 @@ class StudentImport implements ToCollection, WithHeadingRow
             } catch (\Exception $e) {
                 $this->failureCount++;
                 $error = $e->getMessage();
-                
+
                 // Provide more meaningful error messages
                 if (str_contains($error, 'Duplicate entry') && str_contains($error, '_email_')) {
                     $error = 'Email already exists in database';
@@ -159,7 +159,7 @@ class StudentImport implements ToCollection, WithHeadingRow
                 } elseif (str_contains($error, 'Lock wait timeout')) {
                     $error = 'Database is locked - try again in a moment';
                 }
-                
+
                 $this->errors[] = [
                     'row' => $item['rowNumber'],
                     'errors' => ['general' => $error],

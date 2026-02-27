@@ -117,7 +117,7 @@ class MonitoringController extends Controller
             ];
 
             $timeOption = $request->input('time_option');
-            
+
             if ($timeOption === 'reset') {
                 // Reset: start from now (fresh start with full duration)
                 $updateData['started_at'] = now();
@@ -126,7 +126,7 @@ class MonitoringController extends Controller
                 // Calculate started_at based on how many minutes student should have left
                 $customMinutes = (int)$request->input('custom_minutes');
                 $examDuration = $attempt->exam->duration_minutes ?? 60; // Default 60 if not set
-                
+
                 // Validate custom minutes doesn't exceed exam duration
                 if ($customMinutes > $examDuration) {
                     return response()->json([
@@ -134,14 +134,14 @@ class MonitoringController extends Controller
                         'message' => "Durasi waktu tidak boleh melebihi durasi ujian ($examDuration menit)",
                     ], 422);
                 }
-                
+
                 // started_at = now - (total_duration - remaining_minutes)
                 // This way student will have exactly $customMinutes left to complete
                 $minutesAlreadyUsed = $examDuration - $customMinutes;
                 $updateData['started_at'] = now()->subMinutes($minutesAlreadyUsed);
             }
             // 'continue' option: don't change started_at, student continues with original time
-            
+
             // Update exam attempt
             $attempt->update($updateData);
 
@@ -161,11 +161,11 @@ class MonitoringController extends Controller
                     'reason' => $request->input('reason', 'Dibuka kembali oleh admin'),
                     'time_option' => $timeOption,
                 ];
-                
+
                 if ($timeOption === 'custom') {
                     $logData['custom_minutes'] = $request->input('custom_minutes');
                 }
-                
+
                 ActionLog::logAction(
                     auth()->id(),
                     'session_reopened',
@@ -189,7 +189,7 @@ class MonitoringController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan: ' . $e->getMessage(),

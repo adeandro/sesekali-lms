@@ -7,55 +7,58 @@ Your sesekaliCBT student import system has been completely fixed and hardened fo
 ### Code Changes
 
 **1. `/app/Imports/StudentImport.php`** (UPDATED)
+
 - Reduced batch size: 50 → 10 students per batch
-- Process individual students (no batch rollback on error)  
+- Process individual students (no batch rollback on error)
 - Duplicate detection for NIS and email within import file
 - Better error messages identifying root causes
 - 0.1s delay between batches to reduce database lock contention
 
 **2. `/app/Services/StudentService.php`** (ENHANCED)
+
 - **NEW**: `createOrUpdateStudent()` method using `updateOrCreate()` pattern
 - Handles re-imports gracefully (same student can be imported multiple times)
 - Removed NIS uniqueness check from validation (handled at import time)
 
 ### Benefits
 
-| Before | After |
-|--------|-------|
-| Lock timeout errors | ✓ Eliminated |
-| Batch failures cascaded | ✓ Individual handling |
-| Re-imports impossible | ✓ Fully idempotent |
-| Generic error messages | ✓ Specific diagnostics |
-| 50-record batches | ✓ 10-record batches |
-| No inter-batch delays | ✓ 100ms delays |
+| Before                  | After                  |
+| ----------------------- | ---------------------- |
+| Lock timeout errors     | ✓ Eliminated           |
+| Batch failures cascaded | ✓ Individual handling  |
+| Re-imports impossible   | ✓ Fully idempotent     |
+| Generic error messages  | ✓ Specific diagnostics |
+| 50-record batches       | ✓ 10-record batches    |
+| No inter-batch delays   | ✓ 100ms delays         |
 
 ---
 
 ## 📋 Reference Documents Created
 
 1. **`IMPORT_ISSUE_FIX.md`** - Complete technical walkthrough
-   - Root cause analysis
-   - Step-by-step fix guide  
-   - Database verification commands
-   - Troubleshooting tips
+    - Root cause analysis
+    - Step-by-step fix guide
+    - Database verification commands
+    - Troubleshooting tips
 
 2. **`IMPORT_FIX_GUIDE.md`** - Detailed implementation guide
-   - What changed and why
-   - How to clean your CSV
-   - How to fix existing duplicates
-   - Testing procedures
+    - What changed and why
+    - How to clean your CSV
+    - How to fix existing duplicates
+    - Testing procedures
 
 3. **`CSV_VALIDATION_GUIDE.md`** - CSV preparation checklist
-   - Column requirements
-   - How to find duplicates
-   - Data validation rules
-   - Common issues and solutions
+    - Column requirements
+    - How to find duplicates
+    - Data validation rules
+    - Common issues and solutions
 
 ---
 
 ## 🚀 Quick Start: What You Need To Do
 
 ### Step 1: Prepare Your CSV (5 minutes)
+
 ```
 Open your student CSV file
 ↓
@@ -69,6 +72,7 @@ Keep original as backup
 **Check:** Use the duplicate detection methods in `CSV_VALIDATION_GUIDE.md`
 
 ### Step 2: Clear Old Data (Optional but Recommended)
+
 ```bash
 php artisan tinker
 App\Models\User::where('role', 'student')->delete();
@@ -76,6 +80,7 @@ exit
 ```
 
 ### Step 3: Import Clean CSV
+
 ```
 1. Navigate: Admin Dashboard → Students → Import Students
 2. Upload your cleaned CSV file
@@ -89,12 +94,14 @@ exit
 ## 🔍 How to Verify the Fix
 
 ### Quick Test (2 minutes)
+
 1. Get a small, clean CSV (5 students, no duplicates)
 2. Import via admin panel
 3. Confirm all 5 students imported
 4. Check results page - should show zero errors
 
 ### Full Verification
+
 ```bash
 php artisan tinker
 
@@ -116,22 +123,25 @@ exit
 ## ⚙️ Technical Details for Developers
 
 ### Lock Timeout Fix Mechanism
+
 ```
 OLD: 50 students → 1 transaction → long lock hold
 NEW: 50 students → 5 batches × 10 students → each releases immediately
 ```
 
 ### Duplicate Handling
+
 ```
 OLD: Checked at start, only in database
 NEW: Checks at import time (in-memory cache) + database
 
 If NIS seen in CSV before: Skip with message
-If email seen in CSV before: Skip with message  
+If email seen in CSV before: Skip with message
 If in database: Update, don't insert (updateOrCreate)
 ```
 
 ### Error Recovery
+
 ```
 OLD: One error → whole batch fails
 NEW: One student errors → that row logged → rest continue processing
@@ -142,14 +152,17 @@ NEW: One student errors → that row logged → rest continue processing
 ## 📊 Performance Improvements
 
 ### Lock Waits
+
 - **Before**: 196 lock timeout errors
 - **After**: 0 expected (tested with hosted MySQL)
 
 ### Database Connections
+
 - **Before**: 1 long transaction per import
 - **After**: Multiple short transactions per batch
 
 ### Import Speed
+
 - **Before**: Slower per operation (bigger transactions)
 - **After**: Faster throughput (less lock contention)
 
@@ -160,6 +173,7 @@ NEW: One student errors → that row logged → rest continue processing
 If you manage multiple Laravel apps on your hosting:
 
 ### Optimal MySQL Settings for Shared Hosting
+
 ```sql
 -- Via cPanel → PHPMyAdmin → Operations
 SET GLOBAL max_connections = 100;
@@ -168,6 +182,7 @@ SET GLOBAL innodb_lock_wait_timeout = 50;
 ```
 
 ### Monitor During First Import
+
 - Check active connections (should drop to 1 between batches)
 - Check process list for long-running queries (should be none)
 
@@ -215,7 +230,7 @@ CSV_VALIDATION_GUIDE.md                     ← CSV preparation
 ## ✨ Next Steps
 
 1. **NOW**: Read `IMPORT_ISSUE_FIX.md` for complete details (5 min read)
-2. **TODAY**: Clean your CSV file using checklist in `CSV_VALIDATION_GUIDE.md`  
+2. **TODAY**: Clean your CSV file using checklist in `CSV_VALIDATION_GUIDE.md`
 3. **TODAY**: Test import with small sample (5 students)
 4. **TOMORROW**: Import full student list
 5. **OPTIONAL**: Verify database integrity using commands in `IMPORT_ISSUE_FIX.md`
@@ -224,7 +239,7 @@ CSV_VALIDATION_GUIDE.md                     ← CSV preparation
 
 ## 🐛 If Issues Persist
 
-1. **Still getting lock timeouts?** 
+1. **Still getting lock timeouts?**
    → Contact your hosting provider, they may need to adjust MySQL settings
 
 2. **CSV validation failing?**

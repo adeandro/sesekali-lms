@@ -18,11 +18,13 @@ Maatwebsite Excel library membaca sel sebagai number/integer jika formatnya adal
 Sudah diperbaiki di:
 
 ### 1. **StudentImport.php**
+
 - NIS sekarang di-cast eksplisit ke string: `(string) $nisValue`
 - Ini memastikan, apapun tipe data dari Excel, akan dikonversi ke string
 
 ### 2. **StudentService.php**
-- Both `createStudent()` dan `createOrUpdateStudent()` 
+
+- Both `createStudent()` dan `createOrUpdateStudent()`
 - Sekarang cast NIS ke string: `$nis = (string) $data['nis']`
 
 ## Memperbaiki Data yang Sudah Corrupt
@@ -78,12 +80,14 @@ exit
 ```
 
 Kemudian:
+
 1. Perbaiki CSV file (pastikan NIS adalah jenis `Text`, bukan `Number`)
 2. Re-import melalui admin panel
 
 ## Cara Menyimpan CSV dengan Benar di Excel
 
 ### Metode 1: Format Kolom NIS sebagai Text
+
 1. Buka CSV di Excel
 2. Select kolom NIS
 3. Right-click → **Format Cells**
@@ -91,11 +95,13 @@ Kemudian:
 5. Save as CSV
 
 ### Metode 2: Gunakan Google Sheets
+
 1. Upload CSV ke Google Sheets
 2. Google Sheets otomatis mempertahankan format text untuk angka besar
 3. Download sebagai CSV
 
 ### Metode 3: Format di CSV Langsung
+
 Tambahkan single quote di depan NIS saat membuat CSV manual:
 
 ```csv
@@ -127,9 +133,11 @@ exit
 Untuk mencegah issue ini di masa depan, pertimbangkan:
 
 ### Option A: CSV Template dengan Format Sudah Benar
+
 Buat template CSV di Excel dengan NIS sudah di-format sebagai Text, kemudian berikan kepada user
 
 ### Option B: Validasi di Import Form
+
 Tambahkan validasi yang mendeteksi NIS negatif dan reject import:
 
 ```php
@@ -140,6 +148,7 @@ if ($nisString < 0) {
 ```
 
 ### Option C: Migration untuk Format Kolom NIS
+
 Edit migration untuk explicitly membuat kolom NIS sebagai CHAR/VARCHAR dengan fixed length:
 
 ```php
