@@ -22,17 +22,38 @@ class VerifyExamSession
     public function handle(Request $request, Closure $next): Response
     {
         // Get exam ID and attempt from route parameters
-        $attempt = $request->route('attempt');
+        $attemptParam = $request->route('attempt');
+        $attempt = null;
         $examId = null;
 
-        // If we have an attempt parameter (ExamAttempt model), get exam_id from it
-        if ($attempt instanceof ExamAttempt) {
+        // CRITICAL: Model binding hasn't happened yet in middleware
+        // If $attemptParam is an ID (string/int), resolve the model manually
+        if ($attemptParam && !($attemptParam instanceof ExamAttempt)) {
+            // $attemptParam is raw ID, resolve the model
+            try {
+                $attempt = ExamAttempt::findOrFail($attemptParam);
+            } catch (\Exception $e) {
+                \Log::warning('Exam attempt not found: ' . $attemptParam . ' for student ' . auth()->id());
+                return redirect()->route('student.exams.index')
+                    ->with('error', 'Ujian tidak ditemukan.');
+            }
+        } elseif ($attemptParam instanceof ExamAttempt) {
+            // Already resolved (shouldn't happen, but handle it)
+            $attempt = $attemptParam;
+        }
+
+        // If we have an attempt, get exam_id from it
+        if ($attempt) {
             $examId = $attempt->exam_id;
 
             // First check: verify student owns this attempt
-            // CRITICAL: Use explicit type casting to handle PHP type juggling in production
             if ((int)$attempt->student_id !== (int)auth()->id()) {
-                \Log::warning('Access denied: Student ' . auth()->id() . ' attempting to access attempt ' . $attempt->id . ' (owns student ' . $attempt->student_id . ')');
+                \Log::warning('Access denied: Student ' . auth()->id() . ' attempting to access attempt ' . $attempt->id . ' (attempt owns student ' . $attempt->student_id . ')', [
+                    'request_student_id' => auth()->id(),
+                    'attempt_student_id' => $attempt->student_id,
+                    'attempt_id' => $attempt->id,
+                    'exam_id' => $examId,
+                ]);
                 return redirect()->route('student.exams.index')
                     ->with('error', 'Anda tidak memiliki akses ke ujian ini.');
             }
@@ -64,7 +85,7 @@ class VerifyExamSession
 
         // Layer 2: Check if attempt exists and is in_progress/submitted
         $hasValidAttempt = false;
-        if ($attempt instanceof ExamAttempt) {
+        if ($attempt) {
             $hasValidAttempt = in_array($attempt->status, ['in_progress', 'submitted']);
 
             if (!$hasValidAttempt) {
@@ -80,7 +101,7 @@ class VerifyExamSession
 
         // Layer 3: Fallback check - verify attempt exists in DB
         $dbAttempt = ExamAttempt::where('exam_id', $examId)
-            ->where('student_id', auth()->id())
+            ->where('student_id', (int)auth()->id())  // Explicit cast
             ->whereIn('status', ['in_progress', 'submitted'])
             ->latest('id')
             ->first();
