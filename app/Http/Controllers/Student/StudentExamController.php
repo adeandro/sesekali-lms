@@ -312,7 +312,7 @@ class StudentExamController extends Controller
         ]);
 
         try {
-            // Verify exam status
+            // 1. VERIFY EXAM STATUS & TIMING
             if ($exam->status !== 'published') {
                 return response()->json([
                     'success' => false,
@@ -335,14 +335,14 @@ class StudentExamController extends Controller
                 ], 400);
             }
 
-            // Refresh token if it's older than 20 minutes
+            // 2. REFRESH TOKEN IF NEEDED
             if ($exam->tokenNeedsRefresh()) {
                 $this->regenerateExamToken($exam);
                 // Reload exam from database to get fresh token value
                 $exam->refresh();
             }
 
-            // Verify token against exam's static token
+            // 3. VALIDATE TOKEN
             $inputToken = strtoupper(trim($request->token));
             $examToken = strtoupper($exam->token ?? '');
 
@@ -360,12 +360,18 @@ class StudentExamController extends Controller
                 ], 400);
             }
 
-            // Token valid! Save session to remember this student is authorized for this exam
-            session(['authorized_exam_' . $exam->id => true]);
-
-            // Create exam attempt to track student progress (with token)
+            // 4. CREATE EXAM ATTEMPT (with status = in_progress)
             $attempt = ExamEngineService::startExam($exam, auth()->user(), $inputToken);
+            
+            if (!$attempt || !$attempt->id) {
+                throw new \Exception('Gagal membuat attempt ujian. Silakan coba lagi.');
+            }
 
+            // 5. SET SESSION - untuk fallback authorization
+            session(['authorized_exam_' . $exam->id => true]);
+            session(['exam_attempt_' . $exam->id => $attempt->id]); // Extra safety: store attempt ID
+
+            // 6. RETURN SUCCESS WITH REDIRECT
             return response()->json([
                 'success' => true,
                 'message' => 'Token valid! Ujian dimulai...',
@@ -373,6 +379,7 @@ class StudentExamController extends Controller
                 'redirect_url' => route('student.exams.take', $attempt->id),
             ]);
         } catch (\Exception $e) {
+            \Log::error('Token validation error for exam ' . $exam->id . ' student ' . auth()->id() . ': ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan: ' . $e->getMessage(),

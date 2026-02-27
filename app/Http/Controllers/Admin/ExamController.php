@@ -93,7 +93,8 @@ class ExamController extends Controller
      */
     public function destroy(Exam $exam)
     {
-        $exam->delete();
+        // Force delete permanently (Exam model uses SoftDeletes)
+        $exam->forceDelete();
 
         return redirect()->route('admin.exams.index')
             ->with('success', 'Exam deleted successfully');

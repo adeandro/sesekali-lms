@@ -77,6 +77,7 @@ class ExamEngineService
             'exam_id' => $exam->id,
             'student_id' => $student->id,
             'started_at' => now(),
+            'status' => 'in_progress', // Set status so middleware can verify access
             'token' => $token, // Save token used for validation
         ]);
 

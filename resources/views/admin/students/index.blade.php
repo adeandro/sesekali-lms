@@ -24,10 +24,10 @@
                         🔄 Atur Ulang Semua
                     </button>
                 </form>
-                <form id="deleteAllForm" action="{{ route('admin.students.deleteAll') }}" method="POST" style="display:inline;">
+                <form id="deleteAllStudentsForm" action="{{ route('admin.students.deleteAll') }}" method="POST" style="display:inline;">
                     @csrf
                     @method('DELETE')
-                    <button type="button" onclick="confirmDeleteAll()" class="inline-block px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-900 transition font-bold">
+                    <button type="button" onclick="confirmDeleteAllStudents()" class="inline-block px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-900 transition font-bold">
                         🗑️ Hapus Semua Siswa
                     </button>
                 </form>
@@ -196,10 +196,10 @@
                                         {{ $student->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
                                     </button>
                                 </form>
-                                <form action="{{ route('admin.students.destroy', $student) }}" method="POST" style="display: inline;" onclick="return confirm('Hapus siswa?');">
+                                <form action="{{ route('admin.students.destroy', $student) }}" method="POST" style="display: inline;" id="deleteStudentForm{{ $student->id }}">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="text-red-600 hover:text-red-800">Hapus</button>
+                                    <button type="button" class="text-red-600 hover:text-red-800" onclick="deleteStudent('{{ $student->name }}', {{ $student->id }})">Hapus</button>
                                 </form>
                             </td>
                         </tr>

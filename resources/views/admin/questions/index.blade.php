@@ -21,7 +21,7 @@
                 <button type="button" id="bulkDeleteBtn" class="inline-block px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition" style="display: none;">
                     🗑 Delete Selected
                 </button>
-                <form id="deleteAllForm" action="{{ route('admin.questions.deleteAll') }}" method="POST" style="display:inline;">
+                <form id="deleteAllQuestionsForm" action="{{ route('admin.questions.deleteAll') }}" method="POST" style="display:inline;">
                     @csrf
                     @method('DELETE')
                     <button type="button" onclick="confirmDeleteAllQuestions()" class="inline-block px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-900 transition font-bold">
@@ -159,10 +159,10 @@
                             <td class="px-6 py-4 text-sm text-gray-600">{{ substr($question->question_text, 0, 50) }}...</td>
                             <td class="px-6 py-4 text-sm space-x-2">
                                 <a href="{{ route('admin.questions.edit', $question) }}" class="text-blue-600 hover:text-blue-800">Edit</a>
-                                <form action="{{ route('admin.questions.destroy', $question) }}" method="POST" style="display: inline;" class="delete-single-form">
+                                <form action="{{ route('admin.questions.destroy', $question) }}" method="POST" style="display: inline;" id="deleteQuestionForm{{ $question->id }}">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="text-red-600 hover:text-red-800">Delete</button>
+                                    <button type="button" class="text-red-600 hover:text-red-800" onclick="deleteQuestion('{{ $question->question_text }}', {{ $question->id }})" title="Hapus">Hapus</button>
                                 </form>
                             </td>
                         </tr>

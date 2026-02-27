@@ -78,16 +78,27 @@
                     @enderror
                 </div>
 
-                <div id="fileUploadInfo" class="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg hidden">
-                    <p class="text-sm text-gray-700">File: <span id="fileName" class="font-semibold"></span></p>
+                <div id="fileUploadInfo" class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg hidden">
+                    <p class="text-sm text-green-700">✓ File dipilih: <span id="fileName" class="font-semibold"></span></p>
+                </div>
+
+                <!-- Progress Bar (hidden by default) -->
+                <div id="progressContainer" class="mb-6 hidden">
+                    <div class="flex justify-between items-center mb-2">
+                        <p class="text-sm font-medium text-gray-700">Progress Import...</p>
+                        <p class="text-sm text-gray-600"><span id="progressPercent">0</span>%</p>
+                    </div>
+                    <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div id="progressBar" class="h-full bg-gradient-to-r from-green-400 to-green-600 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
                 </div>
 
                 <div class="flex gap-4">
-                    <button type="submit" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
-                        Import Students
+                    <button type="submit" id="submitBtn" class="px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold rounded-lg hover:from-green-700 hover:to-green-800 transition shadow-md">
+                        📤 Import Students
                     </button>
-                    <a href="{{ route('admin.students.index') }}" class="px-6 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition">
-                        Cancel
+                    <a href="{{ route('admin.students.index') }}" class="px-6 py-3 bg-gray-500 text-white font-semibold rounded-lg hover:bg-gray-600 transition shadow-md">
+                        ✕ Batal
                     </a>
                 </div>
             </form>
@@ -95,10 +106,72 @@
     </div>
 
     <script>
-        document.getElementById('file').addEventListener('change', function() {
+        const fileInput = document.getElementById('file');
+        const fileName = document.getElementById('fileName');
+        const fileUploadInfo = document.getElementById('fileUploadInfo');
+        const form = fileInput.closest('form');
+        const submitBtn = document.getElementById('submitBtn');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const progressPercent = document.getElementById('progressPercent');
+
+        // Handle file selection
+        fileInput.addEventListener('change', function() {
             if (this.files.length > 0) {
-                document.getElementById('fileName').textContent = this.files[0].name;
-                document.getElementById('fileUploadInfo').classList.remove('hidden');
+                const name = this.files[0].name;
+                const size = (this.files[0].size / 1024 / 1024).toFixed(2);
+                fileName.textContent = `${name} (${size}MB)`;
+                fileUploadInfo.classList.remove('hidden');
+            } else {
+                fileUploadInfo.classList.add('hidden');
+            }
+        });
+
+        // Simulate progress during form submission
+        form.addEventListener('submit', function(e) {
+            if (fileInput.files.length === 0) {
+                return;
+            }
+
+            progressContainer.classList.remove('hidden');
+            submitBtn.disabled = true;
+
+            // Simulate progress animation
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 30;
+                if (progress >= 90) progress = 90;
+                
+                progressBar.style.width = progress + '%';
+                progressPercent.textContent = Math.round(progress);
+
+                if (progress >= 90) {
+                    clearInterval(interval);
+                }
+            }, 300);
+        });
+
+        // Drag & Drop support
+        const dropZoneArea = fileInput.parentElement;
+        
+        dropZoneArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZoneArea.classList.add('bg-gray-100', 'border-blue-500');
+        });
+
+        dropZoneArea.addEventListener('dragleave', () => {
+            dropZoneArea.classList.remove('bg-gray-100', 'border-blue-500');
+        });
+
+        dropZoneArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZoneArea.classList.remove('bg-gray-100', 'border-blue-500');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                const event = new Event('change', { bubbles: true });
+                fileInput.dispatchEvent(event);
             }
         });
     </script>

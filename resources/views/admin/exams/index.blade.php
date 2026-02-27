@@ -123,10 +123,10 @@
                                                 <button type="submit" class="text-orange-600 hover:text-orange-800 text-xs" title="Draft">↺</button>
                                             </form>
                                         @endif
-                                        <form action="{{ route('admin.exams.destroy', $exam) }}" method="POST" style="display:inline;">
+                                        <form action="{{ route('admin.exams.destroy', $exam) }}" method="POST" style="display:inline;" id="deleteExamForm{{ $exam->id }}">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="text-red-600 hover:text-red-800 text-xs" onclick="return confirm('Anda yakin?')" title="Hapus">🗑️</button>
+                                            <button type="button" class="text-red-600 hover:text-red-800 text-xs" onclick="deleteExam('{{ $exam->title }}', {{ $exam->id }})" title="Hapus">🗑️</button>
                                         </form>
                                     </div>
                                 </td>
@@ -180,10 +180,10 @@
                                     <button type="submit" class="px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs hover:bg-orange-200">↺ Draft</button>
                                 </form>
                             @endif
-                            <form action="{{ route('admin.exams.destroy', $exam) }}" method="POST" style="display:inline;">
+                            <form action="{{ route('admin.exams.destroy', $exam) }}" method="POST" style="display:inline;" id="deleteExamForm{{ $exam->id }}Mobile">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200" onclick="return confirm('Anda yakin?')">🗑️ Hapus</button>
+                                <button type="button" class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200" onclick="deleteExam('{{ $exam->title }}', {{ $exam->id }})">🗑️ Hapus</button>
                             </form>
                         </div>
                     </div>
