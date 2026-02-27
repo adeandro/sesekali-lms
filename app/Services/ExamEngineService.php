@@ -269,7 +269,9 @@ class ExamEngineService
      */
     public static function canAccessAttempt(ExamAttempt $attempt, User $student): bool
     {
-        return $attempt->student_id === $student->id;
+        // Use loose comparison (==) with string casting to handle type mismatches
+        // between DB (string "4") and model (integer 4) in production environments
+        return (string)$attempt->student_id == (string)$student->id;
     }
 
     /**
