@@ -178,7 +178,12 @@
                             <!-- Answer Comparison -->
                             @if($question->question_type === 'multiple_choice')
                                 @php
+                                    // NO SHUFFLING HERE - Just use stored answer text
                                     $studentAnswer = $answer?->selected_answer;
+                                    $studentAnswerText = $answer?->selected_answer_text;  // Use stored text from submission
+                                    $correctAnswerText = $answer?->correct_answer_text;   // Use stored correct text
+                                    
+                                    // Fallback: reconstruct from options if stored text is empty
                                     $options = [
                                         'a' => $question->option_a,
                                         'b' => $question->option_b,
@@ -187,16 +192,26 @@
                                         'e' => $question->option_e,
                                     ];
                                     $options = array_filter($options);
+                                    
+                                    // Fallback for student answer text if not stored
+                                    if (!$studentAnswerText && $studentAnswer) {
+                                        $studentAnswerText = $options[strtolower($studentAnswer)] ?? null;
+                                    }
+                                    
+                                    // Fallback for correct answer text if not stored
+                                    if (!$correctAnswerText) {
+                                        $correctAnswerText = $options[strtolower($question->correct_answer)] ?? null;
+                                    }
                                 @endphp
 
                                 <div class="space-y-3">
                                     <!-- Student's Answer -->
-                                    @if($studentAnswer)
+                                    @if($studentAnswer || $studentAnswerText)
                                         <div>
                                             <p class="text-sm font-semibold text-gray-700 mb-2">Jawaban Anda:</p>
                                             <div class="bg-white p-3 rounded border-l-4 {{ $isCorrect ? 'border-green-500' : 'border-red-500' }}">
                                                 <p class="text-gray-900 font-semibold flex items-center">
-                                                    {{ $options[strtolower($studentAnswer)] ?? 'Opsi Tidak Dikenal' }}
+                                                    {{ $studentAnswerText ?? 'Opsi Tidak Dikenal' }}
                                                     @if($isCorrect)
                                                         <i class="fas fa-check text-green-600 ml-2"></i>
                                                     @else
@@ -214,12 +229,12 @@
                                         </div>
                                     @endif
 
-                                    <!-- Correct Answer -->
+                                    <!-- Correct Answer - Use stored text, never re-shuffle -->
                                     <div>
                                         <p class="text-sm font-semibold text-gray-700 mb-2">Jawaban Benar:</p>
                                         <div class="bg-white p-3 rounded border-l-4 border-green-500">
                                             <p class="text-gray-900 font-semibold flex items-center">
-                                                {{ $options[strtolower($question->correct_answer)] ?? 'Opsi Tidak Dikenal' }}
+                                                {{ $correctAnswerText ?? 'Opsi Tidak Dikenal' }}
                                                 <i class="fas fa-check-circle text-green-600 ml-2"></i>
                                             </p>
                                         </div>
