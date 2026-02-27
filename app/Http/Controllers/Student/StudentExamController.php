@@ -367,9 +367,32 @@ class StudentExamController extends Controller
                 throw new \Exception('Gagal membuat attempt ujian. Silakan coba lagi.');
             }
 
+            \Log::info('Exam attempt created', [
+                'exam_id' => $exam->id,
+                'student_id' => auth()->id(),
+                'attempt_id' => $attempt->id,
+                'attempt_status' => $attempt->status,
+                'token' => $inputToken,
+            ]);
+
             // 5. SET SESSION - untuk fallback authorization
-            session(['authorized_exam_' . $exam->id => true]);
-            session(['exam_attempt_' . $exam->id => $attempt->id]); // Extra safety: store attempt ID
+            $sessionKey1 = 'authorized_exam_' . $exam->id;
+            $sessionKey2 = 'exam_attempt_' . $exam->id;
+
+            session([$sessionKey1 => true]);
+            session([$sessionKey2 => $attempt->id]);
+
+            \Log::info('Session set for exam attempt', [
+                'exam_id' => $exam->id,
+                'student_id' => auth()->id(),
+                'attempt_id' => $attempt->id,
+                'session_key_1' => $sessionKey1,
+                'session_key_2' => $sessionKey2,
+                'session_has_key_1' => session()->has($sessionKey1),
+                'session_has_key_2' => session()->has($sessionKey2),
+                'session_value_1' => session($sessionKey1),
+                'session_value_2' => session($sessionKey2),
+            ]);
 
             // 6. RETURN SUCCESS WITH REDIRECT
             return response()->json([
