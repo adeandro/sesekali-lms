@@ -158,19 +158,3 @@
         dropZone.addEventListener('click', () => fileInput.click());
     </script>
 @endsection
-                    </div>
-
-                    <button type="submit" class="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold">
-                        🚀 Import Questions
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p class="text-blue-800 text-sm">
-                <strong>💡 Tip:</strong> You can download a sample file from the questions index page to use as a template.
-            </p>
-        </div>
-    </div>
-@endsection
