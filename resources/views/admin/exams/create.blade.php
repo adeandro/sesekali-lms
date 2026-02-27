@@ -132,7 +132,7 @@
                             {{ old('randomize_questions') ? 'checked' : '' }}
                             class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                         <label for="randomize_questions" class="ml-2 block text-sm text-gray-700">
-                            Acak Soal (mengurutkan soal secara acak untuk setiap siswa)
+                            🔀 Acak Soal (mengurutkan soal secara acak untuk setiap siswa)
                         </label>
                     </div>
 
@@ -141,7 +141,7 @@
                             {{ old('randomize_options') ? 'checked' : '' }}
                             class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                         <label for="randomize_options" class="ml-2 block text-sm text-gray-700">
-                            Acak Pilihan (mengurutkan pilihan jawaban secara acak untuk setiap siswa)
+                            🔄 Acak Pilihan (mengurutkan pilihan jawaban secara acak untuk setiap siswa)
                         </label>
                     </div>
 
@@ -150,7 +150,7 @@
                             {{ old('show_score_after_submit') ? 'checked' : '' }}
                             class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                         <label for="show_score_after_submit" class="ml-2 block text-sm text-gray-700">
-                            Tampilkan Nilai Setelah Kirim (menampilkan hasil segera setelah pengajuan)
+                            📊 Tampilkan Nilai Setelah Kirim (menampilkan hasil segera setelah pengajuan)
                         </label>
                     </div>
 
@@ -159,7 +159,7 @@
                             {{ old('allow_review_results') ? 'checked' : '' }}
                             class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                         <label for="allow_review_results" class="ml-2 block text-sm text-gray-700">
-                            Izinkan Peninjauan Hasil (siswa dapat meninjau jawaban dan jawaban yang benar setelah pengajuan)
+                            👁️ Izinkan Peninjauan Hasil (siswa dapat meninjau jawaban dan jawaban yang benar setelah pengajuan)
                         </label>
                     </div>
                 </div>

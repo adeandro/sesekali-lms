@@ -31,6 +31,15 @@ class UpdateExamRequest extends FormRequest
                 'end_time' => str_replace('T', ' ', $this->end_time),
             ]);
         }
+
+        // Handle unchecked checkboxes - HTML doesn't send them, so we need to explicitly set to false
+        // This is critical for allow_review_results and other boolean toggles
+        $booleanFields = ['randomize_questions', 'randomize_options', 'show_score_after_submit', 'allow_review_results'];
+        foreach ($booleanFields as $field) {
+            if (!$this->has($field)) {
+                $this->merge([$field => false]);
+            }
+        }
     }
 
     /**

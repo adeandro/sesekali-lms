@@ -69,8 +69,44 @@ class ScoringService
     }
 
     /**
+     * Normalize answer text for robust comparison.
+     * Handles whitespace, case, HTML entities, and special characters.
+     * 
+     * CRITICAL: This ensures answers are compared consistently regardless of formatting
+     */
+    public static function normalizeAnswerText($text)
+    {
+        if (!$text) {
+            return '';
+        }
+
+        // Convert to string
+        $text = (string)$text;
+
+        // 1. Decode HTML entities (&nbsp; → space, etc.)
+        $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        // 2. Convert to lowercase for case-insensitive comparison
+        $text = strtolower($text);
+
+        // 3. Remove extra whitespace: trim ends and collapse internal spaces
+        $text = trim($text);
+        $text = preg_replace('/\s+/', ' ', $text);  // Collapse multiple spaces to single space
+
+        // 4. Remove common variations in punctuation/special chars that don't affect meaning
+        // (optional - only if needed)
+        $text = str_replace(['−', '–', '—'], '-', $text);  // Normalize dashes
+
+        return $text;
+    }
+
+    /**
      * Calculate MC score for an exam attempt.
      * Returns score 0-100 based on correct answers
+     * 
+     * CRITICAL: Uses TEXT-based comparison to match ExamEngineService scoring
+
+     * This handles shuffled options correctly!
      */
     public static function calculateMCScore(ExamAttempt $attempt)
     {
@@ -87,8 +123,43 @@ class ScoringService
 
         $correct = 0;
         foreach ($answers as $answer) {
-            if (strtolower($answer->question->correct_answer) === strtolower($answer->selected_answer)) {
-                $correct++;
+            // Use TEXT-based comparison (same as ExamEngineService::submitExam)
+            // This handles shuffled options correctly
+            
+            // Get selected answer text - prefer stored, fallback to lookup
+            $selectedText = $answer->selected_answer_text;
+            if (!$selectedText && $answer->selected_answer) {
+                // selected_answer is lowercase (a, b, c, d, e)
+                $selectedText = $answer->question->{"option_" . strtolower($answer->selected_answer)} ?? null;
+            }
+            
+            // Get correct answer text
+            $correctText = $answer->correct_answer_text;
+            if (!$correctText) {
+                // correct_answer might be uppercase (A, B, C, D, E) - convert to lowercase for column access
+                $correctPosition = strtolower($answer->question->correct_answer);
+                $correctText = $answer->question->{"option_" . $correctPosition} ?? null;
+            }
+            
+            // NORMALIZE both texts using robust comparison
+            if ($selectedText && $correctText) {
+                $selectedClean = self::normalizeAnswerText($selectedText);
+                $correctClean = self::normalizeAnswerText($correctText);
+                
+                // Log for debugging
+                \Log::debug('MC answer comparison', [
+                    'attempt_id' => $attempt->id,
+                    'question_id' => $answer->question_id,
+                    'selected_raw' => $selectedText,
+                    'selected_normalized' => $selectedClean,
+                    'correct_raw' => $correctText,
+                    'correct_normalized' => $correctClean,
+                    'match' => ($selectedClean === $correctClean),
+                ]);
+                
+                if ($selectedClean === $correctClean) {
+                    $correct++;
+                }
             }
         }
 

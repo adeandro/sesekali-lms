@@ -1,23 +1,23 @@
 @extends('layouts.app')
 
-@section('title', 'Edit Exam - SesekaliCBT')
+@section('title', 'Edit Ujian - SesekaliCBT')
 
 @section('content')
     <div>
         <div class="mb-8">
-            <a href="{{ route('admin.exams.index') }}" class="text-blue-600 hover:text-blue-800">← Back to Exams</a>
-            <h2 class="text-3xl font-bold text-gray-900 mt-2">Edit Exam</h2>
+            <a href="{{ route('admin.exams.index') }}" class="text-blue-600 hover:text-blue-800">← Kembali ke Daftar Ujian</a>
+            <h2 class="text-3xl font-bold text-gray-900 mt-2">Edit Ujian</h2>
         </div>
 
         @if (!$exam->canEdit())
             <div class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p class="font-semibold text-yellow-800">⚠️ This exam is finished and cannot be edited.</p>
+                <p class="font-semibold text-yellow-800">⚠️ Ujian ini sudah selesai dan tidak bisa diedit.</p>
             </div>
         @endif
 
         @if ($errors->any())
             <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p class="font-semibold text-red-800 mb-2">Validation Errors:</p>
+                <p class="font-semibold text-red-800 mb-2">Kesalahan Validasi:</p>
                 <ul class="list-disc list-inside text-red-700">
                     @foreach ($errors->all() as $error)
                         <li>{{ $error }}</li>
@@ -34,22 +34,22 @@
                 <div class="grid grid-cols-2 gap-6 mb-6">
                     <div>
                         <label for="title" class="block text-sm font-medium text-gray-700 mb-2">
-                            Title <span class="text-red-500">*</span>
+                            Judul <span class="text-red-500">*</span>
                         </label>
                         <input type="text" id="title" name="title" value="{{ old('title', $exam->title) }}" 
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 @error('title') border-red-500 @enderror" 
-                            placeholder="e.g., Midterm Examination" required {{ !$exam->canEdit() ? 'disabled' : '' }}>
+                            placeholder="misalnya: Ujian Tengah Semester" required {{ !$exam->canEdit() ? 'disabled' : '' }}>
                         @error('title')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
                     </div>
 
                     <div>
                         <label for="subject_id" class="block text-sm font-medium text-gray-700 mb-2">
-                            Subject <span class="text-red-500">*</span>
+                            Mata Pelajaran <span class="text-red-500">*</span>
                         </label>
                         <select id="subject_id" name="subject_id" 
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 @error('subject_id') border-red-500 @enderror" 
                             required {{ !$exam->canEdit() ? 'disabled' : '' }}>
-                            <option value="">Select Subject</option>
+                            <option value="">Pilih Mata Pelajaran</option>
                             @foreach($subjects as $subject)
                                 <option value="{{ $subject->id }}" {{ old('subject_id', $exam->subject_id) == $subject->id ? 'selected' : '' }}>
                                     {{ $subject->name }}
@@ -67,16 +67,16 @@
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 @error('jenjang') border-red-500 @enderror" 
                             required {{ !$exam->canEdit() ? 'disabled' : '' }}>
                             <option value="">Pilih Kelas</option>
-                            <option value="10" {{ old('jenjang', $exam->jenjang) == '10' ? 'selected' : '' }}>10</option>
-                            <option value="11" {{ old('jenjang', $exam->jenjang) == '11' ? 'selected' : '' }}>11</option>
-                            <option value="12" {{ old('jenjang', $exam->jenjang) == '12' ? 'selected' : '' }}>12</option>
+                            <option value="10" {{ old('jenjang', $exam->jenjang) == '10' ? 'selected' : '' }}>Kelas 10</option>
+                            <option value="11" {{ old('jenjang', $exam->jenjang) == '11' ? 'selected' : '' }}>Kelas 11</option>
+                            <option value="12" {{ old('jenjang', $exam->jenjang) == '12' ? 'selected' : '' }}>Kelas 12</option>
                         </select>
                         @error('jenjang')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
                     </div>
 
                     <div>
                         <label for="duration_minutes" class="block text-sm font-medium text-gray-700 mb-2">
-                            Duration (minutes) <span class="text-red-500">*</span>
+                            Durasi (menit) <span class="text-red-500">*</span>
                         </label>
                         <input type="number" id="duration_minutes" name="duration_minutes" value="{{ old('duration_minutes', $exam->duration_minutes) }}" 
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 @error('duration_minutes') border-red-500 @enderror" 
@@ -86,7 +86,7 @@
 
                     <div>
                         <label for="total_questions" class="block text-sm font-medium text-gray-700 mb-2">
-                            Total Questions <span class="text-red-500">*</span>
+                            Total Soal <span class="text-red-500">*</span>
                         </label>
                         <input type="number" id="total_questions" name="total_questions" value="{{ old('total_questions', $exam->total_questions) }}" 
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 @error('total_questions') border-red-500 @enderror" 
@@ -96,7 +96,7 @@
 
                     <div>
                         <label for="start_time" class="block text-sm font-medium text-gray-700 mb-2">
-                            Start Time <span class="text-red-500">*</span>
+                            Waktu Mulai <span class="text-red-500">*</span>
                         </label>
                         <input type="datetime-local" id="start_time" name="start_time" value="{{ old('start_time', $exam->start_time->format('Y-m-d\TH:i')) }}" 
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 @error('start_time') border-red-500 @enderror" 
@@ -106,7 +106,7 @@
 
                     <div>
                         <label for="end_time" class="block text-sm font-medium text-gray-700 mb-2">
-                            End Time <span class="text-red-500">*</span>
+                            Waktu Selesai <span class="text-red-500">*</span>
                         </label>
                         <input type="datetime-local" id="end_time" name="end_time" value="{{ old('end_time', $exam->end_time->format('Y-m-d\TH:i')) }}" 
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 @error('end_time') border-red-500 @enderror" 
@@ -122,7 +122,7 @@
                             {{ !$exam->canEdit() ? 'disabled' : '' }}
                             class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                         <label for="randomize_questions" class="ml-2 block text-sm text-gray-700">
-                            Randomize Questions (shuffle question order for each student)
+                            🔀 Acak Soal (mengurutkan soal secara acak untuk setiap siswa)
                         </label>
                     </div>
 
@@ -132,7 +132,7 @@
                             {{ !$exam->canEdit() ? 'disabled' : '' }}
                             class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                         <label for="randomize_options" class="ml-2 block text-sm text-gray-700">
-                            Randomize Options (shuffle answer options for each student)
+                            🔄 Acak Pilihan (mengurutkan pilihan jawaban secara acak untuk setiap siswa)
                         </label>
                     </div>
 
@@ -142,7 +142,7 @@
                             {{ !$exam->canEdit() ? 'disabled' : '' }}
                             class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                         <label for="show_score_after_submit" class="ml-2 block text-sm text-gray-700">
-                            Show Score After Submit (display results immediately after submission)
+                            📊 Tampilkan Nilai Setelah Selesai (menampilkan hasil segera setelah pengumpulan)
                         </label>
                     </div>
 
@@ -151,7 +151,7 @@
                             {{ old('allow_review_results', $exam->allow_review_results) ? 'checked' : '' }}
                             class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                         <label for="allow_review_results" class="ml-2 block text-sm text-gray-700">
-                            Allow Review Results (students can review their answers and correct answers after submission)
+                            👁️ Izinkan Review Hasil (siswa dapat melihat jawaban mereka dan jawaban yang benar setelah pengumpulan)
                         </label>
                     </div>
                 </div>
@@ -164,7 +164,7 @@
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 @error('status') border-red-500 @enderror"
                         required {{ !$exam->canEdit() ? 'disabled' : '' }}>
                         <option value="draft" {{ old('status', $exam->status) == 'draft' ? 'selected' : '' }}>Draft</option>
-                        <option value="published" {{ old('status', $exam->status) == 'published' ? 'selected' : '' }}>Published</option>
+                        <option value="published" {{ old('status', $exam->status) == 'published' ? 'selected' : '' }}>Dipublikasikan</option>
                     </select>
                     @error('status')<p class="text-red-500 text-sm mt-1">{{ $message }}</p>@enderror
                 </div>
@@ -172,11 +172,11 @@
                 <div class="flex gap-4">
                     @if($exam->canEdit())
                         <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-                            Update Exam
+                            Update Ujian
                         </button>
                     @endif
                     <a href="{{ route('admin.exams.index') }}" class="px-6 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition">
-                        Cancel
+                        Batal
                     </a>
                 </div>
             </form>

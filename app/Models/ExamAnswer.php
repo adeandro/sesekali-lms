@@ -13,6 +13,8 @@ class ExamAnswer extends Model
         'attempt_id',
         'question_id',
         'selected_answer',
+        'selected_answer_text',
+        'correct_answer_text',
         'essay_answer',
         'is_correct',
         'essay_score',

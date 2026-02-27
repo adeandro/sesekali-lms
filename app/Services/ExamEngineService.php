@@ -84,10 +84,20 @@ class ExamEngineService
         // Initialize exam answers
         $questions = $exam->questions()->get();
         foreach ($questions as $question) {
-            ExamAnswer::create([
+            $creationData = [
                 'attempt_id' => $attempt->id,
                 'question_id' => $question->id,
-            ]);
+            ];
+            
+            // For MC questions, store the correct answer text upfront
+            if ($question->question_type === 'multiple_choice') {
+                // correct_answer is stored as uppercase (A, B, C, D, E) - convert to lowercase for column access
+                $correctAnswerPosition = strtolower($question->correct_answer);
+                $correctAnswerText = $question->{"option_" . $correctAnswerPosition} ?? null;
+                $creationData['correct_answer_text'] = $correctAnswerText;
+            }
+            
+            ExamAnswer::create($creationData);
         }
 
         return $attempt;
@@ -107,6 +117,8 @@ class ExamEngineService
     /**
      * Get exam questions organized by type (MC first, then Essay).
      * Returns collections with proper sequential numbering for navigator.
+     * 
+     * Handles both randomize_questions and randomize_options.
      */
     public static function getExamQuestions(ExamAttempt $attempt)
     {
@@ -117,7 +129,7 @@ class ExamEngineService
         $mcQuestions = $allQuestions->where('question_type', 'multiple_choice')->values();
         $essayQuestions = $allQuestions->where('question_type', 'essay')->values();
 
-        // Apply randomization if enabled
+        // Apply question randomization if enabled
         if ($exam->randomize_questions) {
             // Get or create randomization order for MC questions
             $mcOrder = session()->get("exam_{$attempt->id}_mc_order");
@@ -145,6 +157,92 @@ class ExamEngineService
         // Combine: MC first, then Essay
         $questions = $mcQuestions->concat($essayQuestions)->values();
 
+        // Apply option randomization if enabled (only for MC questions)
+        if ($exam->randomize_options) {
+            foreach ($questions as $question) {
+                if ($question->question_type === 'multiple_choice') {
+                    // Get or create option randomization mapping for this question
+                    $optionMapKey = "exam_{$attempt->id}_question_{$question->id}_option_map";
+                    $optionMap = session()->get($optionMapKey);
+
+                    if (!$optionMap) {
+                        // First time viewing this question: create and shuffle option mapping
+                        // Collect available options (a, b, c, d, e that are not null)
+                        $optionLetters = [];
+                        foreach (['a', 'b', 'c', 'd', 'e'] as $letter) {
+                            if ($question->{"option_$letter"}) {
+                                $optionLetters[] = $letter;
+                            }
+                        }
+
+                        // Shuffle the available options
+                        $shuffledLetters = collect($optionLetters)->shuffle()->toArray();
+
+                        // Create mapping: display_position -> original_letter
+                        // E.g., if original is [a, b, c, d] and shuffled is [c, a, d, b]
+                        // then map should be: ['a' => 'c', 'b' => 'a', 'c' => 'd', 'd' => 'b']
+                        // Meaning: "at display position A, show the option that was originally at position C"
+                        $optionMap = [];
+                        for ($i = 0; $i < count($optionLetters); $i++) {
+                            $displayPosition = $optionLetters[$i];
+                            $originalPosition = $shuffledLetters[$i];
+                            $optionMap[$displayPosition] = $originalPosition;
+                        }
+
+                        // IMPORTANT: Also store reverse mapping for scoring later
+                        // reverse_map: original_position -> display_position
+                        $reverseMap = [];
+                        foreach ($optionMap as $displayPos => $originalPos) {
+                            $reverseMap[$originalPos] = $displayPos;
+                        }
+
+                        session()->put($optionMapKey, $optionMap);
+                        session()->put("exam_{$attempt->id}_question_{$question->id}_reverse_map", $reverseMap);
+                    }
+
+                    // Apply the mapping: rearrange options
+                    $originalOptions = [
+                        'a' => $question->option_a,
+                        'b' => $question->option_b,
+                        'c' => $question->option_c,
+                        'd' => $question->option_d,
+                        'e' => $question->option_e,
+                    ];
+
+                    $originalImages = [
+                        'a' => $question->option_a_image ?? null,
+                        'b' => $question->option_b_image ?? null,
+                        'c' => $question->option_c_image ?? null,
+                        'd' => $question->option_d_image ?? null,
+                        'e' => $question->option_e_image ?? null,
+                    ];
+
+                    // Rearrange options using the mapping
+                    foreach (['a', 'b', 'c', 'd', 'e'] as $displayLetter) {
+                        if (isset($optionMap[$displayLetter])) {
+                            $originalLetter = $optionMap[$displayLetter];
+                            $question->{"option_$displayLetter"} = $originalOptions[$originalLetter];
+                            $question->{"option_{$displayLetter}_image"} = $originalImages[$originalLetter];
+                        }
+                    }
+
+                    // Update the correct_answer to reflect the new position
+                    $originalCorrectAnswer = $question->correct_answer;
+                    // Find which display position the correct answer is now at
+                    foreach ($optionMap as $displayLetter => $originalLetter) {
+                        if ($originalLetter === $originalCorrectAnswer) {
+                            $question->correct_answer = $displayLetter;
+                            $question->original_correct_answer = $originalCorrectAnswer; // Store original for reference
+                            break;
+                        }
+                    }
+
+                    // Store the mapping on the question object for later reference
+                    $question->option_map = $optionMap;
+                }
+            }
+        }
+
         // Add position metadata to each question for navigator
         $mcCount = $mcQuestions->count();
         foreach ($questions as $index => $question) {
@@ -165,8 +263,14 @@ class ExamEngineService
 
     /**
      * Autosave answer.
+     * 
+     * CRITICAL: Must apply same shuffle transformation to question as was applied in getExamQuestions()
+     * Otherwise shuffled answer positions won't match unshuffled DB question structure!
+     * 
+     * Stores both the selected answer position AND the text that was displayed.
+     * Critical for handling shuffled options correctly.
      */
-    public static function autosaveAnswer(ExamAttempt $attempt, int $questionId, ?string $selectedAnswer = null, ?string $essayAnswer = null)
+    public static function autosaveAnswer(ExamAttempt $attempt, int $questionId, ?string $selectedAnswer = null, ?string $essayAnswer = null, $question = null)
     {
         $answer = ExamAnswer::where('attempt_id', $attempt->id)
             ->where('question_id', $questionId)
@@ -179,6 +283,55 @@ class ExamEngineService
         // Update answer
         if ($selectedAnswer !== null) {
             $answer->selected_answer = $selectedAnswer;
+            
+            // Store the actual TEXT that's currently displayed (handles shuffled options)
+            if ($question === null) {
+                $question = \App\Models\Question::find($questionId);
+            }
+            
+            if ($question && $question->question_type === 'multiple_choice') {
+                // CRITICAL: Always store the selected answer TEXT
+                // This is what the student actually saw and clicked on
+                $attempt = $attempt->refresh(); // Ensure fresh instance
+                $exam = $attempt->exam;
+                
+                $selectedText = null;
+                
+                if ($exam && $exam->randomize_options) {
+                    // Get the shuffle mapping from session
+                    $optionMapKey = "exam_{$attempt->id}_question_{$question->id}_option_map";
+                    $optionMap = session()->get($optionMapKey);
+                    
+                    if ($optionMap) {
+                        // optionMap[display_pos] = original_pos
+                        // Student selected a display position, convert to original position
+                        $originalPosition = $optionMap[$selectedAnswer] ?? null;
+                        if ($originalPosition) {
+                            // Get text of the ORIGINAL position
+                            $selectedText = $question->{"option_" . $originalPosition} ?? null;
+                        }
+                    } else {
+                        // Fallback if map not found (shouldn't happen)
+                        $selectedText = $question->{"option_" . $selectedAnswer} ?? null;
+                    }
+                } else {
+                    // No shuffling: direct text lookup
+                    $selectedText = $question->{"option_" . $selectedAnswer} ?? null;
+                }
+                
+                // Store it - this is the TEXT the student saw
+                $answer->selected_answer_text = $selectedText;
+                
+                \Log::debug('Autosaving MC answer', [
+                    'attempt_id' => $attempt->id,
+                    'question_id' => $question->id,
+                    'selected_display_position' => $selectedAnswer,
+                    'selected_original_position' => $optionMap[$selectedAnswer] ?? null,
+                    'selected_text_raw' => $selectedText,
+                    'selected_text_normalized' => ScoringService::normalizeAnswerText($selectedText),
+                    'has_shuffle' => $exam?->randomize_options,
+                ]);
+            }
         }
 
         if ($essayAnswer !== null) {
@@ -215,11 +368,67 @@ class ExamEngineService
             // Score MC questions and prepare essays
             foreach ($answers as $answer) {
                 if ($answer->question->question_type === 'multiple_choice') {
-                    // Auto-score MC questions with case-insensitive comparison
-                    if (strtolower($answer->question->correct_answer) === strtolower($answer->selected_answer)) {
-                        $answer->is_correct = true;
+                    // Auto-score MC questions by comparing ACTUAL TEXT
+                    // Multiple fallbacks to ensure we always get text for comparison
+                    
+                    // Fallback 1: Use stored text (captured at time of answer)
+                    $studentSelectedAnswerText = $answer->selected_answer_text;
+                    
+                    // Fallback 2: If not stored, look up from current question
+                    if (!$studentSelectedAnswerText && $answer->selected_answer) {
+                        // selected_answer is lowercase (a, b, c, d, e)
+                        $studentSelectedAnswerText = $answer->question->{"option_" . strtolower($answer->selected_answer)} ?? null;
+                    }
+                    
+                    // Get the correct answer text - prefer stored, fallback to current
+                    $correctAnswerText = $answer->correct_answer_text;
+                    if (!$correctAnswerText) {
+                        // correct_answer might be uppercase (A, B, C, D, E) - convert to lowercase
+                        $correctAnswerPosition = strtolower($answer->question->correct_answer);
+                        $correctAnswerText = $answer->question->{"option_" . $correctAnswerPosition} ?? null;
+                        // Store it for history/display
+                        $answer->correct_answer_text = $correctAnswerText;
+                    }
+                    
+                    // Log for debugging
+                    \Log::debug('Exam scoring - MC answer comparison', [
+                        'attempt_id' => $attempt->id,
+                        'question_id' => $answer->question_id,
+                        'selected_answer_position' => $answer->selected_answer,
+                        'selected_text_stored' => $answer->selected_answer_text,
+                        'selected_text_fallback' => $studentSelectedAnswerText,
+                        'correct_text' => $correctAnswerText,
+                    ]);
+                    
+                    // Score: Compare TEXT values (case-insensitive, trimmed)
+                    // Both must be non-empty and text must match
+                    if ($studentSelectedAnswerText && $correctAnswerText) {
+                        // Use robust normalization for comparison
+                        $studentClean = ScoringService::normalizeAnswerText($studentSelectedAnswerText);
+                        $correctClean = ScoringService::normalizeAnswerText($correctAnswerText);
+                        
+                        $answer->is_correct = ($studentClean === $correctClean);
+                        
+                        // Log for debugging
+                        \Log::debug('Exam scoring - is_correct set', [
+                            'attempt_id' => $attempt->id,
+                            'question_id' => $answer->question_id,
+                            'selected_raw' => $studentSelectedAnswerText,
+                            'selected_normalized' => $studentClean,
+                            'correct_raw' => $correctAnswerText,
+                            'correct_normalized' => $correctClean,
+                            'is_correct' => $answer->is_correct,
+                        ]);
                     } else {
+                        // Missing text data - mark as incorrect
                         $answer->is_correct = false;
+                        
+                        \Log::warning('Exam scoring - missing text', [
+                            'attempt_id' => $attempt->id,
+                            'question_id' => $answer->question_id,
+                            'has_selected_text' => !!$studentSelectedAnswerText,
+                            'has_correct_text' => !!$correctAnswerText,
+                        ]);
                     }
                 } else {
                     // Essay questions: marked as null initially (pending manual grading)

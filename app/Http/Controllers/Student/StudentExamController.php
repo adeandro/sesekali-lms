@@ -139,11 +139,12 @@ class StudentExamController extends Controller
                 return response()->json(['success' => false, 'message' => 'Time expired'], 400);
             }
 
-            // Autosave answer
+            // Autosave answer - pass question for text extraction
             $selectedAnswer = $request->input('selected_answer');
             $essayAnswer = $request->input('essay_answer');
+            $question = \App\Models\Question::find($request->question_id);
 
-            ExamEngineService::autosaveAnswer($attempt, $request->question_id, $selectedAnswer, $essayAnswer);
+            ExamEngineService::autosaveAnswer($attempt, $request->question_id, $selectedAnswer, $essayAnswer, $question);
 
             return response()->json(['success' => true, 'message' => 'Answer saved']);
         } catch (\Exception $e) {
