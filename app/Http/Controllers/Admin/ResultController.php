@@ -202,12 +202,8 @@ class ResultController extends Controller
                 'student',
                 'exam.subject',
                 'answers' => function ($query) {
-                    $query->with([
-                        'question' => function ($q) {
-                            $q->with('answers'); // For essay grading options if any
-                        }
-                    ])
-                    ->orderBy('question_id');
+                    $query->with('question')
+                        ->orderBy('question_id');
                 }
             ]);
 
