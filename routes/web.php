@@ -135,10 +135,10 @@ Route::middleware('auth')->group(function () {
         // Exam Results and Reporting routes Module 6
         Route::prefix('results')->name('results.')->group(function () {
             Route::get('/', [ResultController::class, 'index'])->name('index');
-            Route::get('{exam}', [ResultController::class, 'show'])->name('show');
-            Route::get('{exam}/review/{attempt}', [ResultController::class, 'review'])->name('review');
-            Route::post('{exam}/review/{attempt}/update-grades', [ResultController::class, 'updateGrades'])->name('update-grades');
-            Route::get('{exam}/export', [ResultController::class, 'export'])->name('export');
+            Route::get('{examId}', [ResultController::class, 'show'])->name('show')->where('examId', '[0-9]+');
+            Route::get('{examId}/review/{attemptId}', [ResultController::class, 'review'])->name('review')->where(['examId' => '[0-9]+', 'attemptId' => '[0-9]+']);
+            Route::post('{examId}/review/{attemptId}/update-grades', [ResultController::class, 'updateGrades'])->name('update-grades')->where(['examId' => '[0-9]+', 'attemptId' => '[0-9]+']);
+            Route::get('{examId}/export', [ResultController::class, 'export'])->name('export')->where('examId', '[0-9]+');
         });
 
         // Token Management Routes (New Module - Monitoring & Security)
