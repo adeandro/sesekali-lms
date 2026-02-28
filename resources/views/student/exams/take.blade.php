@@ -774,8 +774,10 @@
 
         // Anti-Cheating: Violation tracking
         const MAX_VIOLATIONS = 3;
+        const FLOATING_WINDOW_COOLDOWN = 3000; // 3 detik - prevent spam
         let isFullscreen = false;
         let tabSwitchWarnings = new Map();
+        let isProcessingViolation = false; // Debounce untuk floating window detection
         
         // Initialize violation count from sessionStorage (persist across page refreshes)
         let violationCount = parseInt(sessionStorage.getItem('examViolationCount_' + {{ $attempt->id }}) || '0', 10);
@@ -1329,10 +1331,70 @@
         }
 
         /**
-         * Handle window blur (optional secondary detection)
+         * Handle window blur (floating window detection)
+         * Detects ketika siswa membuka aplikasi lain atau jendela mengambang
          */
         function handleWindowBlur() {
-            // Additional check if needed
+            // Cegah spam violations - hanya proses 1 violation per 3 detik
+            if (isProcessingViolation) {
+                console.warn('⏳ Blur event masih dalam cooldown, skip duplicate detection');
+                return;
+            }
+
+            // Jangan proses jika sudah mencapai max violations
+            if (violationCount >= MAX_VIOLATIONS) {
+                return;
+            }
+
+            // Tandai sedang memproses violation
+            isProcessingViolation = true;
+
+            // Increment violation counter
+            violationCount++;
+
+            console.warn(`⚠️ Floating window detected! Violation count: ${violationCount}/${MAX_VIOLATIONS}`);
+
+            // Catat violation ke backend
+            recordViolation('floating_window', 'Jendela mengambang atau aplikasi lain terdeteksi');
+
+            // Tampilkan warning sesuai strike number
+            if (violationCount === 1) {
+                Swal.fire({
+                    title: '⚠️ PERINGATAN 1',
+                    html: '<p>Jangan membuka aplikasi lain atau jendela mengambang saat ujian!</p><p style="margin-top: 10px; font-size: 0.9em;">Pelanggaran: 1 dari 3</p>',
+                    icon: 'warning',
+                    confirmButtonColor: '#dc2626',
+                    confirmButtonText: 'Mengerti, Lanjut Ujian',
+                });
+            } else if (violationCount === 2) {
+                Swal.fire({
+                    title: '⚠️ PERINGATAN 2 (TERAKHIR)',
+                    html: '<p>Ini adalah peringatan kedua. Jangan buka aplikasi lain!</p><p style="margin-top: 10px; font-size: 0.9em;">Jika ada pelanggaran lagi, ujian akan ditutup otomatis.</p><p style="margin-top: 5px; font-size: 0.9em;">Pelanggaran: 2 dari 3</p>',
+                    icon: 'warning',
+                    confirmButtonColor: '#dc2626',
+                    confirmButtonText: 'Mengerti, Lanjut Ujian',
+                });
+            } else if (violationCount >= MAX_VIOLATIONS) {
+                // Strike ke-3: auto submit
+                Swal.fire({
+                    title: '❌ BATAS PELANGGARAN TERLAMPAUI',
+                    html: '<p>Anda telah melanggar aturan ujian 3 kali.</p><p style="margin-top: 10px;">Ujian akan ditutup dan jawaban Anda akan dikirimkan otomatis.</p>',
+                    icon: 'error',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    confirmButtonColor: '#dc2626',
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    // Auto submit menggunakan fungsi yang sudah ada
+                    autoSubmit('Batas pelanggaran tercapai. Ujian ditutup otomatis.');
+                });
+            }
+
+            // Reset cooldown setelah 3 detik
+            setTimeout(() => {
+                isProcessingViolation = false;
+                console.log('✅ Floating window cooldown ended, ready for next detection');
+            }, FLOATING_WINDOW_COOLDOWN);
         }
 
         /**
