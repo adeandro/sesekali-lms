@@ -244,7 +244,7 @@ class StudentExamController extends Controller
             }
 
             $validated = $request->validate([
-                'violation_type' => 'required|in:tab_switch,fullscreen_exit,keyboard_shortcut,right_click,copy_paste,dev_tools,printscreen',
+                'violation_type' => 'required|in:tab_switch,fullscreen_exit,keyboard_shortcut,right_click,copy_paste,dev_tools,printscreen,floating_window',
                 'description' => 'nullable|string|max:255',
             ]);
 

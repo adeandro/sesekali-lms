@@ -91,7 +91,7 @@ class ExamProgressController extends Controller
     public function reportViolation(Request $request, $attemptId)
     {
         $request->validate([
-            'violation_type' => 'required|string|in:tab_switch,window_blur,fullscreen_exit',
+            'violation_type' => 'required|string|in:tab_switch,window_blur,fullscreen_exit,floating_window',
             'details' => 'nullable|string',
         ]);
 

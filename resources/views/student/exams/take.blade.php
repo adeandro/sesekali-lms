@@ -1012,6 +1012,7 @@
             setupFullscreenMode();
             setupTabSwitchDetection();
             setupPrintscreenProtection();
+            startFloatingWindowHeartbeat(); // [TAMBAHAN] Heartbeat cek document.hasFocus() setiap 2 detik
         }
 
         /**
@@ -1402,6 +1403,28 @@
          */
         function handleWindowFocus() {
             // User returned to window
+        }
+
+        /**
+         * [TAMBAHAN] Heartbeat Focus Check — setInterval 2 detik
+         * Mendeteksi floating window / split-screen yang tidak selalu memicu window.blur.
+         * Debounce terintegrasi via isProcessingViolation flag yang sudah ada.
+         * Dipanggil dari initAntiCheating() setelah ujian dimulai.
+         */
+        function startFloatingWindowHeartbeat() {
+            setInterval(() => {
+                // Hanya aktif saat ujian berlangsung dan belum mencapai batas pelanggaran
+                if (violationCount >= MAX_VIOLATIONS) return;
+                if (isProcessingViolation) return;
+
+                // Cek apakah fokus dokumen hilang (aplikasi mengambang / split-screen)
+                if (!document.hasFocus()) {
+                    console.warn('🔍 [hasFocus Heartbeat] Fokus dokumen hilang — aplikasi mengambang terdeteksi');
+                    handleWindowBlur(); // Re-use fungsi blur yang sudah ada (dengan debounce)
+                }
+            }, 2000); // Cek setiap 2 detik
+
+            console.log('✅ Floating window heartbeat aktif — interval 2 detik (hasFocus check)');
         }
 
         /**
@@ -2315,17 +2338,42 @@
 
         function autoSubmit(message) {
             Swal.fire({
-                title: 'Waktu Habis!',
-                html: '<p class="text-gray-700">' + message + '</p><p class="text-sm mt-3">Ujian akan dikirim secara otomatis.</p>',
+                title: 'Ujian Berakhir Otomatis',
+                html: '<p class="text-gray-700">' + message + '</p><p class="text-sm mt-3">Ujian Anda akan dikirimkan secara otomatis. Mohon tunggu sebentar.</p>',
                 icon: 'info',
                 allowOutsideClick: false,
                 allowEscapeKey: false
             }).then(() => {
-                // Clear violation count before submission
+                // Bersihkan hitungan pelanggaran dari sessionStorage
                 sessionStorage.removeItem('examViolationCount_' + attempt_id);
-                document.querySelector('#examForm').action = '/student/exams/' + attempt_id + '/submit';
-                document.querySelector('#examForm').method = 'POST';
-                document.querySelector('#examForm').submit();
+
+                // Gunakan endpoint force-submit agar tercatat di backend dengan benar
+                fetch(`/student/exams/${attempt_id}/force-submit`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('input[name="_token"]')?.value || '',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ reason: message })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success && data.redirect_url) {
+                        window.location.href = data.redirect_url;
+                    } else {
+                        // Fallback ke form submit biasa jika endpoint gagal
+                        document.querySelector('#examForm').action = '/student/exams/' + attempt_id + '/submit';
+                        document.querySelector('#examForm').method = 'POST';
+                        document.querySelector('#examForm').submit();
+                    }
+                })
+                .catch(() => {
+                    // Fallback ke form submit biasa jika jaringan bermasalah
+                    document.querySelector('#examForm').action = '/student/exams/' + attempt_id + '/submit';
+                    document.querySelector('#examForm').method = 'POST';
+                    document.querySelector('#examForm').submit();
+                });
             });
         }
 
