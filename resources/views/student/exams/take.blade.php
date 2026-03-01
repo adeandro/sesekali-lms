@@ -778,15 +778,42 @@
         let isFullscreen = false;
         let tabSwitchWarnings = new Map();
         let isProcessingViolation = false; // Debounce untuk floating window detection
-        
-        // Initialize violation count from sessionStorage (persist across page refreshes)
-        let violationCount = parseInt(sessionStorage.getItem('examViolationCount_' + {{ $attempt->id }}) || '0', 10);
+
+        // [FIX] Sync violationCount dari DB terlebih dahulu (sumber kebenaran utama).
+        // Ini memastikan re-opened session mulai dari angka violations yang benar,
+        // bukan dari sessionStorage yang bisa stale atau salah.
+        const DB_VIOLATION_COUNT = {{ $attempt->violations()->where('user_id', auth()->id())->count() }};
+        const SS_VIOLATION_COUNT = parseInt(sessionStorage.getItem('examViolationCount_' + attempt_id) || '0', 10);
+        // Ambil nilai tertinggi antara DB dan sessionStorage (lebih aman)
+        let violationCount = Math.max(DB_VIOLATION_COUNT, SS_VIOLATION_COUNT);
+        // Sinkronkan kembali ke sessionStorage agar konsisten
+        sessionStorage.setItem('examViolationCount_' + attempt_id, violationCount.toString());
+
+        // [FIX] Paksa window dan dokumen mendapat fokus secepatnya saat halaman dimuat.
+        // Ini penting khususnya di Android yang tidak selalu auto-focus.
+        window.focus();
+        document.addEventListener('click', function _forceFocus() {
+            window.focus();
+            // Hanya perlu sekali, setelah itu hapus listener ini
+            document.removeEventListener('click', _forceFocus);
+        }, { once: true });
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
+            // [FIX] Bersihkan examAgreedFlag saat re-open terdeteksi.
+            // Jika violationCount di DB > 0, maka ini bukan sesi pertama;
+            // flag sessionStorage bisa saja stale dari sesi lama.
+            // Dengan membersihkannya, gating system akan meminta user klik tombol
+            // "Siap Mulai" lagi — yang juga sekaligus memberi fokus ke browser.
+            if (DB_VIOLATION_COUNT > 0) {
+                const examAgreedFlag = 'examAgreedAndInProgress_' + attempt_id;
+                sessionStorage.removeItem(examAgreedFlag);
+                console.log('🔄 Sesi re-opened terdeteksi: membersihkan sessionStorage flag untuk memaksa interaksi ulang.');
+            }
+
             // Setup gating system FIRST - prevent exam viewing until fullscreen
             setupGatingSystem();
-            
+
             // Don't initialize exam features yet - wait for fullscreen confirmation
             // These will be called after user enters fullscreen
         });
@@ -1412,6 +1439,8 @@
          * Dipanggil dari initAntiCheating() setelah ujian dimulai.
          */
         function startFloatingWindowHeartbeat() {
+            // [FIX] Interval dipersingkat dari 2 detik menjadi 1 detik untuk deteksi yang lebih responsif,
+            // khususnya di perangkat mobile/Android yang blur event-nya tidak selalu reliable.
             setInterval(() => {
                 // Hanya aktif saat ujian berlangsung dan belum mencapai batas pelanggaran
                 if (violationCount >= MAX_VIOLATIONS) return;
@@ -1420,11 +1449,11 @@
                 // Cek apakah fokus dokumen hilang (aplikasi mengambang / split-screen)
                 if (!document.hasFocus()) {
                     console.warn('🔍 [hasFocus Heartbeat] Fokus dokumen hilang — aplikasi mengambang terdeteksi');
-                    handleWindowBlur(); // Re-use fungsi blur yang sudah ada (dengan debounce)
+                    handleWindowBlur(); // Re-use fungsi blur yang sudah ada (dengan debounce 3 detik)
                 }
-            }, 2000); // Cek setiap 2 detik
+            }, 1000); // [FIX] Cek setiap 1 detik (lebih agresif, masih efisien karena debounce melindungi from spam)
 
-            console.log('✅ Floating window heartbeat aktif — interval 2 detik (hasFocus check)');
+            console.log('✅ Floating window heartbeat aktif — interval 1 detik (hasFocus check)');
         }
 
         /**
