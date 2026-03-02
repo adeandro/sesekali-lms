@@ -491,7 +491,7 @@
                     <li><strong>Fokus pada Ujian</strong> - Dilarang pindah tab atau jendela selama ujian berlangsung</li>
                     <li><strong>Dilarang Menyalin</strong> - Fungsi copy-paste dinonaktifkan untuk keamanan ujian</li>
                     <li><strong>Dilarang Inspect Element</strong> - Akses developer tools dan view source tidak diizinkan</li>
-                    <li><strong>Batasan Pelanggaran</strong> - 3 pelanggaran akan otomatis submit ujian</li>
+                    <li><strong>Batasan Pelanggaran</strong> - {{ $configs['max_violations'] ?? 3 }} pelanggaran akan otomatis submit ujian</li>
                     <li><strong>Waktu Terbatas</strong> - Ujian akan otomatis submit jika waktu habis</li>
                 </ol>
             </div>
@@ -769,24 +769,25 @@
         const exam_id = {{ $attempt->exam->id }};
         const total_questions = {{ $questions->count() }};
         const remaining_minutes = {{ $remainingMinutes }};
+
+        // [BARU] Global Constants dari Blade
+        const DB_VIOLATION_COUNT = {{ $attempt->violation_count ?? 0 }};
+        const MAX_VIOLATIONS = {{ $configs['max_violations'] ?? 3 }};
+        const ANTI_CHEAT_ENABLED = {{ ($configs['anti_cheat_active'] ?? '1') == '1' ? 'true' : 'false' }};
+        
         let current_question_index = 0;
         let answers = {};
 
-        // Anti-Cheating: Violation tracking
-        const MAX_VIOLATIONS = 3;
-        const FLOATING_WINDOW_COOLDOWN = 3000; // 3 detik - prevent spam
+        // Anti-Cheating state
+        const FLOATING_WINDOW_COOLDOWN = 3000; // 3 detik
         let isFullscreen = false;
         let tabSwitchWarnings = new Map();
-        let isProcessingViolation = false; // Debounce untuk floating window detection
+        let isProcessingViolation = false;
 
-        // [FIX] Sync violationCount dari DB terlebih dahulu (sumber kebenaran utama).
-        // Ini memastikan re-opened session mulai dari angka violations yang benar,
-        // bukan dari sessionStorage yang bisa stale atau salah.
-        const DB_VIOLATION_COUNT = {{ $attempt->violations()->where('user_id', auth()->id())->count() }};
-        const SS_VIOLATION_COUNT = parseInt(sessionStorage.getItem('examViolationCount_' + attempt_id) || '0', 10);
-        // Ambil nilai tertinggi antara DB dan sessionStorage (lebih aman)
-        let violationCount = Math.max(DB_VIOLATION_COUNT, SS_VIOLATION_COUNT);
-        // Sinkronkan kembali ke sessionStorage agar konsisten
+        // [FIX] Sync violationCount dari DB sebagai sumber kebenaran utama.
+        let violationCount = DB_VIOLATION_COUNT;
+        
+        // Update sessionStorage agar sinkron dengan database
         sessionStorage.setItem('examViolationCount_' + attempt_id, violationCount.toString());
 
         // [FIX] Paksa window dan dokumen mendapat fokus secepatnya saat halaman dimuat.
@@ -860,47 +861,43 @@
         }
 
         /**
-         * Initiate exam with fullscreen request
-         * Only called when user clicks "SIAP, MULAI UJIAN" button
+         * Initiate exam with fullscreen request (Robust)
          */
-        function initiateExamWithFullscreen() {
+        async function initiateExamWithFullscreen() {
             const elem = document.documentElement;
-            
-            const requests = [
-                () => elem.requestFullscreen?.(),
-                () => elem.webkitRequestFullscreen?.(),
-                () => elem.mozRequestFullScreen?.(),
-                () => elem.msRequestFullscreen?.(),
-            ];
+            const examAgreedFlag = 'examAgreedAndInProgress_' + attempt_id;
 
-            // Try each fullscreen method
-            for (let i = 0; i < requests.length; i++) {
-                try {
-                    const promise = requests[i]();
-                    if (promise) {
-                        promise
-                            .then(() => {
-                                isFullscreen = true;
-                                // Mark exam as agreed in this session to prevent re-showing modal on refresh
-                                const examAgreedFlag = 'examAgreedAndInProgress_' + attempt_id;
-                                sessionStorage.setItem(examAgreedFlag, 'true');
-                                hideReadinessOverlay();
-                                initializeExamFeatures();
-                                console.log('✅ Fullscreen activated - exam started and flagged in session');
-                            })
-                            .catch((err) => {
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: '⚠️ Mode Layar Penuh Tidak Didukung',
-                                    text: 'Ujian memerlukan mode layar penuh (fullscreen). Browser Anda tidak mendukung fitur ini.',
-                                    confirmButtonText: 'OK',
-                                });
-                                console.warn('Fullscreen request failed:', err.message);
-                            });
-                        return;
-                    }
-                } catch (e) {
-                    // Continue to next method
+            try {
+                // Mencoba masuk mode Fullscreen
+                if (elem.requestFullscreen) {
+                    await elem.requestFullscreen();
+                } else if (elem.webkitRequestFullscreen) {
+                    await elem.webkitRequestFullscreen();
+                } else if (elem.mozRequestFullScreen) {
+                    await elem.mozRequestFullScreen();
+                } else if (elem.msRequestFullscreen) {
+                    await elem.msRequestFullscreen();
+                }
+                
+                isFullscreen = true;
+                console.log('✅ Fullscreen activated via API');
+            } catch (err) {
+                console.warn('⚠️ Fullscreen request failed or blocked:', err.message);
+                // Jangan hentikan user jika fullscreen gagal
+            } finally {
+                // Proses mulai ujian tetap dilanjutkan
+                sessionStorage.setItem(examAgreedFlag, 'true');
+                hideReadinessOverlay();
+                initializeExamFeatures();
+                
+                if (!isFullscreen) {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Mode Ujian Aktif',
+                        text: 'Gagal otomatis ke mode layar penuh. Silakan gunakan browser dalam mode maksimal untuk pengawasan terbaik.',
+                        confirmButtonText: 'Saya Mengerti',
+                        timer: 3000
+                    });
                 }
             }
         }
@@ -1321,6 +1318,7 @@
          * Setup tab/window switch detection
          */
         function setupTabSwitchDetection() {
+            if (!ANTI_CHEAT_ENABLED) return;
             // Detect when user leaves the tab
             document.addEventListener('visibilitychange', handleVisibilityChange);
             window.addEventListener('blur', handleWindowBlur);
@@ -1331,6 +1329,7 @@
          * Handle visibility change (Page Visibility API)
          */
         function handleVisibilityChange() {
+            if (!ANTI_CHEAT_ENABLED) return;
             if (document.hidden) {
                 // Report violation in real-time to admin dashboard
                 reportViolationRealTime('tab_switch', 'Siswa meninggalkan tab ujian');
@@ -1363,6 +1362,7 @@
          * Detects ketika siswa membuka aplikasi lain atau jendela mengambang
          */
         function handleWindowBlur() {
+            if (!ANTI_CHEAT_ENABLED) return;
             // Cegah spam violations - hanya proses 1 violation per 3 detik
             if (isProcessingViolation) {
                 console.warn('⏳ Blur event masih dalam cooldown, skip duplicate detection');
@@ -1389,7 +1389,7 @@
             if (violationCount === 1) {
                 Swal.fire({
                     title: '⚠️ PERINGATAN 1',
-                    html: '<p>Jangan membuka aplikasi lain atau jendela mengambang saat ujian!</p><p style="margin-top: 10px; font-size: 0.9em;">Pelanggaran: 1 dari 3</p>',
+                    html: `<p>Jangan membuka aplikasi lain atau jendela mengambang saat ujian!</p><p style="margin-top: 10px; font-size: 0.9em;">Pelanggaran: 1 dari ${MAX_VIOLATIONS}</p>`,
                     icon: 'warning',
                     confirmButtonColor: '#dc2626',
                     confirmButtonText: 'Mengerti, Lanjut Ujian',
@@ -1397,7 +1397,7 @@
             } else if (violationCount === 2) {
                 Swal.fire({
                     title: '⚠️ PERINGATAN 2 (TERAKHIR)',
-                    html: '<p>Ini adalah peringatan kedua. Jangan buka aplikasi lain!</p><p style="margin-top: 10px; font-size: 0.9em;">Jika ada pelanggaran lagi, ujian akan ditutup otomatis.</p><p style="margin-top: 5px; font-size: 0.9em;">Pelanggaran: 2 dari 3</p>',
+                    html: `<p>Ini adalah peringatan kedua. Jangan buka aplikasi lain!</p><p style="margin-top: 10px; font-size: 0.9em;">Jika ada pelanggaran lagi, ujian akan ditutup otomatis.</p><p style="margin-top: 5px; font-size: 0.9em;">Pelanggaran: 2 dari ${MAX_VIOLATIONS}</p>`,
                     icon: 'warning',
                     confirmButtonColor: '#dc2626',
                     confirmButtonText: 'Mengerti, Lanjut Ujian',
@@ -1406,7 +1406,7 @@
                 // Strike ke-3: auto submit
                 Swal.fire({
                     title: '❌ BATAS PELANGGARAN TERLAMPAUI',
-                    html: '<p>Anda telah melanggar aturan ujian 3 kali.</p><p style="margin-top: 10px;">Ujian akan ditutup dan jawaban Anda akan dikirimkan otomatis.</p>',
+                    html: `<p>Anda telah melanggar aturan ujian ${MAX_VIOLATIONS} kali.</p><p style="margin-top: 10px;">Ujian akan ditutup dan jawaban Anda akan dikirimkan otomatis.</p>`,
                     icon: 'error',
                     allowOutsideClick: false,
                     allowEscapeKey: false,
@@ -1439,6 +1439,7 @@
          * Dipanggil dari initAntiCheating() setelah ujian dimulai.
          */
         function startFloatingWindowHeartbeat() {
+            if (!ANTI_CHEAT_ENABLED) return;
             // [FIX] Interval dipersingkat dari 2 detik menjadi 1 detik untuk deteksi yang lebih responsif,
             // khususnya di perangkat mobile/Android yang blur event-nya tidak selalu reliable.
             setInterval(() => {

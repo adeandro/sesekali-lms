@@ -72,6 +72,7 @@ class StudentService
             'nis' => $nis,
             'grade' => $grade,
             'class_group' => $classGroup,
+            'photo' => $data['photo'] ?? null,
             'role' => 'student',
             'is_active' => true,
         ]);
@@ -112,6 +113,7 @@ class StudentService
                 'password_display' => $password,
                 'grade' => $grade,
                 'class_group' => $classGroup,
+                'photo' => $data['photo'] ?? null,
                 'role' => 'student',
                 'is_active' => true,
             ]

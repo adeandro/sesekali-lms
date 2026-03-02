@@ -11,7 +11,7 @@ class ImportQuestionRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return auth()->check() && in_array(auth()->user()->role, ['admin', 'superadmin']);
+        return auth()->check() && in_array(auth()->user()->role, ['superadmin', 'teacher']);
     }
 
     /**

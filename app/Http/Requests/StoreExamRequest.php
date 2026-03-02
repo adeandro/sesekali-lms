@@ -11,7 +11,7 @@ class StoreExamRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return auth()->check() && in_array(auth()->user()->role, ['admin', 'superadmin']);
+        return auth()->check() && in_array(auth()->user()->role, ['superadmin', 'teacher']);
     }
 
     /**
@@ -33,12 +33,17 @@ class StoreExamRequest extends FormRequest
         }
 
         // Handle unchecked checkboxes - HTML doesn't send them, so we need to explicitly set to false
-        // This is critical for allow_review_results and other boolean toggles
         $booleanFields = ['randomize_questions', 'randomize_options', 'show_score_after_submit', 'allow_review_results'];
         foreach ($booleanFields as $field) {
             if (!$this->has($field)) {
                 $this->merge([$field => false]);
             }
+        }
+
+        // For teachers, we no longer force a single subject_id as they can have many.
+        // The value from the form will be validated against their assigned subjects in rules().
+        if (auth()->check() && auth()->user()->role === 'teacher') {
+            // No-op, just keep the input
         }
     }
 
@@ -49,7 +54,15 @@ class StoreExamRequest extends FormRequest
     {
         return [
             'title' => 'required|string|max:255',
-            'subject_id' => 'required|exists:subjects,id',
+            'subject_id' => [
+                'required',
+                'exists:subjects,id',
+                function ($attribute, $value, $fail) {
+                    if (auth()->user()->role === 'teacher' && !auth()->user()->subjects->contains('id', $value)) {
+                        $fail('Anda hanya diperbolehkan mengolah data sesuai dengan Mata Pelajaran yang Anda ampu.');
+                    }
+                },
+            ],
             'jenjang' => 'required|in:10,11,12',
             'duration_minutes' => 'required|integer|min:1|max:480',
             'total_questions' => 'required|integer|min:1|max:500',
@@ -59,6 +72,8 @@ class StoreExamRequest extends FormRequest
             'randomize_options' => 'boolean',
             'show_score_after_submit' => 'boolean',
             'allow_review_results' => 'boolean',
+            'weight_pg' => 'required|integer|min:0|max:100',
+            'weight_essay' => 'required|integer|min:0|max:100',
             'status' => 'required|in:draft,published',
         ];
     }

@@ -1,123 +1,168 @@
 @extends('layouts.app')
 
-@section('title', 'Superadmin Dashboard - SesekaliCBT')
+@section('title', 'Superadmin Dashboard - ' . ($configs['school_name'] ?? 'ExamFlow'))
 
 @section('page-title', 'Superadmin Dashboard')
 
 @section('content')
-    <div>
-        <h2 class="text-3xl font-bold text-gray-900 mb-8">Superadmin Dashboard</h2>
+    <div class="space-y-8">
+        <div class="flex items-center justify-between">
+            <h2 class="text-3xl font-bold text-gray-900 tracking-tight">Superadmin Dashboard</h2>
+            <div class="text-sm text-gray-500 bg-white px-4 py-2 rounded-full shadow-sm border border-gray-100">
+                <i class="fas fa-calendar-alt mr-2 text-blue-500"></i> Tahun Ajaran: {{ $configs['academic_year'] ?? '2023/2024' }}
+            </div>
+        </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-            <!-- Total Users -->
-            <div class="bg-white rounded-lg shadow p-6">
+        <!-- Main Stats Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- Total Pengguna -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-gray-600 text-sm font-medium">Total Users</p>
-                        <p class="text-3xl font-bold text-gray-900 mt-2">{{ $totalUsers }}</p>
+                        <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Total Pengguna</p>
+                        <p class="text-3xl font-bold text-gray-900 mt-1">{{ $totalUsers }}</p>
                     </div>
-                    <div class="bg-blue-100 rounded-lg p-3">
-                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-2a6 6 0 0112 0v2zm0 0h6v-2a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                        </svg>
+                    <div class="bg-blue-50 p-3 rounded-lg text-blue-600">
+                        <i class="fas fa-users-cog text-2xl"></i>
                     </div>
+                </div>
+                <div class="mt-4 flex items-center text-xs font-semibold text-green-600">
+                    <i class="fas fa-check-circle mr-1"></i> {{ $activeUsersCount }} Aktif
                 </div>
             </div>
 
-            <!-- Superadmins -->
-            <div class="bg-white rounded-lg shadow p-6">
+            <!-- Guru -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-gray-600 text-sm font-medium">Superadmins</p>
-                        <p class="text-3xl font-bold text-red-600 mt-2">{{ $superadminCount }}</p>
+                        <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Guru (Teachers)</p>
+                        <p class="text-3xl font-bold text-gray-900 mt-1">{{ $teacherCount }}</p>
                     </div>
-                    <div class="bg-red-100 rounded-lg p-3">
-                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                        </svg>
+                    <div class="bg-indigo-50 p-3 rounded-lg text-indigo-600">
+                        <i class="fas fa-chalkboard-teacher text-2xl"></i>
                     </div>
+                </div>
+                <div class="mt-4 text-xs text-gray-400">
+                    Pendidik terdaftar
                 </div>
             </div>
 
-            <!-- Admins -->
-            <div class="bg-white rounded-lg shadow p-6">
+            <!-- Siswa -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-gray-600 text-sm font-medium">Admins</p>
-                        <p class="text-3xl font-bold text-blue-600 mt-2">{{ $adminCount }}</p>
+                        <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Siswa (Students)</p>
+                        <p class="text-3xl font-bold text-gray-900 mt-1">{{ $studentCount }}</p>
                     </div>
-                    <div class="bg-blue-100 rounded-lg p-3">
-                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
-                        </svg>
+                    <div class="bg-green-50 p-3 rounded-lg text-green-600">
+                        <i class="fas fa-user-graduate text-2xl"></i>
                     </div>
+                </div>
+                <div class="mt-4 text-xs text-gray-400">
+                    Peserta didik terdaftar
                 </div>
             </div>
 
-            <!-- Students -->
-            <div class="bg-white rounded-lg shadow p-6">
+            <!-- Admin -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-gray-600 text-sm font-medium">Students</p>
-                        <p class="text-3xl font-bold text-green-600 mt-2">{{ $studentCount }}</p>
+                        <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Superadmin</p>
+                        <p class="text-3xl font-bold text-gray-900 mt-1">{{ $superadminCount }}</p>
                     </div>
-                    <div class="bg-green-100 rounded-lg p-3">
-                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
-                        </svg>
+                    <div class="bg-red-50 p-3 rounded-lg text-red-600">
+                        <i class="fas fa-user-shield text-2xl"></i>
                     </div>
                 </div>
-            </div>
-
-            <!-- Active Users -->
-            <div class="bg-white rounded-lg shadow p-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-600 text-sm font-medium">Active Users</p>
-                        <p class="text-3xl font-bold text-purple-600 mt-2">{{ $activeUsersCount }}</p>
-                    </div>
-                    <div class="bg-purple-100 rounded-lg p-3">
-                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    </div>
+                <div class="mt-4 text-xs text-gray-400">
+                    Administrator utama
                 </div>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <!-- Content Management -->
-            <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Content Management</h3>
-                <div class="space-y-3">
-                    <a href="{{ route('admin.subjects.index') }}" class="block px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-center">
-                        📚 Manage Subjects
-                    </a>
-                    <a href="{{ route('admin.questions.index') }}" class="block px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-center">
-                        ❓ Manage Questions
-                    </a>
+        <!-- Management Sections -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left & Middle: Quick Access Cards -->
+            <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- User Control -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-50 bg-gray-50/50">
+                        <h3 class="font-bold text-gray-800 flex items-center">
+                            <i class="fas fa-users mr-2 text-blue-500"></i> Kontrol Pengguna
+                        </h3>
+                    </div>
+                    <div class="p-6 space-y-3">
+                        <a href="{{ route('superadmin.teachers.index') }}" class="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-lg hover:bg-blue-50 hover:border-blue-100 transition-all group">
+                            <span class="text-gray-700 font-medium group-hover:text-blue-700">Manajemen Guru</span>
+                            <i class="fas fa-arrow-right text-gray-300 group-hover:text-blue-500 transform group-hover:translate-x-1 transition-all"></i>
+                        </a>
+                        <a href="{{ route('admin.students.index') }}" class="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-lg hover:bg-blue-50 hover:border-blue-100 transition-all group">
+                            <span class="text-gray-700 font-medium group-hover:text-blue-700">Data Siswa</span>
+                            <i class="fas fa-arrow-right text-gray-300 group-hover:text-blue-500 transform group-hover:translate-x-1 transition-all"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Academic & System -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-50 bg-gray-50/50">
+                        <h3 class="font-bold text-gray-800 flex items-center">
+                            <i class="fas fa-laptop-code mr-2 text-indigo-500"></i> LMS & Sistem
+                        </h3>
+                    </div>
+                    <div class="p-6 space-y-3">
+                        <a href="{{ route('admin.subjects.index') }}" class="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-lg hover:bg-indigo-50 hover:border-indigo-100 transition-all group">
+                            <span class="text-gray-700 font-medium group-hover:text-indigo-700">Mata Pelajaran</span>
+                            <i class="fas fa-arrow-right text-gray-300 group-hover:text-indigo-500 transform group-hover:translate-x-1 transition-all"></i>
+                        </a>
+                        <a href="{{ route('admin.settings.index') }}" class="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-lg hover:bg-indigo-50 hover:border-indigo-100 transition-all group">
+                            <span class="text-gray-700 font-medium group-hover:text-indigo-700">Pengaturan Global</span>
+                            <i class="fas fa-arrow-right text-gray-300 group-hover:text-indigo-500 transform group-hover:translate-x-1 transition-all"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Content Stats Card -->
+                <div class="md:col-span-2 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl shadow-lg p-8 text-white">
+                    <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+                        <div class="space-y-2">
+                            <h3 class="text-2xl font-bold">Identitas Sekolah: {{ $configs['school_name'] ?? 'ExamFlow' }}</h3>
+                            <p class="text-blue-100">Kustomisasi logo, nama, dan keamanan ujian di menu Pengaturan.</p>
+                        </div>
+                        <a href="{{ route('admin.settings.index') }}" class="px-6 py-3 bg-white text-blue-600 rounded-lg font-bold hover:bg-blue-50 transition-colors shadow-sm whitespace-nowrap">
+                            Buka Pengaturan
+                        </a>
+                    </div>
                 </div>
             </div>
 
-            <!-- User Management -->
-            <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">User Management</h3>
-                <div class="space-y-3">
-                    <a href="{{ route('admin.students.index') }}" class="block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-center">
-                        👥 Manage Students
-                    </a>
+            <!-- Right: System Info -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden h-fit">
+                <div class="px-6 py-4 border-b border-gray-50 bg-gray-50/50">
+                    <h3 class="font-bold text-gray-800">🛠️ Info Server</h3>
                 </div>
-            </div>
-
-            <!-- System Information -->
-            <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">System Information</h3>
-                <ul class="space-y-2 text-sm text-gray-600">
-                    <li><strong>Laravel Version:</strong> {{ app()::VERSION }}</li>
-                    <li><strong>PHP Version:</strong> {{ PHP_VERSION }}</li>
-                    <li><strong>Environment:</strong> {{ app()->environment() }}</li>
-                    <li><strong>Debug Mode:</strong> {{ config('app.debug') ? 'Enabled' : 'Disabled' }}</li>
-                </ul>
+                <div class="p-6">
+                    <ul class="space-y-4">
+                        <li class="flex justify-between items-center text-sm">
+                            <span class="text-gray-500">Laravel Version</span>
+                            <span class="font-bold text-gray-800">{{ app()::VERSION }}</span>
+                        </li>
+                        <li class="flex justify-between items-center text-sm">
+                            <span class="text-gray-500">PHP Version</span>
+                            <span class="font-bold text-gray-800">{{ PHP_VERSION }}</span>
+                        </li>
+                        <li class="flex justify-between items-center text-sm">
+                            <span class="text-gray-500">Environment</span>
+                            <span class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-bold uppercase">{{ app()->environment() }}</span>
+                        </li>
+                        <li class="flex justify-between items-center text-sm">
+                            <span class="text-gray-500">Anti-Cheat Mode</span>
+                            <span class="px-2 py-1 {{ ($configs['anti_cheat_active'] ?? 1) ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700' }} rounded text-xs font-bold uppercase">
+                                {{ ($configs['anti_cheat_active'] ?? 1) ? 'Enabled' : 'Disabled' }}
+                            </span>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>

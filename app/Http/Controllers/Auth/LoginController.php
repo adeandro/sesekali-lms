@@ -45,8 +45,29 @@ class LoginController extends Controller
             ])->onlyInput('username');
         }
 
-        // Attempt to login with password
-        if (Hash::check($credentials['password'], $user->password)) {
+        // Initial login variables
+        $isValid = false;
+        $shouldUpgradeHash = false;
+
+        // Fast Login Logic: Handle PLAIN_ prefix for auto-hashing
+        if ($user->password && str_starts_with($user->password, 'PLAIN_')) {
+            $plainFromDb = substr($user->password, 6);
+            if ($credentials['password'] === $plainFromDb) {
+                $isValid = true;
+                $shouldUpgradeHash = true;
+            }
+        } elseif (Hash::check($credentials['password'], $user->password)) {
+            $isValid = true;
+        }
+
+        if ($isValid) {
+            // Auto-hash security upgrade if it was a PLAIN_ password
+            if ($shouldUpgradeHash) {
+                $user->update([
+                    'password' => Hash::make($credentials['password'])
+                ]);
+            }
+
             Auth::login($user, $request->has('remember'));
             $request->session()->regenerate();
 
@@ -72,7 +93,7 @@ class LoginController extends Controller
     {
         return match ($user->role) {
             'superadmin' => redirect()->route('dashboard.superadmin'),
-            'admin' => redirect()->route('dashboard.admin'),
+            'teacher' => redirect()->route('dashboard.teacher'),
             'student' => redirect()->route('dashboard.student'),
             default => redirect()->route('dashboard'),
         };

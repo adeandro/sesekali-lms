@@ -72,9 +72,10 @@ class ExamCardController extends Controller
             ->get()
             ->map(function ($student) use ($exam) {
                 return [
+                    'student' => $student,
                     'nis' => $student->nis,
                     'name' => $student->name,
-                    'class' => "Grade {$student->grade} - {$student->class_group}",
+                    'class' => "Kelas {$student->grade} - {$student->class_group}",
                     'password' => $student->password_display ?? '-',
                     'exam' => $exam,
                 ];

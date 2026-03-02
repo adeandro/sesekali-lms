@@ -1,242 +1,297 @@
-@extends('layouts.app')
-
-@section('title', 'Print Student Credentials - ' . $exam->title)
-
-@section('content')
-    <div class="max-w-6xl mx-auto">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-3xl font-bold">Student Credentials - {{ $exam->title }}</h1>
-            <button onclick="window.print()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-                <i class="fas fa-print mr-2"></i>Print
-            </button>
-        </div>
-
-        <div class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p class="text-yellow-800 text-sm">
-                <i class="fas fa-info-circle mr-2"></i>
-                Total Students: <strong>{{ count($students) }}</strong> | 
-                6 cards per F4 page (2x3 grid) | 
-                Keep passwords confidential
-            </p>
-        </div>
-
-        <!-- Student Credential Cards Grid (6 per page - 2x3) -->
-        <div style="page-break-after: always;">
-            <div class="grid grid-cols-2 gap-3">
-        @foreach($students as $index => $data)
-            @if($index > 0 && $index % 6 == 0)
-                </div>
-            </div>
-            <div style="page-break-after: always; margin: 0; padding: 0;">
-                <div class="grid grid-cols-2 gap-3">
-            @endif
-            
-            <!-- Card -->
-            <div class="p-4 bg-white border-2 border-gray-400 rounded-lg shadow" style="font-size: 0.75rem;">
-                <!-- Header -->
-                <div class="text-center mb-2 border-b-2 border-blue-600 pb-1">
-                    <h3 class="text-xs font-bold text-gray-900">CREDENTIAL CARD</h3>
-                    <p class="text-xs text-gray-600">{{ $data['exam']->title }}</p>
-                </div>
-
-                <!-- Exam Date -->
-                <div class="text-center mb-2">
-                    <p class="text-xs text-gray-500">{{ $data['exam']->start_time->format('d M Y') }}</p>
-                </div>
-
-                <!-- Student ID -->
-                <div class="text-center mb-2 bg-blue-100 p-1 rounded">
-                    <p class="text-xs text-gray-600 font-semibold">NIS</p>
-                    <p class="text-lg font-bold text-blue-600 font-mono">{{ $data['nis'] }}</p>
-                </div>
-
-                <!-- Student Name -->
-                <div class="mb-2 border-b border-gray-200 pb-1">
-                    <p class="text-xs text-gray-600 font-semibold">NAME</p>
-                    <p class="text-xs font-bold text-gray-900 truncate">{{ $data['name'] }}</p>
-                </div>
-
-                <!-- Class -->
-                <div class="mb-3 border-b border-gray-200 pb-1">
-                    <p class="text-xs text-gray-600 font-semibold">CLASS</p>
-                    <p class="text-xs font-bold text-gray-900">{{ $data['class'] ?? '-' }}</p>
-                </div>
-
-                <!-- Login Credentials -->
-                <div class="bg-red-50 p-2 rounded-lg border border-red-300 mb-2">
-                    <p class="text-xs font-bold text-red-700 text-center mb-1">⚠ CONFIDENTIAL</p>
-                    
-                    <div class="mb-1">
-                        <p class="text-xs text-gray-600 font-semibold">USERNAME</p>
-                        <p class="text-center text-xs font-mono font-bold text-gray-900 bg-white rounded px-1 py-0.5">{{ $data['nis'] }}</p>
-                    </div>
-
-                    <div>
-                        <p class="text-xs text-gray-600 font-semibold">PASSWORD</p>
-                        <p class="text-center text-xs font-mono font-bold text-red-600 bg-white rounded px-1 py-0.5">{{ $data['password'] }}</p>
-                    </div>
-                </div>
-
-                <!-- Quick Instructions -->
-                <div class="bg-green-50 p-1.5 rounded-lg border border-green-300 text-center">
-                    <p class="text-xs text-green-700 font-bold leading-tight">✓ Use NIS to login • Change password after login</p>
-                </div>
-            </div>
-        @endforeach
-                </div>
-            </div>
-        </div>
-    </div>
-
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cetak Kartu Peserta - {{ $exam->title }}</title>
+    
+    <!-- Load Tailwind & FontAwesome for Standalone Layout -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        * {
-            box-sizing: border-box;
+        /* Standalone Print CSS Reset */
+        html, body { 
+            height: auto !important; 
+            overflow: visible !important; 
+            position: static !important;
+            background: white !important;
+            color: black !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         }
 
         @page {
-            size: 210mm 330mm;
-            margin: 0.5cm 0.3cm;
+            size: A4;
+            margin: 1cm 0.5cm;
+        }
+
+        /* Responsive Grid for A4 (2 columns) */
+        .print-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            width: 100%;
+        }
+
+        .exam-card {
+            background: white;
+            border: 1px dashed #000;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            break-inside: avoid;
+            page-break-inside: avoid;
+            min-height: 9cm; /* Adjusted for A4 height efficiency */
+            position: relative;
+        }
+
+        /* Component Styling */
+        .card-header {
+            text-align: center;
+            border-bottom: 2px solid #4f46e5;
+            padding-bottom: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .school-name {
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .exam-label {
+            font-size: 1.125rem;
+            font-weight: 900;
+            color: #1e293b;
+        }
+
+        .card-body {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .photo-box {
+            width: 1.5cm;
+            height: 2cm;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border-radius: 4px;
+        }
+
+        .photo-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .details-box {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .label {
+            font-size: 0.6rem;
+            font-weight: 900;
+            color: #94a3b8;
+            text-transform: uppercase;
+        }
+
+        .value {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #334155;
+            text-transform: uppercase;
+        }
+
+        .credential-box {
+            background: #f1f5f9;
+            padding: 0.75rem;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            border: 1px solid #e2e8f0;
+            margin-top: auto;
+        }
+
+        .cred-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+        }
+
+        .cred-item:first-child {
+            border-right: 1px solid #cbd5e1;
+        }
+
+        .cred-label {
+            font-size: 0.6rem;
+            font-weight: 900;
+            color: #64748b;
+        }
+
+        .cred-value {
+            font-size: 0.9rem;
+            font-weight: 900;
+            color: #0f172a;
+            font-family: monospace;
+        }
+
+        .highlight {
+            color: #4f46e5;
+        }
+
+        .card-footer {
+            font-size: 0.6rem;
+            font-weight: 700;
+            color: #94a3b8;
+            text-align: center;
+            font-style: italic;
+            margin-top: 0.5rem;
+        }
+
+        /* Screen Only Controls */
+        @media screen {
+            body {
+                background-color: #f1f5f9 !important;
+                padding: 2rem !important;
+            }
+            .print-grid {
+                max-width: 1000px;
+                margin: 0 auto;
+                gap: 1.5rem;
+            }
+            .exam-card {
+                border-style: solid;
+                border-color: #e2e8f0;
+                border-radius: 1rem;
+                box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            }
+            .no-print-toolbar {
+                max-width: 1000px;
+                margin: 0 auto 2rem;
+                background: white;
+                padding: 1.5rem;
+                border-radius: 1.5rem;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            }
         }
 
         @media print {
-            /* Hide navbar and sidebar during print */
-            nav, aside, header, footer, button, .navbar, .sidebar, .btn-print {
-                display: none !important;
+            .no-print-toolbar { display: none !important; }
+            .exam-card { 
+                box-shadow: none !important;
+                border-color: #000 !important;
             }
-            
-            /* Hide all design elements that aren't part of the cards */
-            .mb-6, .mb-4, .bg-yellow-50 {
-                display: none !important;
-            }
-            * {
-                overflow: visible !important;
-            }
-            
-            html, body {
-                margin: 0 !important;
-                padding: 0 !important;
-                overflow: visible !important;
-                height: auto !important;
-                width: 100% !important;
-            }
-
-            body {
-                background: white;
-                font-family: Arial, sans-serif;
-            }
-
-            .max-w-6xl {
-                max-width: 100%;
-                margin: 0;
-                padding: 0;
-            }
-
-            button, .mb-4, .mb-6 {
-                display: none !important;
-            }
-
-            /* Grid container for cards */
-            .grid {
-                display: grid;
-                grid-template-columns: repeat(2, 1fr);
-                gap: 0.2cm;
-                width: 100%;
-                margin: 0;
-                padding: 0;
-                page-break-inside: avoid;
-            }
-
-            /* Page break container */
-            div[style*="page-break-after"] {
-                page-break-after: always;
-                margin: 0;
-                padding: 0;
-                display: block;
-            }
-
-            /* Card styling */
-            .p-4 {
-                padding: 0.3cm !important;
-                margin: 0 !important;
-                font-size: 10pt !important;
-                line-height: 1.3;
-                break-inside: avoid;
-                height: auto;
-                min-height: 10cm;
-                width: 100%;
-            }
-
-            .border-2 {
-                border-width: 1px !important;
-            }
-
-            /* Text sizes for print */
-            .text-xs {
-                font-size: 9pt !important;
-            }
-
-            .text-sm {
-                font-size: 10pt !important;
-            }
-
-            .text-lg {
-                font-size: 13pt !important;
-            }
-
-            .mb-2 {
-                margin-bottom: 0.15cm !important;
-            }
-
-            .mb-3 {
-                margin-bottom: 0.2cm !important;
-            }
-
-            .mb-1 {
-                margin-bottom: 0.08cm !important;
-            }
-
-            .pb-1 {
-                padding-bottom: 0.1cm !important;
-            }
-
-            /* Section spacing */
-            .rounded {
-                border-radius: 2px;
-            }
-
-            .rounded-lg {
-                border-radius: 2px;
-            }
-
-            .shadow {
-                box-shadow: none;
-            }
-
-            .p-1, .p-1\.5, .p-2 {
-                padding: 0.1cm !important;
-            }
-
-            /* Credential sections */
-            .bg-red-50, .bg-blue-100, .bg-green-50 {
-                background-color: white !important;
-                border: 1px solid #ccc;
-            }
-
-            .text-red-600, .text-blue-600 {
-                color: #000 !important;
-                font-weight: bold;
-            }
-
-            .font-mono {
-                font-family: 'Courier New', monospace;
-                font-size: 9pt;
-            }
-        }
-
-        @media screen {
-            .grid {
-                gap: 0.75rem;
+            .credential-box {
+                background: white !important;
             }
         }
     </style>
-@endsection
+</head>
+<body>
+
+    <!-- Floating Navigation Bar (Screen Only) -->
+    <div class="no-print-toolbar">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-100">
+                <i class="fas fa-id-card text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-black text-gray-900 leading-none">KARTU PESERTA</h1>
+                <p class="text-xs font-bold text-gray-400 mt-1 uppercase">{{ $exam->title }}</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <a href="{{ url()->previous() }}" class="px-6 py-2.5 bg-white border border-gray-100 text-gray-600 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-gray-50 transition shadow-sm">
+                <i class="fas fa-arrow-left mr-2"></i> Kembali
+            </a>
+            <button onclick="window.print()" class="px-6 py-2.5 bg-indigo-600 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-100">
+                <i class="fas fa-print mr-2"></i> Cetak Sekarang
+            </button>
+        </div>
+    </div>
+
+    <!-- Printable Area -->
+    <div class="print-grid">
+        @foreach($students as $data)
+            <div class="exam-card">
+                <div class="card-header">
+                    <div class="school-name">{{ $configs['school_name'] ?? 'SESEKALI CBT' }}</div>
+                    <div class="exam-label">KARTU PESERTA UJIAN</div>
+                </div>
+
+                <div class="card-body">
+                    <!-- Photo -->
+                    <div class="photo-box">
+                        @if(isset($data['student']) && $data['student']->photo)
+                            <img src="{{ $data['student']->photo_url }}" alt="Foto">
+                        @else
+                            <div class="flex flex-col items-center text-[#cbd5e1] font-black uppercase text-[8px]">
+                                <i class="fas fa-user-circle text-2xl mb-1"></i>
+                                <span>3 x 4</span>
+                            </div>
+                        @endif
+                    </div>
+
+                    <!-- Details -->
+                    <div class="details-box">
+                        <div class="detail-item">
+                            <span class="label">NAMA LENGKAP</span>
+                            <span class="value">{{ $data['name'] }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">NOMOR INDUK (NIS)</span>
+                            <span class="value">{{ $data['nis'] }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">KELAS / ROMBEL</span>
+                            <span class="value">{{ $data['class'] }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">MATA PELAJARAN</span>
+                            <span class="value">{{ $exam->subject->name }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Credentials -->
+                <div class="credential-box">
+                    <div class="cred-item">
+                        <span class="cred-label uppercase">ID Login</span>
+                        <span class="cred-value">{{ $data['nis'] }}</span>
+                    </div>
+                    <div class="cred-item">
+                        <span class="cred-label uppercase">Kata Sandi</span>
+                        <span class="cred-value highlight">{{ $data['password'] }}</span>
+                    </div>
+                </div>
+
+                <div class="card-footer">
+                    * Rahasiakan Kata Sandi Anda demi keamanan data.
+                </div>
+            </div>
+        @endforeach
+    </div>
+
+</body>
+</html>

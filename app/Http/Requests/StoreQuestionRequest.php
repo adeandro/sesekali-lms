@@ -11,7 +11,17 @@ class StoreQuestionRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return auth()->check() && in_array(auth()->user()->role, ['admin', 'superadmin']);
+        return auth()->check() && in_array(auth()->user()->role, ['superadmin', 'teacher']);
+    }
+
+    /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation()
+    {
+        // For teachers, ensure subject_id is provided and valid, otherwise fallback to first or leave to validation
+        // But if they only have one, we can force it. If they have many, the form must provide it.
+        // We will keep the form's subject_id but validate it strictly in rules.
     }
 
     /**
@@ -20,7 +30,15 @@ class StoreQuestionRequest extends FormRequest
     public function rules(): array
     {
         $rules = [
-            'subject_id' => 'required|exists:subjects,id',
+            'subject_id' => [
+                'required',
+                'exists:subjects,id',
+                function ($attribute, $value, $fail) {
+                    if (auth()->user()->role === 'teacher' && !auth()->user()->subjects->contains('id', $value)) {
+                        $fail('Anda hanya diperbolehkan mengolah data sesuai dengan Mata Pelajaran yang Anda ampu.');
+                    }
+                },
+            ],
             'jenjang' => 'required|in:10,11,12',
             'topic' => 'required|string|max:255',
             'difficulty_level' => 'required|in:easy,medium,hard',

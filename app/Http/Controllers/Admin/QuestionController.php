@@ -26,6 +26,12 @@ class QuestionController extends Controller
     {
         $query = Question::with('subject');
 
+        // Scoping for Teacher
+        if (auth()->user()->role === 'teacher') {
+            $mySubjectIds = auth()->user()->subjects->pluck('id');
+            $query->whereIn('subject_id', $mySubjectIds);
+        }
+
         // Search
         if ($request->filled('search')) {
             $search = $request->input('search');
@@ -55,7 +61,11 @@ class QuestionController extends Controller
             $query->where('question_type', $request->input('type'));
         }
 
-        $subjects = Subject::orderBy('name')->get();
+        if (auth()->user()->role === 'teacher') {
+            $subjects = auth()->user()->subjects;
+        } else {
+            $subjects = Subject::orderBy('name')->get();
+        }
         $questions = $query->paginate(15)->appends($request->query());
 
         return view('admin.questions.index', compact('questions', 'subjects'));
@@ -66,7 +76,11 @@ class QuestionController extends Controller
      */
     public function create()
     {
-        $subjects = Subject::orderBy('name')->get();
+        if (auth()->user()->role === 'teacher') {
+            $subjects = auth()->user()->subjects;
+        } else {
+            $subjects = Subject::orderBy('name')->get();
+        }
         return view('admin.questions.create', compact('subjects'));
     }
 
@@ -78,7 +92,7 @@ class QuestionController extends Controller
         $question = QuestionService::createQuestion($request->validated());
 
         return redirect()->route('admin.questions.index')
-            ->with('success', 'Question created successfully');
+            ->with('success', 'Soal berhasil ditambahkan ke bank soal');
     }
 
     /**
@@ -86,6 +100,11 @@ class QuestionController extends Controller
      */
     public function show(Question $question)
     {
+        // Security check for Teacher
+        if (auth()->user()->role === 'teacher' && !auth()->user()->subjects->contains('id', $question->subject_id)) {
+            abort(403, 'Unauthorized.');
+        }
+
         return view('admin.questions.show', compact('question'));
     }
 
@@ -94,7 +113,16 @@ class QuestionController extends Controller
      */
     public function edit(Question $question)
     {
-        $subjects = Subject::orderBy('name')->get();
+        // Security check for Teacher
+        if (auth()->user()->role === 'teacher' && !auth()->user()->subjects->contains('id', $question->subject_id)) {
+            abort(403, 'Unauthorized access to this question.');
+        }
+
+        if (auth()->user()->role === 'teacher') {
+            $subjects = auth()->user()->subjects;
+        } else {
+            $subjects = Subject::orderBy('name')->get();
+        }
         return view('admin.questions.edit', compact('question', 'subjects'));
     }
 
@@ -106,7 +134,7 @@ class QuestionController extends Controller
         QuestionService::updateQuestion($question, $request->validated());
 
         return redirect()->route('admin.questions.index')
-            ->with('success', 'Question updated successfully');
+            ->with('success', 'Perubahan soal berhasil disimpan');
     }
 
     /**
@@ -114,12 +142,17 @@ class QuestionController extends Controller
      */
     public function destroy(Question $question)
     {
+        // Security check for Teacher
+        if (auth()->user()->role === 'teacher' && !auth()->user()->subjects->contains('id', $question->subject_id)) {
+            abort(403, 'Unauthorized.');
+        }
+
         QuestionService::deleteQuestion($question);
         // Force delete permanently (including soft-deleted records)
         $question->forceDelete();
 
         return redirect()->route('admin.questions.index')
-            ->with('success', 'Question deleted successfully');
+            ->with('success', 'Soal telah dihapus secara permanen');
     }
 
     /**
@@ -178,6 +211,12 @@ class QuestionController extends Controller
     {
         $query = Question::with('subject');
 
+        // Scoping for Teacher
+        if (auth()->user()->role === 'teacher') {
+            $mySubjectIds = auth()->user()->subjects->pluck('id');
+            $query->whereIn('subject_id', $mySubjectIds);
+        }
+
         // Apply same filters as index
         if ($request->filled('subject')) {
             $query->where('subject_id', $request->input('subject'));
@@ -206,7 +245,7 @@ class QuestionController extends Controller
 
         if (empty($questionIds)) {
             return redirect()->route('admin.questions.index')
-                ->with('error', 'No questions selected');
+                ->with('error', 'Tidak ada soal yang dipilih untuk dihapus');
         }
 
         try {
@@ -215,6 +254,10 @@ class QuestionController extends Controller
             foreach ($questionIds as $id) {
                 $question = Question::withTrashed()->find($id);
                 if ($question) {
+                    // Security check for Teacher
+                    if (auth()->user()->role === 'teacher' && !auth()->user()->subjects->contains('id', $question->subject_id)) {
+                        continue;
+                    }
                     // Delete all images (question image + all option images)
                     QuestionService::deleteQuestion($question);
                     // Permanently delete (force delete soft deleted records)
@@ -224,10 +267,10 @@ class QuestionController extends Controller
             }
 
             return redirect()->route('admin.questions.index')
-                ->with('success', "$deleted question(s) deleted successfully");
+                ->with('success', "$deleted soal berhasil dihapus secara massal");
         } catch (\Exception $e) {
             return redirect()->route('admin.questions.index')
-                ->with('error', 'Failed to delete questions: ' . $e->getMessage());
+                ->with('error', 'Gagal menghapus soal: ' . $e->getMessage());
         }
     }
 
@@ -237,8 +280,13 @@ class QuestionController extends Controller
     public function deleteAllQuestions()
     {
         try {
-            // Get all questions including soft deleted ones
-            $questions = Question::withTrashed()->get();
+            // Get questions including soft deleted ones, scoped for Teacher
+            $query = Question::withTrashed();
+            if (auth()->user()->role === 'teacher') {
+                $mySubjectIds = auth()->user()->subjects->pluck('id');
+                $query->whereIn('subject_id', $mySubjectIds);
+            }
+            $questions = $query->get();
             $count = $questions->count();
 
             foreach ($questions as $question) {
@@ -249,10 +297,10 @@ class QuestionController extends Controller
             }
 
             return redirect()->route('admin.questions.index')
-                ->with('success', "All {$count} questions have been permanently deleted.");
+                ->with('success', "Seluruh soal ({$count}) berhasil dihapus dari sistem.");
         } catch (\Exception $e) {
             return redirect()->route('admin.questions.index')
-                ->with('error', 'Error deleting questions: ' . $e->getMessage());
+                ->with('error', 'Gagal menghapus seluruh soal: ' . $e->getMessage());
         }
     }
 }

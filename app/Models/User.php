@@ -27,6 +27,7 @@ class User extends Authenticatable
         'nis',
         'grade',
         'class_group',
+        'photo',
     ];
 
     /**
@@ -70,6 +71,14 @@ class User extends Authenticatable
     }
 
     /**
+     * The subjects assigned to the teacher.
+     */
+    public function subjects()
+    {
+        return $this->belongsToMany(Subject::class);
+    }
+
+    /**
      * Get tokens used by this student.
      */
     public function usedTokens()
@@ -85,11 +94,26 @@ class User extends Authenticatable
         return $this->hasMany(ActionLog::class, 'admin_id');
     }
 
+
+
     /**
-     * Check if user is admin or superadmin.
+     * Get the photo URL for the student.
+     */
+    public function getPhotoUrlAttribute(): string
+    {
+        if ($this->photo && \Illuminate\Support\Facades\Storage::disk('public')->exists('profiles/' . $this->photo)) {
+            return asset('storage/profiles/' . $this->photo);
+        }
+
+        // Fallback to UI-Avatars
+        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&background=random&color=fff&size=400';
+    }
+
+    /**
+     * Check if user is teacher or superadmin.
      */
     public function isAdmin(): bool
     {
-        return in_array($this->role, ['admin', 'superadmin']);
+        return in_array($this->role, ['superadmin', 'teacher']);
     }
 }

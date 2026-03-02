@@ -11,11 +11,12 @@ class ExamResultsExport implements FromCollection
 {
     use RegistersEventListeners;
 
-    protected $exam;
+    protected $filters;
 
-    public function __construct(Exam $exam)
+    public function __construct(Exam $exam, array $filters = [])
     {
         $this->exam = $exam->load('subject');
+        $this->filters = $filters;
     }
 
     /**
@@ -23,45 +24,65 @@ class ExamResultsExport implements FromCollection
      */
     public function collection()
     {
-        $attempts = $this->exam->attempts()
+        $query = $this->exam->attempts()
             ->where('status', 'submitted')
             ->with('student')
-            ->orderByDesc('final_score')
-            ->get();
+            ->orderByDesc('final_score');
 
-        // Start collection with title and info rows
+        // Apply filters
+        if (!empty($this->filters['class'])) {
+            $classData = explode('|', $this->filters['class']);
+            if (count($classData) === 2) {
+                $query->whereHas('student', fn($q) => 
+                    $q->where('grade', $classData[0])
+                      ->where('class_group', $classData[1])
+                );
+            }
+        }
+
+        if (!empty($this->filters['search'])) {
+            $search = $this->filters['search'];
+            $query->whereHas('student', fn($q) => 
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('nis', 'like', "%{$search}%")
+            );
+        }
+
+        $attempts = $query->get();
+
+        // Start collection with title and info rows (Indonesian)
         $data = collect([
-            ['HASIL UJIAN / EXAM RESULTS'],
-            ['Nama Ujian (Exam Name): ' . $this->exam->name],
-            ['Mata Pelajaran (Subject): ' . ($this->exam->subject->name ?? 'N/A')],
-            ['Tanggal Ekspor (Export Date): ' . now()->format('d/m/Y H:i:s')],
+            ['HASIL UJIAN ' . strtoupper($this->exam->title)],
+            ['Mata Pelajaran: ' . ($this->exam->subject->name ?? 'N/A')],
+            ['Tanggal Ekspor: ' . now()->format('d/m/Y H:i:s')],
+            ['KKM Mata Pelajaran: ' . ($this->exam->subject->kkm ?? 75)],
             [], // Empty row for spacing
             [
                 'Ranking',
                 'NIS',
-                'Name',
-                'Class',
-                'MC Score',
-                'Essay Score',
-                'Final Score',
-                'Subject',
-                'Submitted At',
+                'Nama Lengkap',
+                'Kelas / Rombel',
+                'Skor PG',
+                'Skor Esai',
+                'Skor Akhir',
+                'Status',
+                'Waktu Selesai',
             ],
         ]);
 
         // Add student results
         $attempts->each(function ($attempt, $index) use ($data) {
-            $gradeDisplay = 'Grade ' . ($attempt->student->grade ?? '-') . ' - ' . ($attempt->student->class_group ?? '-');
+            $gradeDisplay = ($attempt->student->grade ?? '-') . ' - ' . ($attempt->student->class_group ?? '-');
             $data->push([
                 $index + 1,  // ranking
                 $attempt->student->nis ?? '-',  // nis
                 $attempt->student->name,  // name
-                $gradeDisplay,  // grade/class
+                $gradeDisplay,  // class
                 round($attempt->score_mc ?? 0, 2),  // score_mc
                 round($attempt->score_essay ?? 0, 2),  // score_essay
                 round($attempt->final_score ?? 0, 2),  // final_score
-                $this->exam->subject->name ?? 'N/A',  // subject
-                $attempt->submitted_at->format('Y-m-d H:i:s'),  // submitted_at
+                $attempt->status_kelulusan,  // status (accessor from model)
+                $attempt->submitted_at->format('d/m/Y H:i:s'),  // submitted_at
             ]);
         });
 

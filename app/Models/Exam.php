@@ -27,6 +27,8 @@ class Exam extends Model
         'jenjang',
         'token',
         'token_last_updated',
+        'weight_pg',
+        'weight_essay',
     ];
 
     protected $casts = [
@@ -40,6 +42,8 @@ class Exam extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
+        'weight_pg' => 'integer',
+        'weight_essay' => 'integer',
     ];
 
     /**

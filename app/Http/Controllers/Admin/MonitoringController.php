@@ -18,6 +18,11 @@ class MonitoringController extends Controller
      */
     public function index(Exam $exam)
     {
+        // Security check for Teacher
+        if (auth()->user()->role === 'teacher' && !auth()->user()->subjects->contains('id', $exam->subject_id)) {
+            abort(403, 'Unauthorized.');
+        }
+
         // Get total students in this grade/jenjang
         $totalStudentsInGrade = User::where('grade', $exam->jenjang)
             ->where('role', 'student')
@@ -94,11 +99,18 @@ class MonitoringController extends Controller
                 'custom_minutes' => 'nullable|integer|min:1',
             ]);
 
-            // Verify authorization - check if user is admin or superadmin
-            if (!in_array(auth()->user()->role, ['admin', 'superadmin'])) {
+            // Verify authorization - check if user is admin, superadmin, or teacher with correct subject
+            if (!in_array(auth()->user()->role, ['superadmin', 'teacher'])) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Unauthorized',
+                ], 403);
+            }
+
+            if (auth()->user()->role === 'teacher' && !auth()->user()->subjects->contains('id', $attempt->exam->subject_id)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized subject access',
                 ], 403);
             }
 
@@ -114,7 +126,14 @@ class MonitoringController extends Controller
             $updateData = [
                 'status' => 'in_progress',
                 'submitted_at' => null,
+                'violation_count' => 0, // Reset hitungan pelanggaran
+                'is_session_locked' => false, // Pastikan tidak terkunci
             ];
+
+            // Bersihkan log pelanggaran lama di database
+            \App\Models\ExamViolation::where('exam_id', $attempt->exam_id)
+                ->where('user_id', $attempt->student_id)
+                ->delete();
 
             $timeOption = $request->input('time_option');
 
@@ -181,7 +200,7 @@ class MonitoringController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Akses ujian berhasil dibuka',
+                'message' => 'Akses berhasil dibuka kembali dan hitungan pelanggaran telah direset.',
             ]);
         } catch (\Exception $e) {
             \Log::error('Reopen session error', [
@@ -205,8 +224,15 @@ class MonitoringController extends Controller
         $search = $request->input('search');
         $subjectId = $request->input('subject');
 
-        $exams = Exam::where('status', 'published')
-            ->when($search, function ($query) use ($search) {
+        $query = Exam::where('status', 'published');
+
+        // Scoping for Teacher
+        if (auth()->user()->role === 'teacher') {
+            $mySubjectIds = auth()->user()->subjects->pluck('id');
+            $query->whereIn('subject_id', $mySubjectIds);
+        }
+
+        $exams = $query->when($search, function ($query) use ($search) {
                 return $query->where('title', 'like', '%' . $search . '%');
             })
             ->when($subjectId, function ($query) use ($subjectId) {
@@ -216,7 +242,11 @@ class MonitoringController extends Controller
             ->orderBy('start_time', 'desc')
             ->paginate(10);
 
-        $subjects = \App\Models\Subject::orderBy('name')->get();
+        if (auth()->user()->role === 'teacher') {
+            $subjects = auth()->user()->subjects;
+        } else {
+            $subjects = \App\Models\Subject::orderBy('name')->get();
+        }
 
         $activeExamsCount = Exam::where('status', 'published')
             ->where('start_time', '<=', now())

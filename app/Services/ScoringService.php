@@ -26,23 +26,31 @@ class ScoringService
      * Get dynamic weights for exam based on question distribution.
      * Returns array with 'mc_weight' and 'essay_weight' (0-100, sum = 100)
      */
-    public static function getExamWeights(Exam $exam, $mc_percentage = 70, $essay_percentage = 30)
+    public static function getExamWeights(Exam $exam)
     {
+        $weight_pg = $exam->weight_pg ?? 70;
+        $weight_essay = $exam->weight_essay ?? 30;
+
         $questions = $exam->questions()->get();
         $mc_count = $questions->where('question_type', 'multiple_choice')->count();
         $essay_count = $questions->where('question_type', 'essay')->count();
 
-        // Dynamic weight calculation
+        // If total weights not 100, normalize (though migration ensures consistency)
+        if ($weight_pg + $weight_essay !== 100) {
+            $total = $weight_pg + $weight_essay;
+            $weight_pg = ($weight_pg / $total) * 100;
+            $weight_essay = ($weight_essay / $total) * 100;
+        }
+
+        // Configuration based on active question types
         if ($mc_count > 0 && $essay_count > 0) {
-            // Both types exist: use configured percentages
             return [
-                'mc_weight' => $mc_percentage,
-                'essay_weight' => $essay_percentage,
+                'mc_weight' => $weight_pg,
+                'essay_weight' => $weight_essay,
                 'has_mc' => true,
                 'has_essay' => true,
             ];
         } elseif ($mc_count > 0) {
-            // Only MC: 100%
             return [
                 'mc_weight' => 100,
                 'essay_weight' => 0,
@@ -50,7 +58,6 @@ class ScoringService
                 'has_essay' => false,
             ];
         } elseif ($essay_count > 0) {
-            // Only Essay: 100%
             return [
                 'mc_weight' => 0,
                 'essay_weight' => 100,
@@ -59,7 +66,6 @@ class ScoringService
             ];
         }
 
-        // No questions
         return [
             'mc_weight' => 0,
             'essay_weight' => 0,
@@ -319,12 +325,12 @@ class ScoringService
      * Get grade letter based on score.
      * A: 85-100, B: 75-84, C: 65-74, D: 50-64, F: 0-49
      */
-    public static function getGrade(float $score)
+    public static function getGrade(float $score, $kkm = 75)
     {
         if ($score >= 85) return 'A';
-        if ($score >= 75) return 'B';
-        if ($score >= 65) return 'C';
-        if ($score >= 50) return 'D';
+        if ($score >= $kkm) return 'B';
+        if ($score >= 60) return 'C';
+        if ($score >= 40) return 'D';
         return 'F';
     }
 

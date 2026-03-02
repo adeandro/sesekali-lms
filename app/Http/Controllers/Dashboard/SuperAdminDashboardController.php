@@ -11,14 +11,14 @@ class SuperAdminDashboardController extends Controller
     {
         $totalUsers = User::count();
         $superadminCount = User::where('role', 'superadmin')->count();
-        $adminCount = User::where('role', 'admin')->count();
+        $teacherCount = User::where('role', 'teacher')->count();
         $studentCount = User::where('role', 'student')->count();
         $activeUsersCount = User::where('is_active', true)->count();
 
         return view('dashboard.superadmin', compact(
             'totalUsers',
             'superadminCount',
-            'adminCount',
+            'teacherCount',
             'studentCount',
             'activeUsersCount'
         ));

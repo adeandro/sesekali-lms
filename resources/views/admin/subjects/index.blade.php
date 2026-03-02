@@ -1,182 +1,224 @@
 @extends('layouts.app')
 
-@section('title', 'Subject Management - SesekaliCBT')
+@section('title', 'Manajemen Mata Pelajaran - ' . ($configs['school_name'] ?? 'SesekaliCBT'))
 
-@section('page-title', 'Subject Management')
+@section('page-title', 'Manajemen Mata Pelajaran')
 
 @section('content')
-    <div>
-        <div class="flex justify-between items-center mb-8">
-            <h2 class="text-3xl font-bold text-gray-900">Subject Management</h2>
-            <div class="flex gap-3">
-                <a href="{{ route('admin.subjects.create') }}" class="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-                    + Add Subject
+<div class="max-w-6xl mx-auto space-y-8 animate-fadeIn pb-12">
+    <!-- Header & Statistics -->
+    <div class="flex flex-col gap-8">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div class="flex items-center gap-4">
+                <div class="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-100">
+                    <i class="fas fa-book-open text-2xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-3xl font-black text-gray-900 tracking-tight uppercase">Mata Pelajaran</h2>
+                    <p class="text-[11px] font-black text-gray-400 uppercase tracking-widest leading-relaxed">Kelola kategori ujian dan bank soal sistem</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="{{ route('admin.subjects.create') }}" class="h-14 px-8 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-100 flex items-center gap-3 group">
+                    <i class="fas fa-plus-circle text-sm group-hover:scale-110 transition-transform"></i> Tambah Mapel
                 </a>
-                <form id="deleteAllSubjectsForm" action="{{ route('admin.subjects.deleteAll') }}" method="POST" style="display:inline;">
+                <form id="deleteAllSubjectsForm" action="{{ route('admin.subjects.deleteAll') }}" method="POST" class="inline">
                     @csrf
                     @method('DELETE')
-                    <button type="button" onclick="confirmDeleteAllSubjects()" class="inline-block px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-900 transition font-bold">
-                        🗑️ Hapus Semua Mata Pelajaran
+                    <button type="button" onclick="confirmDeleteAllSubjects()" class="h-14 px-8 bg-rose-50 text-rose-600 text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-rose-600 hover:text-white transition flex items-center gap-3 border border-rose-100 group">
+                        <i class="fas fa-trash-alt text-sm group-hover:scale-110 transition-transform"></i> Kosongkan
                     </button>
                 </form>
             </div>
         </div>
 
-        @if ($message = Session::get('success'))
-            <div class="mb-6 p-4 bg-linear-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 rounded-lg shadow-sm flex items-start justify-between animate-slideDown">
-                <div class="flex items-start gap-3">
-                    <div class="shrink-0 mt-0.5">
-                        <svg class="h-5 w-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="font-semibold text-green-800">Berhasil!</p>
-                        <p class="text-sm text-green-700 mt-1">{{ $message }}</p>
-                    </div>
+        <!-- Quick Stats -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100 flex items-center gap-6 group hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-500 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-50/30 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-700"></div>
+                <div class="w-16 h-16 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-500">
+                    <i class="fas fa-list-ul text-2xl"></i>
                 </div>
-                <button type="button" class="text-green-600 hover:text-green-800" onclick="this.parentElement.style.display='none';">
-                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                    </svg>
-                </button>
+                <div>
+                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Total Mata Pelajaran</p>
+                    <h4 class="text-3xl font-black text-gray-900 leading-none tracking-tight">{{ $subjects->total() }}</h4>
+                </div>
             </div>
-            <script>
-                setTimeout(() => {
-                    const successAlert = document.querySelector('.animate-slideDown');
-                    if (successAlert) {
-                        successAlert.style.display = 'none';
-                    }
-                }, 5000);
-            </script>
-        @endif
 
-        @if ($message = Session::get('error'))
-            <div class="mb-4 p-4 bg-red-50 border border-red-200 text-red-800 rounded-lg flex justify-between">
-                <span>{{ $message }}</span>
-                <button type="button" class="text-red-800 hover:text-red-600" onclick="this.parentElement.style.display='none';">×</button>
+            <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100 flex items-center gap-6 group hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-500 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-50/30 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-700"></div>
+                <div class="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-500">
+                    <i class="fas fa-tasks text-2xl"></i>
+                </div>
+                <div>
+                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Total Bank Soal</p>
+                    <h4 class="text-3xl font-black text-gray-900 leading-none tracking-tight">{{ $subjects->sum('questions_count') }}</h4>
+                </div>
             </div>
-        @endif
-
-        <!-- Subjects Table -->
-        <div class="bg-white rounded-lg shadow overflow-hidden">
-            <table class="min-w-full">
-                <thead class="bg-gray-100 border-b">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Name</th>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Questions</th>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($subjects as $subject)
-                        <tr class="border-b hover:bg-gray-50">
-                            <td class="px-6 py-4 text-sm text-gray-900 font-medium">{{ $subject->name }}</td>
-                            <td class="px-6 py-4 text-sm text-gray-600">{{ $subject->questions_count }}</td>
-                            <td class="px-6 py-4 text-sm space-x-2">
-                                <a href="{{ route('admin.subjects.edit', $subject) }}" class="text-blue-600 hover:text-blue-800">Edit</a>
-                                <form action="{{ route('admin.subjects.destroy', $subject) }}" method="POST" style="display: inline;" id="deleteSubjectForm{{ $subject->id }}">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="button" class="text-red-600 hover:text-red-800" onclick="deleteSubject('{{ $subject->name }}', {{ $subject->id }})" title="Hapus">Hapus</button>
-                                </form>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="3" class="px-6 py-8 text-center text-gray-500">
-                                No subjects found
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Pagination -->
-        <div class="mt-6">
-            {{ $subjects->links() }}
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script>
-        function confirmDeleteAllSubjects() {
-            Swal.fire({
-                title: '⚠️ PERHATIAN SERIUS!',
-                html: `
-                    <div class="text-left">
-                        <p class="font-bold text-red-700 mb-4">Hapus SEMUA mata pelajaran? Tindakan ini TIDAK BISA DIBATALKAN.</p>
-                        <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded mb-4">
-                            <p class="font-semibold text-red-900 mb-2">Data yang akan dihapus:</p>
-                            <ul class="text-sm text-red-800 space-y-1">
-                                <li>✗ Semua mata pelajaran</li>
-                                <li>✗ Semua soal yang terkait</li>
-                                <li>✗ Semua ujian yang menggunakan mata pelajaran ini</li>
-                                <li>✗ Data tidak dapat dipulihkan setelah penghapusan</li>
-                            </ul>
-                        </div>
-                        <p class="text-sm text-gray-700 mb-4">Jika Anda yakin ingin melanjutkan, ketik <span class="font-mono font-bold bg-gray-200 px-2 py-1 rounded">HAPUS SEMUA</span> di bawah:</p>
-                        <input type="text" id="confirmTextSubjects" placeholder="Ketik: HAPUS SEMUA" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500">
+    <!-- Subjects Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        @forelse($subjects as $subject)
+            <div class="group bg-white rounded-[2.5rem] shadow-sm border border-gray-100 p-8 hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-2 transition-all duration-500 relative overflow-hidden">
+                <!-- Decorative Layer -->
+                <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-50/50 rounded-bl-[5rem] group-hover:bg-indigo-600 group-hover:scale-110 transition-all duration-700 -mr-8 -mt-8 opacity-50 group-hover:opacity-100"></div>
+                
+                <div class="relative z-10 flex flex-col h-full">
+                    <div class="w-16 h-16 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 mb-6 group-hover:bg-white/20 group-hover:text-white transition-all duration-500 shadow-sm">
+                        <i class="fas fa-book-reader text-2xl"></i>
                     </div>
-                `,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#991b1b',
-                cancelButtonColor: '#6b7280',
-                confirmButtonText: 'Ya, Hapus Semua',
-                cancelButtonText: 'Batal',
-                didOpen: () => {
-                    document.getElementById('confirmTextSubjects').focus();
-                },
-                preConfirm: () => {
-                    const input = document.getElementById('confirmTextSubjects').value;
-                    if (input !== 'HAPUS SEMUA') {
-                        Swal.showValidationMessage('Ketik "HAPUS SEMUA" dengan benar untuk konfirmasi');
-                        return false;
-                    }
-                    return true;
-                }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // Show final confirmation
-                    Swal.fire({
-                        title: 'Konfirmasi Terakhir',
-                        html: '<p class="text-gray-800">Ini adalah konfirmasi terakhir. Klik "Hapus Selamanya" untuk menghapus semua mata pelajaran.</p>',
-                        icon: 'error',
-                        showCancelButton: true,
-                        confirmButtonColor: '#7f1d1d',
-                        cancelButtonColor: '#6b7280',
-                        confirmButtonText: 'Hapus Selamanya',
-                        cancelButtonText: 'Batal',
-                        buttonsStyling: false,
-                        customClass: {
-                            confirmButton: 'inline-block px-6 py-2 bg-red-900 text-white rounded-lg font-bold hover:bg-red-950 transition',
-                            cancelButton: 'inline-block px-6 py-2 bg-gray-500 text-white rounded-lg font-bold hover:bg-gray-600 transition ml-2'
-                        }
-                    }).then((finalResult) => {
-                        if (finalResult.isConfirmed) {
-                            document.getElementById('deleteAllForm').submit();
-                        }
-                    });
-                }
-            });
-        }
-    </script>
+                    
+                    <h3 class="text-xl font-black text-gray-900 leading-tight truncate group-hover:text-white transition-colors duration-500 pr-12" title="{{ $subject->name }}">
+                        {{ $subject->name }}
+                    </h3>
+                    
+                    <div class="mt-auto pt-8 flex items-end justify-between border-t border-gray-50 group-hover:border-white/20 transition-colors duration-500">
+                        <div class="flex flex-col">
+                            <span class="text-3xl font-black text-gray-900 group-hover:text-white transition-colors duration-500 leading-none mb-1">{{ $subject->questions_count }}</span>
+                            <span class="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] group-hover:text-white/60 transition-colors duration-500">Butir Soal</span>
+                        </div>
+                        
+                        <div class="flex items-center gap-2">
+                            <a href="{{ route('admin.subjects.edit', $subject) }}" class="w-12 h-12 flex items-center justify-center bg-gray-50 text-gray-400 rounded-2xl hover:bg-amber-500 hover:text-white hover:rotate-12 transition-all duration-300 shadow-sm" title="Edit Mapel">
+                                <i class="fas fa-pen-nib text-sm"></i>
+                            </a>
+                            <form action="{{ route('admin.subjects.destroy', $subject) }}" method="POST" id="deleteSubjectForm{{ $subject->id }}">
+                                @csrf
+                                @method('DELETE')
+                                <button type="button" onclick="deleteSubject('{{ $subject->name }}', {{ $subject->id }})" class="w-12 h-12 flex items-center justify-center bg-gray-50 text-gray-400 rounded-2xl hover:bg-rose-500 hover:text-white hover:-rotate-12 transition-all duration-300 shadow-sm" title="Hapus Mapel">
+                                    <i class="fas fa-trash-alt text-sm"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @empty
+            <div class="col-span-full py-24 bg-white rounded-[3rem] border-4 border-dashed border-gray-50 flex flex-col items-center justify-center text-center px-8 group hover:border-indigo-100 transition-colors duration-500">
+                <div class="w-24 h-24 rounded-full bg-gray-50 flex items-center justify-center text-gray-200 mb-8 group-hover:bg-indigo-50 group-hover:text-indigo-200 transition-all duration-500">
+                    <i class="fas fa-layer-group text-5xl"></i>
+                </div>
+                <h4 class="text-xl font-black text-gray-400 group-hover:text-indigo-600 transition-colors duration-500 uppercase tracking-widest mb-2">Data Mapel Kosong</h4>
+                <p class="text-[11px] font-bold text-gray-300 group-hover:text-indigo-400 transition-colors duration-500 uppercase tracking-[0.3em] max-w-sm leading-relaxed">Sistem belum memiliki kategori mata pelajaran. Silakan tambahkan data baru untuk mulai membuat bank soal.</p>
+                <a href="{{ route('admin.subjects.create') }}" class="mt-8 px-8 py-4 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-100 flex items-center gap-3 group">
+                    <i class="fas fa-plus-circle text-xs"></i> Tambah Sekarang
+                </a>
+            </div>
+        @endforelse
+    </div>
 
-    <style>
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
+    <!-- Pagination -->
+    <div class="flex justify-center mt-12">
+        {{ $subjects->links() }}
+    </div>
+</div>
+
+<script>
+    function deleteSubject(name, id) {
+        Swal.fire({
+            title: '<span class="text-xl font-black uppercase tracking-widest">Hapus Mata Pelajaran?</span>',
+            html: `
+                <div class="text-center space-y-4 py-4">
+                    <p class="text-sm font-bold text-gray-500 uppercase tracking-tight leading-relaxed">Anda akan menghapus kategori <span class="text-indigo-600">"${name}"</span> secara permanen.</p>
+                    <div class="bg-rose-50 p-4 rounded-2xl border border-rose-100">
+                        <p class="text-[10px] font-black text-rose-600 uppercase tracking-widest leading-relaxed">⚠ PERINGATAN: Seluruh bank soal dan data ujian terkait akan ikut terhapus secara permanen!</p>
+                    </div>
+                </div>
+            `,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#4f46e5',
+            cancelButtonColor: '#f43f5e',
+            confirmButtonText: 'YA, HAPUS PERMANEN',
+            cancelButtonText: 'BATALKAN',
+            customClass: {
+                popup: 'rounded-[2.5rem] border-none shadow-2xl p-8',
+                confirmButton: 'rounded-2xl font-black px-8 py-4 text-[10px] uppercase tracking-widest mr-4',
+                cancelButton: 'rounded-2xl font-black px-8 py-4 text-[10px] uppercase tracking-widest'
             }
-            to {
-                opacity: 1;
-                transform: translateY(0);
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('deleteSubjectForm' + id).submit();
             }
-        }
-        .animate-slideDown {
-            animation: slideDown 0.3s ease-out;
-        }
-    </style>
+        });
+    }
+
+    function confirmDeleteAllSubjects() {
+        Swal.fire({
+            title: '<span class="text-xl font-black text-rose-600 uppercase tracking-widest">⚠ TINDAKAN KRITIKAL!</span>',
+            html: `
+                <div class="text-center space-y-6 py-4">
+                    <p class="text-sm font-bold text-gray-500 uppercase tracking-tight leading-relaxed">Anda akan menghapus <span class="text-rose-600 underline">SELURUH</span> data mata pelajaran di sistem.</p>
+                    <div class="bg-rose-50 border-2 border-rose-100 p-6 rounded-[2rem] shadow-sm">
+                        <p class="font-black text-rose-900 mb-4 text-[10px] uppercase tracking-widest">KONSEKUENSI TINDAKAN:</p>
+                        <ul class="text-[10px] text-rose-800 space-y-3 font-black uppercase tracking-wider text-left pl-4 list-disc italic">
+                            <li>SELURUH KATEGORI MAPEL AKAN HILANG</li>
+                            <li>SELURUH BANK SOAL AKAN DIKOSONGKAN</li>
+                            <li>RIWAYAT UJIAN & NILAI TERHAPUS PERMANEN</li>
+                        </ul>
+                    </div>
+                    <div class="space-y-3">
+                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Ketik <span class="text-gray-900 bg-gray-100 px-2 py-1 rounded">HAPUS SEMUA</span> untuk konfirmasi:</p>
+                        <input type="text" id="confirmInput" placeholder="HAPUS SEMUA" class="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl focus:ring-4 focus:ring-rose-500/10 text-sm font-black text-center uppercase tracking-widest">
+                    </div>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonColor: '#be123c',
+            cancelButtonColor: '#9ca3af',
+            confirmButtonText: 'EKSEKUSI PENGHAPUSAN',
+            cancelButtonText: 'BATALKAN',
+            customClass: {
+                popup: 'rounded-[3rem] border-none shadow-2xl p-10',
+                confirmButton: 'rounded-2xl font-black px-8 py-4 text-[10px] uppercase tracking-widest mr-4',
+                cancelButton: 'rounded-2xl font-black px-8 py-4 text-[10px] uppercase tracking-widest'
+            },
+            preConfirm: () => {
+                const val = document.getElementById('confirmInput').value;
+                if (val !== 'HAPUS SEMUA') {
+                    Swal.showValidationMessage('Teks konfirmasi tidak sesuai!');
+                    return false;
+                }
+                return true;
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('deleteAllSubjectsForm').submit();
+            }
+        });
+    }
+
+    @if(session('success'))
+        Swal.fire({
+            icon: 'success',
+            title: '<span class="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-600">BERHASIL!</span>',
+            text: "{{ session('success') }}",
+            showConfirmButton: false,
+            timer: 2500,
+            customClass: { popup: 'rounded-[2rem] border-none shadow-xl' }
+        });
+    @endif
+
+    @if(session('error'))
+        Swal.fire({
+            icon: 'error',
+            title: '<span class="text-[10px] font-black uppercase tracking-[0.3em] text-rose-600">GAGAL!</span>',
+            text: "{{ session('error') }}",
+            confirmButtonColor: '#4f46e5',
+            customClass: { 
+                popup: 'rounded-[2rem] border-none shadow-xl',
+                confirmButton: 'rounded-2xl font-black px-8 py-4 text-[10px] uppercase tracking-widest'
+            }
+        });
+    @endif
+</script>
+
+<style>
+    .animate-fadeIn { animation: fadeIn 0.4s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
 @endsection
+
+    

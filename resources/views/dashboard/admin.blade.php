@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Dasbor Admin - SesekaliCBT')
+@section('title', 'Dasbor Admin - ' . ($configs['school_name'] ?? 'ExamFlow'))
 
 @section('page-title', 'Dasbor Admin')
 

@@ -20,8 +20,8 @@ class StudentPolicy
      */
     public function view(User $user, User $model): bool
     {
-        // Only admin and superadmin can view students
-        return in_array($user->role, ['admin', 'superadmin']) && $model->role === 'student';
+        // Only teacher and superadmin can view students
+        return in_array($user->role, ['teacher', 'superadmin']) && $model->role === 'student';
     }
 
     /**
@@ -29,7 +29,7 @@ class StudentPolicy
      */
     public function create(User $user): bool
     {
-        return in_array($user->role, ['admin', 'superadmin']);
+        return in_array($user->role, ['teacher', 'superadmin']);
     }
 
     /**
@@ -37,8 +37,8 @@ class StudentPolicy
      */
     public function update(User $user, User $model): bool
     {
-        // Only admin and superadmin can update students
-        return in_array($user->role, ['admin', 'superadmin']) && $model->role === 'student';
+        // Only teacher and superadmin can update students
+        return in_array($user->role, ['teacher', 'superadmin']) && $model->role === 'student';
     }
 
     /**
@@ -46,8 +46,8 @@ class StudentPolicy
      */
     public function delete(User $user, User $model): bool
     {
-        // Only admin and superadmin can delete students
-        return in_array($user->role, ['admin', 'superadmin']) && $model->role === 'student';
+        // Only teacher and superadmin can delete students
+        return in_array($user->role, ['teacher', 'superadmin']) && $model->role === 'student';
     }
 
     /**

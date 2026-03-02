@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Dashboard - SesekaliCBT')</title>
+    <title>@yield('title', 'Dashboard - ' . ($configs['school_name'] ?? 'ExamFlow'))</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- SweetAlert2 -->
@@ -42,16 +42,34 @@
         }
         
         .menu-item-active {
-            @apply bg-blue-50 border-l-4 border-blue-600 text-blue-700;
+            @apply bg-indigo-50 border-l-4 border-indigo-600 text-indigo-700 font-bold;
         }
         
         .submenu-item {
-            @apply px-4 py-2 text-sm text-gray-700 hover:bg-gray-100;
+            @apply px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors;
         }
         
         .submenu-item-active {
-            @apply bg-blue-50 text-blue-700;
+            @apply bg-indigo-50 text-indigo-700;
         }
+
+        /* Loading Spinner */
+        #loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.7);
+            z-index: 9999;
+            backdrop-filter: blur(2px);
+        }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4f46e5;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         /* Smooth layout transitions */
         html, body {
@@ -100,29 +118,32 @@
         <!-- Sidebar -->
         <aside id="sidebar" class="sidebar-transition sidebar-hidden lg:translate-x-0 fixed lg:relative left-0 top-0 h-screen w-64 bg-white shadow-lg lg:shadow-none z-40 overflow-y-auto flex-shrink-0">
             <!-- Sidebar Header -->
-            <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 flex items-center justify-between sticky top-0 z-10">
+            <div class="bg-gradient-to-r from-indigo-600 to-indigo-700 text-white p-6 flex items-center justify-between sticky top-0 z-10 shadow-sm">
                 <div>
-                    <h2 class="text-2xl font-bold">ExamFlow</h2>
-                    <p class="text-xs text-blue-100">Learning Managemen System</p>
+                    <h2 class="text-2xl font-bold tracking-tight">{{ $configs['school_name'] ?? 'SesekaliCBT' }}</h2>
+                    <p class="text-[10px] text-indigo-100 uppercase tracking-widest font-semibold">{{ $configs['academic_year'] ?? '2023/2024' }}</p>
                 </div>
-                <button id="closeSidebarBtn" class="lg:hidden text-white hover:bg-blue-800 p-2 rounded transition">
-                    <i class="fas fa-times"></i>
+                <button id="closeSidebarBtn" class="lg:hidden text-indigo-100 hover:text-white hover:bg-white/10 p-2 rounded-lg transition-colors">
+                    <i class="fas fa-times text-lg"></i>
                 </button>
             </div>
 
-            <!-- User Profile Card -->
-            <div class="px-4 py-4 border-b border-gray-200">
-                <div class="bg-blue-50 p-3 rounded-lg">
-                    <p class="text-sm font-semibold text-gray-900">{{ Auth::user()->name }}</p>
-                    <div class="mt-1">
-                        <span class="inline-block px-2 py-1 text-xs font-semibold rounded-full 
-                            @if(Auth::user()->role === 'superadmin') bg-red-100 text-red-800
-                            @elseif(Auth::user()->role === 'admin') bg-blue-100 text-blue-800
-                            @else bg-green-100 text-green-800 @endif">
-                            <i class="fas fa-shield-alt mr-1"></i>{{ ucfirst(Auth::user()->role) }}
-                        </span>
+            <div class="px-4 py-6 border-b border-gray-100">
+                <a href="{{ Auth::user()->role === 'teacher' ? route('teacher.settings.index') : (Auth::user()->role === 'superadmin' ? route('admin.settings.index') : '#') }}" 
+                   class="bg-indigo-50/50 p-4 rounded-xl flex items-center gap-4 border border-indigo-100/50 hover:bg-indigo-100/50 transition-colors group">
+                    <img src="{{ Auth::user()->photo_url }}" alt="Avatar" class="w-12 h-12 rounded-full border-2 border-white shadow-sm object-cover group-hover:scale-105 transition-transform">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-bold text-gray-900 truncate">{{ Auth::user()->name }}</p>
+                        <div class="mt-1">
+                            <span class="inline-flex px-2 py-0.5 text-[10px] font-extrabold rounded-md uppercase tracking-wider
+                                @if(Auth::user()->role === 'superadmin') bg-rose-100 text-rose-700
+                                @elseif(Auth::user()->role === 'teacher') bg-indigo-100 text-indigo-700
+                                @else bg-emerald-100 text-emerald-700 @endif">
+                                {{ Auth::user()->role === 'teacher' ? 'GURU' : Auth::user()->role }}
+                            </span>
+                        </div>
                     </div>
-                </div>
+                </a>
             </div>
 
             <!-- Navigation Menu -->
@@ -159,13 +180,25 @@
                     </a>
                 @endif
 
-                <!-- Management Section (Admin & Superadmin) -->
-                @if(in_array(Auth::user()->role, ['admin', 'superadmin']))
+                <!-- Management Section (Teacher & Superadmin) -->
+                @if(in_array(Auth::user()->role, ['teacher', 'superadmin']))
                     <div class="pt-4 pb-2">
-                        <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Management</p>
+                        <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Manajemen LMS</p>
                     </div>
 
-                    <!-- Students Management -->
+                    <!-- Teacher Management (Superadmin Only) -->
+                    @if(Auth::user()->role === 'superadmin')
+                    <a href="{{ route('superadmin.teachers.index') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition {{ request()->routeIs('superadmin.teachers.*') ? 'menu-item-active' : '' }}">
+                        <i class="fas fa-chalkboard-teacher w-5 text-lg mr-3"></i>
+                        <span class="font-medium">Manajemen Guru</span>
+                        @if(request()->routeIs('superadmin.teachers.*'))
+                            <i class="fas fa-chevron-right ml-auto"></i>
+                        @endif
+                    </a>
+                    @endif
+
+                    <!-- Students Management (Superadmin Only) -->
+                    @if(Auth::user()->role === 'superadmin')
                     <a href="{{ route('admin.students.index') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition {{ request()->routeIs('admin.students.*') ? 'menu-item-active' : '' }}">
                         <i class="fas fa-users w-5 text-lg mr-3"></i>
                         <span class="font-medium">Siswa</span>
@@ -173,8 +206,10 @@
                             <i class="fas fa-chevron-right ml-auto"></i>
                         @endif
                     </a>
+                    @endif
 
-                    <!-- Subjects Management -->
+                    <!-- Subjects Management (Superadmin Only) -->
+                    @if(Auth::user()->role === 'superadmin')
                     <a href="{{ route('admin.subjects.index') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition {{ request()->routeIs('admin.subjects.*') ? 'menu-item-active' : '' }}">
                         <i class="fas fa-book w-5 text-lg mr-3"></i>
                         <span class="font-medium">Mata Pelajaran</span>
@@ -182,6 +217,7 @@
                             <i class="fas fa-chevron-right ml-auto"></i>
                         @endif
                     </a>
+                    @endif
 
                     <!-- Questions Management -->
                     <a href="{{ route('admin.questions.index') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition {{ request()->routeIs('admin.questions.*') ? 'menu-item-active' : '' }}">
@@ -245,11 +281,18 @@
                     <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Akun</p>
                 </div>
 
+                @if(Auth::user()->role === 'superadmin')
                 <!-- Settings -->
-                <a href="#" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                <a href="{{ route('admin.settings.index') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition {{ request()->routeIs('admin.settings.*') ? 'menu-item-active' : '' }}">
                     <i class="fas fa-cog w-5 text-lg mr-3"></i>
                     <span class="font-medium">Pengaturan</span>
                 </a>
+                @elseif(Auth::user()->role === 'teacher')
+                <a href="{{ route('teacher.settings.index') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition {{ request()->routeIs('teacher.settings.*') ? 'menu-item-active' : '' }}">
+                    <i class="fas fa-user-cog w-5 text-lg mr-3"></i>
+                    <span class="font-medium">Pengaturan</span>
+                </a>
+                @endif
 
                 <!-- Logout -->
                 <form action="{{ route('logout') }}" method="POST" class="block">
@@ -266,16 +309,22 @@
         <div class="flex flex-col flex-1 overflow-hidden">
             <!-- Top Navigation Bar -->
             <nav class="bg-white shadow-sm z-20 flex-shrink-0">
-                <div class="px-4 lg:px-8 py-4 flex items-center justify-between gap-4">
+                <div class="px-4 lg:px-8 py-4 flex  items-center justify-end gap-4">
                     <button id="toggleSidebarBtn" class="lg:hidden text-gray-600 hover:text-gray-900 p-2 -ml-2 transition">
                         <i class="fas fa-bars text-xl"></i>
                     </button>
-                    <div class="hidden lg:block flex-1">
+                    <!-- <div class="hidden lg:block flex-1">
                         <h1 class="text-2xl font-bold text-gray-900">@yield('page-title', 'Dashboard')</h1>
-                    </div>
+                    </div> -->
                     <div class="flex items-center gap-4">
-                        <div class="hidden sm:block text-sm text-gray-600 font-medium">
-                            {{ Auth::user()->name }}
+                        <div class="hidden sm:flex items-center gap-3">
+                            <div class="text-right">
+                                <p class="text-sm font-black text-gray-900 uppercase tracking-wide leading-none">{{ Auth::user()->name }}</p>
+                                <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">Sesi Aktif</p>
+                            </div>
+                            <a href="{{ Auth::user()->role === 'teacher' ? route('teacher.settings.index') : (Auth::user()->role === 'superadmin' ? route('admin.settings.index') : '#') }}">
+                                <img src="{{ Auth::user()->photo_url }}" alt="Avatar" class="w-10 h-10 rounded-xl object-cover border-2 border-white shadow-sm hover:scale-105 transition-transform">
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -284,35 +333,19 @@
             <!-- Page Content -->
             <main class="flex-1 overflow-y-auto">
                 <div class="p-4 lg:p-8 max-w-7xl mx-auto w-full">
-                    @if ($message = Session::get('success'))
-                        <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-800 flex items-start gap-3">
-                            <i class="fas fa-check-circle flex-shrink-0 mt-0.5"></i>
-                            <div class="flex-1">
-                                <p class="font-semibold">Berhasil</p>
-                                <p class="text-sm">{{ $message }}</p>
-                            </div>
-                            <button onclick="this.parentElement.style.display='none'" class="text-green-800 hover:text-green-600 transition">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                    @endif
-
-                    @if ($message = Session::get('error'))
-                        <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800 flex items-start gap-3">
-                            <i class="fas fa-exclamation-circle flex-shrink-0 mt-0.5"></i>
-                            <div class="flex-1">
-                                <p class="font-semibold">Kesalahan</p>
-                                <p class="text-sm">{{ $message }}</p>
-                            </div>
-                            <button onclick="this.parentElement.style.display='none'" class="text-red-800 hover:text-red-600 transition">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                    @endif
-
                     @yield('content')
                 </div>
             </main>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay">
+        <div class="flex items-center justify-center h-full">
+            <div class="text-center">
+                <div class="spinner mx-auto mb-4"></div>
+                <p class="text-indigo-900 font-bold">Sedang memproses...</p>
+            </div>
         </div>
     </div>
 
@@ -332,8 +365,8 @@
         closeBtn?.addEventListener('click', toggleSidebar);
         overlay?.addEventListener('click', toggleSidebar);
 
-        // Close sidebar on larger screens
-        window.addEventListener('resize', () => {
+        // Sidebar responsive handling
+        const handleResize = () => {
             if (window.innerWidth >= 1024) {
                 sidebar.classList.remove('sidebar-hidden');
                 overlay.classList.remove('active');
@@ -341,25 +374,50 @@
                 sidebar.classList.add('sidebar-hidden');
                 overlay.classList.remove('active');
             }
-        });
+        };
+        window.addEventListener('resize', handleResize);
+        handleResize(); // Initial call
 
-        // Close sidebar when clicking on a link
-        document.querySelectorAll('#sidebar a').forEach(link => {
-            link.addEventListener('click', () => {
-                if (window.innerWidth < 1024) {
-                    toggleSidebar();
+        // Global Loading Logic for Forms
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', function() {
+                // Don't show for tiny forms or if it has a specific no-loading class
+                if (!this.classList.contains('no-loading')) {
+                    document.getElementById('loading-overlay').style.display = 'block';
                 }
             });
         });
 
-        // Close alert messages with button
-        document.querySelectorAll('[onclick*="style.display"]').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
+        // Global Notifications using SweetAlert2
+        @if(Session::has('success'))
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil!',
+                text: "{{ Session::get('success') }}",
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true
             });
-        });
+        @endif
+
+        @if(Session::has('error'))
+            Swal.fire({
+                icon: 'error',
+                title: 'Kesalahan!',
+                text: "{{ Session::get('error') }}",
+                confirmButtonColor: '#4f46e5',
+            });
+        @endif
+
+        @if(Session::has('info'))
+            Swal.fire({
+                icon: 'info',
+                title: 'Informasi',
+                text: "{{ Session::get('info') }}",
+                confirmButtonColor: '#4f46e5',
+            });
+        @endif
     </script>
-    <!-- Delete Modal Helper Functions -->
     <script src="{{ asset('js/delete-modal.js') }}"></script>
 </body>
 </html>

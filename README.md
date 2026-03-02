@@ -1,59 +1,67 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# SesekaliCBT - Modern Computer Based Test System
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+SesekaliCBT adalah platform ujian daring (CBT) yang modern, aman, dan mudah digunakan, dirancang khusus untuk kebutuhan sekolah dan institusi pendidikan. Sistem ini mengintegrasikan manajemen ujian, pengawasan real-time, dan pelaporan hasil yang mendalam.
 
-## About Laravel
+## 🚀 Teknologi Utama
+- **Framework**: Laravel 12.x (PHP 8.5)
+- **Frontend**: Tailwind CSS & Blade Templating
+- **Database**: MySQL / MariaDB
+- **Keamanan**: Multi-layer focus detection (Anti-tab switching), Token-based gating, Real-time session monitoring.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## ✨ Fitur Unggulan
+- **Manajemen Siswa & Guru**: Pengelolaan data pengguna dengan sistem RBAC (Role-Based Access Control) yang ketat.
+- **Bank Soal & Import**: Mendukung pembuatan soal pilihan ganda dan esai, serta fitur import massal menggunakan CSV/Excel.
+- **Real-time Monitoring**: Dashboard pengawasan untuk admin untuk memantau status siswa (online/offline/pelanggaran) secara langsung.
+- **Sistem Token Dinamis**: Gating ujian menggunakan token yang dapat diperbarui secara otomatis atau manual.
+- **Anti-Curant Flow**: Deteksi jendela melayang (floating window) dan split-screen dengan sistem sanksi otomatis.
+- **Sistem Penilaian (KKM & Bobot)**: Penilaian dinamis dengan bobot PG/Esai per ujian dan ambang kelulusan (KKM) per mata pelajaran.
+- **Reporting & Export**: Laporan hasil ujian yang mendalam (Tampilkan Status Tuntas/Remidial), dapat difilter (Rombel/Kelas) dan diekspor ke format Excel.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 🛠️ Instalasi Cepat
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+```bash
+# 1. Clone repository & install dependencies
+composer install
+npm install
 
-## Learning Laravel
+# 2. Persiapan Environment
+cp .env.example .env
+php artisan key:generate
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+# 3. Database & Seeding
+# Pastikan konfigurasi DB di .env sudah benar
+php artisan migrate --seed
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+# 4. Jalankan Development Server
+php artisan serve
+npm run dev
+```
 
-## Laravel Sponsors
+**Kredensial Default:**
+- **Superadmin**: `superadmin@localhost` | `password`
+- **Guru/Admin**: `admin@localhost` | `password`
+- **Siswa**: `student1@localhost` | `password`
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## 📂 Struktur Folder Penting
+- `app/Http/Controllers/Admin`: Logika manajemen backend (Ujian, Soal, Hasil, Token).
+- `app/Http/Controllers/Student`: Logika antarmuka siswa dan pengerjaan ujian.
+- `app/Models`: Definisi data dan relasi (User, Exam, ExamAttempt, Subject).
+- `resources/views`: Template antarmuka (Layouts, Admin, Student, Dashboard).
+- `routes/web.php`: Definisi rute aplikasi dengan proteksi middleware per peran.
 
-### Premium Partners
+## 🔄 Alur Kerja Utama
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### Alur Admin
+1. **Persiapan**: Buat Mata Pelajaran → Buat Ujian (Draft) → Kelola Soal (Manual/Import).
+2. **Aktivasi**: Publikasikan Ujian → Generate Token di menu 'Kelola Token'.
+3. **Pengawasan**: Buka 'Pantau Ujian' saat sesi dimulai. Gunakan 'Force Submit' jika diperlukan.
+4. **Evaluasi**: Lihat hasil di menu 'Hasil' setelah ujian selesai, lalu ekspor ke Excel.
 
-## Contributing
+### Alur Siswa
+1. **Login**: Masuk menggunakan NIS dan Kata Sandi.
+2. **Persiapan**: Masuk ke menu 'Ujian Saya' atau klik 'Mulai' di Dashboard.
+3. **Validasi**: Masukkan Token yang diberikan pengawas untuk mulai mengerjakan.
+4. **Pengerjaan**: Jawab soal (Auto-save aktif). Selesaikan sebelum waktu habis.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+---
+Dikembangkan dengan ❤️ untuk pendidikan Indonesia yang lebih maju.

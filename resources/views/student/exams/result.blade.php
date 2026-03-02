@@ -1,466 +1,371 @@
 @extends('layouts.app')
 
-@section('title', 'Hasil Ujian - SesekaliCBT')
-
-@section('page-title', 'Hasil Ujian')
-
-@section('styles')
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-    <style>
-        .score-badge {
-            font-size: 3rem;
-            font-weight: bold;
-        }
-
-        .score-excellent {
-            color: #10b981;
-        }
-
-        .score-good {
-            color: #3b82f6;
-        }
-
-        .score-fair {
-            color: #f59e0b;
-        }
-
-        .score-poor {
-            color: #ef4444;
-        }
-
-        .answer-correct {
-            @apply border-l-4 border-green-500 bg-green-50 p-4 rounded;
-        }
-
-        .answer-incorrect {
-            @apply border-l-4 border-red-500 bg-red-50 p-4 rounded;
-        }
-
-        .answer-unanswered {
-            @apply border-l-4 border-gray-400 bg-gray-50 p-4 rounded;
-        }
-
-        /* Confetti Canvas */
-        #confettiCanvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 9999;
-        }
-    </style>
-@endsection
+@section('title', 'Hasil Ujian - ' . ($configs['school_name'] ?? 'SesekaliCBT'))
 
 @section('content')
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Main Result Area -->
-        <div class="lg:col-span-2">
-            @if($attempt->exam->show_score_after_submit)
-            <!-- Score Card -->
-            <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-6">
-                <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-8">
-                    <h1 class="text-2xl font-bold mb-4">{{ $attempt->exam->title }}</h1>
-                    <div class="grid grid-cols-2 gap-6">
-                        <div>
-                            <p class="text-blue-100 text-sm mb-2">Nilai Anda</p>
-                            <div class="text-5xl font-bold">
-                                {{ intval($attempt->final_score) }}
-                            </div>
-                        </div>
-                        <div>
-                            <p class="text-blue-100 text-sm mb-2">Dikerjakan</p>
-                            <p class="text-2xl font-semibold">{{ $attempt->submitted_at->format('d M Y H:i') }}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Statistics -->
-                <div class="p-8 border-t border-gray-200">
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div class="text-center">
-                            <p class="text-gray-600 text-sm">Total Soal</p>
-                            <p class="text-2xl font-bold text-gray-900">{{ $questions->count() }}</p>
-                        </div>
-                        <div class="text-center">
-                            <p class="text-gray-600 text-sm">Benar</p>
-                            <p class="text-2xl font-bold text-green-600">{{ $correct_count }}</p>
-                        </div>
-                        <div class="text-center">
-                            <p class="text-gray-600 text-sm">Salah</p>
-                            <p class="text-2xl font-bold text-red-600">{{ $incorrect_count }}</p>
-                        </div>
-                        <div class="text-center">
-                            <p class="text-gray-600 text-sm">Tidak Dijawab</p>
-                            <p class="text-2xl font-bold text-gray-600">{{ $unanswered_count }}</p>
-                        </div>
-                    </div>
-                </div>
+<div class="space-y-10 pb-20">
+    <!-- Top Nav / Back -->
+    <div class="flex items-center justify-between px-2">
+        <a href="{{ route('student.results') }}" class="group flex items-center gap-3 text-gray-500 hover:text-indigo-600 transition-colors">
+            <div class="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center shadow-sm group-hover:border-indigo-100 group-hover:bg-indigo-50 transition-all">
+                <i class="fas fa-arrow-left text-xs group-hover:-translate-x-1 transition-transform"></i>
             </div>
-            @else
-            <!-- Score Not Available Notice -->
-            <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-6">
-                <div class="bg-gradient-to-r from-gray-600 to-gray-700 text-white p-8">
-                    <h1 class="text-2xl font-bold mb-4">{{ $attempt->exam->title }}</h1>
-                    <p class="text-gray-100">Ujian berhasil dikumpulkan</p>
-                </div>
+            <span class="text-[10px] font-black uppercase tracking-widest">Riwayat Hasil</span>
+        </a>
 
-                <!-- Notice -->
-                <div class="p-8 border-t border-gray-200 bg-blue-50">
-                    <div class="flex items-start">
-                        <svg class="w-6 h-6 text-blue-600 mt-0.5 mr-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zm-11-1a1 1 0 11-2 0 1 1 0 012 0z" clip-rule="evenodd" />
-                        </svg>
-                        <div>
-                            <p class="text-blue-900 font-semibold">Nilai tidak ditampilkan</p>
-                            <p class="text-blue-800 text-sm mt-1">Pengajar belum memperbolehkan menampilkan nilai untuk ujian ini. Silakan hubungi pengajar untuk informasi lebih lanjut.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            @endif
-
-            <!-- Answer Review -->
-            @if($attempt->exam->allow_review_results)
-            <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-                <div class="bg-gray-900 text-white p-6">
-                    <h2 class="text-xl font-bold">Review Jawaban</h2>
-                    <p class="text-gray-400 text-sm mt-1">Rincian jawaban Anda secara mendetail</p>
-                </div>
-
-                <div class="p-6 space-y-6">
-                    @foreach($questions as $index => $question)
-                        @php
-                            $answer = $answers->firstWhere('question_id', $question->id);
-                            $isCorrect = $answer?->is_correct;
-                            $answerClass = $isCorrect === true 
-                                ? 'answer-correct' 
-                                : ($isCorrect === false ? 'answer-incorrect' : 'answer-unanswered');
-                            
-                            // Use nav_position if available, otherwise use display_index
-                            $questionNumber = isset($question->nav_position) ? $question->nav_position : ($index + 1);
-                        @endphp
-
-                        <div class="{{ $answerClass }}">
-                            <!-- Question Header -->
-                            <div class="flex items-start justify-between mb-4 flex-wrap gap-2">
-                                <div>
-                                    <h3 class="font-bold text-lg text-gray-900">
-                                        Soal {{ $questionNumber }}
-                                        <span class="ml-3 inline-block px-3 py-1 text-xs font-semibold rounded-full {{ $question->question_type === 'multiple_choice' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800' }}">
-                                            {{ $question->question_type === 'multiple_choice' ? 'Pilihan Ganda' : 'Essay' }}
-                                        </span>
-                                    </h3>
-                                </div>
-                                <div class="text-right">
-                                    @if($isCorrect === true)
-                                        <i class="fas fa-check-circle text-2xl text-green-600 mb-2"></i>
-                                        <p class="text-sm font-semibold text-green-700">Benar</p>
-                                    @elseif($isCorrect === false)
-                                        <i class="fas fa-times-circle text-2xl text-red-600 mb-2"></i>
-                                        <p class="text-sm font-semibold text-red-700">Salah</p>
-                                    @else
-                                        <i class="fas fa-circle text-2xl text-gray-400 mb-2"></i>
-                                        <p class="text-sm font-semibold text-gray-700">Tidak Dijawab</p>
-                                    @endif
-                                </div>
-                            </div>
-
-                            <!-- Question Text -->
-                            <div class="mb-4">
-                                <p class="text-gray-900 font-semibold mb-2">Soal:</p>
-                                <p class="text-gray-800">{{ $question->question_text }}</p>
-                            </div>
-
-                            <!-- Answer Comparison -->
-                            @if($question->question_type === 'multiple_choice')
-                                @php
-                                    // NO SHUFFLING HERE - Just use stored answer text
-                                    $studentAnswer = $answer?->selected_answer;
-                                    $studentAnswerText = $answer?->selected_answer_text;  // Use stored text from submission
-                                    $correctAnswerText = $answer?->correct_answer_text;   // Use stored correct text
-                                    
-                                    // Fallback: reconstruct from options if stored text is empty
-                                    $options = [
-                                        'a' => $question->option_a,
-                                        'b' => $question->option_b,
-                                        'c' => $question->option_c,
-                                        'd' => $question->option_d,
-                                        'e' => $question->option_e,
-                                    ];
-                                    $options = array_filter($options);
-                                    
-                                    // Fallback for student answer text if not stored
-                                    if (!$studentAnswerText && $studentAnswer) {
-                                        $studentAnswerText = $options[strtolower($studentAnswer)] ?? null;
-                                    }
-                                    
-                                    // Fallback for correct answer text if not stored
-                                    if (!$correctAnswerText) {
-                                        $correctAnswerText = $options[strtolower($question->correct_answer)] ?? null;
-                                    }
-                                @endphp
-
-                                <div class="space-y-3">
-                                    <!-- Student's Answer -->
-                                    @if($studentAnswer || $studentAnswerText)
-                                        <div>
-                                            <p class="text-sm font-semibold text-gray-700 mb-2">Jawaban Anda:</p>
-                                            <div class="bg-white p-3 rounded border-l-4 {{ $isCorrect ? 'border-green-500' : 'border-red-500' }}">
-                                                <p class="text-gray-900 font-semibold flex items-center">
-                                                    {{ $studentAnswerText ?? 'Opsi Tidak Dikenal' }}
-                                                    @if($isCorrect)
-                                                        <i class="fas fa-check text-green-600 ml-2"></i>
-                                                    @else
-                                                        <i class="fas fa-times text-red-600 ml-2"></i>
-                                                    @endif
-                                                </p>
-                                            </div>
-                                        </div>
-                                    @else
-                                        <div>
-                                            <p class="text-sm font-semibold text-gray-700 mb-2">Jawaban Anda:</p>
-                                            <div class="bg-white p-3 rounded border-l-4 border-gray-400">
-                                                <p class="text-gray-600 italic">Tidak ada jawaban</p>
-                                            </div>
-                                        </div>
-                                    @endif
-
-                                    <!-- Correct Answer - Use stored text, never re-shuffle -->
-                                    <div>
-                                        <p class="text-sm font-semibold text-gray-700 mb-2">Jawaban Benar:</p>
-                                        <div class="bg-white p-3 rounded border-l-4 border-green-500">
-                                            <p class="text-gray-900 font-semibold flex items-center">
-                                                {{ $correctAnswerText ?? 'Opsi Tidak Dikenal' }}
-                                                <i class="fas fa-check-circle text-green-600 ml-2"></i>
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            @else
-                                <!-- Essay Question -->
-                                <div class="space-y-3">
-                                    <div>
-                                        <p class="text-sm font-semibold text-gray-700 mb-2">Jawaban Anda:</p>
-                                        <div class="bg-white p-4 rounded border-l-4 border-gray-400 whitespace-pre-wrap text-gray-800">
-                                            {{ $answer?->essay_answer ?? '(Tidak ada jawaban)' }}
-                                        </div>
-                                    </div>
-                                    <div class="bg-blue-50 p-4 rounded border-l-4 border-blue-400">
-                                        <p class="text-sm text-blue-800">
-                                            <i class="fas fa-info-circle mr-2"></i>
-                                            Pertanyaan essay memerlukan penilaian manual oleh instruktur.
-                                        </p>
-                                    </div>
-                                </div>
-                            @endif
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-            @endif
-        </div>
-
-        <!-- Sidebar: Summary -->
-        <div class="lg:col-span-1">
-            @if($attempt->exam->show_score_after_submit)
-            <!-- Score Summary -->
-            <div class="bg-white rounded-lg shadow-lg p-8 mb-6 text-center">
-                <div class="mb-4">
-                    <div class="score-badge 
-                        @if(intval($attempt->final_score) >= 80) score-excellent
-                        @elseif(intval($attempt->final_score) >= 65) score-good
-                        @elseif(intval($attempt->final_score) >= 50) score-fair
-                        @else score-poor @endif">
-                        {{ intval($attempt->final_score) }}
-                    </div>
-                </div>
-
-                <p class="text-gray-600 text-sm mb-4">Nilai Akhir Anda</p>
-
-                <!-- Grade Badge -->
-                @php
-                    $score = intval($attempt->final_score);
-                    if ($score >= 85) {
-                        $grade = 'A';
-                        $grade_class = 'bg-green-100 text-green-800';
-                    } elseif ($score >= 75) {
-                        $grade = 'B';
-                        $grade_class = 'bg-blue-100 text-blue-800';
-                    } elseif ($score >= 65) {
-                        $grade = 'C';
-                        $grade_class = 'bg-yellow-100 text-yellow-800';
-                    } elseif ($score >= 50) {
-                        $grade = 'D';
-                        $grade_class = 'bg-orange-100 text-orange-800';
-                    } else {
-                        $grade = 'F';
-                        $grade_class = 'bg-red-100 text-red-800';
-                    }
-                @endphp
-
-                <div class="inline-block px-6 py-2 rounded-full font-bold text-lg {{ $grade_class }}">
-                    Nilai: {{ $grade }}
-                </div>
-            </div>
-
-            <!-- Performance Breakdown -->
-            <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
-                <h3 class="font-bold text-gray-900 mb-4">Performa</h3>
-                
-                <div class="space-y-4">
-                    <!-- Correct -->
-                    <div>
-                        <div class="flex justify-between mb-2">
-                            <span class="text-sm font-semibold text-green-700">Benar</span>
-                            <span class="text-sm font-bold text-green-700">{{ $correct_count }}/{{ $questions->count() }}</span>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="bg-green-600 h-2 rounded-full" style="width: {{ ($correct_count / $questions->count()) * 100 }}%"></div>
-                        </div>
-                    </div>
-
-                    <!-- Incorrect -->
-                    <div>
-                        <div class="flex justify-between mb-2">
-                            <span class="text-sm font-semibold text-red-700">Salah</span>
-                            <span class="text-sm font-bold text-red-700">{{ $incorrect_count }}/{{ $questions->count() }}</span>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="bg-red-600 h-2 rounded-full" style="width: {{ ($incorrect_count / $questions->count()) * 100 }}%"></div>
-                        </div>
-                    </div>
-
-                    <!-- Unanswered -->
-                    @if($unanswered_count > 0)
-                        <div>
-                            <div class="flex justify-between mb-2">
-                                <span class="text-sm font-semibold text-gray-700">Tidak Dijawab</span>
-                                <span class="text-sm font-bold text-gray-700">{{ $unanswered_count }}/{{ $questions->count() }}</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="bg-gray-400 h-2 rounded-full" style="width: {{ ($unanswered_count / $questions->count()) * 100 }}%"></div>
-                            </div>
-                        </div>
-                    @endif
-                </div>
-            </div>
-            @endif
-
-            <!-- Exam Info -->
-            <div class="bg-white rounded-lg shadow-lg p-6">
-                <h3 class="font-bold text-gray-900 mb-4">Informasi Ujian</h3>
-                <div class="space-y-3 text-sm">
-                    <div>
-                        <p class="text-gray-600">Mata Pelajaran</p>
-                        <p class="font-semibold text-gray-900">{{ $attempt->exam->subject->name }}</p>
-                    </div>
-                    <div>
-                        <p class="text-gray-600">Durasi</p>
-                        <p class="font-semibold text-gray-900">{{ $attempt->exam->duration_minutes }} menit</p>
-                    </div>
-                    <div>
-                        <p class="text-gray-600">Dimulai</p>
-                        <p class="font-semibold text-gray-900 text-xs">{{ $attempt->started_at->format('d M Y H:i') }}</p>
-                    </div>
-                    <div>
-                        <p class="text-gray-600">Dikerjakan</p>
-                        <p class="font-semibold text-gray-900 text-xs">{{ $attempt->submitted_at->format('d M Y H:i') }}</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="mt-6 space-y-3">
-                <a href="{{ route('student.exams.index') }}" class="block w-full text-center px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition">
-                    <i class="fas fa-arrow-left mr-2"></i>Kembali ke Ujian
-                </a>
-                <a href="{{ route('dashboard') }}" class="block w-full text-center px-6 py-3 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-700 transition">
-                    <i class="fas fa-home mr-2"></i>Kembali ke Dashboard
-                </a>
-            </div>
+        <div class="flex items-center gap-2">
+            <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+            <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Sesi Terarsip & Tervalidasi</span>
         </div>
     </div>
 
-    <script>
-        // Trigger confetti and success modal on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            // Always show confetti and success modal on first page load
-            // Use a small delay to ensure DOM is fully ready
-            setTimeout(function() {
-                // Trigger confetti
-                triggerConfetti();
-                
-                // Show success modal
-                Swal.fire({
-                    title: '🎉 Terima Kasih!',
-                    html: '<p class="text-lg font-semibold text-gray-800">Anda telah menyelesaikan ujian</p><p class="text-gray-600 mt-2">Ujian Anda telah berhasil dikirimkan dan sedang diproses</p>',
-                    icon: 'success',
-                    confirmButtonColor: '#10b981',
-                    confirmButtonText: 'Lanjutkan',
-                    allowOutsideClick: false,
-                    allowEscapeKey: false
-                });
-            }, 300);
-        });
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        <!-- Main Result Area -->
+        <div class="lg:col-span-2 space-y-10">
+            @if($attempt->exam->show_score_after_submit)
+                <!-- Score Header Card -->
+                <div class="group relative bg-gradient-to-br from-indigo-600 via-indigo-700 to-indigo-900 rounded-[3rem] p-10 md:p-14 text-white shadow-2xl shadow-indigo-200 overflow-hidden">
+                    <!-- Abstract Decoration -->
+                    <div class="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
+                    <div class="absolute bottom-0 left-0 -ml-20 -mb-20 w-64 h-64 bg-indigo-400/20 rounded-full blur-3xl pointer-events-none"></div>
 
-        // Confetti Animation Function
-        function triggerConfetti() {
-            const canvas = document.createElement('canvas');
-            canvas.id = 'confettiCanvas';
-            document.body.appendChild(canvas);
-            
-            const ctx = canvas.getContext('2d');
-            
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            canvas.style.transition = 'opacity 0.5s ease-out';
-            
-            const particles = [];
-            
-            for (let i = 0; i < 150; i++) {
-                particles.push({
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height - canvas.height,
-                    size: Math.random() * 3 + 2,
-                    speedX: Math.random() * 6 - 3,
-                    speedY: Math.random() * 5 + 2,
-                    rotation: Math.random() * 360,
-                    rotationSpeed: Math.random() * 10 - 5,
-                    color: ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9d56e', '#f8b500', '#ff9e7d', '#a8e6cf', '#ffd3b6'][Math.floor(Math.random() * 8)]
-                });
-            }
-            
-            function animate() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                
-                particles.forEach(p => {
-                    ctx.save();
-                    ctx.translate(p.x, p.y);
-                    ctx.rotate(p.rotation * Math.PI / 180);
-                    ctx.fillStyle = p.color;
-                    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
-                    ctx.restore();
+                    <div class="relative flex flex-col md:flex-row items-center justify-between gap-12">
+                        <div class="space-y-6 text-center md:text-left">
+                            <div class="space-y-2">
+                                <p class="text-indigo-100 font-black uppercase tracking-[0.4em] text-[10px] opacity-80 italic">Pencapaian Akademik</p>
+                                <h1 class="text-3xl md:text-5xl font-black leading-tight uppercase tracking-wider">{{ $attempt->exam->title }}</h1>
+                            </div>
+                            
+                            <div class="flex flex-wrap justify-center md:justify-start gap-4">
+                                <div class="px-5 py-2 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20">
+                                    <p class="text-[8px] font-black text-indigo-200 uppercase tracking-widest mb-1">Dikerjakan Pada</p>
+                                    <p class="text-xs font-black uppercase tracking-wider">{{ $attempt->submitted_at->format('d M Y - H:i') }}</p>
+                                </div>
+                                <div class="px-5 py-2 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20">
+                                    <p class="text-[8px] font-black text-indigo-200 uppercase tracking-widest mb-1">Durasi Sesi</p>
+                                    <p class="text-xs font-black uppercase tracking-wider">{{ $attempt->started_at->diffInMinutes($attempt->submitted_at) }} Menit</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="relative text-center">
+                            <div class="relative inline-block group">
+                                <div class="absolute -inset-4 bg-white/20 rounded-full blur opacity-30 group-hover:opacity-60 transition duration-1000"></div>
+                                <div class="relative w-40 h-40 md:w-52 md:h-52 bg-white/15 backdrop-blur-2xl border-4 border-white/30 rounded-full flex flex-col items-center justify-center shadow-2xl">
+                                    <p class="text-[10px] md:text-xs font-black text-indigo-100 uppercase tracking-[0.3em] mb-1">Skor Akhir</p>
+                                    <span class="text-6xl md:text-8xl font-black tracking-tighter">{{ intval($attempt->final_score) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Stats Grid -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="bg-white rounded-[2.5rem] p-7 border border-gray-100 shadow-sm text-center space-y-1">
+                        <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Total Soal</p>
+                        <p class="text-2xl font-black text-gray-900">{{ $questions->count() }}</p>
+                    </div>
+                    <div class="bg-emerald-50 rounded-[2.5rem] p-7 border border-emerald-100 shadow-sm text-center space-y-1">
+                        <p class="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Jawaban Benar</p>
+                        <p class="text-2xl font-black text-emerald-600">{{ $correct_count }}</p>
+                    </div>
+                    <div class="bg-rose-50 rounded-[2.5rem] p-7 border border-rose-100 shadow-sm text-center space-y-1">
+                        <p class="text-[9px] font-black text-rose-600 uppercase tracking-widest">Jawaban Salah</p>
+                        <p class="text-2xl font-black text-rose-600">{{ $incorrect_count }}</p>
+                    </div>
+                    <div class="bg-gray-50 rounded-[2.5rem] p-7 border border-gray-100 shadow-sm text-center space-y-1">
+                        <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Dilewati</p>
+                        <p class="text-2xl font-black text-gray-600">{{ $unanswered_count }}</p>
+                    </div>
+                </div>
+            @else
+                <!-- Score Hidden Placeholder -->
+                <div class="bg-white rounded-[3rem] p-12 border border-gray-100 shadow-sm text-center space-y-8">
+                    <div class="w-24 h-24 bg-indigo-50 rounded-[2rem] flex items-center justify-center mx-auto text-indigo-600 text-4xl">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <div class="max-w-md mx-auto space-y-4">
+                        <h2 class="text-2xl font-black text-gray-900 uppercase tracking-wider">{{ $attempt->exam->title }}</h2>
+                        <div class="bg-blue-50/50 p-6 rounded-[2rem] border border-blue-100">
+                             <p class="text-xs font-bold text-blue-800 leading-relaxed italic">Ujian Anda telah berhasil dikirimkan. Pengajar telah mengatur agar nilai tidak ditampilkan secara instan. Silakan hubungi pengajar Anda untuk informasi lebih lanjut.</p>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            <!-- Answer Review Section -->
+            @if($attempt->exam->allow_review_results)
+                <div class="space-y-6">
+                    <div class="flex items-center justify-between px-2">
+                        <h3 class="text-xl font-black text-gray-900 uppercase tracking-wider flex items-center gap-3">
+                            <span class="w-2 h-8 bg-indigo-600 rounded-full"></span>
+                            Review Jawaban
+                        </h3>
+                    </div>
+
+                    <div class="space-y-8">
+                        @foreach($questions as $index => $question)
+                            @php
+                                $answer = $answers->firstWhere('question_id', $question->id);
+                                $isCorrect = $answer?->is_correct;
+                                $questionNumber = isset($question->nav_position) ? $question->nav_position : ($index + 1);
+                                
+                                $statusClass = $isCorrect === true ? 'border-emerald-100 bg-emerald-50/20' : ($isCorrect === false ? 'border-rose-100 bg-rose-50/20' : 'border-gray-100 bg-gray-50/20');
+                                $iconClass = $isCorrect === true ? 'bg-emerald-500 text-white' : ($isCorrect === false ? 'bg-rose-500 text-white' : 'bg-gray-400 text-white');
+                            @endphp
+
+                            <div class="group bg-white rounded-[2.5rem] border {{ $statusClass }} shadow-sm overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-gray-100">
+                                <div class="p-8 space-y-8">
+                                    <!-- Q Header -->
+                                    <div class="flex items-start justify-between">
+                                        <div class="flex items-center gap-4">
+                                            <div class="w-12 h-12 {{ $iconClass }} rounded-2xl flex items-center justify-center font-black text-lg shadow-lg">
+                                                {{ $questionNumber }}
+                                            </div>
+                                            <div>
+                                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Pertanyaan {{ $question->question_type === 'multiple_choice' ? 'PG' : 'Esai' }}</p>
+                                                <p class="text-[11px] font-black @if($isCorrect === true) text-emerald-600 @elseif($isCorrect === false) text-rose-600 @else text-gray-500 @endif uppercase tracking-wider">
+                                                    @if($isCorrect === true) Jawaban Benar @elseif($isCorrect === false) Jawaban Salah @else Tidak Dijawab @endif
+                                                </p>
+                                            </div>
+                                        </div>
+                                        
+                                        @if($isCorrect === true)
+                                            <div class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center">
+                                                <i class="fas fa-check"></i>
+                                            </div>
+                                        @elseif($isCorrect === false)
+                                            <div class="w-10 h-10 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center">
+                                                <i class="fas fa-times"></i>
+                                            </div>
+                                        @endif
+                                    </div>
+
+                                    <!-- Question Text -->
+                                    <div class="bg-gray-50/50 p-6 rounded-[2rem] border border-gray-100">
+                                        <p class="text-sm font-bold text-gray-800 leading-relaxed">{{ $question->question_text }}</p>
+                                    </div>
+
+                                    <!-- Option Comparison -->
+                                    @if($question->question_type === 'multiple_choice')
+                                        @php
+                                            $studentAnswerText = $answer?->selected_answer_text;
+                                            $correctAnswerText = $answer?->correct_answer_text;
+                                        @endphp
+
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <!-- Your Answer -->
+                                            <div class="space-y-3">
+                                                <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest pl-2">Jawaban Anda</p>
+                                                <div class="p-5 rounded-2xl border @if($isCorrect) border-emerald-100 bg-emerald-50 text-emerald-800 @else border-rose-100 bg-rose-50 text-rose-800 @endif flex items-center gap-4">
+                                                     <p class="text-xs font-black uppercase tracking-wider leading-tight">
+                                                         @if($studentAnswerText)
+                                                            {{ $studentAnswerText }}
+                                                         @else
+                                                            <span class="italic font-bold opacity-60">Tidak Menjawab</span>
+                                                         @endif
+                                                     </p>
+                                                </div>
+                                            </div>
+                                            <!-- Correct Answer -->
+                                            <div class="space-y-3">
+                                                <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest pl-2">Kunci Jawaban</p>
+                                                <div class="p-5 rounded-2xl border border-emerald-100 bg-emerald-50 text-emerald-800 flex items-center gap-4">
+                                                     <p class="text-xs font-black uppercase tracking-wider leading-tight">{{ $correctAnswerText }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @else
+                                        <!-- Essay View -->
+                                        <div class="space-y-6">
+                                            <div class="space-y-3">
+                                                <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest pl-2">Jawaban Esai Anda</p>
+                                                <div class="p-8 rounded-[2rem] border border-gray-100 bg-gray-50 text-gray-800 italic leading-relaxed text-sm whitespace-pre-wrap">
+                                                    {{ $answer?->essay_answer ?? '(Tidak ada jawaban)' }}
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center gap-4 px-6 py-4 bg-indigo-50 rounded-2xl border border-indigo-100">
+                                                <i class="fas fa-info-circle text-indigo-500"></i>
+                                                <p class="text-[10px] font-black text-indigo-700 uppercase tracking-widest italic">Penilaian Esai dilakukan secara manual oleh pengajar.</p>
+                                            </div>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+        </div>
+
+        <!-- Sidebar Summary Area -->
+        <div class="lg:col-span-1 space-y-10">
+            <!-- Grade Badge Card -->
+            @if($attempt->exam->show_score_after_submit)
+                <div class="bg-white rounded-[3rem] p-10 border border-gray-100 shadow-sm text-center relative overflow-hidden group">
+                    <div class="absolute -top-10 -right-10 w-32 h-32 bg-indigo-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+
+                    @php
+                        $score = intval($attempt->final_score);
+                        if ($score >= 85) { $grade = 'A'; $gradeC = 'text-emerald-500 bg-emerald-50'; $gradeT = 'Excellent Performance'; }
+                        elseif ($score >= 75) { $grade = 'B'; $gradeC = 'text-blue-500 bg-blue-50'; $gradeT = 'Good Attempt'; }
+                        elseif ($score >= 65) { $grade = 'C'; $gradeC = 'text-amber-500 bg-amber-50'; $gradeT = 'Fair Performance'; }
+                        elseif ($score >= 50) { $grade = 'D'; $gradeC = 'text-orange-500 bg-orange-50'; $gradeT = 'Needs Improvement'; }
+                        else { $grade = 'F'; $gradeC = 'text-rose-500 bg-rose-50'; $gradeT = 'Keep Learning'; }
+                    @endphp
+
+                    <div class="relative space-y-6">
+                        <div class="w-32 h-32 {{ $gradeC }} rounded-full flex items-center justify-center mx-auto border-8 border-white shadow-2xl transition-transform duration-500 group-hover:scale-110">
+                            <span class="text-6xl font-black">{{ $grade }}</span>
+                        </div>
+                        <div class="space-y-1">
+                            <h4 class="text-lg font-black text-gray-900 uppercase tracking-widest">{{ $gradeT }}</h4>
+                            <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Kategori Kompetensi</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Performance Breakdown Small -->
+                <div class="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-sm space-y-8">
+                    <h3 class="text-xs font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                        <i class="fas fa-chart-pie text-indigo-600"></i> Distribusi Performa
+                    </h3>
                     
-                    p.x += p.speedX;
-                    p.y += p.speedY;
-                    p.rotation += p.rotationSpeed;
-                    p.speedY += 0.1; // gravity
-                    p.speedX *= 0.99; // air resistance
-                });
-                
-                if (particles.some(p => p.y < canvas.height)) {
-                    requestAnimationFrame(animate);
-                } else {
-                    canvas.style.opacity = '0';
-                    setTimeout(() => canvas.remove(), 500);
+                    <div class="space-y-6">
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-[10px] font-black uppercase tracking-widest">
+                                <span class="text-emerald-600">Ketepatan Jawaban</span>
+                                <span class="text-gray-900">{{ round(($correct_count / $questions->count()) * 100) }}%</span>
+                            </div>
+                            <div class="w-full bg-gray-50 rounded-full h-3 overflow-hidden border border-gray-100">
+                                <div class="bg-gradient-to-r from-emerald-400 to-emerald-600 h-full rounded-full" style="width: {{ ($correct_count / $questions->count()) * 100 }}%"></div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-[10px] font-black uppercase tracking-widest">
+                                <span class="text-rose-600">Tingkat Kesalahan</span>
+                                <span class="text-gray-900">{{ round(($incorrect_count / $questions->count()) * 100) }}%</span>
+                            </div>
+                            <div class="w-full bg-gray-50 rounded-full h-3 overflow-hidden border border-gray-100">
+                                <div class="bg-gradient-to-r from-rose-400 to-rose-600 h-full rounded-full" style="width: {{ ($incorrect_count / $questions->count()) * 100 }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            <!-- Meta Information List -->
+            <div class="bg-indigo-900 rounded-[3rem] p-10 text-white shadow-2xl shadow-indigo-200 space-y-8 relative overflow-hidden">
+                <div class="absolute top-0 right-0 -mr-10 -mt-10 w-32 h-32 bg-white/5 rounded-full blur-2xl"></div>
+
+                <h3 class="text-xs font-black uppercase tracking-[0.3em] flex items-center gap-3">
+                    <span class="w-1.5 h-6 bg-white rounded-full"></span> Detail Meta
+                </h3>
+
+                <div class="space-y-6">
+                    <div class="space-y-1">
+                        <p class="text-[9px] font-black text-indigo-300 uppercase tracking-widest">Mata Pelajaran</p>
+                        <p class="text-sm font-black uppercase tracking-wider">{{ $attempt->exam->subject->name }}</p>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="text-[9px] font-black text-indigo-300 uppercase tracking-widest">Metode Gating</p>
+                        <p class="text-sm font-black uppercase tracking-wider">Token Sistem Global</p>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="text-[9px] font-black text-indigo-300 uppercase tracking-widest">Keamanan Sesi</p>
+                        <p class="text-sm font-black uppercase tracking-wider flex items-center gap-2">
+                            Tervalidasi <i class="fas fa-check-shield text-[10px] text-emerald-400"></i>
+                        </p>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="text-[9px] font-black text-indigo-300 uppercase tracking-widest">Status Data</p>
+                        <div class="flex items-center gap-2 pt-1">
+                             <span class="w-2 h-2 bg-emerald-400 rounded-full animate-ping"></span>
+                             <span class="text-[10px] font-black uppercase tracking-widest">Sinkron Terpusat</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-8 border-t border-white/10 space-y-4">
+                     <button onclick="window.print()" class="w-full py-4 bg-white/10 hover:bg-white/20 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all transition-colors flex items-center justify-center gap-3">
+                         <i class="fas fa-print"></i> Cetak Bukti Hasil
+                     </button>
+                     <a href="{{ route('dashboard.student') }}" class="block w-full text-center text-[10px] font-black text-indigo-300 uppercase tracking-widest hover:text-white transition-colors">
+                         Selesaikan & Keluar
+                     </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Success celebration on page load
+        setTimeout(() => {
+            triggerConfetti();
+            Swal.fire({
+                title: '🎉 Ujian Selesai!',
+                html: '<p class="text-[11px] font-black text-gray-500 uppercase tracking-widest leading-relaxed">Sesi Anda telah berhasil sinkron dan diarsipkan dengan aman ke server pusat.</p>',
+                icon: 'success',
+                confirmButtonText: 'Tutup & Review',
+                confirmButtonColor: '#4f46e5',
+                background: '#ffffff',
+                allowOutsideClick: false,
+                customClass: {
+                    popup: 'rounded-[3rem] p-10',
+                    title: 'text-2xl font-black text-gray-900 tracking-wider',
+                    confirmButton: 'rounded-2xl px-10 py-4 text-[10px] font-black uppercase tracking-widest mt-4 shadow-xl shadow-indigo-100'
                 }
-            }
-            
-            animate();
+            });
+        }, 500);
+    });
+
+    function triggerConfetti() {
+        const canvas = document.createElement('canvas');
+        canvas.style.position = 'fixed';
+        canvas.style.top = '0'; canvas.style.left = '0';
+        canvas.style.width = '100%'; canvas.style.height = '100%';
+        canvas.style.pointerEvents = 'none';
+        canvas.style.zIndex = '99999';
+        document.body.appendChild(canvas);
+        
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        const particles = [];
+        for (let i = 0; i < 150; i++) {
+            particles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height - canvas.height,
+                size: Math.random() * 4 + 2,
+                speedX: Math.random() * 6 - 3,
+                speedY: Math.random() * 5 + 3,
+                r: Math.random() * 360,
+                rs: Math.random() * 10 - 5,
+                c: ['#6366f1', '#10b981', '#f59e0b', '#f43f5e', '#a855f7'][Math.floor(Math.random() * 5)]
+            });
         }
-    </script>
+        
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.r * Math.PI / 180);
+                ctx.fillStyle = p.c;
+                ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+                ctx.restore();
+                p.x += p.speedX; p.y += p.speedY; p.r += p.rs; p.speedY += 0.1;
+            });
+            if (particles.some(p => p.y < canvas.height)) requestAnimationFrame(animate);
+            else { canvas.style.opacity = '0'; setTimeout(() => canvas.remove(), 1000); }
+        }
+        animate();
+    }
+</script>
 @endsection

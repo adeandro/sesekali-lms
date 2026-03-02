@@ -18,9 +18,16 @@ class ResultController extends Controller
      */
     public function index()
     {
-        $exams = Exam::with('subject')
-            ->where('status', 'published')
-            ->get()
+        $query = Exam::with('subject')
+            ->where('status', 'published');
+
+        // Scoping for Teacher
+        if (auth()->user()->role === 'teacher') {
+            $mySubjectIds = auth()->user()->subjects->pluck('id');
+            $query->whereIn('subject_id', $mySubjectIds);
+        }
+
+        $exams = $query->get()
             ->map(function ($exam) {
                 $stats = EssayGradingService::getExamStatistics($exam->id);
                 $exam->stats = $stats;
@@ -47,7 +54,7 @@ class ResultController extends Controller
         // Validate exam exists via explicit find()
         $exam = Exam::find($examId);
         
-        if (!$exam) {
+        if (!$exam || (auth()->user()->role === 'teacher' && !auth()->user()->subjects->contains('id', $exam->subject_id))) {
             Log::warning('Admin Results Show - Exam Not Found', [
                 'exam_id' => $examId,
                 'user_id' => auth()->id(),
@@ -72,9 +79,15 @@ class ResultController extends Controller
             ->where('status', 'submitted')
             ->with('student');
 
-        // Filter by grade if provided
+        // Filter by Class/Rombel if provided
         if ($request->get('class')) {
-            $query->whereHas('student', fn($q) => $q->where('grade', $request->get('class')));
+            $classData = explode('|', $request->get('class'));
+            if (count($classData) === 2) {
+                $query->whereHas('student', fn($q) => 
+                    $q->where('grade', $classData[0])
+                      ->where('class_group', $classData[1])
+                );
+            }
         }
 
         // Search by name if provided
@@ -98,15 +111,20 @@ class ResultController extends Controller
         // Get statistics
         $stats = EssayGradingService::getExamStatistics($exam->id);
 
-        // Get available grades for filter
-        $classes = ExamAttempt::whereHas('student')
-            ->where('exam_id', $exam->id)
+        // Get available classes/rombels for filter (Grade + Class Group)
+        $classes = ExamAttempt::where('exam_id', $exam->id)
+            ->where('status', 'submitted')
+            ->whereHas('student')
             ->with('student')
             ->get()
-            ->pluck('student.grade')
-            ->unique()
-            ->filter()
-            ->sort()
+            ->map(function ($attempt) {
+                return [
+                    'id' => $attempt->student->grade . '|' . $attempt->student->class_group,
+                    'name' => 'Kelas ' . $attempt->student->grade . ' - ' . $attempt->student->class_group
+                ];
+            })
+            ->unique('id')
+            ->sortBy('name')
             ->values();
 
         return view('admin.results.show', compact('exam', 'attempts', 'stats', 'classes'));
@@ -136,7 +154,7 @@ class ResultController extends Controller
         // Step 1: Validate and fetch Exam
         $exam = Exam::find($examId);
         
-        if (!$exam) {
+        if (!$exam || (auth()->user()->role === 'teacher' && !auth()->user()->subjects->contains('id', $exam->subject_id))) {
             Log::warning('Admin Results Review - Exam Not Found', [
                 'exam_id' => $examId,
                 'attempt_id' => $attemptId,
@@ -223,16 +241,18 @@ class ResultController extends Controller
                 ->with('error', 'Terjadi kesalahan saat memuat data: ' . $e->getMessage());
         }
 
-        // Step 5: Load essay answers
+        // Step 5: Load essay and multiple choice answers
         $essayAnswers = EssayGradingService::getEssayAnswers($attempt);
+        $mcAnswers = $attempt->answers->filter(fn($a) => $a->question->question_type === 'multiple_choice');
 
         Log::info('Admin Results Review - Review Page Rendered', [
             'exam_id' => $examId,
             'attempt_id' => $attemptId,
             'essay_answers' => count($essayAnswers),
+            'mc_answers' => $mcAnswers->count(),
         ]);
 
-        return view('admin.results.review', compact('exam', 'attempt', 'essayAnswers'));
+        return view('admin.results.review', compact('exam', 'attempt', 'essayAnswers', 'mcAnswers'));
     }
 
     /**
@@ -253,7 +273,7 @@ class ResultController extends Controller
 
         // Validate exam exists
         $exam = Exam::find($examId);
-        if (!$exam) {
+        if (!$exam || (auth()->user()->role === 'teacher' && !auth()->user()->subjects->contains('id', $exam->subject_id))) {
             Log::warning('Update Grades - Exam Not Found', ['exam_id' => $examId]);
             return redirect()->route('admin.results.index')
                 ->with('error', 'Ujian tidak ditemukan.');
@@ -326,20 +346,21 @@ class ResultController extends Controller
 
         // Validate exam exists
         $exam = Exam::find($examId);
-        if (!$exam) {
+        if (!$exam || (auth()->user()->role === 'teacher' && !auth()->user()->subjects->contains('id', $exam->subject_id))) {
             Log::warning('Export - Exam Not Found', ['exam_id' => $examId]);
             return redirect()->route('admin.results.index')
                 ->with('error', 'Ujian tidak ditemukan.');
         }
 
-        $filename = 'exam_results_' . $exam->id . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+        $filename = 'hasil_ujian_' . $exam->id . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
 
         Log::info('Admin Results Export - File Generated', [
             'exam_id' => $examId,
             'filename' => $filename,
+            'filters' => request()->all(),
         ]);
 
-        return Excel::download(new ExamResultsExport($exam), $filename);
+        return Excel::download(new ExamResultsExport($exam, request()->all()), $filename);
     }
 }
 

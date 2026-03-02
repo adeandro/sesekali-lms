@@ -24,8 +24,18 @@ class ExamController extends Controller
             'status' => $request->input('status'),
         ];
 
+        // Scoping for Teacher
+        if (auth()->user()->role === 'teacher') {
+            $filters['subject'] = auth()->user()->subjects->pluck('id')->toArray();
+        }
+
         $exams = ExamService::getExamsList($filters);
-        $subjects = Subject::orderBy('name')->get();
+        
+        if (auth()->user()->role === 'teacher') {
+            $subjects = auth()->user()->subjects;
+        } else {
+            $subjects = Subject::orderBy('name')->get();
+        }
 
         return view('admin.exams.index', compact('exams', 'subjects'));
     }
@@ -35,7 +45,11 @@ class ExamController extends Controller
      */
     public function create()
     {
-        $subjects = Subject::orderBy('name')->get();
+        if (auth()->user()->role === 'teacher') {
+            $subjects = auth()->user()->subjects;
+        } else {
+            $subjects = Subject::orderBy('name')->get();
+        }
         return view('admin.exams.create', compact('subjects'));
     }
 
@@ -63,12 +77,21 @@ class ExamController extends Controller
      */
     public function edit(Exam $exam)
     {
+        // Security check for Teacher
+        if (auth()->user()->role === 'teacher' && !auth()->user()->subjects->contains('id', $exam->subject_id)) {
+            abort(403, 'Unauthorized access to this exam.');
+        }
+
         if (!$exam->canEdit()) {
             return redirect()->route('admin.exams.index')
                 ->with('error', 'Cannot edit a finished exam');
         }
 
-        $subjects = Subject::orderBy('name')->get();
+        if (auth()->user()->role === 'teacher') {
+            $subjects = auth()->user()->subjects;
+        } else {
+            $subjects = Subject::orderBy('name')->get();
+        }
         return view('admin.exams.edit', compact('exam', 'subjects'));
     }
 
@@ -93,6 +116,11 @@ class ExamController extends Controller
      */
     public function destroy(Exam $exam)
     {
+        // Security check for Teacher
+        if (auth()->user()->role === 'teacher' && !auth()->user()->subjects->contains('id', $exam->subject_id)) {
+            abort(403, 'Unauthorized.');
+        }
+
         // Force delete permanently (Exam model uses SoftDeletes)
         $exam->forceDelete();
 
@@ -105,6 +133,11 @@ class ExamController extends Controller
      */
     public function manageQuestions(Exam $exam)
     {
+        // Security check for Teacher
+        if (auth()->user()->role === 'teacher' && !auth()->user()->subjects->contains('id', $exam->subject_id)) {
+            abort(403, 'Unauthorized access.');
+        }
+
         if ($exam->status === 'finished') {
             return redirect()->route('admin.exams.index')
                 ->with('error', 'Cannot modify a finished exam');
@@ -127,6 +160,11 @@ class ExamController extends Controller
      */
     public function attachQuestions(Request $request, Exam $exam)
     {
+        // Security check for Teacher
+        if (auth()->user()->role === 'teacher' && !auth()->user()->subjects->contains('id', $exam->subject_id)) {
+            abort(403, 'Unauthorized.');
+        }
+
         if ($exam->status === 'finished') {
             return redirect()->back()
                 ->with('error', 'Cannot modify a finished exam');
@@ -152,6 +190,11 @@ class ExamController extends Controller
      */
     public function detachQuestion(Request $request, Exam $exam)
     {
+        // Security check for Teacher
+        if (auth()->user()->role === 'teacher' && !auth()->user()->subjects->contains('id', $exam->subject_id)) {
+            abort(403, 'Unauthorized.');
+        }
+
         $validated = $request->validate([
             'question_id' => 'required|exists:questions,id',
         ]);
@@ -167,6 +210,11 @@ class ExamController extends Controller
      */
     public function autoAddQuestions(Request $request, Exam $exam)
     {
+        // Security check for Teacher
+        if (auth()->user()->role === 'teacher' && !auth()->user()->subjects->contains('id', $exam->subject_id)) {
+            abort(403, 'Unauthorized.');
+        }
+
         if ($exam->status === 'finished') {
             return redirect()->back()
                 ->with('error', 'Cannot modify a finished exam');
@@ -213,6 +261,11 @@ class ExamController extends Controller
      */
     public function detachAllQuestions(Request $request, Exam $exam)
     {
+        // Security check for Teacher
+        if (auth()->user()->role === 'teacher' && !auth()->user()->subjects->contains('id', $exam->subject_id)) {
+            abort(403, 'Unauthorized.');
+        }
+
         if ($exam->status === 'finished') {
             return redirect()->back()
                 ->with('error', 'Cannot modify a finished exam');
@@ -242,6 +295,11 @@ class ExamController extends Controller
      */
     public function publish(Exam $exam)
     {
+        // Security check for Teacher
+        if (auth()->user()->role === 'teacher' && !auth()->user()->subjects->contains('id', $exam->subject_id)) {
+            abort(403, 'Unauthorized.');
+        }
+
         try {
             ExamService::publishExam($exam);
 
@@ -261,6 +319,11 @@ class ExamController extends Controller
      */
     public function setToDraft(Exam $exam)
     {
+        // Security check for Teacher
+        if (auth()->user()->role === 'teacher' && !auth()->user()->subjects->contains('id', $exam->subject_id)) {
+            abort(403, 'Unauthorized.');
+        }
+
         try {
             ExamService::setToDraft($exam);
 
@@ -298,6 +361,11 @@ class ExamController extends Controller
      */
     public function generateToken(Exam $exam)
     {
+        // Security check for Teacher
+        if (auth()->user()->role === 'teacher' && !auth()->user()->subjects->contains('id', $exam->subject_id)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized subject access'], 403);
+        }
+
         try {
             if ($exam->status !== 'published') {
                 return response()->json([
@@ -327,6 +395,11 @@ class ExamController extends Controller
      */
     public function refreshToken(Exam $exam)
     {
+        // Security check for Teacher
+        if (auth()->user()->role === 'teacher' && !auth()->user()->subjects->contains('id', $exam->subject_id)) {
+            abort(403, 'Unauthorized access.');
+        }
+
         try {
             if ($exam->status !== 'published') {
                 return redirect()->route('admin.tokens.index')
@@ -348,6 +421,11 @@ class ExamController extends Controller
      */
     public function updateToken(Request $request, Exam $exam)
     {
+        // Security check for Teacher
+        if (auth()->user()->role === 'teacher' && !auth()->user()->subjects->contains('id', $exam->subject_id)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized subject access'], 403);
+        }
+
         $request->validate([
             'token' => 'required|string|max:10|unique:exams,token,' . $exam->id,
         ]);

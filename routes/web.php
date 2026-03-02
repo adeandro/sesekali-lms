@@ -17,6 +17,7 @@ use App\Http\Controllers\Student\HeartbeatController;
 use App\Http\Controllers\Api\ExamProgressController;
 use App\Http\Controllers\Admin\TokenController;
 use App\Http\Controllers\Admin\MonitoringController;
+use App\Http\Controllers\Admin\SettingController;
 
 // Public routes
 Route::get('/', function () {
@@ -41,7 +42,7 @@ Route::middleware('auth')->group(function () {
         $user = auth()->user();
         return match ($user->role) {
             'superadmin' => redirect()->route('dashboard.superadmin'),
-            'admin' => redirect()->route('dashboard.admin'),
+            'teacher' => redirect()->route('dashboard.teacher'),
             'student' => redirect()->route('dashboard.student'),
             default => redirect()->route('login'),
         };
@@ -50,11 +51,23 @@ Route::middleware('auth')->group(function () {
     // Superadmin routes
     Route::middleware('role:superadmin')->group(function () {
         Route::get('/dashboard/superadmin', [SuperAdminDashboardController::class, 'index'])->name('dashboard.superadmin');
+        
+        // Teacher Management (LMS)
+        Route::prefix('superadmin')->name('superadmin.')->group(function () {
+            Route::resource('teachers', \App\Http\Controllers\Dashboard\SuperAdminTeacherController::class);
+        });
     });
 
-    // Admin routes
-    Route::middleware('role:admin')->group(function () {
-        Route::get('/dashboard/admin', [AdminDashboardController::class, 'index'])->name('dashboard.admin');
+    // Teacher routes
+    Route::middleware('role:teacher')->group(function () {
+        Route::get('/dashboard/teacher', [\App\Http\Controllers\Dashboard\TeacherDashboardController::class, 'index'])->name('dashboard.teacher');
+        
+        // Teacher Settings
+        Route::prefix('teacher/settings')->name('teacher.settings.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Teacher\TeacherSettingsController::class, 'index'])->name('index');
+            Route::post('profile', [\App\Http\Controllers\Teacher\TeacherSettingsController::class, 'updateProfile'])->name('profile');
+            Route::post('password', [\App\Http\Controllers\Teacher\TeacherSettingsController::class, 'updatePassword'])->name('password');
+        });
     });
 
     // Student routes
@@ -97,11 +110,13 @@ Route::middleware('auth')->group(function () {
         Route::get('student/results', [StudentResultController::class, 'index'])->name('student.results');
     });
 
-    // Subject & Question Management routes (Admin & Superadmin only)
-    Route::middleware('role:admin,superadmin')->prefix('admin')->name('admin.')->group(function () {
-        // Subject routes
-        Route::delete('subjects/delete-all', [SubjectController::class, 'deleteAllSubjects'])->name('subjects.deleteAll');
-        Route::resource('subjects', SubjectController::class);
+    // Subject & Question Management routes
+    Route::middleware('role:teacher,superadmin')->prefix('admin')->name('admin.')->group(function () {
+        // [MODUL SUPERADMIN ONLY] Subject routes
+        Route::middleware('role:superadmin')->group(function () {
+            Route::delete('subjects/delete-all', [SubjectController::class, 'deleteAllSubjects'])->name('subjects.deleteAll');
+            Route::resource('subjects', SubjectController::class);
+        });
 
         // Question routes with import/export
         Route::get('questions/import/form', [QuestionController::class, 'importForm'])->name('questions.importForm');
@@ -158,18 +173,26 @@ Route::middleware('auth')->group(function () {
             Route::post('attempts/{attempt}/reopen', [MonitoringController::class, 'reopenSession'])->name('attempts.reopen');
         });
 
-        // Student Management routes
-        // Explicit routes must come before resource()
-        Route::get('students/import/form', [StudentController::class, 'importForm'])->name('students.importForm');
-        Route::post('students/import', [StudentController::class, 'import'])->name('students.import');
-        Route::get('students/import/result', [StudentController::class, 'importResult'])->name('students.importResult');
-        Route::get('students/export', [StudentController::class, 'export'])->name('students.export');
-        Route::post('students/{student}/reset-password', [StudentController::class, 'resetPassword'])->name('students.resetPassword');
-        Route::post('students/reset-all-passwords', [StudentController::class, 'resetAllPasswords'])->name('students.resetAllPasswords');
-        Route::delete('students/delete-all', [StudentController::class, 'deleteAllStudents'])->name('students.deleteAll');
-        Route::post('students/{student}/toggle-active', [StudentController::class, 'toggleActive'])->name('students.toggleActive');
+        // [MODUL SUPERADMIN ONLY] Student Management routes
+        Route::middleware('role:superadmin')->group(function () {
+            // Explicit routes must come before resource()
+            Route::get('students/import/form', [StudentController::class, 'importForm'])->name('students.importForm');
+            Route::post('students/import', [StudentController::class, 'import'])->name('students.import');
+            Route::get('students/import/result', [StudentController::class, 'importResult'])->name('students.importResult');
+            Route::get('students/export', [StudentController::class, 'export'])->name('students.export');
+            Route::post('students/{student}/reset-password', [StudentController::class, 'resetPassword'])->name('students.resetPassword');
+            Route::post('students/reset-all-passwords', [StudentController::class, 'resetAllPasswords'])->name('students.resetAllPasswords');
+            Route::delete('students/delete-all', [StudentController::class, 'deleteAllStudents'])->name('students.deleteAll');
+            Route::post('students/{student}/toggle-active', [StudentController::class, 'toggleActive'])->name('students.toggleActive');
+            Route::get('students/upload-photos', [StudentController::class, 'uploadPhotosForm'])->name('students.upload-photos');
+            Route::post('students/upload-photos', [StudentController::class, 'uploadPhotos'])->name('students.upload-photos.post');
 
-        // Resource routes last
-        Route::resource('students', StudentController::class);
+            // Resource routes last
+            Route::resource('students', StudentController::class);
+
+            // Settings Management
+            Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
+            Route::post('settings', [SettingController::class, 'update'])->name('settings.update');
+        });
     });
 });

@@ -11,7 +11,7 @@ class StoreStudentRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return auth()->check() && in_array(auth()->user()->role, ['admin', 'superadmin']);
+        return auth()->check() && auth()->user()->role === 'superadmin';
     }
 
     /**
@@ -26,6 +26,7 @@ class StoreStudentRequest extends FormRequest
             'name' => 'required|string|max:255',
             'grade' => 'required|string|in:10,11,12',
             'class_group' => 'required|string|max:10',
+            'photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ];
     }
 }

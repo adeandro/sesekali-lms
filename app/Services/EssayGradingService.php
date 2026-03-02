@@ -51,11 +51,11 @@ class EssayGradingService
             // Calculate average essay score
             $averageEssayScore = $essayCount > 0 ? $totalEssayScore / $essayCount : 0;
 
-            // Update exam attempt with new scores
-            $attempt->update([
-                'score_essay' => $averageEssayScore,
-                'final_score' => ($attempt->score_mc + $averageEssayScore) / 2,
-            ]);
+            // Update exam attempt with new scores using ScoringService
+            $attempt->score_essay = $averageEssayScore;
+            $attempt->save(); // Save essay score first
+            
+            \App\Services\ScoringService::updateAttemptScores($attempt);
 
             return $attempt->refresh();
         });
@@ -81,13 +81,15 @@ class EssayGradingService
         }
 
         $scores = $attempts->pluck('final_score');
+        $exam = \App\Models\Exam::with('subject')->find($examId);
+        $kkm = $exam->subject->kkm ?? 75;
 
         return [
             'total_participants' => $attempts->count(),
             'average_score' => $scores->average(),
             'highest_score' => $scores->max(),
             'lowest_score' => $scores->min(),
-            'pass_rate' => $attempts->where('final_score', '>=', 70)->count() / $attempts->count() * 100,
+            'pass_rate' => $attempts->where('final_score', '>=', $kkm)->count() / $attempts->count() * 100,
         ];
     }
 

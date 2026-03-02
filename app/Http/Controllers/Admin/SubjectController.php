@@ -32,6 +32,7 @@ class SubjectController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:subjects,name',
+            'kkm' => 'required|integer|min:0|max:100',
         ]);
 
         Subject::create($validated);
@@ -55,6 +56,7 @@ class SubjectController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:subjects,name,' . $subject->id,
+            'kkm' => 'required|integer|min:0|max:100',
         ]);
 
         $subject->update($validated);

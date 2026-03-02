@@ -17,8 +17,15 @@ class TokenController extends Controller
         $search = $request->input('search');
         $status = $request->input('status', 'all');
 
-        $exams = Exam::query()
-            ->when($search, function ($query) use ($search) {
+        $query = Exam::query();
+
+        // Scoping for Teacher
+        if (auth()->user()->role === 'teacher') {
+            $mySubjectIds = auth()->user()->subjects->pluck('id');
+            $query->whereIn('subject_id', $mySubjectIds);
+        }
+
+        $exams = $query->when($search, function ($query) use ($search) {
                 return $query->where('title', 'like', '%' . $search . '%')
                     ->orWhere('token', 'like', '%' . $search . '%');
             })
@@ -43,6 +50,11 @@ class TokenController extends Controller
      */
     public function listTokens(Exam $exam)
     {
+        // Security check for Teacher
+        if (auth()->user()->role === 'teacher' && !auth()->user()->subjects->contains('id', $exam->subject_id)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized subject access'], 403);
+        }
+
         if (!$exam->token) {
             return response()->json([
                 'success' => false,
@@ -71,6 +83,11 @@ class TokenController extends Controller
      */
     public function refreshToken(Exam $exam)
     {
+        // Security check for Teacher
+        if (auth()->user()->role === 'teacher' && !auth()->user()->subjects->contains('id', $exam->subject_id)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized subject access'], 403);
+        }
+
         if ($exam->status !== 'published') {
             return response()->json([
                 'success' => false,
@@ -100,6 +117,11 @@ class TokenController extends Controller
      */
     public function copyToken(Exam $exam)
     {
+        // Security check for Teacher
+        if (auth()->user()->role === 'teacher' && !auth()->user()->subjects->contains('id', $exam->subject_id)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized subject access'], 403);
+        }
+
         if (!$exam->token) {
             return response()->json([
                 'success' => false,

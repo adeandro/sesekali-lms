@@ -1,101 +1,168 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - SesekaliCBT</title>
+    <title>Masuk - {{ $configs['school_name'] ?? 'SesekaliCBT' }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-50">
-    <div class="flex items-center justify-center min-h-screen">
-        <div class="w-full max-w-md">
-            <div class="bg-white shadow-lg rounded-lg p-8">
-                <div class="text-center mb-8">
-                    <h1 class="text-3xl font-bold text-blue-600">ExamFlow</h1>
-                    <p class="text-gray-600 mt-2">Masuk ke akunmu</p>
-                </div>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
 
-                @if ($errors->any())
-                    <div class="mb-4 p-4 bg-red-50 border border-red-200 text-red-800 rounded-lg">
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .animated-bg {
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+    </style>
+</head>
+<body class="animated-bg min-h-screen flex items-center justify-center p-6">
+    <!-- Main Login Container -->
+    <div class="w-full max-w-lg">
+        <div class="glass-card rounded-[3rem] shadow-2xl p-8 md:p-12 space-y-10 relative overflow-hidden">
+            <!-- Decoration -->
+            <div class="absolute -top-24 -right-24 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl"></div>
+            <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-pink-500/10 rounded-full blur-2xl"></div>
+
+            <!-- Header Section -->
+            <div class="text-center space-y-4">
+                <div class="relative inline-block group">
+                    <div class="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-pink-500 rounded-3xl blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
+                    <div class="relative bg-white p-4 rounded-3xl shadow-sm border border-gray-100 h-24 w-24 flex items-center justify-center mx-auto">
+                        @if(isset($configs['logo']))
+                            <img src="{{ asset('storage/' . $configs['logo']) }}" alt="Logo" class="max-h-16 object-contain">
+                        @else
+                            <i class="fas fa-graduation-cap text-4xl text-indigo-600"></i>
+                        @endif
+                    </div>
+                </div>
+                
+                <div class="space-y-1">
+                    <h1 class="text-3xl font-black text-gray-900 tracking-tight uppercase leading-tight">
+                        {{ $configs['school_name'] ?? 'SesekaliCBT' }}
+                    </h1>
+                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] italic">Electronic Computer Based Test</p>
+                </div>
+            </div>
+
+            <!-- Validation/Alert Area -->
+            @if ($errors->any())
+                <div class="p-5 bg-rose-50 border border-rose-100 rounded-[2rem] flex items-start gap-4">
+                    <div class="w-10 h-10 bg-rose-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-exclamation-triangle text-rose-600"></i>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black text-rose-600 uppercase tracking-widest mb-1">Terjadi Kesalahan</p>
                         @foreach ($errors->all() as $error)
-                            <p class="text-sm">{{ $error }}</p>
+                            <p class="text-xs font-bold text-rose-800">{{ $error }}</p>
                         @endforeach
                     </div>
-                @endif
+                </div>
+            @else
+                <div class="text-center">
+                    <p class="text-xs font-bold text-gray-500 leading-relaxed max-w-xs mx-auto">Selamat datang kembali! Silakan masukkan kredensial Anda untuk melanjutkan sesi.</p>
+                </div>
+            @endif
 
-                <form action="{{ route('login') }}" method="POST">
-                    @csrf
+            <!-- Form Section -->
+            <form action="{{ route('login') }}" method="POST" class="space-y-6">
+                @csrf
 
-                    <div class="mb-4">
-                        <label for="username" class="block text-sm font-medium text-gray-700 mb-2">
-                            NIS
-                        </label>
+                <div class="space-y-2">
+                    <label for="username" class="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] pl-4">Identitas (NIS / NIP / Email)</label>
+                    <div class="group relative">
+                        <div class="absolute inset-y-0 left-5 flex items-center pointer-events-none text-gray-300 group-focus-within:text-indigo-600 transition-colors">
+                            <i class="fas fa-user text-sm"></i>
+                        </div>
                         <input 
                             type="text" 
                             id="username" 
                             name="username" 
                             value="{{ old('username') }}"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Masukkan NIS Anda"
+                            class="w-full bg-gray-50/50 pl-14 pr-8 py-5 border-2 border-gray-100 rounded-3xl focus:border-indigo-600 focus:bg-white focus:outline-none transition-all font-bold text-gray-900 placeholder:text-gray-200"
+                            placeholder="Contoh: 12345678"
                             required
                         >
                     </div>
-
-                    <div class="mb-6">
-                        <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
-                            Password
-                        </label>
-                        <div class="relative">
-                            <input 
-                                type="password" 
-                                id="password" 
-                                name="password" 
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
-                                placeholder="••••••••"
-                                required
-                            >
-                            <button
-                                type="button"
-                                id="togglePassword"
-                                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none transition"
-                                onclick="togglePasswordVisibility()"
-                            >
-                                <svg id="eyeIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="mb-6">
-                        <label for="remember" class="flex items-center">
-                            <input 
-                                type="checkbox" 
-                                id="remember" 
-                                name="remember"
-                                class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-offset-0 focus:ring-blue-200"
-                            >
-                            <span class="ml-2 text-sm text-gray-600">Remember me</span>
-                        </label>
-                    </div>
-
-                    <button 
-                        type="submit"
-                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200"
-                    >
-                        Sign In
-                    </button>
-                </form>
-
-                <div class="mt-6 text-center text-sm text-gray-600">
-
-                    <p>
-                        <ol>
-                            Gunakan NIS dan password yang tertera di kartu ujian. Jika login bermasalah, hubungi guru atau administrator sekolah untuk mendapatkan informasi lebih lanjut.
-                        </ol>
-                    </p>
                 </div>
+
+                <div class="space-y-2">
+                    <label for="password" class="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] pl-4">Kata Sandi</label>
+                    <div class="group relative">
+                        <div class="absolute inset-y-0 left-5 flex items-center pointer-events-none text-gray-300 group-focus-within:text-indigo-600 transition-colors">
+                            <i class="fas fa-lock text-sm"></i>
+                        </div>
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password" 
+                            class="w-full bg-gray-50/50 pl-14 pr-14 py-5 border-2 border-gray-100 rounded-3xl focus:border-indigo-600 focus:bg-white focus:outline-none transition-all font-bold text-gray-900 placeholder:text-gray-200"
+                            placeholder="••••••••"
+                            required
+                        >
+                        <button
+                            type="button"
+                            onclick="togglePasswordVisibility()"
+                            class="absolute inset-y-0 right-5 flex items-center text-gray-300 hover:text-indigo-600 transition-colors"
+                        >
+                            <i id="eyeIcon" class="fas fa-eye text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between px-2 pt-2">
+                    <label class="flex items-center group cursor-pointer">
+                        <input type="checkbox" name="remember" class="hidden">
+                        <div class="w-5 h-5 border-2 border-gray-100 rounded-lg flex items-center justify-center group-hover:border-indigo-600 transition-colors mr-3">
+                            <div class="w-2.5 h-2.5 bg-indigo-600 rounded-sm opacity-0 transition-opacity"></div>
+                        </div>
+                        <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest group-hover:text-gray-600 transition-colors">Ingat Saya</span>
+                    </label>
+                    
+                    <a href="#" class="text-[10px] font-black text-indigo-500 uppercase tracking-widest hover:text-indigo-700 transition-colors">Lupa Akses?</a>
+                </div>
+
+                <button 
+                    type="submit"
+                    class="w-full py-5 bg-indigo-600 text-white rounded-[2rem] text-[11px] font-black uppercase tracking-[0.3em] shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3 group"
+                >
+                    Akses Sekarang <i class="fas fa-arrow-right text-[10px] group-hover:translate-x-1 transition-transform"></i>
+                </button>
+            </form>
+
+            <!-- Footer Text -->
+            <div class="text-center pt-4">
+                <p class="text-[9px] font-black text-gray-300 uppercase tracking-[0.3em] leading-relaxed">
+                    Sistem Ujian Terintegrasi • <span class="text-indigo-400 font-bold">{{ date('Y') }}</span>
+                </p>
+            </div>
+        </div>
+
+        <!-- System Status Labels -->
+        <div class="mt-8 flex flex-wrap justify-center gap-6">
+            <div class="flex items-center gap-2">
+                <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                <span class="text-[9px] font-black text-white/70 uppercase tracking-widest">Server Pusat Aktif</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="w-1.5 h-1.5 bg-white/30 rounded-full"></span>
+                <span class="text-[9px] font-black text-white/70 uppercase tracking-widest">Enkripsi SHA-256</span>
             </div>
         </div>
     </div>
@@ -107,14 +174,20 @@
             
             if (passwordField.type === 'password') {
                 passwordField.type = 'text';
-                // Change icon to indicate password is visible (eye-off icon)
-                eyeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>';
+                eyeIcon.classList.replace('fa-eye', 'fa-eye-slash');
             } else {
                 passwordField.type = 'password';
-                // Change icon back to eye icon
-                eyeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>';
+                eyeIcon.classList.replace('fa-eye-slash', 'fa-eye');
             }
         }
+
+        // Simple custom checkbox logic
+        document.querySelector('label.group').addEventListener('click', function() {
+            const checkbox = this.querySelector('input');
+            const indicator = this.querySelector('.w-2.5');
+            checkbox.checked = !checkbox.checked;
+            indicator.style.opacity = checkbox.checked ? '1' : '0';
+        });
     </script>
 </body>
 </html>

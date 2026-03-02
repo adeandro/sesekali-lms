@@ -11,7 +11,15 @@ class UpdateQuestionRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return auth()->check() && in_array(auth()->user()->role, ['admin', 'superadmin']);
+        return auth()->check() && in_array(auth()->user()->role, ['superadmin', 'teacher']);
+    }
+
+    /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation()
+    {
+        // Keep form value
     }
 
     /**
@@ -20,7 +28,15 @@ class UpdateQuestionRequest extends FormRequest
     public function rules(): array
     {
         $rules = [
-            'subject_id' => 'required|exists:subjects,id',
+            'subject_id' => [
+                'required',
+                'exists:subjects,id',
+                function ($attribute, $value, $fail) {
+                    if (auth()->user()->role === 'teacher' && !auth()->user()->subjects->contains('id', $value)) {
+                        $fail('Anda hanya diperbolehkan mengolah data sesuai dengan Mata Pelajaran yang Anda ampu.');
+                    }
+                },
+            ],
             'jenjang' => 'required|in:10,11,12',
             'topic' => 'required|string|max:255',
             'difficulty_level' => 'required|in:easy,medium,hard',

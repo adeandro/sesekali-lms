@@ -14,10 +14,16 @@ class ExamAttempt extends Model
         'started_at',
         'submitted_at',
         'status',
+        'violation_count',
         'score_mc',
         'score_essay',
         'final_score',
         'token',
+        'heartbeat_last_seen',
+        'is_session_locked',
+        'force_submitted',
+        'force_submit_reason',
+        'force_submitted_at',
     ];
 
     protected $casts = [
@@ -34,6 +40,14 @@ class ExamAttempt extends Model
     public function exam(): BelongsTo
     {
         return $this->belongsTo(Exam::class);
+    }
+
+    /**
+     * Get the subject for this attempt (via exam).
+     */
+    public function subject()
+    {
+        return $this->exam->subject();
     }
 
     /**
@@ -65,7 +79,8 @@ class ExamAttempt extends Model
      */
     public function violations(): HasMany
     {
-        return $this->hasMany(ExamViolation::class, 'exam_id');
+        return $this->hasMany(ExamViolation::class, 'exam_id', 'exam_id')
+                    ->where('user_id', $this->student_id);
     }
 
     /**
@@ -100,5 +115,23 @@ class ExamAttempt extends Model
     public function hasTimeExpired(): bool
     {
         return $this->getRemainingTimeMinutes() === 0;
+    }
+
+    /**
+     * Get Nilai Akhir status (TUNTAS/REMIDIAL)
+     */
+    public function getStatusKelulusanAttribute(): string
+    {
+        $kkm = $this->exam->subject->kkm ?? 75;
+        return $this->final_score >= $kkm ? 'TUNTAS' : 'REMIDIAL';
+    }
+
+    /**
+     * Check if student passed.
+     */
+    public function isPassed(): bool
+    {
+        $kkm = $this->exam->subject->kkm ?? 75;
+        return $this->final_score >= $kkm;
     }
 }

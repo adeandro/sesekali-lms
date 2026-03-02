@@ -1,0 +1,97 @@
+@extends('layouts.app')
+
+@section('title', 'Ubah Guru - SesekaliCBT')
+
+@section('page-title', 'Ubah Guru')
+
+@section('content')
+    <div class="max-w-4xl mx-auto">
+        <div class="flex items-center gap-4 mb-8">
+            <a href="{{ route('superadmin.teachers.index') }}" class="text-gray-600 hover:text-gray-900 transition">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <h2 class="text-3xl font-bold text-gray-900">Ubah Data Guru</h2>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+            <form action="{{ route('superadmin.teachers.update', $teacher) }}" method="POST" class="p-8 space-y-6">
+                @csrf
+                @method('PUT')
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Nama -->
+                    <div class="space-y-2">
+                        <label for="name" class="block text-sm font-semibold text-gray-700">Nama Lengkap</label>
+                        <input type="text" name="name" id="name" value="{{ old('name', $teacher->name) }}" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('name') border-red-500 @enderror">
+                        @error('name') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <!-- Email -->
+                    <div class="space-y-2">
+                        <label for="email" class="block text-sm font-semibold text-gray-700">Email Utama</label>
+                        <input type="email" name="email" id="email" value="{{ old('email', $teacher->email) }}" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('email') border-red-500 @enderror">
+                        @error('email') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <!-- NIP/NIS -->
+                    <div class="space-y-2">
+                        <label for="nis" class="block text-sm font-semibold text-gray-700">NIP / Kode Guru</label>
+                        <input type="text" name="nis" id="nis" value="{{ old('nis', $teacher->nis) }}" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('nis') border-red-500 @enderror">
+                        @error('nis') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <!-- Mata Pelajaran -->
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Mata Pelajaran yang Diampu</label>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-2 border rounded-lg p-3 max-h-48 overflow-y-auto">
+                            @php
+                                $assignedSubjects = old('subject_ids', $teacher->subjects->pluck('id')->toArray());
+                            @endphp
+                            @foreach($subjects as $subject)
+                                <label class="flex items-center space-x-2 text-sm">
+                                    <input type="checkbox" name="subject_ids[]" value="{{ $subject->id }}" 
+                                        class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                        {{ in_array($subject->id, $assignedSubjects) ? 'checked' : '' }}>
+                                    <span>{{ $subject->name }}</span>
+                                </label>
+                            @endforeach
+                        </div>
+                        @error('subject_ids')
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Password (Opsional) -->
+                    <div class="space-y-2">
+                        <label for="password" class="block text-sm font-semibold text-gray-700">Password (Kosongkan jika tidak diubah)</label>
+                        <input type="password" name="password" id="password"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('password') border-red-500 @enderror">
+                        @error('password') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <!-- Konfirmasi Password -->
+                    <div class="space-y-2">
+                        <label for="password_confirmation" class="block text-sm font-semibold text-gray-700">Ulangi Password Baru</label>
+                        <input type="password" name="password_confirmation" id="password_confirmation"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+
+                <!-- Status Aktif -->
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" name="is_active" id="is_active" value="1" {{ $teacher->is_active ? 'checked' : '' }}
+                        class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                    <label for="is_active" class="text-sm font-medium text-gray-700">Akun ini aktif</label>
+                </div>
+
+                <div class="pt-6 border-t border-gray-100 flex justify-end gap-3">
+                    <a href="{{ route('superadmin.teachers.index') }}" class="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition">Batal</a>
+                    <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-bold shadow-blue-200 shadow-lg">Perbarui Guru</button>
+                </div>
+            </form>
+        </div>
+    </div>
+@endsection

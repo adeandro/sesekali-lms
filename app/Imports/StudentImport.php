@@ -15,36 +15,50 @@ class StudentImport implements ToCollection, WithHeadingRow
     public $skippedCount = 0;
     public $failureCount = 0;
     public $errors = [];
-    public $students = [];
     public $skipped = [];
-    private $seenNisses = [];   // Track NISSes within this import
-    private $seenEmails = [];   // Track emails within this import
+    public $students = []; // Untuk menampilkan hasil di UI
+    public $duration = 0;
+    
+    private $startTime;
 
     /**
      * @param Collection $collection
      */
     public function collection(Collection $collection): void
     {
-        // Increase execution time for large imports
-        set_time_limit(300); // 5 minutes for imports
+        $this->startTime = microtime(true);
+        
+        // Safety Nest: Increase execution time and memory for large imports
+        set_time_limit(300);
+        ini_set('memory_limit', '512M');
 
         $rowNumber = 2; // Start from 2 because of header
-        $batch = [];
-        $batchSize = 10; // Smaller batch size for hosted MySQL to avoid lock waits
+        $dataToInsert = [];
+        
+        // Pre-Hashing: Calculate hash once outside the loop
+        $defaultPassword = 'password_default';
+        $hashedPassword = \Illuminate\Support\Facades\Hash::make($defaultPassword);
+        
+        // Efficient Duplicate Check: Load existing NIS and Email into lookup tables
+        $existingStudents = User::select('nis', 'email')->get();
+        $existingNis = $existingStudents->pluck('nis')->filter()->flip()->toArray();
+        $existingEmails = $existingStudents->pluck('email')->filter()->flip()->toArray();
+        
+        // Track NISSes and Emails within THIS import to handle duplicates in the file
+        $fileNisses = [];
+        $fileEmails = [];
 
         foreach ($collection as $row) {
             try {
-                // Prepare data - expects separate columns for grade and class_group
-                // IMPORTANT: Cast NIS to string to prevent integer overflow from Excel
-                // Excel reads large numbers as integers which can overflow, converting them to negative
                 $nisValue = $row['nis'] ?? '';
-                $nisString = trim((string) $nisValue); // Explicit string conversion
+                $nisString = trim((string) $nisValue);
 
                 $data = [
                     'nis' => $nisString,
                     'name' => trim($row['full_name'] ?? $row['name'] ?? ''),
                     'grade' => $row['grade'] ?? null,
                     'class_group' => $row['class_group'] ?? $row['class group'] ?? null,
+                    'photo' => $row['foto'] ?? $row['photo'] ?? null,
                 ];
 
                 // Skip empty rows
@@ -53,68 +67,71 @@ class StudentImport implements ToCollection, WithHeadingRow
                     continue;
                 }
 
-                // Generate email early to check for duplicates
                 $email = 'student_' . $data['nis'] . '@sesekalicbt.local';
 
-                // Check for duplicates within current import
-                if (isset($this->seenNisses[$data['nis']])) {
+                // Check for duplicates in the file
+                if (isset($fileNisses[$data['nis']]) || isset($fileEmails[$email])) {
                     $this->skippedCount++;
-                    $this->skipped[] = [
+                    $this->skipped[] = array_merge($data, [
                         'row' => $rowNumber,
-                        'nis' => $data['nis'],
-                        'name' => $data['name'],
-                        'grade' => $data['grade'] ?? 'N/A',
-                        'class_group' => $data['class_group'] ?? 'N/A',
-                        'reason' => 'Duplicate NIS in import (previously seen in row ' . $this->seenNisses[$data['nis']] . ')',
-                    ];
+                        'reason' => 'Duplikat dalam file',
+                    ]);
                     $rowNumber++;
                     continue;
                 }
 
-                if (isset($this->seenEmails[$email])) {
+                // Check for duplicates in the database (Efficient lookup)
+                if (isset($existingNis[$data['nis']]) || isset($existingEmails[$email])) {
                     $this->skippedCount++;
-                    $this->skipped[] = [
+                    $this->skipped[] = array_merge($data, [
                         'row' => $rowNumber,
-                        'nis' => $data['nis'],
-                        'name' => $data['name'],
-                        'grade' => $data['grade'] ?? 'N/A',
-                        'class_group' => $data['class_group'] ?? 'N/A',
-                        'reason' => 'Duplicate email in import (previously seen in row ' . $this->seenEmails[$email] . ')',
-                    ];
+                        'reason' => 'Sudah ada di database',
+                    ]);
                     $rowNumber++;
                     continue;
                 }
 
-                // Mark as seen
-                $this->seenNisses[$data['nis']] = $rowNumber;
-                $this->seenEmails[$email] = $rowNumber;
-
-                // Validate data
-                $validation = StudentService::validateStudentData($data);
-
-                if (!$validation['valid']) {
+                // Basic validation
+                if (empty($data['grade']) || empty($data['class_group'])) {
                     $this->failureCount++;
                     $this->errors[] = [
                         'row' => $rowNumber,
-                        'errors' => $validation['errors'],
+                        'errors' => ['general' => 'Jenjang dan Kelompok Kelas wajib diisi'],
                     ];
                     $rowNumber++;
                     continue;
                 }
 
-                // Prepare batch data
-                $batch[] = [
-                    'rowNumber' => $rowNumber,
-                    'data' => $data,
+                // Mark as seen in this file
+                $fileNisses[$data['nis']] = true;
+                $fileEmails[$email] = true;
+
+                // Prepare for bulk insert
+                $insertData = [
+                    'name' => $data['name'],
+                    'email' => $email,
+                    'password' => $hashedPassword,
+                    'password_display' => $defaultPassword,
+                    'nis' => $data['nis'],
+                    'grade' => $data['grade'],
+                    'class_group' => $data['class_group'],
+                    'photo' => $data['photo'],
+                    'role' => 'student',
+                    'is_active' => true,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+                
+                $dataToInsert[] = $insertData;
+
+                // Untuk tampilan di UI (menggunakan array biasa, bukan Model untuk speed)
+                $this->students[] = [
+                    'student' => (object)$insertData, 
+                    'password' => $defaultPassword
                 ];
 
-                // Process batch when it reaches batch size to avoid lock waits
-                if (count($batch) >= $batchSize) {
-                    $this->processBatch($batch);
-                    $batch = [];
-                    // Add small delay to reduce database pressure
-                    usleep(100000); // 0.1 second delay
-                }
+                $this->successCount++;
+
             } catch (\Exception $e) {
                 $this->failureCount++;
                 $this->errors[] = [
@@ -126,45 +143,14 @@ class StudentImport implements ToCollection, WithHeadingRow
             $rowNumber++;
         }
 
-        // Process remaining batch
-        if (!empty($batch)) {
-            $this->processBatch($batch);
-        }
-    }
-
-    /**
-     * Process a batch of students with individual error handling
-     * Each student is processed in its own transaction to avoid locking entire batch
-     */
-    private function processBatch(array $batch): void
-    {
-        foreach ($batch as $item) {
-            try {
-                // Use updateOrCreate for idempotency - handles re-imports gracefully
-                $result = StudentService::createOrUpdateStudent($item['data']);
-                $this->successCount++;
-                $this->students[] = [
-                    'student' => $result['student'],
-                    'password' => $result['password'],
-                ];
-            } catch (\Exception $e) {
-                $this->failureCount++;
-                $error = $e->getMessage();
-
-                // Provide more meaningful error messages
-                if (str_contains($error, 'Duplicate entry') && str_contains($error, '_email_')) {
-                    $error = 'Email already exists in database';
-                } elseif (str_contains($error, 'Duplicate entry') && str_contains($error, '_nis_')) {
-                    $error = 'NIS already exists in database';
-                } elseif (str_contains($error, 'Lock wait timeout')) {
-                    $error = 'Database is locked - try again in a moment';
-                }
-
-                $this->errors[] = [
-                    'row' => $item['rowNumber'],
-                    'errors' => ['general' => $error],
-                ];
+        // Bulk Insert in chunks of 500
+        if (!empty($dataToInsert)) {
+            $chunks = array_chunk($dataToInsert, 500);
+            foreach ($chunks as $chunk) {
+                User::insert($chunk);
             }
         }
+        
+        $this->duration = round(microtime(true) - $this->startTime, 2);
     }
 }
