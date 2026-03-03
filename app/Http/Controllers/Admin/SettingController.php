@@ -37,6 +37,7 @@ class SettingController extends Controller
 
         // Save other settings
         Setting::set('school_name', $request->school_name);
+        Setting::set('show_login_header', $request->show_login_header);
         Setting::set('max_violations', $request->max_violations);
         Setting::set('anti_cheat_active', $request->anti_cheat_active);
         Setting::set('academic_year', $request->academic_year);

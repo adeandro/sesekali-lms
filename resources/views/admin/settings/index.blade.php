@@ -32,12 +32,22 @@
                 </div>
             </div>
             <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div class="space-y-2">
+                <div class="space-y-4">
                     <label for="school_name" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nama Sekolah / Instansi</label>
                     <input type="text" name="school_name" id="school_name" value="{{ old('school_name', $allSettings['school_name'] ?? '') }}" 
                         class="w-full h-14 bg-gray-50 border-transparent rounded-2xl px-6 text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all" required>
                 </div>
+                <!-- Login Page Branding Toggle -->
                 <div class="space-y-4">
+                    <label for="show_login_header" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nama Sekolah di Login</label>
+                    <select name="show_login_header" id="show_login_header" 
+                        class="w-full h-14 bg-gray-50 border-transparent rounded-2xl px-6 text-xs font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all appearance-none cursor-pointer">
+                        <option value="1" {{ (old('show_login_header', $allSettings['show_login_header'] ?? '1') == '1') ? 'selected' : '' }}>TAMPILKAN (Visible)</option>
+                        <option value="0" {{ (old('show_login_header', $allSettings['show_login_header'] ?? '1') == '0') ? 'selected' : '' }}>SEMBUNYIKAN (Hidden)</option>
+                    </select>
+                    <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest leading-relaxed px-1">Sembunyikan jika Anda ingin tampilan login lebih minimalis (hanya logo).</p>
+                </div>
+                <div class="space-y-4 col-span-full">
                     <label for="logo" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Logo Instansi</label>
                     <div class="flex items-center gap-6 p-4 bg-gray-50 rounded-2xl border border-dashed border-gray-200 group-hover:border-indigo-200 transition-colors">
                         @if(isset($allSettings['logo']))

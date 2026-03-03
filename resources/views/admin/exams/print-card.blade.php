@@ -1,245 +1,397 @@
-@extends('layouts.app')
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cetak Hasil Ujian - {{ $exam->title }}</title>
+    
+    <!-- Load Tailwind & FontAwesome for Standalone Layout -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
-@section('title', 'Cetak Kartu Ujian - ' . $exam->title)
+        /* Standalone Print CSS Reset */
+        html, body { 
+            height: auto !important; 
+            overflow: visible !important; 
+            position: static !important;
+            background: #f8fafc !important;
+            color: #1e293b !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
 
-@section('content')
-    <div class="max-w-4xl mx-auto">
-        <div class="flex justify-between items-center mb-6 no-print">
-            <h1 class="text-3xl font-bold">Kartu Ujian - {{ $exam->title }}</h1>
-            <button onclick="window.print()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-                <i class="fas fa-print mr-2"></i>Cetak
+        @page {
+            size: A4;
+            margin: 1cm 0.5cm;
+        }
+
+        /* Responsive Grid for A4 (2 columns) */
+        .print-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            width: 100%;
+            gap: 10px;
+            padding: 10px;
+        }
+
+        .exam-card {
+            background: white;
+            border: 1px dashed #cbd5e1;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            break-inside: avoid;
+            page-break-inside: avoid;
+            min-height: 14cm;
+            position: relative;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
+        }
+
+        /* Component Styling */
+        .card-header {
+            text-align: center;
+            border-bottom: 2px solid #ef4444; /* Red accent for results */
+            padding-bottom: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .school-name {
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .exam-label {
+            font-size: 1.25rem;
+            font-weight: 900;
+            color: #0f172a;
+            letter-spacing: -0.025em;
+        }
+
+        .student-info {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .photo-box {
+            width: 2cm;
+            height: 2.5cm;
+            border: 2px solid #f1f5f9;
+            background: #f8fafc;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border-radius: 0.75rem;
+        }
+
+        .photo-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .details-box {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .label {
+            font-size: 0.6rem;
+            font-weight: 800;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .value {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: #334155;
+            line-height: 1.2;
+        }
+
+        /* Result Section */
+        .result-section {
+            background: #f8fafc;
+            border-radius: 1rem;
+            padding: 1rem;
+            border: 1px solid #e2e8f0;
+        }
+
+        .score-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .score-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.5rem;
+            background: white;
+            border-radius: 0.75rem;
+            border: 1px solid #f1f5f9;
+        }
+
+        .score-label {
+            font-size: 0.55rem;
+            font-weight: 900;
+            color: #94a3b8;
+            text-transform: uppercase;
+        }
+
+        .score-value {
+            font-size: 1.125rem;
+            font-weight: 800;
+            color: #475569;
+        }
+
+        .final-score-box {
+            grid-column: span 2;
+            padding: 1rem;
+            background: #fff;
+            border: 2px solid #ef4444; /* Default accent */
+            border-radius: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .final-score-box.passed {
+            border-color: #22c55e;
+        }
+
+        .final-score-value {
+            font-size: 2.5rem;
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        .status-badge {
+            margin-top: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .passed-text { color: #16a34a; }
+        .failed-text { color: #dc2626; }
+
+        .rules-box {
+            font-size: 0.65rem;
+            color: #64748b;
+            line-height: 1.5;
+            padding: 0.75rem;
+            border-top: 1px solid #f1f5f9;
+            margin-top: auto;
+        }
+
+        .rules-title {
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-bottom: 0.25rem;
+            color: #475569;
+        }
+
+        .signature-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 0.5rem;
+            padding-top: 1rem;
+            border-top: 1px dotted #cbd5e1;
+        }
+
+        .sig-item {
+            text-align: center;
+        }
+
+        .sig-label {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: #64748b;
+            margin-bottom: 2.5rem;
+        }
+
+        .sig-line {
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #1e293b;
+            border-bottom: 1px solid #1e293b;
+            display: inline-block;
+            min-width: 80%;
+            padding-bottom: 2px;
+        }
+
+        /* Screen Only Controls */
+        @media screen {
+            .no-print-toolbar {
+                max-width: 1000px;
+                margin: 2rem auto;
+                background: white;
+                padding: 1.5rem;
+                border-radius: 1.5rem;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            }
+            .print-grid {
+                max-width: 1000px;
+                margin: 0 auto 3rem;
+                gap: 1.5rem;
+            }
+        }
+
+        @media print {
+            .no-print-toolbar { display: none !important; }
+            body { background: white !important; }
+            .exam-card { 
+                box-shadow: none !important;
+                border-color: #000 !important;
+                border-radius: 0 !important;
+            }
+            .result-section { border-color: #000 !important; background: white !important; }
+            .score-item { border-color: #000 !important; }
+            .final-score-box { border-color: #000 !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation Bar (Screen Only) -->
+    <div class="no-print-toolbar">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-red-600 flex items-center justify-center text-white shadow-lg shadow-red-100">
+                <i class="fas fa-file-invoice text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-black text-gray-900 leading-none">LAPORAN HASIL UJIAN</h1>
+                <p class="text-xs font-bold text-gray-400 mt-1 uppercase">{{ $exam->title }}</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <a href="{{ url()->previous() }}" class="px-6 py-2.5 bg-white border border-gray-100 text-gray-600 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-gray-50 transition shadow-sm">
+                <i class="fas fa-arrow-left mr-2"></i> Kembali
+            </a>
+            <button onclick="window.print()" class="px-6 py-2.5 bg-red-600 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-red-700 transition shadow-lg shadow-red-100">
+                <i class="fas fa-print mr-2"></i> Cetak Sekarang
             </button>
         </div>
+    </div>
 
-        <!-- Exam Card for each student -->
-        @foreach($students as $index => $data)
-            <div class="p-8 bg-white border-2 border-gray-800 rounded-lg shadow-lg exam-card">
-                <!-- Header -->
-                <div class="text-center mb-6 border-b-3 border-gray-800 pb-4">
-                    <h2 class="text-2xl font-bold text-gray-900">KARTU UJIAN</h2>
-                    <p class="text-gray-600 mt-1">ID Sekolah: SesekaliCBT-{{ str_pad($data['student']->id, 5, '0', STR_PAD_LEFT) }}</p>
+    <!-- Printable Area -->
+    <div class="print-grid">
+        @foreach($students as $data)
+            @php
+                $isPassed = $data['score'] >= ($exam->subject->kkm ?? 75);
+                $accentColor = $isPassed ? 'text-green-600' : 'text-red-600';
+            @endphp
+            <div class="exam-card">
+                <div class="card-header">
+                    <div class="school-name">{{ $configs['school_name'] ?? 'SESEKALI CBT' }}</div>
+                    <div class="exam-label">LAPORAN HASIL UJIAN</div>
                 </div>
 
-                <!-- Student Information -->
-                <div class="grid grid-cols-2 gap-6 mb-6">
-                    <div>
-                        <p class="text-gray-700 text-sm font-bold">NAMA SISWA</p>
-                        <p class="text-lg font-bold text-gray-900 mt-1">{{ $data['student']->name }}</p>
+                <div class="student-info">
+                    <div class="photo-box">
+                        @if($data['student']->photo)
+                            <img src="{{ $data['student']->photo_url }}" alt="Foto">
+                        @else
+                            <div class="flex flex-col items-center text-[#cbd5e1] font-black uppercase text-[8px]">
+                                <i class="fas fa-user-circle text-4xl mb-1"></i>
+                                <span>Pas Foto</span>
+                            </div>
+                        @endif
                     </div>
-                    <div>
-                        <p class="text-gray-700 text-sm font-bold">NIS</p>
-                        <p class="text-lg font-bold text-gray-900 mt-1">{{ $data['student']->nis }}</p>
-                    </div>
-                    <div>
-                        <p class="text-gray-700 text-sm font-bold">KELAS</p>
-                        <p class="text-lg font-bold text-gray-900 mt-1">{{ $data['student']->class ?? '-' }}</p>
-                    </div>
-                    <div>
-                        <p class="text-gray-700 text-sm font-bold">TANGGAL LAHIR</p>
-                        <p class="text-lg font-bold text-gray-900 mt-1">________________</p>
-                    </div>
-                </div>
-
-                <!-- Exam Details -->
-                <div class="bg-gray-100 p-3 rounded mb-4 border-l-4 border-blue-700">
-                    <div class="grid grid-cols-2 gap-3 text-sm">
-                        <div>
-                            <p class="text-gray-700 font-bold">JUDUL UJIAN</p>
-                            <p class="text-gray-900 font-semibold mt-1">{{ $exam->title }}</p>
+                    <div class="details-box">
+                        <div class="detail-item">
+                            <span class="label">NAMA LENGKAP</span>
+                            <span class="value">{{ $data['student']->name }}</span>
                         </div>
-                        <div>
-                            <p class="text-gray-700 font-bold">MATA PELAJARAN</p>
-                            <p class="text-gray-900 font-semibold mt-1">{{ $exam->subject->name ?? '-' }}</p>
+                        <div class="detail-item">
+                            <span class="label">NIS / ID SISWA</span>
+                            <span class="value">{{ $data['student']->nis }}</span>
                         </div>
-                        <div>
-                            <p class="text-gray-700 font-bold">DURASI</p>
-                            <p class="text-gray-900 font-semibold mt-1">{{ $exam->duration_minutes }} Menit</p>
+                        <div class="detail-item">
+                            <span class="label">KELAS / ROMBEL</span>
+                            <span class="value">{{ $data['student']->grade }} - {{ $data['student']->class_group }}</span>
                         </div>
-                        <div>
-                            <p class="text-gray-700 font-bold">JUMLAH SOAL</p>
-                            <p class="text-gray-900 font-semibold mt-1">{{ $exam->total_questions }} Soal</p>
-                        </div>
-                        <div>
-                            <p class="text-gray-700 font-bold">TANGGAL UJIAN</p>
-                            <p class="text-gray-900 font-semibold mt-1">{{ $exam->start_time->translatedFormat('d F Y') }}</p>
-                        </div>
-                        <div>
-                            <p class="text-gray-700 font-bold">JAM UJIAN</p>
-                            <p class="text-gray-900 font-semibold mt-1">{{ $exam->start_time->format('H:i') }} - {{ $exam->end_time->format('H:i') }}</p>
+                        <div class="detail-item">
+                            <span class="label">MATA PELAJARAN</span>
+                            <span class="value">{{ $exam->subject->name }} (KKM: {{ $exam->subject->kkm ?? 75 }})</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Score Section -->
-                <div class="bg-green-100 p-3 rounded mb-4 border-l-4 border-green-700">
-                    <div class="grid grid-cols-3 gap-3">
-                        <div class="text-center">
-                            <p class="text-gray-700 text-sm font-bold">NILAI AKHIR</p>
-                            <p class="text-3xl font-bold text-green-700 mt-1">{{ intval($data['score']) }}</p>
+                <!-- Scores -->
+                <div class="result-section">
+                    <div class="score-grid">
+                        <div class="score-item">
+                            <span class="score-label">Bobot PG ({{ $exam->weight_pg }}%)</span>
+                            <span class="score-value">{{ $data['is_submitted'] ? 'Aktif' : 'N/A' }}</span>
                         </div>
-                        <div class="text-center">
-                            <p class="text-gray-700 text-sm font-bold">STATUS</p>
-                            <p class="text-lg font-bold text-green-700 mt-1">{{ $data['score'] >= 70 ? 'LULUS' : 'TIDAK LULUS' }}</p>
+                        <div class="score-item">
+                            <span class="score-label">Bobot Esai ({{ $exam->weight_essay }}%)</span>
+                            <span class="score-value">{{ $data['is_submitted'] ? 'Aktif' : 'N/A' }}</span>
                         </div>
-                        <div class="text-center">
-                            <p class="text-gray-700 text-sm font-bold">KETERANGAN</p>
-                            <p class="text-sm font-bold text-gray-900 mt-1">
-                                {{ $data['score'] >= 90 ? 'Sangat Baik' : ($data['score'] >= 80 ? 'Baik' : ($data['score'] >= 70 ? 'Cukup' : 'Kurang')) }}
-                            </p>
+                        <div class="final-score-box {{ $isPassed ? 'passed' : '' }}">
+                            <span class="score-label">NILAI AKHIR</span>
+                            <span class="final-score-value {{ $accentColor }}">{{ number_format($data['score'], 0) }}</span>
+                            <div class="status-badge {{ $accentColor }}">
+                                {{ $isPassed ? '● TUNTAS' : '● REMIDIAL' }}
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Instructions Section -->
-                <div class="bg-yellow-100 p-2 rounded mb-4 border-l-4 border-yellow-700 text-xs">
-                    <p class="text-gray-700 font-bold mb-1">PERATURAN:</p>
-                    <ul class="text-gray-800 space-y-0">
-                        <li>✓ Simpan kartu ini - merupakan bukti selesai ujian</li>
-                        <li>✓ Laporkan jika ada kesalahan nilai ke adminstrasi ujian</li>
-                        <li>✓ Kartu berlaku hingga akhir tahun ajaran</li>
-                    </ul>
+                <div class="rules-box">
+                    <div class="rules-title">Keterangan:</div>
+                    <p>Laporan ini merupakan hasil rekapitulasi sistem secara otomatis. Nilai akhir dihitung berdasarkan pembobotan Pilihan Ganda dan Esai yang telah ditentukan.</p>
                 </div>
 
-                <!-- Signature Section -->
-                <div class="grid grid-cols-3 gap-2 mt-4 pt-4 border-t-2 border-gray-800 text-center text-xs">
-                    <div>
-                        <p class="text-gray-700 font-bold mb-3">Tanda Tangan Siswa</p>
-                        <div style="border-top: 1px solid #000; height: 30px;"></div>
-                        <p class="text-gray-600 text-xs mt-1">(__________________)</p>
+                <!-- Signature -->
+                <div class="signature-grid">
+                    <div class="sig-item">
+                        <div class="sig-label">Siswa Peserta,</div>
+                        <div class="sig-line">{{ $data['student']->name }}</div>
                     </div>
-                    <div>
-                        <p class="text-gray-700 font-bold mb-3">Pengawas</p>
-                        <div style="border-top: 1px solid #000; height: 30px;"></div>
-                        <p class="text-gray-600 text-xs mt-1">(__________________)</p>
-                    </div>
-                    <div>
-                        <p class="text-gray-700 font-bold mb-3">Kepala Sekolah</p>
-                        <div style="border-top: 1px solid #000; height: 30px;"></div>
-                        <p class="text-gray-600 text-xs mt-1">(__________________)</p>
+                    <div class="sig-item">
+                        <div class="sig-label">Administrator,</div>
+                        <div class="sig-line">Panitia Ujian</div>
                     </div>
                 </div>
 
-                <!-- Footer -->
-                <div class="text-center mt-3 pt-2 border-t border-gray-300">
-                    <p class="text-xs text-gray-500">SesekaliCBT - Sistem Ujian Berbasis Komputer</p>
-                    <p class="text-xs text-gray-500">{{ now()->locale('id')->translatedFormat('d F Y H:i') }}</p>
+                <div class="mt-4 text-[8px] text-gray-400 text-center uppercase font-bold tracking-tighter">
+                    Dicetak Otomatis oleh {{ $configs['school_name'] ?? 'SESEKALI CBT' }} - {{ now()->format('d/m/Y H:i') }}
                 </div>
             </div>
         @endforeach
     </div>
 
-    <style>
-        /* Screen styles */
-        body {
-            background-color: #f3f4f6;
-        }
-
-        .no-print {
-            display: block;
-        }
-
-        .exam-card {
-            margin-bottom: 2rem;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-        }
-
-        /* Print styles */
-        @media print {
-            * {
-                margin: 0;
-                padding: 0;
-            }
-
-            html, body {
-                width: 100%;
-                height: 100%;
-                margin: 0;
-                padding: 0;
-                background: white;
-                font-size: 11pt;
-            }
-
-            .max-w-4xl {
-                max-width: 100% !important;
-                width: 100%;
-                margin: 0;
-                padding: 0;
-            }
-
-            .no-print {
-                display: none !important;
-            }
-
-            .exam-card {
-                display: block;
-                page-break-after: always;
-                page-break-inside: avoid;
-                break-after: page;
-                break-inside: avoid;
-                margin: 0;
-                padding: 15mm;
-                width: 100%;
-                min-height: 330mm;
-                box-sizing: border-box;
-                border: 2px solid #000;
-                background: white;
-                box-shadow: none;
-                font-size: 11pt;
-                line-height: 1.4;
-                page-break-before: auto;
-            }
-
-            .exam-card:last-child {
-                page-break-after: avoid;
-            }
-
-            /* Remove unnecessary styling during print */
-            .shadow-lg {
-                box-shadow: none !important;
-            }
-
-            /* Ensure text is black */
-            h2, p, span, div {
-                color: #000 !important;
-                background: transparent !important;
-            }
-
-            /* Remove rounded corners for cleaner print */
-            .rounded-lg {
-                border-radius: 0 !important;
-            }
-
-            /* Adjust grid for print */
-            .grid {
-                display: grid !important;
-            }
-
-            /* Make text smaller for print preview */
-            .text-3xl {
-                font-size: 16pt !important;
-            }
-
-            .text-2xl {
-                font-size: 14pt !important;
-            }
-
-            .text-lg {
-                font-size: 12pt !important;
-            }
-
-            .text-sm {
-                font-size: 10pt !important;
-            }
-
-            .text-xs {
-                font-size: 9pt !important;
-            }
-        }
-
-        @page {
-            size: 210mm 330mm;
-            margin: 0;
-            padding: 0;
-        }
-    </style>
-@endsection
+</body>
+</html>

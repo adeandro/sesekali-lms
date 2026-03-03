@@ -41,24 +41,30 @@
             <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-pink-500/10 rounded-full blur-2xl"></div>
 
             <!-- Header Section -->
-            <div class="text-center space-y-4">
-                <div class="relative inline-block group">
-                    <div class="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-pink-500 rounded-3xl blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
-                    <div class="relative bg-white p-4 rounded-3xl shadow-sm border border-gray-100 h-24 w-24 flex items-center justify-center mx-auto">
-                        @if(isset($configs['logo']))
-                            <img src="{{ asset('storage/' . $configs['logo']) }}" alt="Logo" class="max-h-16 object-contain">
-                        @else
-                            <i class="fas fa-graduation-cap text-4xl text-indigo-600"></i>
-                        @endif
-                    </div>
+            <div class="text-center space-y-8">
+                <!-- Branding: Pure Logo with Drop Shadow -->
+                <div class="group inline-block">
+                    @if(isset($configs['logo']))
+                        <img src="{{ asset('storage/' . $configs['logo']) }}" alt="Logo" class="h-28 w-auto object-contain drop-shadow-[0_20px_35px_rgba(0,0,0,0.15)] group-hover:drop-shadow-[0_25px_50px_rgba(0,0,0,0.25)] group-hover:scale-105 transition-all duration-700 ease-out">
+                    @else
+                        <div class="h-24 w-24 bg-white/10 backdrop-blur-sm rounded-[2rem] flex items-center justify-center text-white drop-shadow-2xl group-hover:scale-110 transition-all duration-700">
+                            <i class="fas fa-graduation-cap text-5xl"></i>
+                        </div>
+                    @endif
                 </div>
                 
-                <div class="space-y-1">
-                    <h1 class="text-3xl font-black text-gray-900 tracking-tight uppercase leading-tight">
+                @if($configs['show_login_header'] ?? true)
+                <div class="space-y-2">
+                    <h1 class="text-2xl font-black text-gray-900 tracking-tight uppercase leading-none">
                         {{ $configs['school_name'] ?? 'SesekaliCBT' }}
                     </h1>
-                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] italic">Electronic Computer Based Test</p>
+                    <div class="flex items-center justify-center gap-3">
+                        <span class="h-px w-8 bg-gradient-to-r from-transparent to-gray-200"></span>
+                        <p class="text-[9px] font-black text-gray-400 uppercase tracking-[0.4em]">Integrated CBT</p>
+                        <span class="h-px w-8 bg-gradient-to-l from-transparent to-gray-200"></span>
+                    </div>
                 </div>
+                @endif
             </div>
 
             <!-- Validation/Alert Area -->
