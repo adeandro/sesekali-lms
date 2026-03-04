@@ -42,7 +42,7 @@ class SettingController extends Controller
         Setting::set('anti_cheat_active', $request->anti_cheat_active);
         Setting::set('academic_year', $request->academic_year);
 
-        return redirect()->back()->with('success', 'Pengaturan berhasil diperbarui.');
+        return redirect()->back()->with('success', 'Pengaturan berhasil diperbarui.')->with('active_tab', 'identity');
     }
 
     /**
@@ -85,6 +85,6 @@ class SettingController extends Controller
 
         $user->save();
 
-        return redirect()->back()->with('success', 'Profil berhasil diperbarui.');
+        return redirect()->back()->with('success', 'Profil berhasil diperbarui.')->with('active_tab', 'profile');
     }
 }
