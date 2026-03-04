@@ -133,12 +133,12 @@
                 </div>
 
                 <div class="flex items-center justify-between px-2 pt-2">
-                    <label class="flex items-center group cursor-pointer">
-                        <input type="checkbox" name="remember" class="hidden">
-                        <div class="w-5 h-5 border-2 border-gray-100 rounded-lg flex items-center justify-center group-hover:border-indigo-600 transition-colors mr-3">
-                            <div class="w-2.5 h-2.5 bg-indigo-600 rounded-sm opacity-0 transition-opacity"></div>
+                    <label class="flex items-center cursor-pointer group">
+                        <input type="checkbox" name="remember" class="peer hidden">
+                        <div class="w-5 h-5 border-2 border-gray-100 rounded-lg flex items-center justify-center group-hover:border-indigo-600 peer-checked:border-indigo-600 transition-colors mr-3">
+                            <div class="w-2.5 h-2.5 bg-indigo-600 rounded-sm opacity-0 peer-checked:opacity-100 transition-opacity"></div>
                         </div>
-                        <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest group-hover:text-gray-600 transition-colors">Ingat Saya</span>
+                        <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest group-hover:text-gray-600 peer-checked:text-indigo-600 transition-colors">Ingat Saya</span>
                     </label>
                     
                     <a href="#" class="text-[10px] font-black text-indigo-500 uppercase tracking-widest hover:text-indigo-700 transition-colors">Lupa Akses?</a>
@@ -187,13 +187,7 @@
             }
         }
 
-        // Simple custom checkbox logic
-        document.querySelector('label.group').addEventListener('click', function() {
-            const checkbox = this.querySelector('input');
-            const indicator = this.querySelector('.w-2.5');
-            checkbox.checked = !checkbox.checked;
-            indicator.style.opacity = checkbox.checked ? '1' : '0';
-        });
+        // Sidebar and UI logic could go here if needed 
     </script>
 </body>
 </html>
