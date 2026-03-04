@@ -32,14 +32,19 @@
                         <i class="fas fa-exclamation-triangle mr-2"></i> Aksi Bahaya
                         <i class="fas fa-chevron-down ml-2 text-xs"></i>
                     </button>
-                    <div class="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-30 hidden group-hover:block animate-slideUp">
-                        <button type="button" onclick="confirmResetAllPasswords()" class="w-full text-left px-4 py-2 text-sm text-orange-600 hover:bg-orange-50 font-medium">
-                            <i class="fas fa-key w-5"></i> Atur Ulang Semua Password
-                        </button>
-                        <hr class="my-2 border-gray-100">
-                        <button type="button" onclick="confirmDeleteAllStudents()" class="w-full text-left px-4 py-2 text-sm text-rose-600 hover:bg-rose-50 font-bold">
-                            <i class="fas fa-trash-alt w-5"></i> Hapus Semua Siswa
-                        </button>
+                    <!-- Floating Wrapper to Close the Hover Gap -->
+                    <div class="absolute right-0 pt-2 w-56 z-30 hidden group-hover:block animate-slideUp">
+                        <div class="bg-white rounded-xl shadow-xl border border-gray-100 py-2 overflow-hidden">
+                            <button type="button" onclick="confirmResetAllPasswords()" class="w-full text-left px-4 py-2 text-sm text-orange-600 hover:bg-orange-50 font-medium flex items-center gap-3 transition-colors">
+                                <i class="fas fa-key w-5 text-center"></i> 
+                                <span>Atur Ulang Password</span>
+                            </button>
+                            <hr class="my-2 border-gray-100">
+                            <button type="button" onclick="confirmDeleteAllStudents()" class="w-full text-left px-4 py-2 text-sm text-rose-600 hover:bg-rose-50 font-bold flex items-center gap-3 transition-colors">
+                                <i class="fas fa-trash-alt w-5 text-center"></i>
+                                <span>Hapus Semua Siswa</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
