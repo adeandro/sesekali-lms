@@ -52,55 +52,73 @@ class ExamEngineService
      */
     public static function startExam(Exam $exam, User $student, $token = null)
     {
-        // Check if already has active attempt
-        $activeAttempt = ExamAttempt::where('exam_id', $exam->id)
+        // Check if already has an attempt
+        $existingAttempt = ExamAttempt::where('exam_id', $exam->id)
             ->where('student_id', $student->id)
-            ->where('status', 'in_progress')
             ->first();
 
-        if ($activeAttempt) {
-            return $activeAttempt;
+        if ($existingAttempt) {
+            // If already submitted and NOT locked, stay submitted
+            if ($existingAttempt->isSubmitted() && !$existingAttempt->is_session_locked) {
+                throw new \Exception('You have already submitted this exam.');
+            }
+
+            // If it's locked (reset case) or already in progress, just reactivate/return it
+            $existingAttempt->update([
+                'status' => 'in_progress',
+                'started_at' => $existingAttempt->started_at ?? now(),
+                'is_session_locked' => false,
+                'token' => $token ?? $existingAttempt->token,
+            ]);
+
+            // Ensure answers exist (in case they were deleted during reset)
+            self::initializeAnswers($existingAttempt, $exam);
+
+            return $existingAttempt;
         }
 
-        // Check if already submitted
-        $submitted = ExamAttempt::where('exam_id', $exam->id)
-            ->where('student_id', $student->id)
-            ->where('status', 'submitted')
-            ->first();
-
-        if ($submitted) {
-            throw new \Exception('You have already submitted this exam.');
-        }
-
-        // Create new attempt (with token if provided)
+        // Create new attempt
         $attempt = ExamAttempt::create([
             'exam_id' => $exam->id,
             'student_id' => $student->id,
             'started_at' => now(),
-            'status' => 'in_progress', // Set status so middleware can verify access
-            'token' => $token, // Save token used for validation
+            'status' => 'in_progress',
+            'token' => $token,
         ]);
 
         // Initialize exam answers
-        $questions = $exam->questions()->get();
-        foreach ($questions as $question) {
-            $creationData = [
-                'attempt_id' => $attempt->id,
-                'question_id' => $question->id,
-            ];
-            
-            // For MC questions, store the correct answer text upfront
-            if ($question->question_type === 'multiple_choice') {
-                // correct_answer is stored as uppercase (A, B, C, D, E) - convert to lowercase for column access
-                $correctAnswerPosition = strtolower($question->correct_answer);
-                $correctAnswerText = $question->{"option_" . $correctAnswerPosition} ?? null;
-                $creationData['correct_answer_text'] = $correctAnswerText;
-            }
-            
-            ExamAnswer::create($creationData);
-        }
+        self::initializeAnswers($attempt, $exam);
 
         return $attempt;
+    }
+
+    /**
+     * Initialize or restore answers for an attempt.
+     */
+    private static function initializeAnswers(ExamAttempt $attempt, Exam $exam)
+    {
+        $questions = $exam->questions()->get();
+        foreach ($questions as $question) {
+            // Only create if doesn't exist
+            $exists = ExamAnswer::where('attempt_id', $attempt->id)
+                ->where('question_id', $question->id)
+                ->exists();
+            
+            if (!$exists) {
+                $creationData = [
+                    'attempt_id' => $attempt->id,
+                    'question_id' => $question->id,
+                ];
+                
+                if ($question->question_type === 'multiple_choice') {
+                    $correctAnswerPosition = strtolower($question->correct_answer);
+                    $correctAnswerText = $question->{"option_" . $correctAnswerPosition} ?? null;
+                    $creationData['correct_answer_text'] = $correctAnswerText;
+                }
+                
+                ExamAnswer::create($creationData);
+            }
+        }
     }
 
     /**

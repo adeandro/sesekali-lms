@@ -125,13 +125,20 @@
                                 <p class="text-[9px] font-black text-indigo-400 uppercase tracking-widest mt-1">{{ $student['submitted_at']->format('H:i:s') }}</p>
                             </td>
                             <td class="px-8 py-6 text-center">
-                                <button class="reopen-btn h-10 px-6 bg-amber-50 text-amber-600 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-amber-600 hover:text-white transition flex items-center justify-center gap-2 mx-auto"
-                                    data-attempt-id="{{ $student['attempt_id'] }}"
-                                    data-student-name="{{ $student['student_name'] }}"
-                                    data-last-worked="{{ $student['submitted_at']->format('Y-m-d H:i:s') }}"
-                                    data-exam-duration="{{ $exam->duration_minutes }}">
-                                    <i class="fas fa-lock-open text-[8px]"></i> Buka Akses
-                                </button>
+                                <div class="flex flex-col gap-2">
+                                    <button class="reopen-btn h-9 px-4 bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-indigo-600 hover:text-white transition flex items-center justify-center gap-2 mx-auto w-full"
+                                        data-attempt-id="{{ $student['attempt_id'] }}"
+                                        data-student-name="{{ $student['student_name'] }}"
+                                        data-last-worked="{{ $student['submitted_at']->format('Y-m-d H:i:s') }}"
+                                        data-exam-duration="{{ $exam->duration_minutes }}">
+                                        <i class="fas fa-lock-open text-[8px]"></i> Buka Akses
+                                    </button>
+                                    <button onclick="resetExam('{{ $student['attempt_id'] }}', '{{ $student['student_name'] }}')" 
+                                        class="h-9 px-4 bg-rose-50 text-rose-600 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-rose-600 hover:text-white transition flex items-center justify-center gap-2 mx-auto w-full"
+                                        title="Hapus Jawaban & Reset Nilai">
+                                        <i class="fas fa-undo text-[8px]"></i> Reset Jawaban
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                         @endforeach
@@ -184,6 +191,85 @@
             }
         });
     });
+
+    async function resetExam(attemptId, studentName) {
+        const result = await Swal.fire({
+            title: 'RESET JAWABAN?',
+            html: `
+                <div class="space-y-4 text-center">
+                    <p class="text-sm text-gray-500">Seluruh jawaban dan nilai untuk <span class="font-black text-gray-900">${studentName}</span> akan dihapus permanen.</p>
+                    <div class="p-4 bg-rose-50 rounded-2xl border border-rose-100 text-left">
+                        <p class="text-[10px] font-black text-rose-600 uppercase tracking-widest flex items-center gap-2 mb-1">
+                            <i class="fas fa-exclamation-triangle"></i> Peringatan
+                        </p>
+                        <p class="text-[9px] font-bold text-rose-400 leading-relaxed uppercase tracking-widest">
+                            Siswa harus mengulang ujian dari awal setelah akses dibuka kembali.
+                        </p>
+                    </div>
+                </div>
+            `,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'YA, RESET SEKARANG',
+            cancelButtonText: 'BATAL',
+            customClass: {
+                popup: 'rounded-[1.5rem] p-8',
+                confirmButton: 'h-14 bg-rose-600 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl px-12 order-2 border-0',
+                cancelButton: 'h-14 bg-gray-50 text-gray-400 text-[10px] font-black uppercase tracking-widest rounded-2xl px-12 order-1 border-0'
+            },
+            buttonsStyling: false
+        });
+
+        if (result.isConfirmed) {
+            try {
+                Swal.fire({
+                    title: 'MEMPROSES...',
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading(),
+                    customClass: { popup: 'rounded-[1.5rem]' }
+                });
+
+                const response = await fetch(`/admin/monitor/attempts/${attemptId}/reset`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    await Swal.fire({
+                        title: 'BERHASIL!',
+                        text: data.message,
+                        icon: 'success',
+                        confirmButtonText: 'OKE',
+                        customClass: {
+                            popup: 'rounded-[1.5rem]',
+                            confirmButton: 'h-14 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl px-12 border-0'
+                        },
+                        buttonsStyling: false
+                    });
+                    location.reload();
+                } else {
+                    Swal.fire({
+                        title: 'GAGAL',
+                        text: data.message || 'Terjadi kesalahan sistem.',
+                        icon: 'error',
+                        customClass: { popup: 'rounded-[1.5rem]' }
+                    });
+                }
+            } catch (error) {
+                Swal.fire({
+                    title: 'ERROR',
+                    text: 'Gagal menghubungi server.',
+                    icon: 'error',
+                    customClass: { popup: 'rounded-[1.5rem]' }
+                });
+            }
+        }
+    }
 
     async function reopenExam(attemptId, studentName, lastWorked, examDuration) {
         const result = await Swal.fire({

@@ -127,7 +127,8 @@ class ExamService
 
         // Filter by subject
         if (!empty($filters['subject'])) {
-            $query->where('subject_id', $filters['subject']);
+            $subjectIds = is_array($filters['subject']) ? $filters['subject'] : [$filters['subject']];
+            $query->whereIn('subject_id', $subjectIds);
         }
 
         // Filter by status

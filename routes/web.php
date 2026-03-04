@@ -171,6 +171,7 @@ Route::middleware('auth')->group(function () {
         Route::prefix('monitor')->name('monitor.')->group(function () {
             Route::get('exams/{exam}', [MonitoringController::class, 'index'])->name('exams.index');
             Route::post('attempts/{attempt}/reopen', [MonitoringController::class, 'reopenSession'])->name('attempts.reopen');
+            Route::post('attempts/{attempt}/reset', [MonitoringController::class, 'resetAnswers'])->name('attempts.reset');
         });
 
         // [MODUL SUPERADMIN ONLY] Student Management routes
@@ -193,6 +194,7 @@ Route::middleware('auth')->group(function () {
             // Settings Management
             Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
             Route::post('settings', [SettingController::class, 'update'])->name('settings.update');
+            Route::post('settings/profile', [SettingController::class, 'updateProfile'])->name('settings.update-profile');
         });
     });
 });

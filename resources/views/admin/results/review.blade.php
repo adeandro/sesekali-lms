@@ -210,7 +210,7 @@
                                             min="0" 
                                             max="100" 
                                             step="0.01"
-                                            value="{{ round($answer->is_correct ?? 0, 2) }}"
+                                            value="{{ round($answer->essay_score ?? 0, 2) }}"
                                             class="w-full h-16 bg-gray-50 border-transparent rounded-[1.5rem] px-6 text-2xl font-black text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all"
                                             required>
                                         <div class="absolute right-6 top-1/2 -translate-y-1/2 text-[10px] font-black text-gray-300 uppercase tracking-widest">pts</div>

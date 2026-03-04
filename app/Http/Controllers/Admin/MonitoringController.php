@@ -87,6 +87,77 @@ class MonitoringController extends Controller
 
 
     /**
+     * Reset student's answers and scores for an attempt.
+     */
+    public function resetAnswers(Request $request, ExamAttempt $attempt)
+    {
+        try {
+            // Verify authorization
+            if (!in_array(auth()->user()->role, ['superadmin', 'teacher'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized',
+                ], 403);
+            }
+
+            if (auth()->user()->role === 'teacher' && !auth()->user()->subjects->contains('id', $attempt->exam->subject_id)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized subject access',
+                ], 403);
+            }
+
+            // Perform reset
+            // 1. Delete all answers
+            \App\Models\ExamAnswer::where('attempt_id', $attempt->id)->delete();
+
+            // 2. Reset scores and set status to submitted (locked)
+            // We set status to submitted so that it stays in the monitoring list
+            // but we lock the session so student cannot enter without 'Buka Akses'
+            $attempt->update([
+                'score_mc' => 0,
+                'score_essay' => 0,
+                'final_score' => 0,
+                'status' => 'submitted', // Keep it in 'submitted' so it shows in 'Selesai' list for Buka Akses
+                'submitted_at' => now(), // Set a dummy submitted_at
+                'violation_count' => 0,
+                'is_session_locked' => true, // LOCK THE SESSION
+            ]);
+
+            // 3. Reset the associated exam session if any
+            $session = \App\Models\ExamSession::where('exam_attempt_id', $attempt->id)->first();
+            if ($session) {
+                $session->update([
+                    'status' => 'inactive',
+                    'ended_at' => null,
+                    'is_active' => false,
+                ]);
+            }
+
+            // Log the action
+            \App\Models\ActionLog::logAction(
+                auth()->id(),
+                'answers_reset',
+                "Jawaban dan nilai direset untuk siswa oleh admin",
+                $attempt->exam_id,
+                $attempt->student_id,
+                ['attempt_id' => $attempt->id]
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Jawaban dihapus. Silakan klik \'Buka Akses\' untuk mengizinkan siswa mulai dari awal.',
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Reset answers error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Reopen an exam session (allow student to continue).
      */
     public function reopenSession(Request $request, ExamAttempt $attempt)
@@ -114,11 +185,11 @@ class MonitoringController extends Controller
                 ], 403);
             }
 
-            // Only reopen if status is submitted (completed)
-            if ($attempt->status !== 'submitted') {
+            // Only reopen if status is submitted (completed) or if it's locked manually
+            if ($attempt->status !== 'submitted' && !$attempt->is_session_locked) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Hanya ujian yang sudah diselesaikan yang dapat dibuka kembali',
+                    'message' => 'Hanya ujian yang sudah diselesaikan atau dikunci yang dapat dibuka kembali',
                 ], 422);
             }
 
@@ -251,14 +322,23 @@ class MonitoringController extends Controller
         $activeExamsCount = Exam::where('status', 'published')
             ->where('start_time', '<=', now())
             ->where('end_time', '>=', now())
+            ->when(auth()->user()->role === 'teacher', function($q) {
+                return $q->whereIn('subject_id', auth()->user()->subjects->pluck('id'));
+            })
             ->count();
-
+ 
         $upcomingExamsCount = Exam::where('status', 'published')
             ->where('start_time', '>', now())
+            ->when(auth()->user()->role === 'teacher', function($q) {
+                return $q->whereIn('subject_id', auth()->user()->subjects->pluck('id'));
+            })
             ->count();
-
+ 
         $finishedExamsCount = Exam::where('status', 'published')
             ->where('end_time', '<', now())
+            ->when(auth()->user()->role === 'teacher', function($q) {
+                return $q->whereIn('subject_id', auth()->user()->subjects->pluck('id'));
+            })
             ->count();
 
         return view('admin.monitoring.exams', [

@@ -26,7 +26,21 @@ class ExamController extends Controller
 
         // Scoping for Teacher
         if (auth()->user()->role === 'teacher') {
-            $filters['subject'] = auth()->user()->subjects->pluck('id')->toArray();
+            $mySubjectIds = auth()->user()->subjects->pluck('id')->toArray();
+            
+            // If filtering by a specific subject, ensure it's in their authorized list
+            if ($request->filled('subject')) {
+                $requestedSubjectId = $request->input('subject');
+                if (in_array($requestedSubjectId, $mySubjectIds)) {
+                    $filters['subject'] = [$requestedSubjectId];
+                } else {
+                    // Unauthorized subject requested, fallback to all their subjects
+                    $filters['subject'] = $mySubjectIds;
+                }
+            } else {
+                // No specific filter, show all authorized subjects
+                $filters['subject'] = $mySubjectIds;
+            }
         }
 
         $exams = ExamService::getExamsList($filters);

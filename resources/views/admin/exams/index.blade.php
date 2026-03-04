@@ -195,11 +195,20 @@
                                         </a>
                                     @endif
                                     
-                                    <div class="relative group/more">
-                                        <button class="w-10 h-10 flex items-center justify-center bg-gray-50 text-gray-400 rounded-xl hover:bg-gray-900 hover:text-white transition-all">
+                                    <div class="relative" x-data="{ open: false }">
+                                        <button @click="open = !open" class="w-10 h-10 flex items-center justify-center bg-gray-50 text-gray-400 rounded-xl hover:bg-gray-900 hover:text-white transition-all">
                                             <i class="fas fa-ellipsis-v text-xs"></i>
                                         </button>
-                                        <div class="absolute right-0 bottom-full mb-3 hidden group-hover/more:block w-48 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-20 animate-pop">
+                                        <div x-show="open" 
+                                             x-transition:enter="transition ease-out duration-200"
+                                             x-transition:enter-start="opacity-0 scale-95"
+                                             x-transition:enter-end="opacity-100 scale-100"
+                                             x-transition:leave="transition ease-in duration-75"
+                                             x-transition:leave-start="opacity-100 scale-100"
+                                             x-transition:leave-end="opacity-0 scale-95"
+                                             @click.away="open = false"
+                                             class="absolute right-0 bottom-full mb-3 w-48 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50"
+                                             style="display: none;">
                                             @if($exam->status !== 'published' && $exam->canPublish())
                                                 <form action="{{ route('admin.exams.publish', $exam) }}" method="POST">
                                                     @csrf

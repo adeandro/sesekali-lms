@@ -202,8 +202,8 @@ class ScoringService
      */
     public static function saveEssayScore(ExamAttempt $attempt, int $answerId, float $score)
     {
-        if ($score < 0 || $score > 10) {
-            throw new \Exception('Essay score must be between 0 and 10.');
+        if ($score < 0 || $score > 100) {
+            throw new \Exception('Essay score must be between 0 and 100.');
         }
 
         $answer = ExamAnswer::where('id', $answerId)
@@ -253,8 +253,8 @@ class ScoringService
             return null; // Not all scored yet
         }
 
-        // Score: (sum of points) / (count × 10) × 100
-        $max_points = $answers->count() * 10;
+        // Score: (sum of points) / (count × 100) × 100
+        $max_points = $answers->count() * 100;
         return ($total_points / $max_points) * 100;
     }
 

@@ -125,8 +125,94 @@
 
         <div class="flex items-center justify-end pt-4">
             <button type="submit" class="group relative h-14 px-12 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-100 flex items-center justify-center gap-3">
-                <i class="fas fa-save text-[10px] group-hover:scale-110 transition-transform"></i> Simpan Perubahan
+                <i class="fas fa-save text-[10px] group-hover:scale-110 transition-transform"></i> Simpan Konfigurasi
             </button>
+        </div>
+    </form>
+
+    <hr class="border-gray-100">
+
+    <!-- Profil Super Admin -->
+    <form action="{{ route('admin.settings.update-profile') }}" method="POST" enctype="multipart/form-data" class="space-y-8">
+        @csrf
+        <div class="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden group hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-500">
+            <div class="p-8 border-b border-gray-50 flex items-center gap-4">
+                <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white transition-colors">
+                    <i class="fas fa-user-circle text-sm"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-black text-gray-900 tracking-tight uppercase">Profil Saya</h3>
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-relaxed">Kelola identitas personal dan keamanan akun administrator</p>
+                </div>
+            </div>
+            <div class="p-8 space-y-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Foto Profil -->
+                    <div class="space-y-4">
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Foto Profil</label>
+                        <div class="flex items-center gap-6 p-6 bg-gray-50 rounded-[2rem] border border-dashed border-gray-200 group-hover:border-indigo-200 transition-colors">
+                            <div class="relative shrink-0">
+                                <img id="profilePreview" src="{{ auth()->user()->photo_url }}" alt="Profile" class="w-24 h-24 rounded-2xl object-cover border-4 border-white shadow-sm font-black text-[10px] flex items-center justify-center bg-white text-gray-300">
+                                <button type="button" onclick="document.getElementById('profilePhoto').click()" class="absolute -bottom-2 -right-2 w-8 h-8 bg-indigo-600 text-white rounded-xl shadow-lg flex items-center justify-center hover:scale-110 transition-transform">
+                                    <i class="fas fa-camera text-[10px]"></i>
+                                </button>
+                            </div>
+                            <div class="flex-1 space-y-1">
+                                <input type="file" name="photo" id="profilePhoto" accept="image/*" class="hidden" onchange="previewImage(this)">
+                                <p class="text-[10px] font-black text-gray-900 uppercase tracking-tight">Ganti Foto</p>
+                                <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest leading-relaxed">Rasio 1:1, Maks. 2MB</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Nama & Email -->
+                    <div class="space-y-6">
+                        <div class="space-y-2">
+                            <label for="name" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nama Lengkap</label>
+                            <input type="text" name="name" id="name" value="{{ old('name', auth()->user()->name) }}" 
+                                class="w-full h-14 bg-gray-50 border-transparent rounded-2xl px-6 text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all" required>
+                        </div>
+                        <div class="space-y-2">
+                            <label for="email" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Alamat Email</label>
+                            <input type="email" name="email" id="email" value="{{ old('email', auth()->user()->email) }}" 
+                                class="w-full h-14 bg-gray-50 border-transparent rounded-2xl px-6 text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Keamanan / Password -->
+                <div class="pt-8 border-t border-gray-50 space-y-6">
+                    <p class="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                        <i class="fas fa-shield-alt"></i> Keamanan Akun (Opsional)
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="space-y-2">
+                            <label for="current_password" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Password Saat Ini</label>
+                            <input type="password" name="current_password" id="current_password" 
+                                class="w-full h-14 bg-gray-50 border-transparent rounded-2xl px-6 text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all">
+                        </div>
+                        <div class="space-y-2">
+                            <label for="new_password" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Password Baru</label>
+                            <input type="password" name="new_password" id="new_password" 
+                                class="w-full h-14 bg-gray-50 border-transparent rounded-2xl px-6 text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all">
+                        </div>
+                        <div class="space-y-2">
+                            <label for="new_password_confirmation" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Konfirmasi Password</label>
+                            <input type="password" name="new_password_confirmation" id="new_password_confirmation" 
+                                class="w-full h-14 bg-gray-50 border-transparent rounded-2xl px-6 text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-8 bg-gray-50/50 flex items-center justify-between gap-6">
+                <div class="flex items-center gap-3 text-amber-600">
+                    <i class="fas fa-info-circle text-xs"></i>
+                    <p class="text-[9px] font-black uppercase tracking-widest">Kosongkan password jika tidak ingin mengganti</p>
+                </div>
+                <button type="submit" class="h-14 px-12 bg-gray-900 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-indigo-600 transition shadow-lg flex items-center justify-center gap-3">
+                    <i class="fas fa-user-edit text-[10px]"></i> Perbarui Profil
+                </button>
+            </div>
         </div>
     </form>
 </div>
@@ -151,6 +237,16 @@
         document.getElementById('fileName').textContent = fileName;
         if (input.files[0]) {
             document.getElementById('fileName').classList.add('text-indigo-600', 'font-black');
+        }
+    }
+
+    function previewImage(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('profilePreview').src = e.target.result;
+            }
+            reader.readAsDataURL(input.files[0]);
         }
     }
 

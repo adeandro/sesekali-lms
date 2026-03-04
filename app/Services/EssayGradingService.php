@@ -43,7 +43,7 @@ class EssayGradingService
                     ->where('question_id', $questionId)
                     ->firstOrFail();
 
-                $answer->update(['is_correct' => $score]);
+                $answer->update(['essay_score' => $score]);
                 $totalEssayScore += $score;
                 $essayCount++;
             }
