@@ -217,7 +217,16 @@
                                     </div>
                                     <div class="text-2xl font-black text-gray-200">/ 100</div>
                                 </div>
-                                <p class="text-[10px] font-bold text-gray-400 italic">Gunakan titik (.) untuk angka desimal.</p>
+                                <div class="flex flex-wrap gap-2 pt-2">
+                                    @foreach([0, 25, 50, 75, 100] as $quickScore)
+                                        <button type="button" 
+                                            onclick="this.closest('.space-y-4').querySelector('input').value = {{ $quickScore }}"
+                                            class="px-4 py-2 bg-gray-100 hover:bg-indigo-600 hover:text-white text-gray-600 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all active:scale-95 shadow-sm border border-transparent hover:border-indigo-200">
+                                            {{ $quickScore }}
+                                        </button>
+                                    @endforeach
+                                </div>
+                                <p class="text-[10px] font-bold text-gray-400 italic">Klik tombol di atas untuk input cepat atau gunakan titik (.) untuk desimal.</p>
                                 @error("scores.{$answer->question->id}")
                                     <p class="text-rose-600 text-[10px] font-black uppercase tracking-widest mt-2 pl-2">{{ $message }}</p>
                                 @enderror

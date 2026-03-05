@@ -10,6 +10,7 @@ use App\Http\Requests\UpdateQuestionRequest;
 use App\Http\Requests\ImportQuestionRequest;
 use App\Imports\QuestionImport;
 use App\Exports\QuestionExport;
+use App\Exports\QuestionTemplateExport;
 use App\Services\QuestionService;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
@@ -202,6 +203,14 @@ class QuestionController extends Controller
         }
 
         return view('admin.questions.import_result', $data);
+    }
+
+    /**
+     * Download template Excel for question import.
+     */
+    public function downloadTemplate()
+    {
+        return Excel::download(new QuestionTemplateExport, 'template-import-soal.xlsx');
     }
 
     /**

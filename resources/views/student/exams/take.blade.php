@@ -469,6 +469,23 @@
             from { opacity: 0; }
             to { opacity: 1; }
         }
+
+        /* Responsive Exam Images */
+        .exam-content-img {
+            max-width: 100%;
+            height: auto !important;
+            display: block;
+            margin: 1rem 0;
+            border-radius: 0.75rem;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (max-width: 640px) {
+            .exam-content-img {
+                width: 100%;
+            }
+        }
     </style>
 @endsection
 
@@ -582,10 +599,10 @@
                                         <h2 class="question-text-enhanced">{{ $question->question_text }}</h2>
                                         
                                         @if($question->question_image)
-                                            <div class="mb-4">
+                                            <div class="my-4">
                                                 <img src="{{ asset($question->question_image) }}" 
                                                      alt="Question Image" 
-                                                     class="max-w-2xl h-auto rounded-lg border border-gray-300">
+                                                     class="exam-content-img">
                                             </div>
                                         @endif
                                     </div>
@@ -624,7 +641,7 @@
                                                         @if($optionImage)
                                                             <img src="{{ asset($optionImage) }}" 
                                                                  alt="Option {{ strtoupper($key) }}" 
-                                                                 class="max-w-80 h-auto rounded border border-gray-300">
+                                                                 class="exam-content-img mt-2">
                                                         @endif
                                                     </div>
                                                 </label>

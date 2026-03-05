@@ -103,7 +103,7 @@
                 </div>
             </div>
             
-            <a href="#" class="block p-8 bg-indigo-600 rounded-[2.5rem] shadow-xl shadow-indigo-100 group/dl hover:bg-indigo-700 transition-all duration-300">
+            <a href="{{ route('admin.questions.download-template') }}" class="block p-8 bg-indigo-600 rounded-[2.5rem] shadow-xl shadow-indigo-100 group/dl hover:bg-indigo-700 transition-all duration-300">
                 <div class="flex items-center justify-between">
                     <div>
                         <h4 class="text-white text-[11px] font-black uppercase tracking-widest mb-1">Unduh Template</h4>

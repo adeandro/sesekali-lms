@@ -120,6 +120,7 @@ Route::middleware('auth')->group(function () {
 
         // Question routes with import/export
         Route::get('questions/import/form', [QuestionController::class, 'importForm'])->name('questions.importForm');
+        Route::get('questions/import/template', [QuestionController::class, 'downloadTemplate'])->name('questions.download-template');
         Route::post('questions/import', [QuestionController::class, 'import'])->name('questions.import');
         Route::get('questions/import/result', [QuestionController::class, 'importResult'])->name('questions.importResult');
         Route::get('questions/export', [QuestionController::class, 'export'])->name('questions.export');
