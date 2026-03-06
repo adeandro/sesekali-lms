@@ -401,7 +401,7 @@
 
             <div class="report-title">
                 <div class="handwritten-grade">{{ $gradeLabel }}</div>
-                <h2>LAPORAN HASIL UJIAN HARIAN</h2>
+                <h2>LAPORAN HASIL UJIAN</h2>
                 <p class="text-sm font-bold text-gray-500 tracking-[0.2em] uppercase">Tahun Ajaran {{ date('Y') }}/{{ date('Y') + 1 }}</p>
             </div>
 
