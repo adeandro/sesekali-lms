@@ -231,10 +231,14 @@ class StudentExamController extends Controller
             ]]);
 
             // Determine teacher name for signature
+            // Priority: 1. Subject Teacher, 2. Exam Creator, 3. Generic Fallback
             $teacherName = 'Guru Mata Pelajaran';
+            
             $teacher = $exam->subject->teachers->first();
             if ($teacher) {
                 $teacherName = $teacher->name;
+            } elseif ($exam->creator) {
+                $teacherName = $exam->creator->name;
             }
 
             return view('admin.exams.print-card', compact('exam', 'students', 'teacherName'));

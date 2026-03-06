@@ -72,7 +72,10 @@ class ExamController extends Controller
      */
     public function store(StoreExamRequest $request)
     {
-        ExamService::createExam($request->validated());
+        $data = $request->validated();
+        $data['user_id'] = auth()->id();
+        
+        ExamService::createExam($data);
 
         return redirect()->route('admin.exams.index')
             ->with('success', 'Exam created successfully');

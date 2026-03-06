@@ -29,15 +29,16 @@ class ExamCardController extends Controller
             ->keyBy('student_id');
 
         // Determine teacher name for signature
+        // Priority: 1. Subject Teacher, 2. Exam Creator, 3. Generic Fallback
         $teacherName = 'Guru Mata Pelajaran';
-        if (auth()->user()->role === 'teacher') {
+        
+        $teacher = $exam->subject->teachers->first();
+        if ($teacher) {
+            $teacherName = $teacher->name;
+        } elseif ($exam->creator) {
+            $teacherName = $exam->creator->name;
+        } elseif (auth()->user()->role === 'teacher') {
             $teacherName = auth()->user()->name;
-        } else {
-            // Find teacher associated with this subject
-            $teacher = $exam->subject->teachers->first();
-            if ($teacher) {
-                $teacherName = $teacher->name;
-            }
         }
 
         // Map all students with their attempts (if any)

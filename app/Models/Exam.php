@@ -29,6 +29,7 @@ class Exam extends Model
         'token_last_updated',
         'weight_pg',
         'weight_essay',
+        'user_id',
     ];
 
     protected $casts = [
@@ -52,6 +53,14 @@ class Exam extends Model
     public function subject(): BelongsTo
     {
         return $this->belongsTo(Subject::class);
+    }
+
+    /**
+     * Get the user (creator) of this exam.
+     */
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     /**
