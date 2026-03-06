@@ -67,6 +67,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/', [\App\Http\Controllers\Teacher\TeacherSettingsController::class, 'index'])->name('index');
             Route::post('profile', [\App\Http\Controllers\Teacher\TeacherSettingsController::class, 'updateProfile'])->name('profile');
             Route::post('password', [\App\Http\Controllers\Teacher\TeacherSettingsController::class, 'updatePassword'])->name('password');
+            Route::delete('signature', [\App\Http\Controllers\Teacher\TeacherSettingsController::class, 'deleteSignature'])->name('delete-signature');
         });
     });
 
@@ -197,6 +198,7 @@ Route::middleware('auth')->group(function () {
             Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
             Route::post('settings', [SettingController::class, 'update'])->name('settings.update');
             Route::post('settings/profile', [SettingController::class, 'updateProfile'])->name('settings.update-profile');
+            Route::delete('settings/signature', [SettingController::class, 'deleteSignature'])->name('settings.delete-signature');
         });
     });
 });

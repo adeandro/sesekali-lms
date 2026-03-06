@@ -60,6 +60,8 @@ class SettingController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
             'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'signature' => 'nullable|image|mimes:png,jpg,jpeg|max:2048',
+            'is_signature_active' => 'nullable|in:0,1',
             'current_password' => 'nullable|required_with:new_password',
             'new_password' => 'nullable|min:8|confirmed',
         ]);
@@ -87,8 +89,41 @@ class SettingController extends Controller
             $user->photo = $filename;
         }
 
+        // Handle Signature Upload
+        if ($request->hasFile('signature')) {
+            if ($user->signature) {
+                Storage::disk('public')->delete('signatures/' . $user->signature);
+            }
+
+            $filename = 'sig_admin_' . $user->id . '_' . time() . '.' . $request->file('signature')->getClientOriginalExtension();
+            $request->file('signature')->storeAs('signatures', $filename, 'public');
+            $user->signature = $filename;
+            $user->is_signature_active = true;
+        }
+
+        if ($request->has('is_signature_active')) {
+            $user->is_signature_active = $request->is_signature_active == '1';
+        }
+
         $user->save();
 
         return redirect()->back()->with('success', 'Profil berhasil diperbarui.')->with('active_tab', 'profile');
+    }
+
+    /**
+     * Delete admin signature.
+     */
+    public function deleteSignature()
+    {
+        $user = auth()->user();
+        
+        if ($user->signature) {
+            Storage::disk('public')->delete('signatures/' . $user->signature);
+            $user->signature = null;
+            $user->is_signature_active = false;
+            $user->save();
+        }
+
+        return redirect()->back()->with('success', 'Tanda tangan berhasil dihapus.')->with('active_tab', 'profile');
     }
 }

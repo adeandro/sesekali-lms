@@ -28,6 +28,8 @@ class User extends Authenticatable
         'grade',
         'class_group',
         'photo',
+        'signature',
+        'is_signature_active',
     ];
 
     /**
@@ -51,6 +53,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'is_signature_active' => 'boolean',
         ];
     }
 
@@ -107,6 +110,18 @@ class User extends Authenticatable
 
         // Fallback to UI-Avatars
         return 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&background=random&color=fff&size=400';
+    }
+
+    /**
+     * Get the signature URL.
+     */
+    public function getSignatureUrlAttribute(): ?string
+    {
+        if ($this->signature && \Illuminate\Support\Facades\Storage::disk('public')->exists('signatures/' . $this->signature)) {
+            return asset('storage/signatures/' . $this->signature);
+        }
+
+        return null;
     }
 
     /**

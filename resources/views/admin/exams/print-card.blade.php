@@ -134,6 +134,25 @@
             margin-bottom: 0.25rem;
         }
 
+        .sig-img-container {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 5px 0;
+        }
+
+        .sig-img-container img {
+            max-height: 100%;
+            max-width: 150px;
+            object-fit: contain;
+        }
+
+        .sig-spacer {
+            height: 60px;
+            margin: 5px 0;
+        }
+
         /* Identity & Photo Section */
         .identity-layout {
             display: flex;
@@ -477,11 +496,19 @@
                 <div class="sig-block">
                     <div class="sig-date">&nbsp;</div>
                     <div class="sig-role">Peserta Ujian,</div>
+                    <div class="sig-spacer"></div>
                     <div class="sig-name">{{ $data['student']->name }}</div>
                 </div>
                 <div class="sig-block">
                     <div class="sig-date">{{ now()->translatedFormat('d F Y') }}</div>
                     <div class="sig-role">Guru Mata Pelajaran,</div>
+                    @if($signatureUser && $signatureUser->is_signature_active && $signatureUser->signature_url)
+                        <div class="sig-img-container">
+                            <img src="{{ $signatureUser->signature_url }}" alt="Signature">
+                        </div>
+                    @else
+                        <div class="sig-spacer"></div>
+                    @endif
                     <div class="sig-name">{{ $teacherName }}</div>
                 </div>
             </div>

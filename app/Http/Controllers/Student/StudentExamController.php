@@ -233,15 +233,18 @@ class StudentExamController extends Controller
             // Determine teacher name for signature
             // Priority: 1. Subject Teacher, 2. Exam Creator, 3. Generic Fallback
             $teacherName = 'Guru Mata Pelajaran';
+            $signatureUser = null;
             
             $teacher = $exam->subject->teachers->first();
             if ($teacher) {
                 $teacherName = $teacher->name;
+                $signatureUser = $teacher;
             } elseif ($exam->creator) {
                 $teacherName = $exam->creator->name;
+                $signatureUser = $exam->creator;
             }
 
-            return view('admin.exams.print-card', compact('exam', 'students', 'teacherName'));
+            return view('admin.exams.print-card', compact('exam', 'students', 'teacherName', 'signatureUser'));
         } catch (\Exception $e) {
             return redirect()->route('student.exams.index')
                 ->with('error', $e->getMessage());

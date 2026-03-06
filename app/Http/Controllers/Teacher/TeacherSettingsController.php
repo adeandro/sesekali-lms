@@ -31,11 +31,16 @@ class TeacherSettingsController extends Controller
             'name' => 'required|string|max:255',
             'username' => 'required|string|max:255|unique:users,username,' . $user->id,
             'photo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'signature' => 'nullable|image|mimes:png,jpg,jpeg|max:2048',
+            'is_signature_active' => 'nullable|in:0,1',
         ], [
             'username.unique' => 'NIP/Username ini sudah digunakan oleh pengguna lain.',
             'photo.image' => 'File harus berupa gambar.',
             'photo.mimes' => 'Format gambar harus JPG, JPEG, atau PNG.',
             'photo.max' => 'Ukuran gambar maksimal 2MB.',
+            'signature.image' => 'File tanda tangan harus berupa gambar.',
+            'signature.mimes' => 'Format tanda tangan harus PNG, JPG, atau JPEG.',
+            'signature.max' => 'Ukuran tanda tangan maksimal 2MB.',
         ]);
 
         $user->name = $validated['name'];
@@ -51,6 +56,24 @@ class TeacherSettingsController extends Controller
             $filename = 'teacher_' . $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();
             $file->storeAs('profiles', $filename, 'public');
             $user->photo = $filename;
+        }
+
+        if ($request->hasFile('signature')) {
+            // Delete old signature if exists
+            if ($user->signature) {
+                Storage::disk('public')->delete('signatures/' . $user->signature);
+            }
+
+            $file = $request->file('signature');
+            $filename = 'sig_' . $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $file->storeAs('signatures', $filename, 'public');
+            $user->signature = $filename;
+            $user->is_signature_active = true; // Auto activate on upload
+        }
+
+        // Handle toggle
+        if ($request->has('is_signature_active')) {
+            $user->is_signature_active = $request->is_signature_active == '1';
         }
 
         $user->save();
@@ -78,5 +101,22 @@ class TeacherSettingsController extends Controller
         $user->save();
 
         return redirect()->back()->with('success', 'Kata sandi Anda berhasil diperbarui.');
+    }
+
+    /**
+     * Delete the teacher's signature.
+     */
+    public function deleteSignature()
+    {
+        $user = auth()->user();
+        
+        if ($user->signature) {
+            Storage::disk('public')->delete('signatures/' . $user->signature);
+            $user->signature = null;
+            $user->is_signature_active = false;
+            $user->save();
+        }
+
+        return redirect()->back()->with('success', 'Tanda tangan berhasil dihapus.');
     }
 }

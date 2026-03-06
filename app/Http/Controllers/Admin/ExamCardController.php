@@ -31,14 +31,18 @@ class ExamCardController extends Controller
         // Determine teacher name for signature
         // Priority: 1. Subject Teacher, 2. Exam Creator, 3. Generic Fallback
         $teacherName = 'Guru Mata Pelajaran';
+        $signatureUser = null;
         
         $teacher = $exam->subject->teachers->first();
         if ($teacher) {
             $teacherName = $teacher->name;
+            $signatureUser = $teacher;
         } elseif ($exam->creator) {
             $teacherName = $exam->creator->name;
+            $signatureUser = $exam->creator;
         } elseif (auth()->user()->role === 'teacher') {
             $teacherName = auth()->user()->name;
+            $signatureUser = auth()->user();
         }
 
         // Map all students with their attempts (if any)
@@ -54,7 +58,7 @@ class ExamCardController extends Controller
             ];
         });
 
-        return view('admin.exams.print-card', compact('exam', 'students', 'teacherName'));
+        return view('admin.exams.print-card', compact('exam', 'students', 'teacherName', 'signatureUser'));
     }
 
     /**

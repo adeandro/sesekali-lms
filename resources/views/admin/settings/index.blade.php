@@ -219,6 +219,65 @@
                             </div>
                         </div>
 
+                        <!-- Digital Signature Section -->
+                        <div class="pt-8 border-t border-gray-100">
+                            <div class="flex flex-col md:flex-row items-center gap-10">
+                                <!-- Signature Preview -->
+                                <div class="w-full md:w-64 h-32 bg-gray-50 rounded-[2rem] border-2 border-dashed border-gray-200 flex items-center justify-center relative overflow-hidden group">
+                                    @if(auth()->user()->signature)
+                                        <img id="sigPreview" src="{{ auth()->user()->signature_url }}" alt="Signature" class="max-w-full max-h-full object-contain p-4">
+                                    @else
+                                        <div id="sigPlaceholder" class="text-center space-y-2">
+                                            <i class="fas fa-signature text-2xl text-gray-300"></i>
+                                            <p class="text-[8px] font-black text-gray-300 uppercase tracking-widest">Belum Ada Tanda Tangan</p>
+                                        </div>
+                                        <img id="sigPreview" src="" alt="Signature" class="hidden max-w-full max-h-full object-contain p-4">
+                                    @endif
+                                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer" onclick="document.getElementById('sigInput').click()">
+                                        <i class="fas fa-upload text-white text-xl"></i>
+                                    </div>
+                                </div>
+
+                                <div class="flex-1 space-y-6">
+                                    <div class="space-y-1">
+                                        <h3 class="text-xs font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                                            Tanda Tangan Digital 
+                                            @if(auth()->user()->signature)
+                                                <span class="px-2 py-0.5 {{ auth()->user()->is_signature_active ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-500' }} rounded-md text-[8px] font-black uppercase">
+                                                    {{ auth()->user()->is_signature_active ? 'Aktif' : 'Non-Aktif' }}
+                                                </span>
+                                            @endif
+                                        </h3>
+                                        <p class="text-[10px] font-bold text-gray-400 leading-relaxed italic uppercase tracking-wider">Gunakan format PNG transparan untuk hasil cetak laporan yang paling jernih dan profesional.</p>
+                                    </div>
+
+                                    <div class="flex flex-wrap items-center gap-4">
+                                        <input type="file" name="signature" id="sigInput" accept="image/*" class="hidden" onchange="previewSignature(this)">
+                                        <button type="button" onclick="document.getElementById('sigInput').click()" class="px-5 py-2.5 bg-white border border-gray-200 text-indigo-600 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-indigo-50 hover:border-indigo-100 transition-all shadow-sm">
+                                            {{ auth()->user()->signature ? 'Ganti Tanda Tangan' : 'Upload Tanda Tangan' }}
+                                        </button>
+
+                                        @if(auth()->user()->signature)
+                                            <div class="flex items-center gap-3">
+                                                <div class="flex items-center bg-white px-4 py-2 rounded-xl border border-gray-100 shadow-sm">
+                                                    <input type="hidden" name="is_signature_active" value="0">
+                                                    <label class="relative inline-flex items-center cursor-pointer">
+                                                        <input type="checkbox" name="is_signature_active" value="1" {{ auth()->user()->is_signature_active ? 'checked' : '' }} class="sr-only peer">
+                                                        <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                                                        <span class="ml-3 text-[9px] font-black text-gray-500 uppercase tracking-widest">Aktif</span>
+                                                    </label>
+                                                </div>
+
+                                                <button type="button" onclick="confirmDeleteSignature()" class="w-9 h-9 bg-red-50 text-red-500 rounded-xl flex items-center justify-center hover:bg-red-100 transition-colors shadow-sm border border-red-100">
+                                                    <i class="fas fa-trash-alt text-[10px]"></i>
+                                                </button>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Keamanan / Password -->
                         <div class="pt-8 border-t border-gray-50 space-y-6">
                             <p class="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] flex items-center gap-2">
@@ -288,6 +347,44 @@
                 document.getElementById('profilePreview').src = e.target.result;
             }
             reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function previewSignature(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('sigPreview');
+                const placeholder = document.getElementById('sigPlaceholder');
+                
+                preview.src = e.target.result;
+                preview.classList.remove('hidden');
+                if (placeholder) placeholder.classList.add('hidden');
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function confirmDeleteSignature() {
+        if (confirm('Apakah Anda yakin ingin menghapus tanda tangan digital Anda?')) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = "{{ route('admin.settings.delete-signature') }}";
+            
+            const csrf = document.createElement('input');
+            csrf.type = 'hidden';
+            csrf.name = '_token';
+            csrf.value = "{{ csrf_token() }}";
+            form.appendChild(csrf);
+
+            const method = document.createElement('input');
+            method.type = 'hidden';
+            method.name = '_method';
+            method.value = 'DELETE';
+            form.appendChild(method);
+
+            document.body.appendChild(form);
+            form.submit();
         }
     }
 

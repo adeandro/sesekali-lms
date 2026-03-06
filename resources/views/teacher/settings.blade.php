@@ -71,6 +71,65 @@
                         </div>
                     </div>
 
+                    <!-- Signature Upload -->
+                    <div class="pt-6 border-t border-gray-100">
+                        <div class="flex flex-col md:flex-row items-center gap-10">
+                            <!-- Signature Preview/Placeholder -->
+                            <div class="w-full md:w-64 h-32 bg-gray-50 rounded-[2rem] border-2 border-dashed border-gray-200 flex items-center justify-center relative overflow-hidden group">
+                                @if($user->signature)
+                                    <img id="sig-preview" src="{{ $user->signature_url }}" alt="Signature" class="max-w-full max-h-full object-contain p-4">
+                                @else
+                                    <div id="sig-placeholder" class="text-center space-y-2">
+                                        <i class="fas fa-signature text-2xl text-gray-300"></i>
+                                        <p class="text-[8px] font-black text-gray-300 uppercase tracking-widest">Belum Ada Tanda Tangan</p>
+                                    </div>
+                                    <img id="sig-preview" src="" alt="Signature" class="hidden max-w-full max-h-full object-contain p-4">
+                                @endif
+                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer" onclick="document.getElementById('sig-input').click()">
+                                    <i class="fas fa-upload text-white text-xl"></i>
+                                </div>
+                            </div>
+
+                            <div class="flex-1 space-y-6">
+                                <div class="space-y-1">
+                                    <h3 class="text-xs font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                                        Digital Signature 
+                                        @if($user->signature)
+                                            <span class="px-2 py-0.5 {{ $user->is_signature_active ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-500' }} rounded-md text-[8px] font-black uppercase">
+                                                {{ $user->is_signature_active ? 'Aktif' : 'Non-Aktif' }}
+                                            </span>
+                                        @endif
+                                    </h3>
+                                    <p class="text-[10px] font-bold text-gray-400 leading-relaxed italic">Upload tanda tangan digital Anda untuk dicantumkan otomatis pada Laporan Hasil Ujian. Gunakan format PNG transparan untuk hasil terbaik.</p>
+                                </div>
+
+                                <div class="flex flex-wrap items-center gap-4">
+                                    <input type="file" id="sig-input" name="signature" class="hidden" accept="image/*" onchange="previewSignature(this)">
+                                    <button type="button" onclick="document.getElementById('sig-input').click()" class="px-5 py-2.5 bg-white border border-gray-200 text-indigo-600 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-indigo-50 hover:border-indigo-100 transition-all">
+                                        {{ $user->signature ? 'Ganti Tanda Tangan' : 'Upload Tanda Tangan' }}
+                                    </button>
+
+                                    @if($user->signature)
+                                        <div class="flex items-center gap-3 ml-2">
+                                            <div class="flex items-center bg-gray-50 px-4 py-2 rounded-xl border border-gray-100">
+                                                <input type="hidden" name="is_signature_active" value="0">
+                                                <label class="relative inline-flex items-center cursor-pointer">
+                                                    <input type="checkbox" name="is_signature_active" value="1" {{ $user->is_signature_active ? 'checked' : '' }} class="sr-only peer">
+                                                    <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                                                    <span class="ml-3 text-[9px] font-black text-gray-500 uppercase tracking-widest">Aktifkan</span>
+                                                </label>
+                                            </div>
+
+                                            <button type="button" onclick="confirmDeleteSignature()" class="w-9 h-9 bg-red-50 text-red-500 rounded-xl flex items-center justify-center hover:bg-red-100 transition-colors shadow-sm border border-red-100">
+                                                <i class="fas fa-trash-alt text-[10px]"></i>
+                                            </button>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="pt-6">
                         <button type="submit" class="px-10 py-4 bg-indigo-600 text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center gap-3">
                             <i class="fas fa-save"></i> Perbarui Profil
@@ -138,6 +197,44 @@
                 document.getElementById('photo-preview').src = e.target.result;
             }
             reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function previewSignature(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('sig-preview');
+                const placeholder = document.getElementById('sig-placeholder');
+                
+                preview.src = e.target.result;
+                preview.classList.remove('hidden');
+                if (placeholder) placeholder.classList.add('hidden');
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function confirmDeleteSignature() {
+        if (confirm('Apakah Anda yakin ingin menghapus tanda tangan digital Anda?')) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = "{{ route('teacher.settings.delete-signature') }}";
+            
+            const csrf = document.createElement('input');
+            csrf.type = 'hidden';
+            csrf.name = '_token';
+            csrf.value = "{{ csrf_token() }}";
+            form.appendChild(csrf);
+
+            const method = document.createElement('input');
+            method.type = 'hidden';
+            method.name = '_method';
+            method.value = 'DELETE';
+            form.appendChild(method);
+
+            document.body.appendChild(form);
+            form.submit();
         }
     }
 </script>
