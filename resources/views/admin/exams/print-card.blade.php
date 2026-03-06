@@ -379,6 +379,7 @@
             <div class="handwritten-grade">{{ $gradeLabel }}</div>
 
             <!-- Kop Surat -->
+            @if(($configs['show_report_header'] ?? '1') == '1')
             <div class="kop-header">
                 @if(isset($configs['logo']) && $configs['logo'])
                     <img src="{{ asset('storage/' . $configs['logo']) }}" class="school-logo" alt="Logo">
@@ -393,6 +394,7 @@
                     <p class="mt-1 font-bold italic">{{ $configs['report_header_subtitle'] ?? 'Official Exam Results Certificate' }}</p>
                 </div>
             </div>
+            @endif
 
             <div class="report-title">
                 <h2>LAPORAN HASIL UJIAN HARIAN</h2>

@@ -76,6 +76,14 @@
                                 class="w-full h-14 bg-gray-50 border-transparent rounded-2xl px-6 text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all">
                         </div>
                         <div class="space-y-4">
+                            <label for="show_report_header" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Tampilkan Kop Laporan</label>
+                            <select name="show_report_header" id="show_report_header" 
+                                class="w-full h-14 bg-gray-50 border-transparent rounded-2xl px-6 text-xs font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all appearance-none cursor-pointer">
+                                <option value="1" {{ (old('show_report_header', $allSettings['show_report_header'] ?? '1') == '1') ? 'selected' : '' }}>TAMPILKAN (Visible)</option>
+                                <option value="0" {{ (old('show_report_header', $allSettings['show_report_header'] ?? '1') == '0') ? 'selected' : '' }}>SEMBUNYIKAN (Hidden)</option>
+                            </select>
+                        </div>
+                        <div class="space-y-4">
                             <label for="show_login_header" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nama Sekolah di Login</label>
                             <select name="show_login_header" id="show_login_header" 
                                 class="w-full h-14 bg-gray-50 border-transparent rounded-2xl px-6 text-xs font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all appearance-none cursor-pointer">
