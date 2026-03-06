@@ -8,6 +8,7 @@
     <!-- Load Tailwind & FontAwesome for Standalone Layout -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/x-icon" href="{{ isset($configs['logo']) ? asset('storage/' . $configs['logo']) : asset('favicon.ico') }}">
     
     <style>
         /* Standalone Print CSS Reset */

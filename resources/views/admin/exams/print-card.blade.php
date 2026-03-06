@@ -8,6 +8,7 @@
     <!-- Load Tailwind & FontAwesome for Standalone Layout -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/x-icon" href="{{ isset($configs['logo']) ? asset('storage/' . $configs['logo']) : asset('favicon.ico') }}">
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Caveat:wght@700&display=swap');
@@ -135,7 +136,7 @@
         }
 
         .sig-img-container {
-            height: 60px;
+            height: 120px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -144,12 +145,12 @@
 
         .sig-img-container img {
             max-height: 100%;
-            max-width: 150px;
+            max-width: 250px;
             object-fit: contain;
         }
 
         .sig-spacer {
-            height: 60px;
+            height: 120px;
             margin: 5px 0;
         }
 
@@ -500,7 +501,7 @@
                     <div class="sig-name">{{ $data['student']->name }}</div>
                 </div>
                 <div class="sig-block">
-                    <div class="sig-date">{{ now()->translatedFormat('d F Y') }}</div>
+                    <div class="sig-date">{{ now()->locale('id')->translatedFormat('d F Y') }}</div>
                     <div class="sig-role">Guru Mata Pelajaran,</div>
                     @if($signatureUser && $signatureUser->is_signature_active && $signatureUser->signature_url)
                         <div class="sig-img-container">
