@@ -210,6 +210,41 @@ class StudentExamController extends Controller
     }
 
     /**
+     * Print professional report for student.
+     */
+    public function printReport(ExamAttempt $attempt)
+    {
+        // Verify student owns this attempt
+        if (!ExamEngineService::canAccessAttempt($attempt, auth()->user())) {
+            abort(403, 'Unauthorized');
+        }
+
+        try {
+            $exam = $attempt->exam;
+            
+            // Map student with their attempt data (matching ExamCardController format)
+            $students = collect([[
+                'student' => $attempt->student,
+                'score' => $attempt->final_score ?? 0,
+                'status' => ($attempt->final_score >= ($exam->subject->kkm ?? 75) ? 'Lulus' : 'Tidak Lulus'),
+                'is_submitted' => true,
+            ]]);
+
+            // Determine teacher name for signature
+            $teacherName = 'Guru Mata Pelajaran';
+            $teacher = $exam->subject->teachers->first();
+            if ($teacher) {
+                $teacherName = $teacher->name;
+            }
+
+            return view('admin.exams.print-card', compact('exam', 'students', 'teacherName'));
+        } catch (\Exception $e) {
+            return redirect()->route('student.exams.index')
+                ->with('error', $e->getMessage());
+        }
+    }
+
+    /**
      * Get remaining time via AJAX.
      */
     public function getRemainingTime(ExamAttempt $attempt)

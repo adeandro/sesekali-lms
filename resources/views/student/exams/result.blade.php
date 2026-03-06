@@ -289,9 +289,9 @@
                 </div>
 
                 <div class="pt-8 border-t border-white/10 space-y-4">
-                     <button onclick="window.print()" class="w-full py-4 bg-white/10 hover:bg-white/20 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all transition-colors flex items-center justify-center gap-3">
-                         <i class="fas fa-print"></i> Cetak Bukti Hasil
-                     </button>
+                     <a href="{{ route('student.exams.print', $attempt->id) }}" target="_blank" class="w-full py-4 bg-white text-indigo-900 hover:bg-indigo-50 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-indigo-950/20 flex items-center justify-center gap-3">
+                         <i class="fas fa-print"></i> Cetak Hasil Ujian
+                     </a>
                      <a href="{{ route('dashboard.student') }}" class="block w-full text-center text-[10px] font-black text-indigo-300 uppercase tracking-widest hover:text-white transition-colors">
                          Selesaikan & Keluar
                      </a>

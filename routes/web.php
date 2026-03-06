@@ -89,6 +89,7 @@ Route::middleware('auth')->group(function () {
                 Route::post('{attempt}/autosave', [StudentExamController::class, 'autosave'])->name('autosave');
                 Route::post('{attempt}/submit', [StudentExamController::class, 'submit'])->name('submit');
                 Route::get('{attempt}/result', [StudentExamController::class, 'result'])->name('result');
+                Route::get('{attempt}/print', [StudentExamController::class, 'printReport'])->name('print');
                 Route::get('{attempt}/remaining-time', [StudentExamController::class, 'getRemainingTime'])->name('remaining-time');
                 Route::post('{attempt}/save-violation', [StudentExamController::class, 'saveViolation'])->name('save-violation');
                 Route::post('{attempt}/force-submit', [StudentExamController::class, 'forceSubmit'])->name('force-submit');

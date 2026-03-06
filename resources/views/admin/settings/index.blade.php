@@ -61,6 +61,21 @@
                                 class="w-full h-14 bg-gray-50 border-transparent rounded-2xl px-6 text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all" required>
                         </div>
                         <div class="space-y-4">
+                            <label for="school_phone" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">WhatsApp / Phone</label>
+                            <input type="text" name="school_phone" id="school_phone" value="{{ old('school_phone', $allSettings['school_phone'] ?? '') }}" 
+                                class="w-full h-14 bg-gray-50 border-transparent rounded-2xl px-6 text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all">
+                        </div>
+                        <div class="space-y-4 col-span-full">
+                            <label for="school_address" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Alamat Instansi / Sekolah</label>
+                            <input type="text" name="school_address" id="school_address" value="{{ old('school_address', $allSettings['school_address'] ?? '') }}" 
+                                class="w-full h-14 bg-gray-50 border-transparent rounded-2xl px-6 text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all">
+                        </div>
+                        <div class="space-y-4">
+                            <label for="report_header_subtitle" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Subtitle Kop Laporan</label>
+                            <input type="text" name="report_header_subtitle" id="report_header_subtitle" value="{{ old('report_header_subtitle', $allSettings['report_header_subtitle'] ?? 'Official Exam Results Certificate') }}" 
+                                class="w-full h-14 bg-gray-50 border-transparent rounded-2xl px-6 text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all">
+                        </div>
+                        <div class="space-y-4">
                             <label for="show_login_header" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nama Sekolah di Login</label>
                             <select name="show_login_header" id="show_login_header" 
                                 class="w-full h-14 bg-gray-50 border-transparent rounded-2xl px-6 text-xs font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all appearance-none cursor-pointer">

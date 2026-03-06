@@ -13,9 +13,10 @@ class ExamCardController extends Controller
      */
     public function printCard(Exam $exam)
     {
-        // Get all active students
+        // Get active students matching the exam's grade level (jenjang)
         $allStudents = \App\Models\User::where('role', 'student')
             ->where('is_active', true)
+            ->where('grade', $exam->jenjang) // Filter by grade matching exam
             ->orderBy('grade', 'asc')
             ->orderBy('class_group', 'asc')
             ->orderBy('name', 'asc')
@@ -27,6 +28,18 @@ class ExamCardController extends Controller
             ->get()
             ->keyBy('student_id');
 
+        // Determine teacher name for signature
+        $teacherName = 'Guru Mata Pelajaran';
+        if (auth()->user()->role === 'teacher') {
+            $teacherName = auth()->user()->name;
+        } else {
+            // Find teacher associated with this subject
+            $teacher = $exam->subject->teachers->first();
+            if ($teacher) {
+                $teacherName = $teacher->name;
+            }
+        }
+
         // Map all students with their attempts (if any)
         $students = $allStudents->map(function ($student) use ($exam, $attemptsMap) {
             $attempt = $attemptsMap->get($student->id);
@@ -34,13 +47,13 @@ class ExamCardController extends Controller
                 'student' => $student,
                 'score' => $attempt?->final_score ?? 0,
                 'status' => $attempt
-                    ? ($attempt->final_score >= 70 ? 'Lulus' : 'Tidak Lulus')
+                    ? ($attempt->final_score >= ($exam->subject->kkm ?? 75) ? 'Lulus' : 'Tidak Lulus')
                     : 'Belum Dinilai',
                 'is_submitted' => $attempt ? true : false,
             ];
         });
 
-        return view('admin.exams.print-card', compact('exam', 'students'));
+        return view('admin.exams.print-card', compact('exam', 'students', 'teacherName'));
     }
 
     /**
