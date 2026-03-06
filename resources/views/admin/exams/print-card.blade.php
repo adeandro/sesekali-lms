@@ -477,7 +477,7 @@
                     <div class="final-score-label">Points (Scale 0-100)</div>
                     
                     <div class="status-pill {{ $isPassed ? 'passed' : 'failed' }}">
-                        {{ $isPassed ? 'TUNTAS' : 'REMIDIAL' }}
+                        {{ $isPassed ? 'LULUS' : 'REMIDIAL' }}
                     </div>
                 </div>
             </div>
@@ -486,7 +486,7 @@
                 <p><strong>Keterangan:</strong></p>
                 <ul class="list-disc ml-5 mt-2 space-y-1">
                     <li>Nilai KKM untuk mata pelajaran ini adalah <strong>{{ $exam->subject->kkm ?? 75 }}</strong>.</li>
-                    <li>Siswa dinyatakan <strong>TUNTAS</strong> jika nilai akhir lebih besar atau sama dengan KKM.</li>
+                    <li>Siswa dinyatakan <strong>LULUS</strong> jika nilai akhir lebih besar atau sama dengan KKM.</li>
                     <li>Laporan ini dicetak secara otomatis oleh sistem ujian CBT dan bersifat sah sebagai arsip nilai harian.</li>
                 </ul>
             </div>
