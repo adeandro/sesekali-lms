@@ -16,7 +16,7 @@ class SuperAdminTeacherController extends Controller
      */
     public function index(Request $request)
     {
-        $query = User::where('role', 'teacher')->with('subjects');
+        $query = User::whereIn('role', ['teacher', 'superadmin'])->with('subjects');
 
         if ($request->filled('search')) {
             $search = $request->input('search');
@@ -74,7 +74,7 @@ class SuperAdminTeacherController extends Controller
      */
     public function edit(User $teacher)
     {
-        if ($teacher->role !== 'teacher') {
+        if (!in_array($teacher->role, ['teacher', 'superadmin'])) {
             abort(404);
         }
 
@@ -87,7 +87,7 @@ class SuperAdminTeacherController extends Controller
      */
     public function update(Request $request, User $teacher)
     {
-        if ($teacher->role !== 'teacher') {
+        if (!in_array($teacher->role, ['teacher', 'superadmin'])) {
             abort(404);
         }
 
@@ -122,13 +122,18 @@ class SuperAdminTeacherController extends Controller
      */
     public function destroy(User $teacher)
     {
-        if ($teacher->role !== 'teacher') {
+        if (!in_array($teacher->role, ['teacher', 'superadmin'])) {
             abort(404);
+        }
+
+        if ($teacher->id === auth()->id()) {
+            return redirect()->route('superadmin.teachers.index')
+                ->with('error', 'Anda tidak dapat menghapus akun Anda sendiri.');
         }
 
         $teacher->delete();
 
         return redirect()->route('superadmin.teachers.index')
-            ->with('success', 'Guru berhasil dihapus.');
+            ->with('success', 'User berhasil dihapus.');
     }
 }

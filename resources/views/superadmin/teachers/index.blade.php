@@ -7,9 +7,9 @@
 @section('content')
     <div class="space-y-6">
         <div class="flex justify-between items-center">
-            <h2 class="text-3xl font-bold text-gray-900">Manajemen Guru</h2>
+            <h2 class="text-3xl font-bold text-gray-900">Manajemen Pengguna (Admin & Guru)</h2>
             <a href="{{ route('superadmin.teachers.create') }}" class="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-                + Tambah Guru
+                + Tambah User
             </a>
         </div>
 
@@ -34,8 +34,9 @@
             <table class="min-w-full">
                 <thead class="bg-gray-100 border-b">
                     <tr>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">NIP/NIS</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">NIS/ID</th>
                         <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Nama</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Role</th>
                         <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Email</th>
                         <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Mata Pelajaran</th>
                         <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
@@ -47,6 +48,11 @@
                         <tr class="border-b hover:bg-gray-50">
                             <td class="px-6 py-4 text-sm text-gray-900 font-medium">{{ $teacher->nis }}</td>
                             <td class="px-6 py-4 text-sm text-gray-900">{{ $teacher->name }}</td>
+                            <td class="px-6 py-4 text-sm">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider {{ $teacher->role === 'superadmin' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700' }}">
+                                    {{ $teacher->role === 'superadmin' ? 'Super Admin' : 'Guru' }}
+                                </span>
+                            </td>
                             <td class="px-6 py-4 text-sm text-gray-600">{{ $teacher->email }}</td>
                             <td class="px-6 py-4 text-sm text-gray-900">
                                 <div class="flex flex-wrap gap-1">
