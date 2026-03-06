@@ -47,8 +47,8 @@
         /* Handwritten Grade Overlay */
         .handwritten-grade {
             position: absolute;
-            top: 4.5rem;
-            right: 2.5rem;
+            top: -1.75rem; /* Slightly lower to center with title better */
+            right: 5.5rem; /* Shifted left to avoid photo area */
             font-family: 'Caveat', cursive;
             font-size: 8rem;
             color: #b91c1c; /* Deep Red Marker Color */
@@ -116,8 +116,13 @@
 
         .report-title {
             text-align: center;
-            margin-bottom: 1rem;
+            margin-bottom: 2rem; /* Increased to give more air */
             position: relative;
+        }
+
+        .no-header .report-title {
+            margin-top: 1.5rem;
+            margin-bottom: 3rem;
         }
 
         .report-title h2 {
@@ -373,11 +378,9 @@
 
             // Get school configs
             $configs = \App\Models\Setting::all()->pluck('value', 'key')->toArray();
+            $showHeader = ($configs['show_report_header'] ?? '1') == '1';
         @endphp
-        <div class="report-page">
-            <!-- Handwritten Overlay -->
-            <div class="handwritten-grade">{{ $gradeLabel }}</div>
-
+        <div class="report-page {{ $showHeader ? '' : 'no-header' }}">
             <!-- Kop Surat -->
             @if(($configs['show_report_header'] ?? '1') == '1')
             <div class="kop-header">
@@ -397,6 +400,7 @@
             @endif
 
             <div class="report-title">
+                <div class="handwritten-grade">{{ $gradeLabel }}</div>
                 <h2>LAPORAN HASIL UJIAN HARIAN</h2>
                 <p class="text-sm font-bold text-gray-500 tracking-[0.2em] uppercase">Tahun Ajaran {{ date('Y') }}/{{ date('Y') + 1 }}</p>
             </div>
