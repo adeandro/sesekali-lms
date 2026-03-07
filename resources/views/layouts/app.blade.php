@@ -528,29 +528,6 @@
                                         </div>
                                     @endif
                                 </div>
-                                     @if($configs['enable_gamification'] ?? '1' == '1')
-                                         @if(isset($index) && $index === 0)
-                                            <!-- Crown Icon for Rank 1 -->
-                                            <div class="absolute -top-3 -right-2 text-amber-400 drop-shadow-[0_0_5px_rgba(251,191,36,0.8)] z-20 text-lg hover:scale-125 transition-transform origin-bottom">
-                                                <i class="fas fa-crown"></i>
-                                            </div>
-                                         @endif
-                                         <div class="absolute -bottom-1 -right-1 bg-[var(--brand-primary)] text-white text-[6px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-white shadow-sm z-10">
-                                             {{ (isset($index) ? $index : 0) + 1 }}
-                                         </div>
-                                     @endif                             <!-- Level Badge -->
-                                <div class="absolute -bottom-1 -right-1 bg-[var(--brand-primary)] text-white text-[8px] font-black w-6 h-6 rounded-full flex items-center justify-center border-2 border-white shadow-sm">
-                                    {{ Auth::user()->current_level }}
-                                </div>
-                            @else
-                                <!-- Standard Avatar (Kill Switch Active or Non-Student) -->
-                                <div class="w-12 h-12 rounded-full border-2 border-white shadow-sm overflow-hidden bg-white">
-                                @if(Auth::user()->has_avatar)
-                                    <img src="{{ Auth::user()->avatar_url }}" alt="Formal Photo" class="w-full h-full object-cover">
-                                @else
-                                    <div class="w-full h-full bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center text-white text-[10px] font-black italic leading-none">
-                                        {{ Auth::user()->initials }}
-                                    </div>
                                 @endif
                                 </div>
                             @endif
@@ -561,7 +538,7 @@
                             <div class="flex items-center gap-2 mt-0.5">
                                 @if($isGamified)
                                     <span class="px-2 py-0.5 text-[8px] font-black bg-[var(--brand-primary)] text-white rounded-lg uppercase tracking-widest shadow-sm">
-                                        {{ Auth::user()->level_title }}
+                                        LVL {{ Auth::user()->current_level }} • {{ Auth::user()->level_title }}
                                     </span>
                                 @else
                                     <span class="inline-flex px-2 py-0.5 text-[9px] font-extrabold rounded-md uppercase tracking-wider
