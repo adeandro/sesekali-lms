@@ -115,7 +115,7 @@
                                     </div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="text-sm font-bold text-gray-900">{{ $student->name }}</div>
+                                    <div class="text-sm font-bold text-gray-900">{{ $student->formatted_name }}</div>
                                     <div class="text-xs text-gray-500 font-mono tracking-tight mt-0.5">NIS: {{ $student->nis }}</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm">

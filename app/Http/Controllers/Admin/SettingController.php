@@ -35,6 +35,18 @@ class SettingController extends Controller
             Setting::set('logo', $path);
         }
 
+        // Handle Default Student Avatar Upload
+        if ($request->hasFile('default_student_avatar')) {
+            // Delete old avatar if exists
+            $oldAvatar = Setting::get('default_student_avatar');
+            if ($oldAvatar) {
+                Storage::disk('public')->delete($oldAvatar);
+            }
+
+            $path = $request->file('default_student_avatar')->store('school', 'public');
+            Setting::set('default_student_avatar', $path);
+        }
+
         // Save other settings
         Setting::set('school_name', $request->school_name);
         Setting::set('school_address', $request->school_address);
@@ -45,6 +57,8 @@ class SettingController extends Controller
         Setting::set('max_violations', $request->max_violations);
         Setting::set('anti_cheat_active', $request->anti_cheat_active);
         Setting::set('academic_year', $request->academic_year);
+        Setting::set('enable_gamification', $request->enable_gamification);
+        Setting::set('enable_leaderboard', $request->enable_leaderboard);
 
         return redirect()->back()->with('success', 'Pengaturan berhasil diperbarui.')->with('active_tab', 'identity');
     }

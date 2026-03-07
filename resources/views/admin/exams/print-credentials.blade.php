@@ -117,7 +117,6 @@
             font-size: 0.8rem;
             font-weight: 700;
             color: #334155;
-            text-transform: uppercase;
         }
 
         .credential-box {

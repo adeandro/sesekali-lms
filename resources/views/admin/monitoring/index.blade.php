@@ -105,10 +105,8 @@
                                 <span class="text-[10px] font-black text-gray-300 uppercase tracking-widest">{{ $loop->iteration }}</span>
                             </td>
                             <td class="px-8 py-6">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 text-xs font-black uppercase">
-                                        {{ substr($student['student_name'], 0, 2) }}
-                                    </div>
+                                <div class="flex items-center gap-4" x-data>
+                                    <div x-html="multiavatar('{{ $student['avatar_seed'] }}')" class="w-10 h-10 rounded-xl border border-gray-100 shadow-sm bg-white overflow-hidden"></div>
                                     <div>
                                         <p class="text-sm font-bold text-gray-900 leading-none student-name">{{ $student['student_name'] }}</p>
                                         <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 student-nis">NIS: {{ $student['nis'] }}</p>

@@ -7,6 +7,7 @@ use App\Models\Exam;
 use App\Models\ExamAttempt;
 use App\Services\EssayGradingService;
 use App\Exports\ExamResultsExport;
+use App\Services\ScoringService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
@@ -361,6 +362,49 @@ class ResultController extends Controller
         ]);
 
         return Excel::download(new ExamResultsExport($exam, request()->all()), $filename);
+    }
+    /**
+     * Apply Akar adjustment to all results of an exam.
+     */
+    public function applyAdjustment($examId)
+    {
+        $examId = (int)$examId;
+        $exam = Exam::find($examId);
+
+        if (!$exam || (auth()->user()->role === 'teacher' && !auth()->user()->subjects->contains('id', $exam->subject_id))) {
+            return redirect()->back()->with('error', 'Ujian tidak ditemukan atau Anda tidak memiliki akses.');
+        }
+
+        try {
+            $count = ScoringService::applyAkarAdjustment($examId);
+            return redirect()->route('admin.results.show', $examId)
+                ->with('success', "Penyesuaian Nilai (Metode Akar) berhasil diterapkan pada $count siswa.");
+        } catch (\Exception $e) {
+            Log::error('Apply Adjustment Error', ['exam_id' => $examId, 'error' => $e->getMessage()]);
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat menerapkan penyesuaian nilai.');
+        }
+    }
+
+    /**
+     * Reset adjustment for all results of an exam.
+     */
+    public function resetAdjustment($examId)
+    {
+        $examId = (int)$examId;
+        $exam = Exam::find($examId);
+
+        if (!$exam || (auth()->user()->role === 'teacher' && !auth()->user()->subjects->contains('id', $exam->subject_id))) {
+            return redirect()->back()->with('error', 'Ujian tidak ditemukan atau Anda tidak memiliki akses.');
+        }
+
+        try {
+            ScoringService::resetAkarAdjustment($examId);
+            return redirect()->route('admin.results.show', $examId)
+                ->with('success', 'Nilai telah dikembalikan ke nilai murni.');
+        } catch (\Exception $e) {
+            Log::error('Reset Adjustment Error', ['exam_id' => $examId, 'error' => $e->getMessage()]);
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat mengembalikan nilai.');
+        }
     }
 }
 

@@ -7,15 +7,15 @@
     <!-- Header Section -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 px-2">
         <div class="space-y-1">
-            <p class="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em] italic">Riwayat Kompetensi</p>
+            <p class="text-[10px] font-black text-[var(--brand-primary)] uppercase tracking-[0.3em] italic">Riwayat Kompetensi</p>
             <h1 class="text-3xl font-black text-gray-900 uppercase tracking-wider flex items-center gap-3">
-                <span class="w-2 h-10 bg-indigo-600 rounded-full"></span>
+                <span class="w-2 h-10 bg-[var(--brand-primary)] rounded-full"></span>
                 Hasil Ujian Saya
             </h1>
         </div>
         
         <div class="flex items-center gap-4">
-            <a href="{{ route('dashboard.student') }}" class="group px-6 py-3 bg-white border border-gray-100 rounded-2xl text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-indigo-600 hover:border-indigo-100 transition-all flex items-center gap-2 shadow-sm">
+            <a href="{{ route('dashboard.student') }}" class="group px-6 py-3 bg-white border border-gray-100 rounded-2xl text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-[var(--brand-primary)] hover:border-[var(--brand-glow)] transition-all flex items-center gap-2 shadow-sm">
                 <i class="fas fa-arrow-left group-hover:-translate-x-1 transition-transform"></i> Dashboard
             </a>
         </div>
@@ -23,10 +23,10 @@
 
     <!-- Stats Grid -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm relative overflow-hidden group">
-            <div class="absolute -top-6 -right-6 w-24 h-24 bg-indigo-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+        <div class="bg-white rounded-[2rem] p-8 border-l-4 border-[var(--brand-primary)] shadow-md shadow-[var(--brand-glow)] relative overflow-hidden group">
+            <div class="absolute -top-6 -right-6 w-24 h-24 bg-[var(--brand-glow)] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
             <div class="relative space-y-3">
-                <div class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center text-sm">
+                <div class="w-10 h-10 bg-[var(--brand-glow)] text-[var(--brand-primary)] rounded-xl flex items-center justify-center text-sm">
                     <i class="fas fa-file-signature"></i>
                 </div>
                 <div>
@@ -36,7 +36,7 @@
             </div>
         </div>
 
-        <div class="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm relative overflow-hidden group">
+        <div class="bg-white rounded-[2rem] p-8 border-l-4 border-emerald-500 shadow-md shadow-emerald-100 relative overflow-hidden group">
             <div class="absolute -top-6 -right-6 w-24 h-24 bg-emerald-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
             @php
                 $avgScore = $results->where('can_view_score', true)->avg('final_score');
@@ -52,7 +52,7 @@
             </div>
         </div>
 
-        <div class="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-sm relative overflow-hidden group">
+        <div class="bg-white rounded-[2rem] p-8 border-l-4 border-amber-500 shadow-md shadow-amber-100 relative overflow-hidden group">
             <div class="absolute -top-6 -right-6 w-24 h-24 bg-amber-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
             @php
                 $maxScore = $results->where('can_view_score', true)->max('final_score');
@@ -70,10 +70,10 @@
     </div>
 
     <!-- History List -->
-    <div class="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden min-h-[400px]">
+    <div class="bg-white rounded-[2.5rem] border-l-4 border-[var(--brand-primary)] shadow-md shadow-[var(--brand-glow)] overflow-hidden min-h-[400px]">
         <div class="px-8 py-6 border-b border-gray-50 flex items-center justify-between">
             <h2 class="text-sm font-black text-gray-900 uppercase tracking-[0.2em] flex items-center gap-3">
-                <i class="fas fa-history text-indigo-600"></i> Riwayat Pencapaian
+                <i class="fas fa-history text-[var(--brand-primary)]"></i> Riwayat Pencapaian
             </h2>
         </div>
 
@@ -83,17 +83,17 @@
                     <i class="fas fa-folder-open"></i>
                 </div>
                 <p class="text-xs font-black text-gray-400 uppercase tracking-widest">Belum ada riwayat ujian</p>
-                <a href="{{ route('student.exams.index') }}" class="px-6 py-3 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition shadow-lg shadow-indigo-100">Cari Ujian Tersedia</a>
+                <a href="{{ route('student.exams.index') }}" class="px-6 py-3 bg-[var(--brand-primary)] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-[var(--brand-dark)] transition shadow-lg shadow-[var(--brand-glow)]">Cari Ujian Tersedia</a>
             </div>
         @else
             <div class="divide-y divide-gray-50">
                 @foreach($results as $result)
-                    <div class="p-8 hover:bg-indigo-50/30 transition-all duration-300 group">
+                    <div class="p-8 hover:bg-[var(--brand-glow)]/30 transition-all duration-300 group">
                         <div class="flex flex-col lg:flex-row lg:items-center gap-8">
                             <!-- Exam Identity -->
                             <div class="flex-1 space-y-1">
-                                <p class="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] italic">{{ $result->exam->subject->name }}</p>
-                                <h4 class="text-lg font-black text-gray-900 leading-tight group-hover:text-indigo-600 transition-colors">{{ $result->exam->title }}</h4>
+                                <p class="text-[10px] font-black text-[var(--brand-primary)] uppercase tracking-[0.2em] italic">{{ $result->exam->subject->name }}</p>
+                                <h4 class="text-lg font-black text-gray-900 leading-tight group-hover:text-[var(--brand-primary)] transition-colors">{{ $result->exam->title }}</h4>
                                 <div class="flex items-center gap-2 text-gray-400 text-[11px] font-bold uppercase tracking-wider">
                                     <i class="far fa-calendar-check mt-0.5"></i>
                                     {{ $result->submitted_at->format('d M Y') }} <span class="text-gray-200 mx-1">|</span> {{ $result->submitted_at->format('H:i') }}
@@ -139,11 +139,11 @@
                                 @endif
                             </div>
 
-                            <!-- Action -->
+                             <!-- Action -->
                             <div class="pt-4 lg:pt-0">
                                 @if($result->can_view_score)
                                     <a href="{{ route('student.exams.result', $result->id) }}" 
-                                        class="w-full lg:w-auto inline-flex items-center justify-center px-8 py-3.5 bg-white border border-gray-200 group-hover:border-indigo-600 group-hover:bg-indigo-600 text-[10px] font-black uppercase tracking-widest text-gray-700 group-hover:text-white rounded-2xl transition-all shadow-sm">
+                                        class="w-full lg:w-auto inline-flex items-center justify-center px-8 py-3.5 bg-white border border-gray-200 group-hover:border-[var(--brand-primary)] group-hover:bg-[var(--brand-primary)] text-[10px] font-black uppercase tracking-widest text-gray-700 group-hover:text-white rounded-2xl transition-all shadow-sm">
                                         Detail Review <i class="fas fa-chevron-right ml-2 text-[8px] group-hover:translate-x-1 transition-transform"></i>
                                     </a>
                                 @else

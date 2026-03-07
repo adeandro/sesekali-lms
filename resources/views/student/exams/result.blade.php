@@ -6,8 +6,8 @@
 <div class="space-y-10 pb-20">
     <!-- Top Nav / Back -->
     <div class="flex items-center justify-between px-2">
-        <a href="{{ route('student.results') }}" class="group flex items-center gap-3 text-gray-500 hover:text-indigo-600 transition-colors">
-            <div class="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center shadow-sm group-hover:border-indigo-100 group-hover:bg-indigo-50 transition-all">
+        <a href="{{ route('student.results') }}" class="group flex items-center gap-3 text-gray-400 hover:text-[var(--brand-primary)] transition-colors">
+            <div class="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center shadow-sm group-hover:border-[var(--brand-glow)] group-hover:bg-[var(--brand-glow)]/10 transition-all">
                 <i class="fas fa-arrow-left text-xs group-hover:-translate-x-1 transition-transform"></i>
             </div>
             <span class="text-[10px] font-black uppercase tracking-widest">Riwayat Hasil</span>
@@ -24,10 +24,10 @@
         <div class="lg:col-span-2 space-y-10">
             @if($attempt->exam->show_score_after_submit)
                 <!-- Score Header Card -->
-                <div class="group relative bg-gradient-to-br from-indigo-600 via-indigo-700 to-indigo-900 rounded-[3rem] p-10 md:p-14 text-white shadow-2xl shadow-indigo-200 overflow-hidden">
+                <div class="group relative bg-gradient-to-br from-[var(--brand-primary)] via-[var(--brand-primary)] to-[var(--brand-dark)] rounded-[3rem] p-10 md:p-14 text-white shadow-2xl shadow-[var(--brand-glow)] overflow-hidden">
                     <!-- Abstract Decoration -->
                     <div class="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
-                    <div class="absolute bottom-0 left-0 -ml-20 -mb-20 w-64 h-64 bg-indigo-400/20 rounded-full blur-3xl pointer-events-none"></div>
+                    <div class="absolute bottom-0 left-0 -ml-20 -mb-20 w-64 h-64 bg-[var(--brand-glow)]/20 rounded-full blur-3xl pointer-events-none"></div>
 
                     <div class="relative flex flex-col md:flex-row items-center justify-between gap-12">
                         <div class="space-y-6 text-center md:text-left">
@@ -38,11 +38,11 @@
                             
                             <div class="flex flex-wrap justify-center md:justify-start gap-4">
                                 <div class="px-5 py-2 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20">
-                                    <p class="text-[8px] font-black text-indigo-200 uppercase tracking-widest mb-1">Dikerjakan Pada</p>
+                                    <p class="text-[8px] font-black text-white/60 uppercase tracking-widest mb-1">Dikerjakan Pada</p>
                                     <p class="text-xs font-black uppercase tracking-wider">{{ $attempt->submitted_at->format('d M Y - H:i') }}</p>
                                 </div>
                                 <div class="px-5 py-2 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20">
-                                    <p class="text-[8px] font-black text-indigo-200 uppercase tracking-widest mb-1">Durasi Sesi</p>
+                                    <p class="text-[8px] font-black text-white/60 uppercase tracking-widest mb-1">Durasi Sesi</p>
                                     <p class="text-xs font-black uppercase tracking-wider">{{ $attempt->started_at->diffInMinutes($attempt->submitted_at) }} Menit</p>
                                 </div>
                             </div>
@@ -52,7 +52,7 @@
                             <div class="relative inline-block group">
                                 <div class="absolute -inset-4 bg-white/20 rounded-full blur opacity-30 group-hover:opacity-60 transition duration-1000"></div>
                                 <div class="relative w-40 h-40 md:w-52 md:h-52 bg-white/15 backdrop-blur-2xl border-4 border-white/30 rounded-full flex flex-col items-center justify-center shadow-2xl">
-                                    <p class="text-[10px] md:text-xs font-black text-indigo-100 uppercase tracking-[0.3em] mb-1">Skor Akhir</p>
+                                    <p class="text-[10px] md:text-xs font-black text-white/70 uppercase tracking-[0.3em] mb-1">Skor Akhir</p>
                                     <span class="text-6xl md:text-8xl font-black tracking-tighter">{{ intval($attempt->final_score) }}</span>
                                 </div>
                             </div>
@@ -62,19 +62,19 @@
 
                 <!-- Detailed Stats Grid -->
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div class="bg-white rounded-[2.5rem] p-7 border border-gray-100 shadow-sm text-center space-y-1">
+                    <div class="bg-white rounded-[2.5rem] p-7 border-l-4 border-[var(--brand-primary)] shadow-md shadow-[var(--brand-glow)] text-center space-y-1">
                         <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Total Soal</p>
                         <p class="text-2xl font-black text-gray-900">{{ $questions->count() }}</p>
                     </div>
-                    <div class="bg-emerald-50 rounded-[2.5rem] p-7 border border-emerald-100 shadow-sm text-center space-y-1">
+                    <div class="bg-emerald-50 rounded-[2.5rem] p-7 border-l-4 border-emerald-500 shadow-md shadow-emerald-100 text-center space-y-1">
                         <p class="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Jawaban Benar</p>
                         <p class="text-2xl font-black text-emerald-600">{{ $correct_count }}</p>
                     </div>
-                    <div class="bg-rose-50 rounded-[2.5rem] p-7 border border-rose-100 shadow-sm text-center space-y-1">
+                    <div class="bg-rose-50 rounded-[2.5rem] p-7 border-l-4 border-rose-500 shadow-md shadow-rose-100 text-center space-y-1">
                         <p class="text-[9px] font-black text-rose-600 uppercase tracking-widest">Jawaban Salah</p>
                         <p class="text-2xl font-black text-rose-600">{{ $incorrect_count }}</p>
                     </div>
-                    <div class="bg-gray-50 rounded-[2.5rem] p-7 border border-gray-100 shadow-sm text-center space-y-1">
+                    <div class="bg-gray-50 rounded-[2.5rem] p-7 border-l-4 border-gray-400 shadow-md shadow-gray-100 text-center space-y-1">
                         <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Dilewati</p>
                         <p class="text-2xl font-black text-gray-600">{{ $unanswered_count }}</p>
                     </div>
@@ -82,7 +82,7 @@
             @else
                 <!-- Score Hidden Placeholder -->
                 <div class="bg-white rounded-[3rem] p-12 border border-gray-100 shadow-sm text-center space-y-8">
-                    <div class="w-24 h-24 bg-indigo-50 rounded-[2rem] flex items-center justify-center mx-auto text-indigo-600 text-4xl">
+                    <div class="w-24 h-24 bg-[var(--brand-glow)] rounded-[2rem] flex items-center justify-center mx-auto text-[var(--brand-primary)] text-4xl">
                         <i class="fas fa-lock"></i>
                     </div>
                     <div class="max-w-md mx-auto space-y-4">
@@ -99,7 +99,7 @@
                 <div class="space-y-6">
                     <div class="flex items-center justify-between px-2">
                         <h3 class="text-xl font-black text-gray-900 uppercase tracking-wider flex items-center gap-3">
-                            <span class="w-2 h-8 bg-indigo-600 rounded-full"></span>
+                            <span class="w-2 h-8 bg-[var(--brand-primary)] rounded-full"></span>
                             Review Jawaban
                         </h3>
                     </div>
@@ -185,9 +185,9 @@
                                                     {{ $answer?->essay_answer ?? '(Tidak ada jawaban)' }}
                                                 </div>
                                             </div>
-                                            <div class="flex items-center gap-4 px-6 py-4 bg-indigo-50 rounded-2xl border border-indigo-100">
-                                                <i class="fas fa-info-circle text-indigo-500"></i>
-                                                <p class="text-[10px] font-black text-indigo-700 uppercase tracking-widest italic">Penilaian Esai dilakukan secara manual oleh pengajar.</p>
+                                            <div class="flex items-center gap-4 px-6 py-4 bg-[var(--brand-glow)] rounded-2xl border border-[var(--brand-glow)]">
+                                                <i class="fas fa-info-circle text-[var(--brand-primary)]"></i>
+                                                <p class="text-[10px] font-black text-[var(--brand-primary)] uppercase tracking-widest italic">Penilaian Esai dilakukan secara manual oleh pengajar.</p>
                                             </div>
                                         </div>
                                     @endif
@@ -203,8 +203,8 @@
         <div class="lg:col-span-1 space-y-10">
             <!-- Grade Badge Card -->
             @if($attempt->exam->show_score_after_submit)
-                <div class="bg-white rounded-[3rem] p-10 border border-gray-100 shadow-sm text-center relative overflow-hidden group">
-                    <div class="absolute -top-10 -right-10 w-32 h-32 bg-indigo-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                <div class="bg-white rounded-[3rem] p-10 border-l-4 border-[var(--brand-primary)] shadow-md shadow-[var(--brand-glow)] text-center relative overflow-hidden group">
+                    <div class="absolute -top-10 -right-10 w-32 h-32 bg-[var(--brand-glow)] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
 
                     @php
                         $score = intval($attempt->final_score);
@@ -227,9 +227,9 @@
                 </div>
 
                 <!-- Performance Breakdown Small -->
-                <div class="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-sm space-y-8">
+                <div class="bg-white rounded-[2.5rem] p-8 border-l-4 border-[var(--brand-primary)] shadow-md shadow-[var(--brand-glow)] space-y-8">
                     <h3 class="text-xs font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
-                        <i class="fas fa-chart-pie text-indigo-600"></i> Distribusi Performa
+                        <i class="fas fa-chart-pie text-[var(--brand-primary)]"></i> Distribusi Performa
                     </h3>
                     
                     <div class="space-y-6">
@@ -257,7 +257,7 @@
             @endif
 
             <!-- Meta Information List -->
-            <div class="bg-indigo-900 rounded-[3rem] p-10 text-white shadow-2xl shadow-indigo-200 space-y-8 relative overflow-hidden">
+            <div class="bg-[var(--brand-dark)] rounded-[3rem] p-10 text-white shadow-2xl shadow-[var(--brand-glow)] space-y-8 relative overflow-hidden">
                 <div class="absolute top-0 right-0 -mr-10 -mt-10 w-32 h-32 bg-white/5 rounded-full blur-2xl"></div>
 
                 <h3 class="text-xs font-black uppercase tracking-[0.3em] flex items-center gap-3">
@@ -266,21 +266,21 @@
 
                 <div class="space-y-6">
                     <div class="space-y-1">
-                        <p class="text-[9px] font-black text-indigo-300 uppercase tracking-widest">Mata Pelajaran</p>
+                        <p class="text-[9px] font-black text-white/50 uppercase tracking-widest">Mata Pelajaran</p>
                         <p class="text-sm font-black uppercase tracking-wider">{{ $attempt->exam->subject->name }}</p>
                     </div>
                     <div class="space-y-1">
-                        <p class="text-[9px] font-black text-indigo-300 uppercase tracking-widest">Metode Gating</p>
+                        <p class="text-[9px] font-black text-white/50 uppercase tracking-widest">Metode Gating</p>
                         <p class="text-sm font-black uppercase tracking-wider">Token Sistem Global</p>
                     </div>
                     <div class="space-y-1">
-                        <p class="text-[9px] font-black text-indigo-300 uppercase tracking-widest">Keamanan Sesi</p>
+                        <p class="text-[9px] font-black text-white/50 uppercase tracking-widest">Keamanan Sesi</p>
                         <p class="text-sm font-black uppercase tracking-wider flex items-center gap-2">
                             Tervalidasi <i class="fas fa-check-shield text-[10px] text-emerald-400"></i>
                         </p>
                     </div>
                     <div class="space-y-1">
-                        <p class="text-[9px] font-black text-indigo-300 uppercase tracking-widest">Status Data</p>
+                        <p class="text-[9px] font-black text-white/50 uppercase tracking-widest">Status Data</p>
                         <div class="flex items-center gap-2 pt-1">
                              <span class="w-2 h-2 bg-emerald-400 rounded-full animate-ping"></span>
                              <span class="text-[10px] font-black uppercase tracking-widest">Sinkron Terpusat</span>
@@ -289,10 +289,10 @@
                 </div>
 
                 <div class="pt-8 border-t border-white/10 space-y-4">
-                     <a href="{{ route('student.exams.print', $attempt->id) }}" target="_blank" class="w-full py-4 bg-white text-indigo-900 hover:bg-indigo-50 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-indigo-950/20 flex items-center justify-center gap-3">
+                     <a href="{{ route('student.exams.print', $attempt->id) }}" target="_blank" class="w-full py-4 bg-white text-[var(--brand-dark)] hover:bg-gray-100 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-black/20 flex items-center justify-center gap-3">
                          <i class="fas fa-print"></i> Cetak Hasil Ujian
                      </a>
-                     <a href="{{ route('dashboard.student') }}" class="block w-full text-center text-[10px] font-black text-indigo-300 uppercase tracking-widest hover:text-white transition-colors">
+                     <a href="{{ route('dashboard.student') }}" class="block w-full text-center text-[10px] font-black text-white/40 uppercase tracking-widest hover:text-white transition-colors">
                          Selesaikan & Keluar
                      </a>
                 </div>
@@ -312,13 +312,13 @@
                 html: '<p class="text-[11px] font-black text-gray-500 uppercase tracking-widest leading-relaxed">Sesi Anda telah berhasil sinkron dan diarsipkan dengan aman ke server pusat.</p>',
                 icon: 'success',
                 confirmButtonText: 'Tutup & Review',
-                confirmButtonColor: '#4f46e5',
+                confirmButtonColor: getComputedStyle(document.body).getPropertyValue('--brand-primary').trim() || '#4f46e5',
                 background: '#ffffff',
                 allowOutsideClick: false,
                 customClass: {
                     popup: 'rounded-[3rem] p-10',
                     title: 'text-2xl font-black text-gray-900 tracking-wider',
-                    confirmButton: 'rounded-2xl px-10 py-4 text-[10px] font-black uppercase tracking-widest mt-4 shadow-xl shadow-indigo-100'
+                    confirmButton: 'rounded-2xl px-10 py-4 text-[10px] font-black uppercase tracking-widest mt-4 shadow-xl'
                 }
             });
         }, 500);
@@ -347,7 +347,10 @@
                 speedY: Math.random() * 5 + 3,
                 r: Math.random() * 360,
                 rs: Math.random() * 10 - 5,
-                c: ['#6366f1', '#10b981', '#f59e0b', '#f43f5e', '#a855f7'][Math.floor(Math.random() * 5)]
+                c: [
+                    getComputedStyle(document.body).getPropertyValue('--brand-primary').trim() || '#6366f1',
+                    '#10b981', '#f59e0b', '#f43f5e', '#a855f7'
+                ][Math.floor(Math.random() * 5)]
             });
         }
         

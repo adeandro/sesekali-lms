@@ -7,9 +7,9 @@
     <!-- Header Section -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 px-2">
         <div class="space-y-1">
-            <p class="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em] italic">Eksplorasi Ujian</p>
+            <p class="text-[10px] font-black text-[var(--brand-primary)] uppercase tracking-[0.3em] italic">Eksplorasi Ujian</p>
             <h1 class="text-3xl font-black text-gray-900 uppercase tracking-wider flex items-center gap-3">
-                <span class="w-2 h-10 bg-indigo-600 rounded-full"></span>
+                <span class="w-2 h-10 bg-[var(--brand-primary)] rounded-full"></span>
                 Ujian Tersedia
             </h1>
         </div>
@@ -17,7 +17,7 @@
         <!-- Stats Summary -->
         <div class="flex items-center gap-3 bg-white px-6 py-3 rounded-2xl border border-gray-100 shadow-sm">
             <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Sesi:</span>
-            <span class="text-lg font-black text-indigo-600">{{ $exams->count() }}</span>
+            <span class="text-lg font-black text-[var(--brand-primary)]">{{ $exams->count() }}</span>
         </div>
     </div>
 
@@ -43,13 +43,13 @@
                 }
             @endphp
             
-            <div class="group relative bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-indigo-100 transition-all duration-500 hover:-translate-y-2 overflow-hidden flex flex-col h-full">
+            <div class="group relative bg-white border-l-4 border-[var(--brand-primary)] rounded-[2.5rem] p-8 shadow-md shadow-[var(--brand-glow)] hover:shadow-2xl hover:shadow-[var(--brand-glow)] transition-all duration-500 hover:-translate-y-2 overflow-hidden flex flex-col h-full">
                 <!-- Background Decoration -->
-                <div class="absolute -top-12 -right-12 w-40 h-40 bg-indigo-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
+                <div class="absolute -top-12 -right-12 w-40 h-40 bg-[var(--brand-glow)] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
 
                 <!-- Card Header -->
                 <div class="relative flex items-start justify-between mb-8">
-                    <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-[1.5rem] flex items-center justify-center text-3xl group-hover:bg-indigo-600 group-hover:text-white transition-colors duration-500 shadow-sm shadow-indigo-50">
+                    <div class="w-16 h-16 bg-[var(--brand-glow)] text-[var(--brand-primary)] rounded-[1.5rem] flex items-center justify-center text-3xl group-hover:bg-[var(--brand-primary)] group-hover:text-white transition-colors duration-500 shadow-sm shadow-[var(--brand-glow)]">
                         <i class="fas fa-book-open"></i>
                     </div>
                     
@@ -86,8 +86,8 @@
                 <!-- Card Content -->
                 <div class="relative flex-grow space-y-4">
                     <div>
-                        <p class="text-[11px] font-black text-indigo-500 uppercase tracking-[0.2em] mb-1 italic">{{ $exam->subject->name }}</p>
-                        <h3 class="text-xl font-black text-gray-900 leading-tight group-hover:text-indigo-600 transition-colors">{{ $exam->title }}</h3>
+                        <p class="text-[11px] font-black text-[var(--brand-primary)] uppercase tracking-[0.2em] mb-1 italic">{{ $exam->subject->name }}</p>
+                        <h3 class="text-xl font-black text-gray-900 leading-tight group-hover:text-[var(--brand-primary)] transition-colors">{{ $exam->title }}</h3>
                     </div>
 
                     <div class="flex flex-wrap items-center gap-x-6 gap-y-3 pt-2">
@@ -105,14 +105,14 @@
                         </div>
                     </div>
 
-                    <div class="bg-gray-50 rounded-2xl p-4 flex items-center justify-between group-hover:bg-indigo-50 transition-colors duration-500">
+                    <div class="bg-gray-50 rounded-2xl p-4 flex items-center justify-between group-hover:bg-[var(--brand-glow)] transition-colors duration-500">
                         <div class="space-y-1">
                             <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Jadwal Ujian</p>
                             <p class="text-[11px] font-black text-gray-700 uppercase tracking-wider">
                                 {{ $exam->start_time->format('d M') }} <span class="text-gray-300 mx-1">|</span> {{ $exam->start_time->format('H:i') }} - {{ $exam->end_time->format('H:i') }}
                             </p>
                         </div>
-                        <i class="fas fa-calendar-alt text-gray-200 group-hover:text-indigo-200 transition-colors"></i>
+                        <i class="fas fa-calendar-alt text-gray-200 group-hover:text-[var(--brand-primary)]/20 transition-colors"></i>
                     </div>
                 </div>
 
@@ -135,7 +135,7 @@
                             <i class="fas fa-hourglass-end text-[10px]"></i> Sesi Berakhir
                         </div>
                     @else
-                        <a href="{{ route('student.exams.start', $exam->id) }}" class="w-full py-4 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center justify-center gap-3 group/btn relative overflow-hidden animate-pulse-custom">
+                        <a href="{{ route('student.exams.start', $exam->id) }}" class="w-full py-4 bg-[var(--brand-primary)] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] shadow-xl shadow-[var(--brand-glow)] hover:bg-[var(--brand-dark)] transition-all flex items-center justify-center gap-3 group/btn relative overflow-hidden animate-pulse-custom">
                             <i class="fas fa-play text-[8px] group-hover/btn:translate-x-1 transition-transform"></i> Mulai Ujian
                         </a>
                     @endif
@@ -157,8 +157,8 @@
 
 <style>
     @keyframes pulse-custom {
-        0%, 100% { transform: scale(1); box-shadow: 0 20px 25px -5px rgba(79, 70, 229, 0.1), 0 10px 10px -5px rgba(79, 70, 229, 0.04); }
-        50% { transform: scale(1.01); box-shadow: 0 25px 30px -5px rgba(79, 70, 229, 0.2), 0 15px 15px -5px rgba(79, 70, 229, 0.1); }
+        0%, 100% { transform: scale(1); box-shadow: 0 20px 25px -5px var(--brand-glow), 0 10px 10px -5px var(--brand-glow); }
+        50% { transform: scale(1.01); box-shadow: 0 25px 30px -5px var(--brand-glow), 0 15px 15px -5px var(--brand-glow); }
     }
     .animate-pulse-custom {
         animation: pulse-custom 3s infinite ease-in-out;

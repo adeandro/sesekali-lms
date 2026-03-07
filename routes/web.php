@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\ExamProgressController;
 use App\Http\Controllers\Admin\TokenController;
 use App\Http\Controllers\Admin\MonitoringController;
 use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\UserPreferenceController;
 
 // Public routes
 Route::get('/', function () {
@@ -37,6 +38,8 @@ Route::post('/logout', [LoginController::class, 'logout'])->middleware('auth')->
 
 // Dashboard routes - protected by auth middleware
 Route::middleware('auth')->group(function () {
+    // Universal Theme Route — works for all roles
+    Route::post('/profile/update-theme', [UserPreferenceController::class, 'update'])->name('profile.update-theme');
     // Redirect dashboard to appropriate role dashboard
     Route::get('/dashboard', function () {
         $user = auth()->user();
@@ -74,6 +77,19 @@ Route::middleware('auth')->group(function () {
     // Student routes
     Route::middleware('role:student')->group(function () {
         Route::get('/dashboard/student', [StudentDashboardController::class, 'index'])->name('dashboard.student');
+
+        // Student Dashboard
+        Route::get('/student', [StudentDashboardController::class, 'index'])->name('student.dashboard');
+
+        // Profile & Avatar Management
+        Route::get('/student/profile', [\App\Http\Controllers\Student\AvatarController::class, 'index'])->name('student.profile');
+        Route::post('/student/profile/avatar/gallery', [\App\Http\Controllers\Student\AvatarController::class, 'updateGallery'])->name('student.profile.avatar.gallery');
+        Route::post('/student/profile/avatar/multiavatar', [\App\Http\Controllers\Student\AvatarController::class, 'saveMultiavatar'])->name('student.profile.avatar.multiavatar');
+        Route::post('/student/profile/avatar/upload', [\App\Http\Controllers\Student\AvatarController::class, 'updateUpload'])->name('student.profile.avatar.upload');
+        Route::post('/student/profile/avatar/delete-upload', [\App\Http\Controllers\Student\AvatarController::class, 'deleteUpload'])->name('student.profile.avatar.delete-upload');
+        Route::post('/student/profile/avatar/reset', [\App\Http\Controllers\Student\AvatarController::class, 'resetToFormal'])->name('student.profile.avatar.reset');
+        Route::post('/student/profile/theme', [\App\Http\Controllers\Student\AvatarController::class, 'updateTheme'])->name('student.profile.theme');
+        Route::post('/student/profile/password', [\App\Http\Controllers\Student\AvatarController::class, 'updatePassword'])->name('student.profile.password');
 
         // Student Exam routes
         Route::prefix('student/exams')->name('student.exams.')->group(function () {
@@ -157,6 +173,8 @@ Route::middleware('auth')->group(function () {
             Route::get('{examId}/review/{attemptId}', [ResultController::class, 'review'])->name('review')->where(['examId' => '[0-9]+', 'attemptId' => '[0-9]+']);
             Route::post('{examId}/review/{attemptId}/update-grades', [ResultController::class, 'updateGrades'])->name('update-grades')->where(['examId' => '[0-9]+', 'attemptId' => '[0-9]+']);
             Route::get('{examId}/export', [ResultController::class, 'export'])->name('export')->where('examId', '[0-9]+');
+            Route::post('{examId}/apply-adjustment', [ResultController::class, 'applyAdjustment'])->name('apply-adjustment')->where('examId', '[0-9]+');
+            Route::post('{examId}/reset-adjustment', [ResultController::class, 'resetAdjustment'])->name('reset-adjustment')->where('examId', '[0-9]+');
         });
 
         // Token Management Routes (New Module - Monitoring & Security)

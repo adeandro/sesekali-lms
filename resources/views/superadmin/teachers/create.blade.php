@@ -18,12 +18,28 @@
                 @csrf
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Gelar Depan -->
+                    <div class="space-y-2">
+                        <label for="title_ahead" class="block text-sm font-semibold text-gray-700">Gelar Depan</label>
+                        <input type="text" name="title_ahead" id="title_ahead" value="{{ old('title_ahead') }}" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('title_ahead') border-red-500 @enderror">
+                        @error('title_ahead') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    </div>
+
                     <!-- Nama -->
                     <div class="space-y-2">
                         <label for="name" class="block text-sm font-semibold text-gray-700">Nama Lengkap</label>
-                        <input type="text" name="name" id="name" value="{{ old('name') }}" required
+                        <input type="text" name="name" id="name" value="{{ old('name') }}" required 
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('name') border-red-500 @enderror">
                         @error('name') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <!-- Gelar Belakang -->
+                    <div class="space-y-2">
+                        <label for="title_behind" class="block text-sm font-semibold text-gray-700">Gelar Belakang</label>
+                        <input type="text" name="title_behind" id="title_behind" value="{{ old('title_behind') }}" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('title_behind') border-red-500 @enderror">
+                        @error('title_behind') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                     </div>
 
                     <!-- Email -->

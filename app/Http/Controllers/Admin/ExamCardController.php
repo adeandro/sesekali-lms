@@ -35,24 +35,28 @@ class ExamCardController extends Controller
         
         $teacher = $exam->subject->teachers->first();
         if ($teacher) {
-            $teacherName = $teacher->name;
+            $teacherName = $teacher->full_name;
             $signatureUser = $teacher;
         } elseif ($exam->creator) {
-            $teacherName = $exam->creator->name;
+            $teacherName = $exam->creator->full_name;
             $signatureUser = $exam->creator;
         } elseif (auth()->user()->role === 'teacher') {
-            $teacherName = auth()->user()->name;
+            $teacherName = auth()->user()->full_name;
             $signatureUser = auth()->user();
         }
 
         // Map all students with their attempts (if any)
         $students = $allStudents->map(function ($student) use ($exam, $attemptsMap) {
             $attempt = $attemptsMap->get($student->id);
+            $finalScore = $attempt && $attempt->is_adjusted ? $attempt->adjusted_score : ($attempt?->final_score ?? 0);
+            
             return [
                 'student' => $student,
-                'score' => $attempt?->final_score ?? 0,
+                'score' => $finalScore,
+                'original_score' => $attempt?->final_score ?? 0,
+                'is_adjusted' => $attempt?->is_adjusted ?? false,
                 'status' => $attempt
-                    ? ($attempt->final_score >= ($exam->subject->kkm ?? 75) ? 'Lulus' : 'Tidak Lulus')
+                    ? ($finalScore >= ($exam->subject->kkm ?? 75) ? 'Lulus' : 'Tidak Lulus')
                     : 'Belum Dinilai',
                 'is_submitted' => $attempt ? true : false,
             ];
@@ -92,7 +96,7 @@ class ExamCardController extends Controller
                 return [
                     'student' => $student,
                     'nis' => $student->nis,
-                    'name' => $student->name,
+                    'name' => $student->formatted_name,
                     'class' => "Kelas {$student->grade} - {$student->class_group}",
                     'password' => $student->password_display ?? '-',
                     'exam' => $exam,

@@ -22,6 +22,26 @@
                 </div>
             </div>
             <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2">
+                    @php
+                        $isAnyAdjusted = $attempts->contains('is_adjusted', true);
+                    @endphp
+                    @if(!$isAnyAdjusted)
+                        <form action="{{ route('admin.results.apply-adjustment', $exam->id) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="px-6 py-3 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-100 flex items-center gap-2">
+                                <i class="fas fa-magic"></i> Terapkan Penyesuaian
+                            </button>
+                        </form>
+                    @else
+                        <form action="{{ route('admin.results.reset-adjustment', $exam->id) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="px-6 py-3 bg-rose-600 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-rose-700 transition shadow-lg shadow-rose-100 flex items-center gap-2">
+                                <i class="fas fa-undo"></i> Kembalikan Nilai Asli
+                            </button>
+                        </form>
+                    @endif
+                </div>
                 <a href="{{ route('admin.results.export', array_merge(['examId' => $exam->id], request()->all())) }}" class="px-6 py-3 bg-white text-indigo-600 border-2 border-indigo-100 text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition shadow-sm flex items-center gap-2">
                     <i class="fas fa-file-excel"></i> Export Excel
                 </a>
@@ -74,6 +94,46 @@
                 <div class="relative z-10">
                     <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Tuntas KKM ({{ $exam->subject->kkm ?? 75 }}+)</p>
                     <p class="text-3xl font-black text-gray-900">{{ round($stats['pass_rate'], 1) }}%</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Card: Fair Score Adjustment -->
+        <div class="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-[2.5rem] shadow-xl shadow-indigo-100 p-8 md:p-10 relative overflow-hidden group">
+            <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl group-hover:scale-110 transition-transform duration-700"></div>
+            <div class="absolute bottom-0 left-0 w-48 h-48 bg-indigo-400/20 rounded-full -ml-10 -mb-10 blur-2xl"></div>
+            
+            <div class="relative z-10 flex flex-col lg:flex-row gap-10 items-center">
+                <div class="flex-1 space-y-6">
+                    <div class="inline-flex items-center gap-3 px-4 py-2 bg-white/10 backdrop-blur-md rounded-xl border border-white/20">
+                        <i class="fas fa-info-circle text-white"></i>
+                        <span class="text-[10px] font-bold text-white uppercase tracking-[0.2em]">Metode Penyesuaian Nilai</span>
+                    </div>
+                    <h3 class="text-3xl font-black text-white leading-tight">Implementasi Fair Score Adjustment (Metode Akar)</h3>
+                    <p class="text-indigo-100 text-lg font-medium leading-relaxed max-w-2xl">
+                        Sistem menggunakan rumus <code class="bg-white/20 px-2 py-1 rounded-lg font-black tracking-wider text-white">√Nilai_Asli * 10</code> untuk pemerataan nilai yang adil (dongkrak nilai). Metode ini memberikan peningkatkan lebih besar pada nilai rendah namun tetap menjaga proporsi nilai tinggi secara logaritmis.
+                    </p>
+                </div>
+                
+                <div class="w-full lg:w-80 bg-white/10 backdrop-blur-md border border-white/20 rounded-[2rem] p-6 space-y-4">
+                    <p class="text-[10px] font-black text-indigo-200 uppercase tracking-widest mb-4">Simulasi Perubahan</p>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/10">
+                            <span class="text-xs font-bold text-indigo-100">Asli 25</span>
+                            <i class="fas fa-arrow-right text-indigo-300 text-[10px]"></i>
+                            <span class="text-sm font-black text-white">Jadi 50</span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/10">
+                            <span class="text-xs font-bold text-indigo-100">Asli 49</span>
+                            <i class="fas fa-arrow-right text-indigo-300 text-[10px]"></i>
+                            <span class="text-sm font-black text-white">Jadi 70</span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/10">
+                            <span class="text-xs font-bold text-indigo-100">Asli 81</span>
+                            <i class="fas fa-arrow-right text-indigo-300 text-[10px]"></i>
+                            <span class="text-sm font-black text-white">Jadi 90</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -153,7 +213,8 @@
                                 <th class="px-8 py-6 text-center text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Kelas</th>
                                 <th class="px-8 py-6 text-center text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Skor PG</th>
                                 <th class="px-8 py-6 text-center text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Skor Esai</th>
-                                <th class="px-8 py-6 text-center text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Skor Akhir</th>
+                                <th class="px-8 py-6 text-center text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Nilai Murni</th>
+                                <th class="px-8 py-6 text-center text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Nilai Penyesuaian</th>
                                 <th class="px-8 py-6 text-center text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Status</th>
                                 <th class="px-8 py-6 text-center text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Waktu Selesai</th>
                                 <th class="px-8 py-6 text-center text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Aksi</th>
@@ -199,12 +260,25 @@
                                         </span>
                                     </td>
                                     <td class="px-8 py-6 text-center">
-                                        <span class="px-4 py-1.5 rounded-xl text-xs font-black {{ $attempt->final_score >= ($exam->subject->kkm ?? 75) ? 'bg-emerald-50 text-emerald-600 border-2 border-emerald-100' : 'bg-rose-50 text-rose-600 border-2 border-rose-100' }}">
-                                            {{ round($attempt->final_score, 1) }}
-                                        </span>
+                                        <span class="text-sm font-black text-gray-400">{{ round($attempt->final_score, 1) }}</span>
                                     </td>
                                     <td class="px-8 py-6 text-center">
-                                        @if($attempt->final_score >= ($exam->subject->kkm ?? 75))
+                                        @if($attempt->is_adjusted)
+                                            <span class="px-4 py-1.5 rounded-xl text-xs font-black bg-indigo-50 text-indigo-600 border-2 border-indigo-100 flex flex-col items-center">
+                                                <span>{{ round($attempt->adjusted_score, 1) }}</span>
+                                                <span class="text-[8px] font-black uppercase tracking-tighter">Adjusted</span>
+                                            </span>
+                                        @else
+                                            <span class="text-sm font-black text-gray-300">-</span>
+                                        @endif
+                                    </td>
+                                    @php
+                                        $displayScore = $attempt->is_adjusted ? $attempt->adjusted_score : $attempt->final_score;
+                                        $kkm = $exam->subject->kkm ?? 75;
+                                        $isPass = $displayScore >= $kkm;
+                                    @endphp
+                                    <td class="px-8 py-6 text-center">
+                                        @if($isPass)
                                             <span class="text-[10px] font-black text-emerald-600 bg-emerald-100/50 px-3 py-1 rounded-lg uppercase tracking-widest border border-emerald-200">Tuntas</span>
                                         @else
                                             <span class="text-[10px] font-black text-rose-600 bg-rose-100/50 px-3 py-1 rounded-lg uppercase tracking-widest border border-rose-200">Remidial</span>

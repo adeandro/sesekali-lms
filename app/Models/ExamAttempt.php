@@ -24,6 +24,8 @@ class ExamAttempt extends Model
         'force_submitted',
         'force_submit_reason',
         'force_submitted_at',
+        'adjusted_score',
+        'is_adjusted',
     ];
 
     protected $casts = [
@@ -32,6 +34,8 @@ class ExamAttempt extends Model
         'score_mc' => 'float',
         'score_essay' => 'float',
         'final_score' => 'float',
+        'adjusted_score' => 'float',
+        'is_adjusted' => 'boolean',
     ];
 
     /**

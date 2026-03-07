@@ -348,4 +348,47 @@ class ScoringService
             default => 'bg-gray-100 text-gray-800 border-gray-300',
         };
     }
+    /**
+     * Apply "Metode Akar" (Root Method) adjustment to all attempts of an exam.
+     * Formula: Final Score = √Original Score * 10
+     */
+    public static function applyAkarAdjustment(int $examId)
+    {
+        $attempts = ExamAttempt::where('exam_id', $examId)
+            ->where('status', 'submitted')
+            ->get();
+
+        foreach ($attempts as $attempt) {
+            $originalScore = $attempt->final_score;
+            
+            if ($originalScore >= 100) {
+                $adjustedScore = 100;
+            } else {
+                $adjustedScore = round(sqrt($originalScore) * 10, 2);
+            }
+
+            // Ensure not exceeding 100
+            $adjustedScore = min(100, $adjustedScore);
+
+            $attempt->update([
+                'adjusted_score' => $adjustedScore,
+                'is_adjusted' => true
+            ]);
+        }
+
+        return $attempts->count();
+    }
+
+    /**
+     * Reset score adjustment for all attempts of an exam.
+     */
+    public static function resetAkarAdjustment(int $examId)
+    {
+        return ExamAttempt::where('exam_id', $examId)
+            ->where('status', 'submitted')
+            ->update([
+                'adjusted_score' => null,
+                'is_adjusted' => false
+            ]);
+    }
 }

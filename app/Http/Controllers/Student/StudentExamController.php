@@ -171,6 +171,11 @@ class StudentExamController extends Controller
             // Submit exam
             $attempt = ExamEngineService::submitExam($attempt);
 
+            // Check Achievements
+            if (\App\Models\Setting::get('enable_gamification', '1') == '1') {
+                app(\App\Services\AchievementService::class)->checkSubmissionAchievements($attempt);
+            }
+
             return redirect()->route('student.exams.result', $attempt->id)
                 ->with('success', 'Exam submitted successfully. Your score will be calculated.');
         } catch (\Exception $e) {
@@ -222,11 +227,14 @@ class StudentExamController extends Controller
         try {
             $exam = $attempt->exam;
             
+            $finalScore = $attempt->is_adjusted ? $attempt->adjusted_score : ($attempt->final_score ?? 0);
+
             // Map student with their attempt data (matching ExamCardController format)
             $students = collect([[
                 'student' => $attempt->student,
-                'score' => $attempt->final_score ?? 0,
-                'status' => ($attempt->final_score >= ($exam->subject->kkm ?? 75) ? 'Lulus' : 'Tidak Lulus'),
+                'score' => $finalScore,
+                'is_adjusted' => $attempt->is_adjusted ?? false,
+                'status' => ($finalScore >= ($exam->subject->kkm ?? 75) ? 'Lulus' : 'Tidak Lulus'),
                 'is_submitted' => true,
             ]]);
 
@@ -237,10 +245,10 @@ class StudentExamController extends Controller
             
             $teacher = $exam->subject->teachers->first();
             if ($teacher) {
-                $teacherName = $teacher->name;
+                $teacherName = $teacher->full_name;
                 $signatureUser = $teacher;
             } elseif ($exam->creator) {
-                $teacherName = $exam->creator->name;
+                $teacherName = $exam->creator->full_name;
                 $signatureUser = $exam->creator;
             }
 

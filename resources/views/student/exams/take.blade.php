@@ -37,14 +37,14 @@
             position: sticky;
             top: 0;
             z-index: 100;
-            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-dark) 100%);
+            box-shadow: 0 4px 15px var(--brand-glow);
         }
 
         /* Enhanced Progress Bar */
         #progressBar {
-            background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
-            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+            background: var(--brand-primary);
+            box-shadow: 0 0 10px var(--brand-glow);
             transition: width 0.3s ease;
         }
 
@@ -127,7 +127,7 @@
         }
 
         button:focus, input[type="button"]:focus, input[type="submit"]:focus {
-            outline: 2px solid #3b82f6;
+            outline: 2px solid var(--brand-primary);
             outline-offset: 2px;
         }
 
@@ -158,7 +158,7 @@
         }
 
         label:focus-within {
-            outline: 2px solid #3b82f6;
+            outline: 2px solid var(--brand-primary);
             outline-offset: 2px;
         }
 
@@ -185,7 +185,7 @@
 
         /* Focus visible for keyboard navigation */
         :focus-visible {
-            outline: 2px solid #3b82f6;
+            outline: 2px solid var(--brand-primary);
             outline-offset: 2px;
         }
 
@@ -200,8 +200,10 @@
         }
 
         .question-nav-active {
-            background-color: #2563eb !important;
+            background-color: var(--brand-primary) !important;
+            box-shadow: 0 0 10px var(--brand-glow) !important;
             color: white !important;
+            border-color: var(--brand-primary) !important;
         }
 
         .question-nav-answered {
@@ -291,7 +293,7 @@
         #fullscreenOverlay button {
             margin-top: 30px;
             padding: 16px 40px;
-            background-color: #2563eb;
+            background-color: var(--brand-primary);
             color: white;
             border: none;
             border-radius: 8px;
@@ -299,13 +301,13 @@
             font-size: 18px;
             font-weight: bold;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+            box-shadow: 0 4px 15px var(--brand-glow);
         }
 
         #fullscreenOverlay button:hover {
-            background-color: #1d4ed8;
+            opacity: 0.9;
             transform: scale(1.05);
-            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.6);
+            box-shadow: 0 6px 20px var(--brand-glow);
         }
 
         #fullscreenOverlay button:active {
@@ -365,7 +367,7 @@
 
         #readinessOverlay .rules {
             background-color: #f3f4f6;
-            border-left: 4px solid #2563eb;
+            border-left: 4px solid var(--brand-primary);
             padding: 20px;
             border-radius: 8px;
             margin: 20px 0;
@@ -549,16 +551,16 @@
     <div class="exam-container grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-6">
         <!-- Main Exam Area -->
         <div class="lg:col-span-3">
-            <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div class="bg-white border-l-4 border-[var(--brand-primary)] rounded-lg shadow-lg overflow-hidden">
                 <!-- STICKY Exam Header with Timer -->
                 <div class="exam-sticky-header text-white p-4 md:p-6">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                         <div class="w-full sm:flex-1">
                             <h1 class="text-xl md:text-2xl font-bold break-words">{{ $attempt->exam->title }}</h1>
-                            <p class="text-blue-200 text-sm mt-1">{{ $attempt->exam->subject->name }}</p>
+                            <p class="text-[var(--brand-glow)] brightness-200 text-sm mt-1">{{ $attempt->exam->subject->name }}</p>
                         </div>
                         <div class="text-center sm:text-right w-full sm:w-auto">
-                            <p class="text-xs sm:text-sm text-blue-200 mb-2">⏱️ Waktu Tersisa</p>
+                            <p class="text-xs sm:text-sm text-[var(--brand-glow)] brightness-200 mb-2">⏱️ Waktu Tersisa</p>
                             <div id="timer" class="text-3xl sm:text-4xl font-bold font-mono timer-normal timer-display">
                                 {{ sprintf('%02d:%02d', intval($remainingMinutes), 0) }}
                             </div>
@@ -566,12 +568,12 @@
                     </div>
                     
                     <!-- Progress Section -->
-                    <div class="border-t border-blue-400 pt-4">
+                    <div class="border-t border-white/20 pt-4">
                         <div class="flex items-center justify-between mb-2">
-                            <span class="text-xs sm:text-sm font-semibold text-blue-100">
+                            <span class="text-xs sm:text-sm font-semibold text-white/90">
                                 📋 Soal <span id="currentQNum">1</span> dari {{ $questions->count() }} (<span id="completionPercent">0</span>%)
                             </span>
-                            <span class="text-xs font-semibold text-blue-100" id="answeredCount">0 terjawab</span>
+                            <span class="text-xs font-semibold text-white/90" id="answeredCount">0 terjawab</span>
                         </div>
                         <div class="progress-container">
                             <div id="progressBar" class="h-full rounded-full transition-all" style="width: 0%"></div>
@@ -629,13 +631,13 @@
                                                     $imageFieldName = 'option_' . $key . '_image';
                                                     $optionImage = $question->$imageFieldName ?? null;
                                                 @endphp
-                                                <label class="flex items-start p-3 md:p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-400 transition text-sm md:text-base">
-                                                    <input type="radio" 
-                                                        name="answer_{{ $question->id }}" 
-                                                        value="{{ $key }}" 
-                                                        class="mt-1 mr-3 question-answer"
-                                                        data-question-id="{{ $question->id }}"
-                                                        {{ $current_answer === $key ? 'checked' : '' }}>
+                                <label class="flex items-start p-3 md:p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-[var(--brand-primary)]/50 transition text-sm md:text-base">
+                                    <input type="radio" 
+                                        name="answer_{{ $question->id }}" 
+                                        value="{{ $key }}" 
+                                        class="mt-1 mr-3 question-answer text-[var(--brand-primary)] focus:ring-[var(--brand-primary)]"
+                                        data-question-id="{{ $question->id }}"
+                                        {{ $current_answer === $key ? 'checked' : '' }}>
                                                     <div class="flex-1">
                                                         <span class="text-gray-800 block mb-2">{{ $option }}</span>
                                                         @if($optionImage)
@@ -655,7 +657,7 @@
                                             
                                             <textarea 
                                                 name="answer_{{ $question->id }}" 
-                                                class="w-full p-3 md:p-4 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none question-answer text-sm md:text-base" 
+                                                class="w-full p-3 md:p-4 border-2 border-gray-200 rounded-lg focus:border-[var(--brand-primary)] focus:ring-4 focus:ring-[var(--brand-glow)] focus:outline-none question-answer text-sm md:text-base transition-all" 
                                                 rows="6" 
                                                 placeholder="Ketik jawaban anda di sini..."
                                                 data-question-id="{{ $question->id }}">{{ $current_essay }}</textarea>
@@ -670,21 +672,21 @@
 
                         <!-- Navigation Buttons -->
                         <div class="mt-8 pt-8 border-t border-gray-200 flex flex-col sm:flex-row justify-between gap-2 sm:gap-4">
-                            <button type="button" id="prevBtn" class="px-4 sm:px-6 py-2 bg-gray-300 text-gray-900 rounded-lg font-semibold hover:bg-gray-400 transition disabled:opacity-50 text-sm sm:text-base order-2 sm:order-1">
+                            <button type="button" id="prevBtn" class="px-4 sm:px-6 py-2 bg-gray-100 text-gray-700 border border-gray-200 rounded-lg font-semibold hover:bg-gray-200 transition disabled:opacity-50 text-sm sm:text-base order-2 sm:order-1">
                                 <i class="fas fa-chevron-left mr-2"></i>Sebelumnya
                             </button>
                             
                             <div class="flex gap-2 flex-wrap justify-center order-3 sm:order-2">
-                                <button type="button" id="raguBtn" class="px-4 sm:px-6 py-2 bg-yellow-500 text-white rounded-lg font-semibold hover:bg-yellow-600 transition text-sm sm:text-base">
+                                <button type="button" id="raguBtn" class="px-4 sm:px-6 py-2 bg-amber-500 text-white rounded-lg font-semibold hover:bg-amber-600 transition text-sm sm:text-base shadow-lg shadow-amber-500/20">
                                     <i class="fas fa-question-circle mr-2"></i>Ragu-ragu
                                 </button>
                             </div>
                             
                             <div class="flex gap-2 flex-wrap justify-end sm:justify-center order-1 sm:order-3">
-                                <button type="button" id="nextBtn" class="flex-1 sm:flex-none px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition text-sm sm:text-base">
+                                <button type="button" id="nextBtn" class="flex-1 sm:flex-none px-4 sm:px-6 py-2 bg-[var(--brand-primary)] text-white rounded-lg font-semibold hover:opacity-90 transition text-sm sm:text-base shadow-lg shadow-[var(--brand-glow)]">
                                     Lanjut<i class="fas fa-chevron-right ml-2"></i>
                                 </button>
-                                <button type="button" id="submitBtn" class="flex-1 sm:flex-none px-4 sm:px-6 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition hidden text-sm sm:text-base">
+                                <button type="button" id="submitBtn" class="flex-1 sm:flex-none px-4 sm:px-6 py-2 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 transition hidden text-sm sm:text-base shadow-lg shadow-emerald-500/30">
                                     <i class="fas fa-paper-plane mr-2"></i>Kirim Ujian
                                 </button>
                             </div>
@@ -697,7 +699,7 @@
         <!-- Sidebar: Question Navigation & Info -->
         <div class="lg:col-span-1">
             <!-- Exam Info Card -->
-            <div class="bg-white rounded-lg shadow-md p-4 md:p-6 mb-6">
+            <div class="bg-white border-l-4 border-[var(--brand-primary)] rounded-lg shadow-md p-4 md:p-6 mb-6">
                 <h3 class="font-bold text-gray-900 mb-4 text-sm md:text-base">📚 Informasi Ujian</h3>
                 <div class="space-y-0">
                     <div class="exam-info-stat">
@@ -722,7 +724,7 @@
             @endphp
 
             @if($mcCount > 0)
-            <div class="bg-white rounded-lg shadow-md p-4 md:p-6 mb-6">
+            <div class="bg-white border-l-4 border-[var(--brand-primary)] rounded-lg shadow-md p-4 md:p-6 mb-6">
                 <h3 class="font-bold text-gray-900 mb-4 text-sm md:text-base">Pilihan Ganda</h3>
                 <div class="grid grid-cols-5 gap-1 md:gap-2" id="mcNav">
                     @foreach($questions->where('nav_type', 'mc') as $question)
@@ -730,7 +732,7 @@
                             class="question-nav-btn mc-nav-btn w-full py-2 rounded-lg font-semibold text-xs md:text-sm border-2 transition"
                             data-question-id="{{ $question->id }}"
                             data-display-index="{{ $question->display_index }}"
-                            style="border-color: #e5e7eb;">
+                            style="border-color: var(--brand-glow);">
                             {{ $question->nav_position }}
                         </button>
                     @endforeach
@@ -740,7 +742,7 @@
 
             <!-- Essay Navigator -->
             @if($essayCount > 0)
-            <div class="bg-white rounded-lg shadow-md p-4 md:p-6 mb-6">
+            <div class="bg-white border-l-4 border-[var(--brand-primary)] rounded-lg shadow-md p-4 md:p-6 mb-6">
                 <h3 class="font-bold text-gray-900 mb-4 text-sm md:text-base">Essay</h3>
                 <div class="grid grid-cols-5 gap-1 md:gap-2" id="essayNav">
                     @foreach($questions->where('nav_type', 'essay') as $question)
@@ -748,7 +750,7 @@
                             class="question-nav-btn essay-nav-btn w-full py-2 rounded-lg font-semibold text-xs md:text-sm border-2 transition"
                             data-question-id="{{ $question->id }}"
                             data-display-index="{{ $question->display_index }}"
-                            style="border-color: #e5e7eb;">
+                            style="border-color: var(--brand-glow);">
                             {{ $question->nav_position }}
                         </button>
                     @endforeach
@@ -757,15 +759,15 @@
             @endif
 
             <!-- Legend -->
-            <div class="bg-white rounded-lg shadow-md p-4 md:p-6">
+            <div class="bg-white border-l-4 border-[var(--brand-primary)] rounded-lg shadow-md p-4 md:p-6">
                 <h3 class="font-bold text-gray-900 mb-4 text-sm md:text-base">📊 Keterangan Status</h3>
                 <div class="space-y-3 text-xs md:text-sm">
-                    <div class="flex gap-3 items-center p-2 bg-blue-50 rounded">
-                        <div class="w-4 h-4 bg-blue-600 rounded-full flex-shrink-0"></div>
+                    <div class="flex gap-3 items-center p-2 bg-[var(--brand-glow)]/10 rounded">
+                        <div class="w-4 h-4 bg-[var(--brand-primary)] rounded-full flex-shrink-0"></div>
                         <span class="text-gray-700 font-medium">Soal Aktif (sedang dikerjakan)</span>
                     </div>
-                    <div class="flex gap-3 items-center p-2 bg-green-50 rounded">
-                        <div class="w-4 h-4 bg-green-500 rounded-full flex-shrink-0"></div>
+                    <div class="flex gap-3 items-center p-2 bg-emerald-50 rounded">
+                        <div class="w-4 h-4 bg-emerald-500 rounded-full flex-shrink-0"></div>
                         <span class="text-gray-700 font-medium">Sudah Dijawab</span>
                     </div>
                     <div class="flex gap-3 items-center p-2 bg-yellow-50 rounded">
@@ -1204,7 +1206,7 @@
                     title: '⚠️ PERINGATAN!',
                     html: `<p>Anda mencoba keluar dari mode ujian.</p><p class="mt-2 font-bold">Pelanggaran ke-<span class="text-red-500">${violationCount}</span> dari ${MAX_VIOLATIONS}</p>`,
                     icon: 'warning',
-                    confirmButtonColor: '#dc2626',
+                    confirmButtonColor: getComputedStyle(document.body).getPropertyValue('--brand-primary').trim() || '#4f46e5',
                     confirmButtonText: 'Kembali ke Ujian',
                     allowOutsideClick: false,
                     allowEscapeKey: false,
@@ -1540,7 +1542,7 @@
                 icon: 'info',
                 allowOutsideClick: false,
                 allowEscapeKey: false,
-                confirmButtonColor: '#2563eb',
+                confirmButtonColor: getComputedStyle(document.body).getPropertyValue('--brand-primary').trim() || '#4f46e5',
                 confirmButtonText: 'Lanjutkan'
             }).then(() => {
                 document.getElementById('examForm').submit();
@@ -2389,7 +2391,9 @@
                 html: '<p class="text-gray-700">' + message + '</p><p class="text-sm mt-3">Ujian Anda akan dikirimkan secara otomatis. Mohon tunggu sebentar.</p>',
                 icon: 'info',
                 allowOutsideClick: false,
-                allowEscapeKey: false
+                allowEscapeKey: false,
+                confirmButtonColor: getComputedStyle(document.body).getPropertyValue('--brand-primary').trim() || '#4f46e5',
+                confirmButtonText: 'OK'
             }).then(() => {
                 // Bersihkan hitungan pelanggaran dari sessionStorage
                 sessionStorage.removeItem('examViolationCount_' + attempt_id);
@@ -2443,7 +2447,11 @@
                     speedY: Math.random() * 5 + 2,
                     rotation: Math.random() * 360,
                     rotationSpeed: Math.random() * 10 - 5,
-                    color: ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9d56e', '#f8b500', '#ff9e7d', '#a8e6cf', '#ffd3b6'][Math.floor(Math.random() * 8)]
+                    color: [
+                        getComputedStyle(document.body).getPropertyValue('--brand-primary').trim() || '#4f46e5',
+                        getComputedStyle(document.body).getPropertyValue('--brand-dark').trim() || '#312e81',
+                        '#ff6b6b', '#4ecdc4', '#f9d56e', '#a8e6cf'
+                    ][Math.floor(Math.random() * 6)]
                 });
             }
             

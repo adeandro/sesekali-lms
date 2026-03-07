@@ -47,6 +47,8 @@ class SuperAdminTeacherController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'title_ahead' => 'nullable|string|max:50',
+            'title_behind' => 'nullable|string|max:50',
             'email' => 'required|email|unique:users,email',
             'nis' => 'required|string|unique:users,nis',
             'password' => 'required|string|min:8|confirmed',
@@ -93,6 +95,8 @@ class SuperAdminTeacherController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'title_ahead' => 'nullable|string|max:50',
+            'title_behind' => 'nullable|string|max:50',
             'email' => ['required', 'email', Rule::unique('users')->ignore($teacher->id)],
             'nis' => ['required', 'string', Rule::unique('users')->ignore($teacher->id)],
             'password' => 'nullable|string|min:8|confirmed',

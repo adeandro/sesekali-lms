@@ -64,7 +64,8 @@ class ExamResultsExport implements FromCollection
                 'Kelas / Rombel',
                 'Skor PG',
                 'Skor Esai',
-                'Skor Akhir',
+                'Nilai Murni',
+                'Nilai Penyesuaian',
                 'Status',
                 'Waktu Selesai',
             ],
@@ -80,7 +81,8 @@ class ExamResultsExport implements FromCollection
                 $gradeDisplay,  // class
                 round($attempt->score_mc ?? 0, 2),  // score_mc
                 round($attempt->score_essay ?? 0, 2),  // score_essay
-                round($attempt->final_score ?? 0, 2),  // final_score
+                round($attempt->final_score ?? 0, 2),  // final_score (Nilai Murni)
+                $attempt->is_adjusted ? round($attempt->adjusted_score, 2) : '-', // Nilai Penyesuaian
                 $attempt->status_kelulusan,  // status (accessor from model)
                 $attempt->submitted_at->format('d/m/Y H:i:s'),  // submitted_at
             ]);
@@ -98,23 +100,23 @@ class ExamResultsExport implements FromCollection
 
         // Style title row (Row 1)
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
-        $sheet->getStyle('A1:I1')->getFill()
+        $sheet->getStyle('A1:J1')->getFill()
             ->setFillType('solid')
             ->getStartColor()->setARGB('FFFF9999');
 
         // Style info rows (Rows 2-4)
-        $sheet->getStyle('A2:I4')->getFont()->setSize(11);
+        $sheet->getStyle('A2:J4')->getFont()->setSize(11);
 
         // Style header row (Row 6)
-        $sheet->getStyle('A6:I6')->getFont()->setBold(true);
-        $sheet->getStyle('A6:I6')->getFill()
+        $sheet->getStyle('A6:J6')->getFont()->setBold(true);
+        $sheet->getStyle('A6:J6')->getFill()
             ->setFillType('solid')
             ->getStartColor()->setARGB('FF4472C4');
-        $sheet->getStyle('A6:I6')->getFont()->getColor()->setARGB('FFFFFFFF');
-        $sheet->getStyle('A6:I6')->getAlignment()->setHorizontal('center');
+        $sheet->getStyle('A6:J6')->getFont()->getColor()->setARGB('FFFFFFFF');
+        $sheet->getStyle('A6:J6')->getAlignment()->setHorizontal('center');
 
         // Auto-size columns
-        foreach (range('A', 'I') as $col) {
+        foreach (range('A', 'J') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
     }

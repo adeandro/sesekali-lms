@@ -75,23 +75,33 @@
                             <input type="text" name="report_header_subtitle" id="report_header_subtitle" value="{{ old('report_header_subtitle', $allSettings['report_header_subtitle'] ?? 'Official Exam Results Certificate') }}" 
                                 class="w-full h-14 bg-gray-50 border-transparent rounded-2xl px-6 text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all">
                         </div>
-                        <div class="space-y-4">
-                            <label for="show_report_header" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Tampilkan Kop Laporan</label>
-                            <select name="show_report_header" id="show_report_header" 
-                                class="w-full h-14 bg-gray-50 border-transparent rounded-2xl px-6 text-xs font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all appearance-none cursor-pointer">
-                                <option value="1" {{ (old('show_report_header', $allSettings['show_report_header'] ?? '1') == '1') ? 'selected' : '' }}>TAMPILKAN (Visible)</option>
-                                <option value="0" {{ (old('show_report_header', $allSettings['show_report_header'] ?? '1') == '0') ? 'selected' : '' }}>SEMBUNYIKAN (Hidden)</option>
-                            </select>
+                        <div class="space-y-3" x-data="{ showHeader: {{ (old('show_report_header', $allSettings['show_report_header'] ?? '1') == '1') ? 'true' : 'false' }} }">
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Tampilkan Kop Laporan</label>
+                            <div class="flex items-center justify-between w-full h-14 bg-gray-50 rounded-2xl px-6 border border-transparent transition-all group-hover:border-indigo-100">
+                                <span class="text-xs font-bold text-gray-900 uppercase tracking-widest" x-text="showHeader ? 'Tampilkan' : 'Sembunyikan'"></span>
+                                <input type="hidden" name="show_report_header" :value="showHeader ? '1' : '0'">
+                                <button type="button" @click="showHeader = !showHeader" 
+                                    class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2"
+                                    :class="showHeader ? 'bg-indigo-600' : 'bg-gray-200'">
+                                    <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                                        :class="showHeader ? 'translate-x-5' : 'translate-x-0'"></span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="space-y-3" x-data="{ loginHeader: {{ (old('show_login_header', $allSettings['show_login_header'] ?? '1') == '1') ? 'true' : 'false' }} }">
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nama Sekolah di Login</label>
+                            <div class="flex items-center justify-between w-full h-14 bg-gray-50 rounded-2xl px-6 border border-transparent transition-all group-hover:border-indigo-100">
+                                <span class="text-xs font-bold text-gray-900 uppercase tracking-widest" x-text="loginHeader ? 'Tampilkan' : 'Sembunyikan'"></span>
+                                <input type="hidden" name="show_login_header" :value="loginHeader ? '1' : '0'">
+                                <button type="button" @click="loginHeader = !loginHeader" 
+                                    class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2"
+                                    :class="loginHeader ? 'bg-indigo-600' : 'bg-gray-200'">
+                                    <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                                        :class="loginHeader ? 'translate-x-5' : 'translate-x-0'"></span>
+                                </button>
+                            </div>
                         </div>
                         <div class="space-y-4">
-                            <label for="show_login_header" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nama Sekolah di Login</label>
-                            <select name="show_login_header" id="show_login_header" 
-                                class="w-full h-14 bg-gray-50 border-transparent rounded-2xl px-6 text-xs font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all appearance-none cursor-pointer">
-                                <option value="1" {{ (old('show_login_header', $allSettings['show_login_header'] ?? '1') == '1') ? 'selected' : '' }}>TAMPILKAN (Visible)</option>
-                                <option value="0" {{ (old('show_login_header', $allSettings['show_login_header'] ?? '1') == '0') ? 'selected' : '' }}>SEMBUNYIKAN (Hidden)</option>
-                            </select>
-                        </div>
-                        <div class="space-y-4 col-span-full">
                             <label for="logo" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Logo Instansi</label>
                             <div class="flex items-center gap-6 p-4 bg-gray-50 rounded-2xl border border-dashed border-gray-200 group-hover:border-indigo-200 transition-colors">
                                 @if(isset($allSettings['logo']))
@@ -100,9 +110,24 @@
                                     </div>
                                 @endif
                                 <div class="flex-1 space-y-1">
-                                    <input type="file" name="logo" id="logo" accept="image/*" class="hidden" onchange="updateFileName(this)">
+                                    <input type="file" name="logo" id="logo" accept="image/*" class="hidden" onchange="updateFileName(this, 'logo_name')">
                                     <button type="button" onclick="document.getElementById('logo').click()" class="px-4 py-2 bg-white text-indigo-600 text-[10px] font-black uppercase tracking-widest rounded-lg border border-indigo-100 hover:bg-indigo-600 hover:text-white transition shadow-sm mb-1">Pilih File</button>
-                                    <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest leading-relaxed" id="fileName">Format: PNG, JPG (Maks. 2MB)</p>
+                                    <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest leading-relaxed" id="logo_name">Format: PNG, JPG (Maks. 2MB)</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <label for="default_student_avatar" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Foto Default Siswa</label>
+                            <div class="flex items-center gap-6 p-4 bg-gray-50 rounded-2xl border border-dashed border-gray-200 group-hover:border-indigo-200 transition-colors">
+                                @if(isset($allSettings['default_student_avatar']))
+                                    <div class="w-20 h-20 rounded-xl bg-white p-2 border border-gray-100 shadow-sm flex items-center justify-center shrink-0">
+                                        <img src="{{ asset('storage/' . $allSettings['default_student_avatar']) }}" alt="Default Avatar" class="max-w-full max-h-full object-contain">
+                                    </div>
+                                @endif
+                                <div class="flex-1 space-y-1">
+                                    <input type="file" name="default_student_avatar" id="default_student_avatar" accept="image/*" class="hidden" onchange="updateFileName(this, 'avatar_name')">
+                                    <button type="button" onclick="document.getElementById('default_student_avatar').click()" class="px-4 py-2 bg-white text-indigo-600 text-[10px] font-black uppercase tracking-widest rounded-lg border border-indigo-100 hover:bg-indigo-600 hover:text-white transition shadow-sm mb-1">Pilih File</button>
+                                    <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest leading-relaxed" id="avatar_name">Format: PNG, JPG (Maks. 2MB)</p>
                                 </div>
                             </div>
                         </div>
@@ -126,13 +151,18 @@
                             <input type="number" name="max_violations" id="max_violations" value="{{ old('max_violations', $allSettings['max_violations'] ?? '3') }}" 
                                 class="w-full h-14 bg-gray-50 border-transparent rounded-2xl px-6 text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all" required>
                         </div>
-                        <div class="space-y-4">
-                            <label for="anti_cheat_active" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Status Anti-Cheat Global</label>
-                            <select name="anti_cheat_active" id="anti_cheat_active" 
-                                class="w-full h-14 bg-gray-50 border-transparent rounded-2xl px-6 text-xs font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all appearance-none cursor-pointer">
-                                <option value="1" {{ (old('anti_cheat_active', $allSettings['anti_cheat_active'] ?? '1') == '1') ? 'selected' : '' }}>AKTIF</option>
-                                <option value="0" {{ (old('anti_cheat_active', $allSettings['anti_cheat_active'] ?? '1') == '0') ? 'selected' : '' }}>NONAKTIF</option>
-                            </select>
+                        <div class="space-y-3" x-data="{ antiCheat: {{ (old('anti_cheat_active', $allSettings['anti_cheat_active'] ?? '1') == '1') ? 'true' : 'false' }} }">
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Status Anti-Cheat Global</label>
+                            <div class="flex items-center justify-between w-full h-14 bg-gray-50 rounded-2xl px-6 border border-transparent transition-all group-hover:border-rose-100">
+                                <span class="text-xs font-bold text-gray-900 uppercase tracking-widest" x-text="antiCheat ? 'Aktif' : 'Non-Aktif'"></span>
+                                <input type="hidden" name="anti_cheat_active" :value="antiCheat ? '1' : '0'">
+                                <button type="button" @click="antiCheat = !antiCheat" 
+                                    class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-rose-600 focus:ring-offset-2"
+                                    :class="antiCheat ? 'bg-rose-600' : 'bg-gray-200'">
+                                    <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                                        :class="antiCheat ? 'translate-x-5' : 'translate-x-0'"></span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -153,6 +183,47 @@
                             <label for="academic_year" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Tahun Ajaran Aktif</label>
                             <input type="text" name="academic_year" id="academic_year" value="{{ old('academic_year', $allSettings['academic_year'] ?? '') }}" 
                                 class="w-full h-14 bg-gray-50 border-transparent rounded-2xl px-6 text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fitur Lainnya -->
+                <div class="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden group hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-500">
+                    <div class="p-8 border-b border-gray-50 flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600 transition-colors">
+                            <i class="fas fa-plus-circle text-sm"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-black text-gray-900 tracking-tight uppercase">Fitur Tambahan</h3>
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-relaxed">Aktifkan atau nonaktifkan fitur gamifikasi untuk seluruh siswa</p>
+                        </div>
+                    </div>
+                    <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="space-y-3" x-data="{ gamification: {{ (old('enable_gamification', $allSettings['enable_gamification'] ?? '1') == '1') ? 'true' : 'false' }} }">
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Sistem Gamifikasi (Achievement)</label>
+                            <div class="flex items-center justify-between w-full h-14 bg-gray-50 rounded-2xl px-6 border border-transparent transition-all group-hover:border-purple-100">
+                                <span class="text-xs font-bold text-gray-900 uppercase tracking-widest" x-text="gamification ? 'Aktif' : 'Non-Aktif'"></span>
+                                <input type="hidden" name="enable_gamification" :value="gamification ? '1' : '0'">
+                                <button type="button" @click="gamification = !gamification" 
+                                    class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2"
+                                    :class="gamification ? 'bg-purple-600' : 'bg-gray-200'">
+                                    <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                                        :class="gamification ? 'translate-x-5' : 'translate-x-0'"></span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="space-y-3" x-data="{ leaderboard: {{ (old('enable_leaderboard', $allSettings['enable_leaderboard'] ?? '1') == '1') ? 'true' : 'false' }} }">
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Leaderboard & Peringkat</label>
+                            <div class="flex items-center justify-between w-full h-14 bg-gray-50 rounded-2xl px-6 border border-transparent transition-all group-hover:border-purple-100">
+                                <span class="text-xs font-bold text-gray-900 uppercase tracking-widest" x-text="leaderboard ? 'Aktif' : 'Non-Aktif'"></span>
+                                <input type="hidden" name="enable_leaderboard" :value="leaderboard ? '1' : '0'">
+                                <button type="button" @click="leaderboard = !leaderboard" 
+                                    class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2"
+                                    :class="leaderboard ? 'bg-purple-600' : 'bg-gray-200'">
+                                    <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                                        :class="leaderboard ? 'translate-x-5' : 'translate-x-0'"></span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -301,6 +372,41 @@
                                 </div>
                             </div>
                         </div>
+                        <!-- Tema Dashboard Section -->
+                        <div class="pt-8 border-t border-gray-50 space-y-6">
+                            <p class="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                <i class="fas fa-palette"></i> Personalisasi Tema
+                            </p>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4" id="admin-theme-picker">
+                                @php
+                                    $proThemes = [
+                                        ['key' => 'indigo', 'name' => 'Indigo Pro',  'color' => '#4f46e5', 'desc' => 'Elegan & Formal'],
+                                        ['key' => 'slate',  'name' => 'Slate Dark',  'color' => '#475569', 'desc' => 'Minimalis & Tegas'],
+                                        ['key' => 'ocean',  'name' => 'Ocean Blue',  'color' => '#0284c7', 'desc' => 'Segar & Profesional'],
+                                    ];
+                                    $activeProTheme = Auth::user()->ui_theme ?? 'indigo';
+                                @endphp
+                                @foreach($proThemes as $pt)
+                                    <button onclick="switchAdminTheme('{{ $pt['key'] }}')"
+                                            id="admin-theme-btn-{{ $pt['key'] }}"
+                                            type="button"
+                                            class="group relative rounded-2xl p-4 border-2 text-left transition-all duration-300 hover:shadow-xl {{ $activeProTheme === $pt['key'] ? 'shadow-md border-indigo-600 bg-indigo-50/50' : 'border-gray-100 hover:border-gray-200' }}">
+                                        <div class="flex items-center gap-4">
+                                            <div class="w-10 h-10 rounded-xl shadow-md transition-transform group-hover:scale-110 shrink-0" style="background-color: {{ $pt['color'] }};"></div>
+                                            <div>
+                                                <p class="text-[10px] font-black uppercase tracking-wider mb-0.5 text-gray-900 group-hover:text-indigo-600 transition-colors">{{ $pt['name'] }}</p>
+                                                <p class="text-[9px] font-bold text-gray-400">{{ $pt['desc'] }}</p>
+                                            </div>
+                                        </div>
+                                        @if($activeProTheme === $pt['key'])
+                                            <div class="check-badge absolute top-3 right-3 w-6 h-6 rounded-full flex items-center justify-center bg-indigo-600">
+                                                <i class="fas fa-check text-[10px] text-white"></i>
+                                            </div>
+                                        @endif
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
                     </div>
                     <div class="p-8 bg-gray-50/50 flex items-center justify-between gap-6">
                         <div class="flex items-center gap-3 text-amber-600">
@@ -332,11 +438,12 @@
 </div>
 
 <script>
-    function updateFileName(input) {
+    function updateFileName(input, targetId) {
         const fileName = input.files[0]?.name || 'Format: PNG, JPG (Maks. 2MB)';
-        document.getElementById('fileName').textContent = fileName;
+        const target = document.getElementById(targetId);
+        target.textContent = fileName;
         if (input.files[0]) {
-            document.getElementById('fileName').classList.add('text-indigo-600', 'font-black');
+            target.classList.add('text-indigo-600', 'font-black');
         }
     }
 
@@ -399,6 +506,41 @@
     document.getElementById('profileForm').addEventListener('submit', function() {
         document.getElementById('loadingOverlay').classList.remove('hidden');
     });
+
+    function switchAdminTheme(theme) {
+        fetch('{{ route("profile.update-theme") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ theme })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                // Apply immediately to current view
+                document.body.className = document.body.className.replace(/theme-\w+/, 'theme-' + theme);
+                
+                // Update button visuals
+                document.querySelectorAll('[id^="admin-theme-btn-"]').forEach(btn => {
+                    btn.className = 'group relative rounded-2xl p-4 border-2 text-left transition-all duration-300 hover:shadow-xl border-gray-100 hover:border-gray-200';
+                    const badge = btn.querySelector('.check-badge');
+                    if (badge) badge.remove();
+                });
+                
+                const activeBtn = document.getElementById('admin-theme-btn-' + theme);
+                if (activeBtn) {
+                    activeBtn.className = 'group relative rounded-2xl p-4 border-2 text-left transition-all duration-300 hover:shadow-xl shadow-md border-indigo-600 bg-indigo-50/50';
+                    const badge = document.createElement('div');
+                    badge.className = 'check-badge absolute top-3 right-3 w-6 h-6 rounded-full flex items-center justify-center bg-indigo-600';
+                    badge.innerHTML = '<i class="fas fa-check text-[10px] text-white"></i>';
+                    activeBtn.appendChild(badge);
+                }
+            }
+        });
+    }
 </script>
 
 <style>

@@ -187,6 +187,48 @@
             </div>
         </div>
     </div>
+
+    {{-- Professional Theme Selector --}}
+    <div class="bg-white rounded-[3rem] p-10 border theme-soft-shadow space-y-8" style="border-color: var(--brand-glow);">
+        <div class="space-y-2">
+            <h3 class="text-xl font-black uppercase tracking-wider flex items-center gap-3" style="color: var(--brand-text);">
+                <span class="w-1.5 h-8 rounded-full" style="background-color: var(--brand-primary);"></span>
+                Tema Dashboard
+            </h3>
+            <p class="text-xs font-bold text-gray-400 leading-relaxed italic">Pilih nuansa visual yang sesuai dengan gaya kerja profesional Anda.</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4" id="teacher-theme-picker">
+            @php
+                $proThemes = [
+                    ['key' => 'indigo', 'name' => 'Indigo Pro',  'color' => '#4f46e5', 'desc' => 'Elegan & Formal'],
+                    ['key' => 'slate',  'name' => 'Slate Dark',  'color' => '#475569', 'desc' => 'Minimalis & Tegas'],
+                    ['key' => 'ocean',  'name' => 'Ocean Blue',  'color' => '#0284c7', 'desc' => 'Segar & Profesional'],
+                ];
+                $activeProTheme = Auth::user()->ui_theme ?? 'indigo';
+            @endphp
+            @foreach($proThemes as $pt)
+                <button onclick="switchTeacherTheme('{{ $pt['key'] }}')"
+                        id="teacher-theme-btn-{{ $pt['key'] }}"
+                        type="button"
+                        class="group relative rounded-[2rem] p-6 border-2 text-left transition-all duration-300 hover:shadow-xl {{ $activeProTheme === $pt['key'] ? 'shadow-lg' : 'border-gray-100 hover:border-gray-200' }}"
+                        style="{{ $activeProTheme === $pt['key'] ? 'border-color: var(--brand-primary); background-color: var(--brand-glow);' : '' }}">
+                    <div class="flex flex-col gap-4">
+                        <div class="w-14 h-14 rounded-2xl shadow-lg transition-transform group-hover:scale-110" style="background-color: {{ $pt['color'] }};"></div>
+                        <div>
+                            <p class="text-sm font-black uppercase tracking-wider mb-1" style="color: var(--brand-text);">{{ $pt['name'] }}</p>
+                            <p class="text-xs font-bold text-gray-400">{{ $pt['desc'] }}</p>
+                        </div>
+                    </div>
+                    @if($activeProTheme === $pt['key'])
+                        <div class="check-badge absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center" style="background-color: var(--brand-primary);">
+                            <i class="fas fa-check text-xs text-white"></i>
+                        </div>
+                    @endif
+                </button>
+            @endforeach
+        </div>
+    </div>
 </div>
 
 <script>
@@ -236,6 +278,49 @@
             document.body.appendChild(form);
             form.submit();
         }
+    }
+
+    function switchTeacherTheme(theme) {
+        fetch('{{ route("profile.update-theme") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ theme })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                // Instant theme apply
+                document.body.className = document.body.className.replace(/theme-\w+/, 'theme-' + theme);
+                // Update button states
+                document.querySelectorAll('[id^="teacher-theme-btn-"]').forEach(btn => {
+                    btn.style.borderColor = '';
+                    btn.style.backgroundColor = '';
+                    btn.classList.remove('shadow-lg');
+                    btn.classList.add('border-gray-100');
+                    const badge = btn.querySelector('.check-badge');
+                    if (badge) badge.remove();
+                });
+                const active = document.getElementById('teacher-theme-btn-' + theme);
+                if (active) {
+                    active.style.borderColor = 'var(--brand-primary)';
+                    active.style.backgroundColor = 'var(--brand-glow)';
+                    active.classList.add('shadow-lg');
+                    active.classList.remove('border-gray-100');
+                    const badge = document.createElement('div');
+                    badge.className = 'check-badge absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center';
+                    badge.style.backgroundColor = 'var(--brand-primary)';
+                    badge.innerHTML = '<i class="fas fa-check text-xs text-white"></i>';
+                    active.appendChild(badge);
+                }
+                // Show toast
+                const toastEvent = new CustomEvent('theme-changed', { detail: { theme } });
+                document.dispatchEvent(toastEvent);
+            }
+        });
     }
 </script>
 @endsection

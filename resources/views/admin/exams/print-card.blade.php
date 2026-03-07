@@ -385,21 +385,22 @@
     </div>
 
     @foreach($students as $data)
-        @php
-            $score = $data['score'];
-            $isPassed = $score >= ($exam->subject->kkm ?? 75);
-            
-            // Map score to Grade (A-E)
-            $gradeLabel = 'E';
-            if ($score >= 90) $gradeLabel = 'A';
-            elseif ($score >= 80) $gradeLabel = 'B';
-            elseif ($score >= 70) $gradeLabel = 'C';
-            elseif ($score >= 60) $gradeLabel = 'D';
+            @php
+                $score = $data['score'];
+                $isAdjusted = $data['is_adjusted'];
+                $isPassed = $score >= ($exam->subject->kkm ?? 75);
+                
+                // Map score to Grade (A-E)
+                $gradeLabel = 'E';
+                if ($score >= 90) $gradeLabel = 'A';
+                elseif ($score >= 80) $gradeLabel = 'B';
+                elseif ($score >= 70) $gradeLabel = 'C';
+                elseif ($score >= 60) $gradeLabel = 'D';
 
-            // Get school configs
-            $configs = \App\Models\Setting::all()->pluck('value', 'key')->toArray();
-            $showHeader = ($configs['show_report_header'] ?? '1') == '1';
-        @endphp
+                // Get school configs
+                $configs = \App\Models\Setting::all()->pluck('value', 'key')->toArray();
+                $showHeader = ($configs['show_report_header'] ?? '1') == '1';
+            @endphp
         <div class="report-page {{ $showHeader ? '' : 'no-header' }}">
             <!-- Kop Surat -->
             @if(($configs['show_report_header'] ?? '1') == '1')
@@ -432,7 +433,7 @@
                         <tr>
                             <td class="label">Nama Lengkap</td>
                             <td class="colon">:</td>
-                            <td class="value">{{ $data['student']->name }}</td>
+                            <td class="value">{{ $data['student']->formatted_name }}</td>
                         </tr>
                         <tr>
                             <td class="label">NIS / ID Siswa</td>
@@ -474,8 +475,12 @@
             <div class="results-container">
                 <div class="results-header">REKAPITULASI NILAI AKHIR</div>
                 <div class="score-display">
-                    <div class="final-score-value">{{ number_format($data['score'], 0) }}</div>
-                    <div class="final-score-label">Points (Scale 0-100)</div>
+                    <div class="final-score-value">{{ number_format($score, 0) }}</div>
+                    @if($isAdjusted)
+                        <div class="final-score-label" style="color: #4f46e5; font-size: 0.75rem;">Nilai Telah Disesuaikan (Adjusted)</div>
+                    @else
+                        <div class="final-score-label">Points (Scale 0-100)</div>
+                    @endif
                     
                     <div class="status-pill {{ $isPassed ? 'passed' : 'failed' }}">
                         {{ $isPassed ? 'LULUS' : 'REMIDIAL' }}
@@ -498,7 +503,7 @@
                     <div class="sig-date">&nbsp;</div>
                     <div class="sig-role">Peserta Ujian,</div>
                     <div class="sig-spacer"></div>
-                    <div class="sig-name">{{ $data['student']->name }}</div>
+                    <div class="sig-name">{{ $data['student']->formatted_name }}</div>
                 </div>
                 <div class="sig-block">
                     <div class="sig-date">{{ now()->locale('id')->translatedFormat('d F Y') }}</div>
