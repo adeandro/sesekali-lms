@@ -528,7 +528,16 @@
                                         </div>
                                     @endif
                                 </div>
-                                @endif
+                            @else
+                                <!-- Standard Avatar (Kill Switch Active or Non-Student) -->
+                                <div class="w-12 h-12 rounded-full border-2 border-white shadow-sm overflow-hidden bg-white">
+                                    @if(Auth::user()->has_avatar)
+                                        <img src="{{ Auth::user()->avatar_url }}" alt="Formal Photo" class="w-full h-full object-cover">
+                                    @else
+                                        <div class="w-full h-full bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center text-white text-[10px] font-black italic leading-none">
+                                            {{ Auth::user()->initials }}
+                                        </div>
+                                    @endif
                                 </div>
                             @endif
                         </div>
