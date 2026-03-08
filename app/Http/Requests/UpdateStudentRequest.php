@@ -27,6 +27,7 @@ class UpdateStudentRequest extends FormRequest
             'class_group' => 'required|string|max:10',
             'is_active' => 'required|boolean',
             'photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'password' => 'nullable|string|min:4|max:255',
         ];
     }
 }

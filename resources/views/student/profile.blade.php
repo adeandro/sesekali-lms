@@ -379,15 +379,21 @@
                                 <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1 transition-colors group-focus-within:text-[var(--brand-primary)]">Password Saat Ini</label>
                                 <div class="relative">
                                     <i class="fas fa-shield-alt absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-[var(--brand-primary)] transition-colors"></i>
-                                    <input type="password" name="current_password" required class="w-full pl-12 pr-6 py-4 bg-gray-50 border-transparent rounded-xl text-sm font-bold focus:bg-white focus:border-[var(--brand-primary)] focus:ring-4 focus:ring-[var(--brand-glow)] transition-all outline-none">
+                                    <input type="password" name="current_password" required class="w-full pl-12 pr-6 py-4 bg-gray-50 border-transparent rounded-xl text-sm font-bold focus:bg-white focus:border-[var(--brand-primary)] focus:ring-4 focus:ring-[var(--brand-glow)] transition-all outline-none @error('current_password') border-rose-300 ring-4 ring-rose-100 @enderror">
                                 </div>
+                                @error('current_password')
+                                    <p class="text-[10px] text-rose-500 font-bold mt-1.5 ml-1 uppercase tracking-wider">{{ $message }}</p>
+                                @enderror
                             </div>
                             <div class="group">
                                 <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1 transition-colors group-focus-within:text-[var(--brand-primary)]">Password Baru</label>
                                 <div class="relative">
                                     <i class="fas fa-lock absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-[var(--brand-primary)] transition-colors"></i>
-                                    <input type="password" name="password" required class="w-full pl-12 pr-6 py-4 bg-gray-50 border-transparent rounded-xl text-sm font-bold focus:bg-white focus:border-[var(--brand-primary)] focus:ring-4 focus:ring-[var(--brand-glow)] transition-all outline-none">
+                                    <input type="password" name="password" required class="w-full pl-12 pr-6 py-4 bg-gray-50 border-transparent rounded-xl text-sm font-bold focus:bg-white focus:border-[var(--brand-primary)] focus:ring-4 focus:ring-[var(--brand-glow)] transition-all outline-none @error('password') border-rose-300 ring-4 ring-rose-100 @enderror">
                                 </div>
+                                @error('password')
+                                    <p class="text-[10px] text-rose-500 font-bold mt-1.5 ml-1 uppercase tracking-wider">{{ $message }}</p>
+                                @enderror
                             </div>
                             <div class="group">
                                 <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1 transition-colors group-focus-within:text-[var(--brand-primary)]">Konfirmasi Password Baru</label>
@@ -395,6 +401,9 @@
                                     <i class="fas fa-check-double absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-[var(--brand-primary)] transition-colors"></i>
                                     <input type="password" name="password_confirmation" required class="w-full pl-12 pr-6 py-4 bg-gray-50 border-transparent rounded-xl text-sm font-bold focus:bg-white focus:border-[var(--brand-primary)] focus:ring-4 focus:ring-[var(--brand-glow)] transition-all outline-none">
                                 </div>
+                                @error('password_confirmation')
+                                    <p class="text-[10px] text-rose-500 font-bold mt-1.5 ml-1 uppercase tracking-wider">{{ $message }}</p>
+                                @enderror
                             </div>
                         </div>
                         <div class="pt-4 mt-auto">

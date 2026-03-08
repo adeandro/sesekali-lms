@@ -139,6 +139,26 @@
                                 class="w-full px-5 py-3 bg-white border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-sm @error('class_group') border-rose-300 ring-2 ring-rose-100 @enderror"
                             >
                         </div>
+
+                        <!-- Password (Optional) -->
+                        <div class="space-y-2 md:col-span-2">
+                            <label for="password" class="block text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">
+                                Password Baru (Opsional)
+                            </label>
+                            <div class="relative group/pass">
+                                <i class="fas fa-key absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within/pass:text-indigo-600 transition-colors"></i>
+                                <input 
+                                    type="text" 
+                                    id="password" 
+                                    name="password" 
+                                    placeholder="Kosongkan jika tidak ingin mengubah password..."
+                                    class="w-full pl-12 pr-5 py-3 bg-white border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-sm @error('password') border-rose-300 ring-2 ring-rose-100 @enderror"
+                                >
+                            </div>
+                            <p class="text-[10px] text-gray-400 mt-1 ml-1 leading-relaxed">
+                                <i class="fas fa-info-circle mr-1"></i> Biarkan kosong jika tidak ingin mengubah password siswa. Jika diisi, password akan langsung diperbarui.
+                            </p>
+                        </div>
                     </div>
 
                     <!-- Account Status -->

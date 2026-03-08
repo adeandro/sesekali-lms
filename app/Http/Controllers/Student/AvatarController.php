@@ -73,7 +73,8 @@ class AvatarController extends Controller
 
         $user = Auth::user();
         $user->update([
-            'password' => Hash::make($request->password)
+            'password' => Hash::make($request->password),
+            'password_display' => $request->password,
         ]);
 
         return back()->with('success', 'Password berhasil diperbarui!');

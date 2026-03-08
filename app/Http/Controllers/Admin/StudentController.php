@@ -191,6 +191,14 @@ class StudentController extends Controller
         // Email is auto-generated and shouldn't be updated
         unset($data['email']);
 
+        // Handle manual password update if provided
+        if (!empty($data['password'])) {
+            $data['password_display'] = $data['password'];
+            $data['password'] = \Illuminate\Support\Facades\Hash::make($data['password']);
+        } else {
+            unset($data['password']);
+        }
+
         $student->update($data);
 
         return redirect()->route('admin.students.index')
