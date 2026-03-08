@@ -20,9 +20,11 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Seed users first (admin, superadmin, and 50 students)
+        // Seed users and themes
         $this->call([
             UserSeeder::class,
+            AchievementSeeder::class,
+            ThemeSeeder::class,
         ]);
 
         // Create sample subjects

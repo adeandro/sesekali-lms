@@ -1,0 +1,173 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use App\Models\Theme;
+use App\Models\Achievement;
+
+class ThemeSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $themes = [
+            [
+                'name'                   => 'Indigo',
+                'slug'                   => 'indigo',
+                'primary_color'          => '#4f46e5',
+                'secondary_color'        => '#818cf8',
+                'glow_color'             => 'rgba(79, 70, 229, 0.2)',
+                'bg_color'               => '#f8faff',
+                'text_color'             => '#1e293b',
+                'dark_color'             => '#3730a3',
+                'surface_color'          => '#ffffff',
+                'is_unlocked_by_default' => true,
+                'is_active'              => true,
+                'min_level'              => 0,
+            ],
+            [
+                'name'                   => 'Emerald',
+                'slug'                   => 'emerald',
+                'primary_color'          => '#10b981',
+                'secondary_color'        => '#34d399',
+                'glow_color'             => 'rgba(16, 185, 129, 0.18)',
+                'bg_color'               => '#f0fdf9',
+                'text_color'             => '#064e3b',
+                'dark_color'             => '#065f46',
+                'surface_color'          => '#f9fffd',
+                'is_unlocked_by_default' => false,
+                'is_active'              => true,
+                'min_level'              => 5,
+            ],
+            [
+                'name'                   => 'Volcano',
+                'slug'                   => 'volcano',
+                'primary_color'          => '#ef4444',
+                'secondary_color'        => '#f87171',
+                'glow_color'             => 'rgba(239, 68, 68, 0.18)',
+                'bg_color'               => '#fffafa',
+                'text_color'             => '#450a0a',
+                'dark_color'             => '#7f1d1d',
+                'surface_color'          => '#fff8f8',
+                'is_unlocked_by_default' => false,
+                'is_active'              => true,
+                'min_level'              => 15,
+            ],
+            [
+                'name'                   => 'Rose',
+                'slug'                   => 'rose',
+                'primary_color'          => '#f43f5e',
+                'secondary_color'        => '#fb7185',
+                'glow_color'             => 'rgba(244, 63, 94, 0.18)',
+                'bg_color'               => '#fff5f7',
+                'text_color'             => '#4c0519',
+                'dark_color'             => '#9f1239',
+                'surface_color'          => '#fffbfc',
+                'is_unlocked_by_default' => false,
+                'is_active'              => true,
+                'min_level'              => 25,
+            ],
+            [
+                'name'                   => 'Amber',
+                'slug'                   => 'amber',
+                'primary_color'          => '#d97706',
+                'secondary_color'        => '#f59e0b',
+                'glow_color'             => 'rgba(217, 119, 6, 0.18)',
+                'bg_color'               => '#fffbf0',
+                'text_color'             => '#451a03',
+                'dark_color'             => '#78350f',
+                'surface_color'          => '#fffdf7',
+                'is_unlocked_by_default' => false,
+                'is_active'              => true,
+                'min_level'              => 35,
+            ],
+            [
+                'name'                   => 'Midnight',
+                'slug'                   => 'midnight',
+                'primary_color'          => '#818cf8',
+                'secondary_color'        => '#a5b4fc',
+                'glow_color'             => 'rgba(129, 140, 248, 0.25)',
+                'bg_color'               => '#0f172a',
+                'text_color'             => '#e2e8f0',
+                'dark_color'             => '#0f172a',
+                'surface_color'          => '#1e293b',
+                'is_unlocked_by_default' => false,
+                'is_active'              => true,
+                'min_level'              => 45,
+            ],
+            [
+                'name'                   => 'Violet',
+                'slug'                   => 'violet',
+                'primary_color'          => '#7c3aed',
+                'secondary_color'        => '#a78bfa',
+                'glow_color'             => 'rgba(124, 58, 237, 0.18)',
+                'bg_color'               => '#f7f4ff',
+                'text_color'             => '#2e1065',
+                'dark_color'             => '#4c1d95',
+                'surface_color'          => '#fbf9ff',
+                'is_unlocked_by_default' => true,
+                'is_active'              => true,
+                'min_level'              => 0,
+            ],
+            [
+                'name'                   => 'Slate',
+                'slug'                   => 'slate',
+                'primary_color'          => '#475569',
+                'secondary_color'        => '#94a3b8',
+                'glow_color'             => 'rgba(71, 85, 105, 0.15)',
+                'bg_color'               => '#f6f8fa',
+                'text_color'             => '#1e293b',
+                'dark_color'             => '#1e293b',
+                'surface_color'          => '#f9fbfc',
+                'is_unlocked_by_default' => true,
+                'is_active'              => true,
+                'min_level'              => 0,
+            ],
+            [
+                'name'                   => 'Ocean',
+                'slug'                   => 'ocean',
+                'primary_color'          => '#0284c7',
+                'secondary_color'        => '#38bdf8',
+                'glow_color'             => 'rgba(2, 132, 199, 0.18)',
+                'bg_color'               => '#f0f9ff',
+                'text_color'             => '#0c2a3e',
+                'dark_color'             => '#0c4a6e',
+                'surface_color'          => '#f5fbff',
+                'is_unlocked_by_default' => true,
+                'is_active'              => true,
+                'min_level'              => 0,
+            ],
+            [
+                'name'                   => 'Cyberpunk',
+                'slug'                   => 'cyberpunk',
+                'primary_color'          => '#e040fb',
+                'secondary_color'        => '#00e5ff',
+                'glow_color'             => 'rgba(224, 64, 251, 0.3)',
+                'bg_color'               => '#06000e',
+                'text_color'             => '#f0e6ff',
+                'dark_color'             => '#12002b',
+                'surface_color'          => '#130025',
+                'is_unlocked_by_default' => false,
+                'is_active'              => true,
+                'min_level'              => 0,
+                'required_achievement_slug' => 'the_flash',
+            ],
+        ];
+
+        foreach ($themes as $themeData) {
+            $achievementId = null;
+            if (isset($themeData['required_achievement_slug'])) {
+                $achievement = Achievement::where('slug', $themeData['required_achievement_slug'])->first();
+                $achievementId = $achievement ? $achievement->id : null;
+                unset($themeData['required_achievement_slug']);
+            }
+
+            $themeData['required_achievement_id'] = $achievementId;
+
+            Theme::updateOrCreate(
+                ['slug' => $themeData['slug']],
+                $themeData
+            );
+        }
+    }
+}
