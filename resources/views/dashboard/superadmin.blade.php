@@ -7,7 +7,13 @@
 @section('content')
     <div class="space-y-8">
     <div class="flex items-center justify-between">
-        <h2 class="text-3xl font-bold tracking-tight" style="color: var(--brand-text);">Superadmin Dashboard</h2>
+        <div class="space-y-1">
+            <p class="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400">📍 Dashboard — Superadmin</p>
+            <h2 class="text-2xl font-black tracking-tight" style="color: var(--brand-text);">
+                Selamat {{ $greetingWord }}, <span style="color: var(--brand-primary);">Super Admin!</span> {{ $greetingEmoji }}
+            </h2>
+            <p class="text-sm font-bold text-gray-500">{{ $greetingMotif }}</p>
+        </div>
         <div class="text-sm text-gray-500 px-4 py-2 rounded-full shadow-sm border" style="background-color: var(--brand-surface); border-color: var(--brand-glow);">
             <i class="fas fa-calendar-alt mr-2" style="color: var(--brand-primary);"></i> Tahun Ajaran: {{ $configs['academic_year'] ?? '2023/2024' }}
         </div>

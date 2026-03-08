@@ -73,31 +73,28 @@ class StudentDashboardController extends Controller
             ? array_search($user->id, $localRankedStudents) + 1 
             : '-';
 
-        // 5. Badges
-        $allAchievements = \App\Models\Achievement::all();
+        // 5. Badges (Dynamic active only)
+        $allAchievements = \App\Models\Achievement::where('is_active', true)->orderBy('created_at', 'asc')->get();
         $earnedAchievements = $user->achievements->keyBy('slug');
 
-        // 6. Greeting
-        $hour = now()->hour;
-        $minute = now()->minute;
-        $greeting = 'Selamat Malam 🌙';
-        $motivationalText = 'Siap menaklukkan materi malam ini?';
-
+        // 6. Greeting (WIB)
+        $now = now()->timezone('Asia/Jakarta');
+        $hour = $now->hour;
+        $firstName = explode(' ', $user->name)[0];
+        
         if ($hour >= 5 && $hour < 11) {
-            $greeting = 'Selamat Pagi 🌅';
+            $greeting = 'Selamat Pagi, ' . $firstName . ' 🌅';
             $motivationalText = 'Mulai harimu dengan semangat belajar baru!';
         } elseif ($hour >= 11 && $hour < 15) {
-            $greeting = 'Selamat Siang ☀️';
-            $motivationalText = 'Tetap fokus, perjalanan menuju sukses masih panjang.';
-        } elseif ($hour >= 15 && $hour < 18) {
-            $greeting = 'Selamat Sore 🌇';
+            $greeting = 'Selamat Siang, Pejuang! ☀️';
+            $motivationalText = 'Tetap semangat di tengah aktivitas hari ini!';
+        } elseif ($hour >= 15 && $hour < 19) {
+            $greeting = 'Selamat Sore, ' . $firstName . ' 🌇';
             $motivationalText = 'Sore yang cerah untuk mereview pelajaran hari ini.';
-        } elseif ($hour >= 18 || $hour < 5) {
-            $firstName = explode(' ', $user->name)[0];
-            $greeting = 'Selamat Malam, ' . $firstName . '. 🌙';
-            
+        } else {
+            $greeting = 'Selamat Malam, ' . $firstName . ' 🌙';
             if ($hour >= 20 || $hour < 5) {
-                 $motivationalText = 'Malam yang tenang untuk konsentrasi maksimal. 🌙';
+                 $motivationalText = 'Malam yang tenang untuk konsentrasi maksimal.';
             } else {
                  $motivationalText = 'Konsentrasi ekstra untuk meraih bintang ujianmu!';
             }
@@ -148,5 +145,11 @@ class StudentDashboardController extends Controller
             'earnedAchievements', 
             'allAchievements'
         ));
+    }
+
+    public function markNotificationsRead()
+    {
+        Auth::user()->unreadNotifications->markAsRead();
+        return back()->with('success', 'Semua notifikasi telah ditandai dibaca.');
     }
 }

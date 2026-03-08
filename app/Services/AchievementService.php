@@ -16,16 +16,30 @@ class AchievementService
     public function checkSubmissionAchievements(ExamAttempt $attempt)
     {
         $user = $attempt->student;
-        
-        $this->checkFirstBlood($user);
-        $this->checkPerfectScore($attempt);
-        $this->checkUnstoppable($user);
-        $this->checkEarlyBird($attempt);
-        $this->checkTheFlash($attempt);
-        $this->checkComebackKing($attempt);
-        $this->checkNightOwl($attempt);
-        $this->checkHardWorker($user);
-        $this->checkScholarWarrior($user);
+
+        // Fetch all active achievements
+        $activeAchievements = Achievement::where('is_active', true)->get();
+
+        foreach ($activeAchievements as $achievement) {
+            $type  = $achievement->criteria_type;
+            $value = (float) $achievement->criteria_value;
+
+            $shouldAward = match ($type) {
+                'exam_count'          => $this->checkExamCount($user, $value),
+                'final_score'         => $this->checkFinalScore($attempt, $value),
+                'consecutive_pass'    => $this->checkConsecutivePass($user, $value),
+                'first_submit'        => $this->checkFirstSubmit($attempt),
+                'completion_time_pct' => $this->checkCompletionTimePct($attempt, $value),
+                'score_increase'      => $this->checkScoreIncrease($attempt, $value),
+                'submission_hour'     => $this->checkSubmissionHour($attempt, $value),
+                'avg_score'           => $this->checkAvgScore($user, $value),
+                default               => false,
+            };
+
+            if ($shouldAward) {
+                $this->awardBadge($user, $achievement);
+            }
+        }
 
         // Award XP for completion
         $xpReward = 50 + ($attempt->correct_answers ?? 0);
@@ -37,110 +51,101 @@ class AchievementService
      */
     public function checkAchievements(User $user)
     {
-        $this->checkFirstBlood($user);
-        $this->checkAvatarAchievement($user);
-        $this->checkHardWorker($user);
-        $this->checkScholarWarrior($user);
-    }
+        $activeAchievements = Achievement::where('is_active', true)
+                                         ->whereIn('criteria_type', ['exam_count', 'avg_score', 'custom_avatar'])
+                                         ->get();
 
-    /**
-     * Check social media king achievement (updated avatar).
-     */
-    public function checkAvatarAchievement(User $user)
-    {
-        if ($user->custom_avatar || $user->avatar_upload) {
-            if ($this->awardBadge($user, 'social_media_king')) {
-                $this->awardXp($user, 20); // Bonus XP for styling
+        foreach ($activeAchievements as $achievement) {
+            $type  = $achievement->criteria_type;
+            $value = (float) $achievement->criteria_value;
+
+            $shouldAward = match ($type) {
+                'exam_count'    => $this->checkExamCount($user, $value),
+                'avg_score'     => $this->checkAvgScore($user, $value),
+                'custom_avatar' => $this->checkAvatarAchievement($user),
+                default         => false,
+            };
+
+            if ($shouldAward) {
+                $this->awardBadge($user, $achievement);
             }
         }
     }
 
-    protected function checkFirstBlood(User $user)
-    {
-        $completedCount = $user->examAttempts()
-            ->where('status', 'submitted')
-            ->count();
+    // ─────────────────────────────────────────
+    // DYNAMIC CRITERIA CHECKERS
+    // ─────────────────────────────────────────
 
-        if ($completedCount >= 1) {
-            $this->awardBadge($user, 'first_blood');
-        }
+    protected function checkExamCount(User $user, float $targetCount): bool
+    {
+        $count = $user->examAttempts()->where('status', 'submitted')->count();
+        return $count >= $targetCount;
     }
 
-    protected function checkPerfectScore(ExamAttempt $attempt)
+    protected function checkFinalScore(ExamAttempt $attempt, float $targetScore): bool
     {
-        // Nilai 100 murni (before any adjustment if possible, but here we use final_score)
-        if ($attempt->final_score >= 100) {
-            $this->awardBadge($attempt->student, 'perfect_score');
-        }
+        return $attempt->final_score >= $targetScore;
     }
 
-    protected function checkUnstoppable(User $user)
+    protected function checkConsecutivePass(User $user, float $targetConsecutive): bool
     {
-        // Last 3 attempts passing KKM
-        $lastAttempts = $user->examAttempts()
-            ->with('exam.subject')
+        $attempts = $user->examAttempts()
+            ->with(['exam.subject'])
             ->where('status', 'submitted')
             ->orderBy('submitted_at', 'DESC')
-            ->take(3)
+            ->take((int)$targetConsecutive)
             ->get();
 
-        if ($lastAttempts->count() < 3) return;
+        if ($attempts->count() < $targetConsecutive) {
+            return false;
+        }
 
-        $allPassed = true;
-        foreach ($lastAttempts as $attempt) {
+        foreach ($attempts as $attempt) {
             $kkm = $attempt->exam->subject->kkm ?? 75;
             if ($attempt->final_score < $kkm) {
-                $allPassed = false;
-                break;
+                return false;
             }
         }
 
-        if ($allPassed) {
-            $this->awardBadge($user, 'unstoppable');
-        }
+        return true;
     }
 
-    protected function checkEarlyBird(ExamAttempt $attempt)
+    protected function checkFirstSubmit(ExamAttempt $attempt): bool
     {
-        // First student to submit in their class group for this exam
-        $classGroup = $attempt->student->class_group;
-        
-        $isFirst = !ExamAttempt::where('exam_id', $attempt->exam_id)
-            ->where('id', '!=', $attempt->id)
+        $firstAttempt = ExamAttempt::where('exam_session_id', $attempt->exam_session_id)
             ->where('status', 'submitted')
-            ->whereHas('student', function($q) use ($classGroup) {
-                $q->where('class_group', $classGroup);
-            })
-            ->exists();
+            ->orderBy('submitted_at', 'ASC')
+            ->first();
 
-        if ($isFirst) {
-            $this->awardBadge($attempt->student, 'early_bird');
-        }
+        return $firstAttempt && $firstAttempt->id === $attempt->id;
     }
 
-    protected function checkTheFlash(ExamAttempt $attempt)
+    protected function checkCompletionTimePct(ExamAttempt $attempt, float $targetPct): bool
     {
-        // Lulus KKM with work time < 50% of duration
         $kkm = $attempt->exam->subject->kkm ?? 75;
-        if ($attempt->final_score < $kkm) return;
+        if ($attempt->final_score < $kkm) {
+            return false;
+        }
 
         $durationMinutes = $attempt->exam->duration_minutes;
-        if (!$durationMinutes) return;
+        if (!$durationMinutes) {
+            return false;
+        }
 
-        $startedAt = $attempt->started_at;
+        $startedAt   = $attempt->started_at;
         $submittedAt = $attempt->submitted_at;
         
         if ($startedAt && $submittedAt) {
             $minutesUsed = $startedAt->diffInMinutes($submittedAt);
-            if ($minutesUsed < ($durationMinutes / 2)) {
-                $this->awardBadge($attempt->student, 'the_flash');
-            }
+            $pctUsed     = ($minutesUsed / $durationMinutes) * 100;
+            return $pctUsed <= $targetPct;
         }
+
+        return false;
     }
 
-    protected function checkComebackKing(ExamAttempt $attempt)
+    protected function checkScoreIncrease(ExamAttempt $attempt, float $targetIncrease): bool
     {
-        // Score increase > 30 points from previous exam
         $previousAttempt = $attempt->student->examAttempts()
             ->where('status', 'submitted')
             ->where('id', '!=', $attempt->id)
@@ -149,55 +154,66 @@ class AchievementService
             ->first();
 
         if ($previousAttempt) {
-            if (($attempt->final_score - $previousAttempt->final_score) > 30) {
-                $this->awardBadge($attempt->student, 'comeback_king');
+            return ($attempt->final_score - $previousAttempt->final_score) >= $targetIncrease;
+        }
+
+        return false;
+    }
+
+    protected function checkSubmissionHour(ExamAttempt $attempt, float $targetHour): bool
+    {
+        if ($attempt->submitted_at) {
+            $submittedWIB = $attempt->submitted_at->copy()->setTimezone('Asia/Jakarta');
+            return $submittedWIB->hour >= $targetHour;
+        }
+        return false;
+    }
+
+    protected function checkAvgScore(User $user, float $targetAvg): bool
+    {
+        $avg = $user->examAttempts()->where('status', 'submitted')->avg('final_score');
+        return $avg && $avg >= $targetAvg;
+    }
+
+    public function checkAvatarAchievement(User $user)
+    {
+        $hasCustomAvatar = false;
+        
+        if ($user->avatar_upload) {
+            $hasCustomAvatar = true;
+        } elseif ($user->custom_avatar && !$user->is_avatar_seed && !str_starts_with($user->custom_avatar, 'avatars/multiavatar/')) {
+            $hasCustomAvatar = true;
+        }
+
+        if ($hasCustomAvatar) {
+            $achievement = Achievement::where('slug', 'social_media_king')->first();
+            if ($achievement && !$user->achievements()->where('achievement_id', $achievement->id)->exists()) {
+                $this->awardBadge($user, $achievement);
             }
         }
     }
 
-    protected function checkNightOwl(ExamAttempt $attempt)
-    {
-        // Submit after 21:00
-        if ($attempt->submitted_at && $attempt->submitted_at->hour >= 21) {
-            $this->awardBadge($attempt->student, 'night_owl');
-        }
-    }
-
-    protected function checkHardWorker(User $user)
-    {
-        // 10 completed exams
-        $count = $user->examAttempts()->where('status', 'submitted')->count();
-        if ($count >= 10) {
-            $this->awardBadge($user, 'hard_worker');
-        }
-    }
-
-    protected function checkScholarWarrior(User $user)
-    {
-        // Average score > 90
-        $avg = $user->examAttempts()->where('status', 'submitted')->avg('final_score');
-        if ($avg && $avg > 90) {
-            $this->awardBadge($user, 'scholar_warrior');
-        }
-    }
+    // ─────────────────────────────────────────
+    // AWARDS & XP
+    // ─────────────────────────────────────────
 
     public function awardXp(User $user, int $amount)
     {
         $oldLevel = $user->current_level;
         $user->increment('total_exp', $amount);
         
-        // Level calculation: 100 XP per level
         $newLevel = floor($user->total_exp / 100) + 1;
         
         if ($newLevel > $oldLevel) {
             $user->update(['current_level' => $newLevel]);
             
-            // Celebration logic for theme/avatar unlocks
             $celebrations = [];
-            if ($newLevel == 5) $celebrations[] = "🎉 Baru! Tema 'Emerald' kini dapat kamu gunakan!";
-            if ($newLevel == 15) $celebrations[] = "🎉 Baru! Tema 'Rose' kini dapat kamu gunakan!";
+            if ($newLevel == 5)  $celebrations[] = "🎉 Baru! Tema 'Emerald' kini dapat kamu gunakan!";
+            if ($newLevel == 15) $celebrations[] = "🎉 Baru! Tema 'Volcano' kini dapat kamu gunakan!";
             if ($newLevel == 20) $celebrations[] = "🎉 Baru! Avatar Spesial 'Cyber Master' kini dapat kamu gunakan!";
-            if ($newLevel == 30) $celebrations[] = "🎉 Baru! Tema 'Amber (Gold)' kini dapat kamu gunakan!";
+            if ($newLevel == 25) $celebrations[] = "🎉 Baru! Tema 'Rose' kini dapat kamu gunakan!";
+            if ($newLevel == 35) $celebrations[] = "🎉 Baru! Tema 'Amber (Gold)' kini dapat kamu gunakan!";
+            if ($newLevel == 45) $celebrations[] = "🎉 Baru! Tema 'Midnight' kini dapat kamu gunakan!";
 
             if (!empty($celebrations)) {
                 foreach ($celebrations as $msg) {
@@ -205,33 +221,73 @@ class AchievementService
                 }
             }
 
-            // Flash level up to session for SweetAlert2
-            session()->push('level_ups', [
-                'old' => $oldLevel,
-                'new' => $newLevel,
-                'title' => $user->level_title
+            // Fire Celebration Popup payload
+            session()->flash('celebration', [
+                'type' => 'level_up',
+                'title' => 'LEVEL UP!',
+                'subtitle' => 'Kamu Naik ke Level ' . $newLevel,
+                'icon' => 'fas fa-angle-double-up',
+                'reward' => 'Peringkat: ' . $user->level_title,
             ]);
+
+            // Database Notification
+            $user->notify(new \App\Notifications\GamificationUnlocked([
+                'type' => 'level_up',
+                'title' => 'Level Up!',
+                'subtitle' => 'Selamat, kamu berhasil mencapai Level ' . $newLevel,
+                'icon' => 'fas fa-arrow-up text-indigo-500',
+            ]));
         }
     }
 
-    protected function awardBadge(User $user, string $slug): bool
+    protected function awardBadge(User $user, Achievement $achievement): bool
     {
-        $achievement = Achievement::where('slug', $slug)->first();
-        if (!$achievement) return false;
-
-        // Check if already has it
         if (!$user->achievements()->where('achievement_id', $achievement->id)->exists()) {
             $user->achievements()->attach($achievement->id, [
                 'achieved_at' => Carbon::now(),
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now()
+                'created_at'  => Carbon::now(),
+                'updated_at'  => Carbon::now()
             ]);
             
-            // Store a flag in session to show the unlock modal on next page load
-            session()->push('new_achievements', $achievement->toArray());
+            $xpReward = $achievement->xp_reward ?? 100;
+            $this->awardXp($user, $xpReward);
+            
+            // Generate Celebration Payload
+            session()->flash('celebration', [
+                'type' => 'achievement',
+                'title' => 'ACHIEVEMENT UNLOCKED!',
+                'subtitle' => $achievement->title,
+                'icon' => 'fas fa-medal',
+                'reward' => '+' . $xpReward . ' EXP',
+            ]);
 
-            // Award XP for achievement
-            $this->awardXp($user, 100);
+            // Database Notification
+            $user->notify(new \App\Notifications\GamificationUnlocked([
+                'type' => 'achievement',
+                'title' => 'Piala Diperoleh!',
+                'subtitle' => 'Kamu mendapatkan piala: ' . $achievement->title,
+                'icon' => 'fas fa-medal text-amber-500',
+                'reward' => '+' . $xpReward . ' EXP',
+            ]));
+
+            // Process Special Item Unlocks
+            if ($achievement->slug === 'social_media_king') {
+                $user->notify(new \App\Notifications\GamificationUnlocked([
+                    'type' => 'item_unlock',
+                    'title' => 'Avatar Terbuka!',
+                    'subtitle' => 'Avatar Eksklusif CyberPro telah tersedia di profilmu.',
+                    'icon' => 'fas fa-user-astronaut text-purple-500',
+                ]));
+            }
+
+            if ($achievement->slug === 'night_owl') {
+                $user->notify(new \App\Notifications\GamificationUnlocked([
+                    'type' => 'item_unlock',
+                    'title' => 'Tema Terbuka!',
+                    'subtitle' => 'Tema Dark Mode (Midnight) & Volcano kini dapat kamu gunakan.',
+                    'icon' => 'fas fa-moon text-blue-500',
+                ]));
+            }
             
             return true;
         }

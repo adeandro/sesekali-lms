@@ -27,7 +27,41 @@ class AvatarController extends Controller
             }
         }
 
-        return view('student.profile', compact('user', 'defaultAvatars'));
+        // FETCH DYNAMIC THEMES
+        $themes = \App\Models\Theme::where('is_active', true)
+            ->with('requiredAchievement')
+            ->orderBy('id')
+            ->get()
+            ->map(function ($theme) use ($user) {
+                $locked = false;
+                $reason = '';
+
+                if (!$theme->is_unlocked_by_default) {
+                    // Check Level
+                    if ($user->current_level < $theme->min_level) {
+                        $locked = true;
+                        $reason = "Level {$theme->min_level}";
+                    }
+                    
+                    // Check Achievement
+                    if ($theme->required_achievement_id) {
+                        $hasAchievement = $user->achievements()
+                            ->where('achievements.id', $theme->required_achievement_id)
+                            ->exists();
+                        
+                        if (!$hasAchievement) {
+                            $locked = true;
+                            $reason = $theme->requiredAchievement->title ?? "Achievement Required";
+                        }
+                    }
+                }
+
+                $theme->is_locked = $locked;
+                $theme->lock_reason = $reason;
+                return $theme;
+            });
+
+        return view('student.profile', compact('user', 'defaultAvatars', 'themes'));
     }
 
     public function updatePassword(Request $request)
@@ -179,41 +213,40 @@ class AvatarController extends Controller
 
     public function updateTheme(Request $request)
     {
-        $allowedThemes = ['indigo', 'emerald', 'rose', 'amber', 'violet', 'midnight', 'cyberpunk', 'volcano', 'ocean', 'slate'];
-        
         $request->validate([
-            'theme' => 'required|in:' . implode(',', $allowedThemes)
+            'theme' => 'required|string|exists:themes,slug'
         ]);
 
         $user = Auth::user();
-        $level = $user->current_level;
-        $theme = $request->theme;
+        $themeSlug = $request->theme;
+        
+        $theme = \App\Models\Theme::where('slug', $themeSlug)
+            ->where('is_active', true)
+            ->first();
 
-        // Level Lock Logic
-        if ($theme === 'emerald' && $level < 5) {
-            return $this->themeError('Tema Emerald terbuka di Level 5!');
-        }
-        if ($theme === 'volcano' && $level < 15) {
-            return $this->themeError('Tema Volcano terbuka di Level 15!');
-        }
-        if ($theme === 'rose' && $level < 25) {
-            return $this->themeError('Tema Rose terbuka di Level 25!');
-        }
-        if ($theme === 'amber' && $level < 35) {
-            return $this->themeError('Tema Amber terbuka di Level 35!');
-        }
-        if ($theme === 'midnight' && $level < 45) {
-            return $this->themeError('Tema Midnight terbuka di Level 45!');
+        if (!$theme) {
+            return $this->themeError('Tema tidak tersedia.');
         }
 
-        // Premium Skin Logic
-        if ($theme === 'cyberpunk') {
-            if (!$user->achievements()->where('slug', 'the_flash')->exists()) {
-                return $this->themeError('Tema Cyberpunk terkunci! Kamu butuh achievement \'The Flash\'.');
+        // Unlock Validation
+        if (!$theme->is_unlocked_by_default) {
+            if ($user->current_level < $theme->min_level) {
+                return $this->themeError("Tema \"{$theme->name}\" terbuka di Level {$theme->min_level}!");
+            }
+
+            if ($theme->required_achievement_id) {
+                $hasAchievement = $user->achievements()
+                    ->where('achievements.id', $theme->required_achievement_id)
+                    ->exists();
+                
+                if (!$hasAchievement) {
+                    $achievementTitle = $theme->requiredAchievement->title ?? 'Pencapaian Tertentu';
+                    return $this->themeError("Tema \"{$theme->name}\" terkunci! Kamu butuh achievement '{$achievementTitle}'.");
+                }
             }
         }
 
-        $user->update(['ui_theme' => $theme]);
+        $user->update(['ui_theme' => $themeSlug]);
 
         if (request()->expectsJson()) {
             return response()->json([

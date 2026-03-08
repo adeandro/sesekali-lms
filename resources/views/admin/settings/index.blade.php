@@ -187,44 +187,23 @@
                     </div>
                 </div>
 
-                <!-- Fitur Lainnya -->
-                <div class="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden group hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-500">
-                    <div class="p-8 border-b border-gray-50 flex items-center gap-4">
-                        <div class="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600 transition-colors">
-                            <i class="fas fa-plus-circle text-sm"></i>
+
+                {{-- Gamification section moved to dedicated module --}}
+                <div class="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden group hover:shadow-xl hover:shadow-purple-500/5 transition-all duration-500">
+                    <div class="p-8 flex items-center gap-6">
+                        <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-purple-500/20 shrink-0"
+                             style="background: linear-gradient(135deg, #7c3aed, #4f46e5);">
+                            <i class="fas fa-trophy text-xl"></i>
                         </div>
-                        <div>
-                            <h3 class="text-base font-black text-gray-900 tracking-tight uppercase">Fitur Tambahan</h3>
-                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-relaxed">Aktifkan atau nonaktifkan fitur gamifikasi untuk seluruh siswa</p>
+                        <div class="flex-1">
+                            <h3 class="text-sm font-black text-gray-900 tracking-tight uppercase">Gamification Center</h3>
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-relaxed">Toggle gamifikasi & leaderboard kini dikelola di modul tersendiri.</p>
                         </div>
-                    </div>
-                    <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div class="space-y-3" x-data="{ gamification: {{ (old('enable_gamification', $allSettings['enable_gamification'] ?? '1') == '1') ? 'true' : 'false' }} }">
-                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Sistem Gamifikasi (Achievement)</label>
-                            <div class="flex items-center justify-between w-full h-14 bg-gray-50 rounded-2xl px-6 border border-transparent transition-all group-hover:border-purple-100">
-                                <span class="text-xs font-bold text-gray-900 uppercase tracking-widest" x-text="gamification ? 'Aktif' : 'Non-Aktif'"></span>
-                                <input type="hidden" name="enable_gamification" :value="gamification ? '1' : '0'">
-                                <button type="button" @click="gamification = !gamification" 
-                                    class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2"
-                                    :class="gamification ? 'bg-purple-600' : 'bg-gray-200'">
-                                    <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-                                        :class="gamification ? 'translate-x-5' : 'translate-x-0'"></span>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="space-y-3" x-data="{ leaderboard: {{ (old('enable_leaderboard', $allSettings['enable_leaderboard'] ?? '1') == '1') ? 'true' : 'false' }} }">
-                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Leaderboard & Peringkat</label>
-                            <div class="flex items-center justify-between w-full h-14 bg-gray-50 rounded-2xl px-6 border border-transparent transition-all group-hover:border-purple-100">
-                                <span class="text-xs font-bold text-gray-900 uppercase tracking-widest" x-text="leaderboard ? 'Aktif' : 'Non-Aktif'"></span>
-                                <input type="hidden" name="enable_leaderboard" :value="leaderboard ? '1' : '0'">
-                                <button type="button" @click="leaderboard = !leaderboard" 
-                                    class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2"
-                                    :class="leaderboard ? 'bg-purple-600' : 'bg-gray-200'">
-                                    <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
-                                        :class="leaderboard ? 'translate-x-5' : 'translate-x-0'"></span>
-                                </button>
-                            </div>
-                        </div>
+                        <a href="{{ route('admin.gamification.settings') }}"
+                           class="flex items-center gap-2 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white shadow-lg hover:scale-105 transition-all duration-300 will-change-transform shrink-0"
+                           style="background: linear-gradient(135deg, #7c3aed, #4f46e5);">
+                            <i class="fas fa-external-link-alt text-[10px]"></i> Buka Gamification Center
+                        </a>
                     </div>
                 </div>
 

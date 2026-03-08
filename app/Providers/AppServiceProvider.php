@@ -53,6 +53,21 @@ class AppServiceProvider extends ServiceProvider
                 }
             }
             $view->with('configs', $configs);
+
+            // Dynamic Theme Injection logic
+            if (auth()->check()) {
+                static $activeTheme = null;
+                if ($activeTheme === null) {
+                    $user = auth()->user();
+                    $themeSlug = $user->ui_theme ?? 'indigo';
+                    
+                    // Try to find the theme in database
+                    $activeTheme = \App\Models\Theme::where('slug', $themeSlug)
+                        ->where('is_active', true)
+                        ->first();
+                }
+                $view->with('activeTheme', $activeTheme);
+            }
         });
     }
 }

@@ -37,14 +37,8 @@
                             <span class="text-sm">LVL {{ Auth::user()->current_level }}</span>
                         </div>
                     @else
-                        @if(Auth::user()->has_avatar)
-                            <img src="{{ Auth::user()->photo_url }}" alt="Profile" 
-                                class="relative w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-white/30 shadow-2xl transition-transform duration-500 group-hover/avatar:scale-105">
-                        @else
-                            <div class="relative w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-white/30 bg-gradient-to-br from-[var(--brand-primary)] to-[var(--brand-dark)] flex items-center justify-center text-white text-3xl font-black italic tracking-tighter shadow-2xl transition-transform duration-500 group-hover/avatar:scale-105">
-                                {{ Auth::user()->initials }}
-                            </div>
-                        @endif
+                        <img src="{{ Auth::user()->photo_url }}" alt="Profile" 
+                            class="relative w-24 h-24 md:w-32 md:h-32 rounded-full object-cover border-4 border-white/30 shadow-2xl transition-transform duration-500 group-hover/avatar:scale-105">
                     @endif
                     <div class="absolute -bottom-1 -right-1 w-8 h-8 bg-[var(--brand-primary)] text-white rounded-full border-2 border-white flex items-center justify-center shadow-lg opacity-0 group-hover/avatar:opacity-100 transition-opacity">
                         <i class="fas fa-cog text-[10px]"></i>
@@ -201,7 +195,7 @@
                 <div class="flex items-center justify-between mb-8 relative">
                     <h3 class="text-lg font-black text-gray-900 uppercase tracking-widest flex items-center gap-3">
                         <i class="fas fa-award text-[var(--brand-primary)]"></i>
-                        Pencapaian Kamu
+                        Achievement Kamu
                     </h3>
                     <span class="text-[10px] font-black text-[var(--brand-primary)] bg-[var(--brand-glow)] px-3 py-1 rounded-full uppercase">{{ count($earnedAchievements) }}/{{ count($allAchievements) }} Terkumpul</span>
                 </div>
@@ -210,16 +204,26 @@
                     @foreach($allAchievements as $achievement)
                         @php 
                             $isEarned = isset($earnedAchievements[$achievement->slug]); 
-                            $progress = $isEarned ? 100 : 0;
-                            $loreTexts = [
-                                "Penjaga Gerbang" => "Kunci rahasia terletak pada ketekunan.",
-                                "Pejuang Malam" => "Cahaya ilmu menembus kegelapan.",
-                                "Sang Perintis" => "Setiap langkah besar dimulai dari sini.",
-                                "Pemburu Nilai" => "Kesempurnaan adalah hasil dari dedikasi."
-                            ];
-                            $lore = $loreTexts[$achievement->name] ?? "Langkah nyata menuju puncak intelektual.";
+                            
+                            // Calculate dynamic progress for locked achievements where applicable
+                            $progress = 0;
+                            if ($isEarned) {
+                                $progress = 100;
+                            } else {
+                                if ($achievement->criteria_type === 'exam_count') {
+                                    $target = (float) $achievement->criteria_value;
+                                    $current = Auth::user()->examAttempts()->where('status', 'submitted')->count();
+                                    $progress = $target > 0 ? min(100, round(($current / $target) * 100)) : 0;
+                                } elseif ($achievement->criteria_type === 'avg_score') {
+                                    $target = (float) $achievement->criteria_value;
+                                    $current = Auth::user()->examAttempts()->where('status', 'submitted')->avg('final_score') ?? 0;
+                                    $progress = $target > 0 ? min(100, round(($current / $target) * 100)) : 0;
+                                }
+                            }
+
+                            $iconColor = $achievement->color ?: '#6366f1';
                         @endphp
-                        <div class="group relative bg-[#0f172a]/95 border border-white/5 rounded-2xl p-6 transition-all duration-300 premium-motion shadow-lg hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)] hover:-translate-y-1 overflow-hidden gpu-accelerated premium-shine"
+                        <div class="group relative bg-[#0f172a]/95 border border-white/5 rounded-2xl p-6 transition-all duration-300 premium-motion shadow-lg hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)] hover:-translate-y-1 overflow-hidden gpu-accelerated premium-shine will-change-transform"
                              title="{{ $achievement->description }}">
                             
                             <!-- Minimalist Progress Ring (Top Right) -->
@@ -242,28 +246,34 @@
                             <!-- Card Content (Center Aligned) -->
                             <div class="flex flex-col items-center text-center space-y-4 pt-2 relative z-10">
                                 
-                                <!-- Icon Area (Standardized Size) -->
+                                <!-- Icon Area -->
                                 <div class="relative">
                                     @if(!$isEarned)
-                                         <div class="absolute inset-0 bg-[var(--brand-primary)] opacity-5 blur-2xl rounded-full animate-pulse"></div>
+                                         <div class="absolute inset-0 bg-gray-500 opacity-5 blur-2xl rounded-full"></div>
                                     @endif
-                                    <div class="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-3xl shadow-none transition-all duration-300 premium-motion relative z-10
-                                         {{ $isEarned ? 'group-hover:animate-float-slow group-hover:drop-shadow-[0_0_15px_var(--brand-primary)]' : 'opacity-20 grayscale shadow-none' }}" 
-                                         style="background-color: {{ $isEarned ? $achievement->color : 'rgba(255,255,255,0.05)' }}">
-                                        <i class="{{ $achievement->icon }}"></i>
+                                    
+                                    <div class="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-3xl shadow-none transition-all duration-500 premium-motion relative z-10 overflow-hidden
+                                         {{ $isEarned ? 'group-hover:animate-float-slow group-hover:scale-110 drop-shadow-[0_0_15px_'. $iconColor . '40]' : 'opacity-30 grayscale shadow-none' }}" 
+                                         style="background-color: {{ $isEarned ? $iconColor : 'rgba(255,255,255,0.05)' }};">
+                                        
+                                        @if($achievement->icon_url)
+                                            <img src="{{ $achievement->icon_url }}" alt="Icon" class="w-full h-full object-cover">
+                                        @else
+                                            <i class="{{ $achievement->icon ?: 'fas fa-trophy' }}"></i>
+                                        @endif
                                     </div>
                                 </div>
 
                                 <!-- Text Details -->
                                 <div class="space-y-1 w-full">
                                     <h4 class="text-sm font-extrabold tracking-tight uppercase leading-tight {{ $isEarned ? 'text-white' : 'text-slate-500' }} line-clamp-1">
-                                        {{ $achievement->name }}
+                                        {{ $achievement->display_title }}
                                     </h4>
                                     <p class="text-[11px] font-medium text-slate-400 leading-tight line-clamp-2 min-h-[1.5rem]">
                                         {{ $achievement->description }}
                                     </p>
-                                    <p class="text-[9px] text-slate-500/80 italic mt-2 line-clamp-1">
-                                        "{{ $lore }}"
+                                    <p class="text-[9px] text-slate-500/80 italic mt-2 line-clamp-2 font-serif">
+                                        "{{ $achievement->lore_text ?: 'Langkah nyata menuju puncak intelektual.' }}"
                                     </p>
                                 </div>
                             </div>
@@ -532,35 +542,4 @@
     }
 </style>
 
-@if(session('new_achievements'))
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        @foreach(session('new_achievements') as $achievement)
-        Swal.fire({
-            title: '🎉 Achievement Unlocked!',
-            html: `
-                <div class="flex flex-col items-center gap-4 py-4">
-                    <div class="w-20 h-20 rounded-2xl flex items-center justify-center text-white text-3xl shadow-xl" style="background-color: {{ $achievement['color'] }}">
-                        <i class="{{ $achievement['icon'] }}"></i>
-                    </div>
-                    <div class="text-center">
-                        <h3 class="text-xl font-black text-gray-900 uppercase tracking-tight mb-1">{{ $achievement['name'] }}</h3>
-                        <p class="text-sm text-gray-500 font-medium">{{ $achievement['description'] }}</p>
-                    </div>
-                </div>
-            `,
-            showConfirmButton: true,
-            confirmButtonText: 'KEREN!',
-            confirmButtonColor: '#4f46e5',
-            customClass: {
-                popup: 'rounded-[2rem]',
-                confirmButton: 'rounded-xl px-8 py-3 text-[10px] font-black uppercase tracking-widest'
-            },
-            backdrop: `rgba(79, 70, 229, 0.1) backdrop-filter: blur(4px)`
-        });
-        @endforeach
-    });
-</script>
-@php session()->forget('new_achievements') @endphp
-@endif
 @endsection

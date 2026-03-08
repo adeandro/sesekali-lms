@@ -85,6 +85,7 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <!-- Section 2: Informasi Pribadi -->
+                @if(($configs['enable_gamification'] ?? '1') == '1')
                 <div class="lg:col-span-1 bg-white border-l-4 border-[var(--brand-primary)] rounded-[2.5rem] p-8 sm:p-10 shadow-md shadow-[var(--brand-glow)] relative overflow-hidden flex flex-col transition-all duration-500">
                     <div class="absolute -top-10 -right-10 w-40 h-40 bg-[var(--brand-primary)] rounded-full opacity-10 blur-3xl"></div>
                     
@@ -140,6 +141,7 @@
                         </div>
                     </div>
                 </div>
+                @endif
 
                 <!-- Section 3: Futuristic Theme Selection -->
                 @if(($configs['enable_theme_customization'] ?? '1') == '1' && ($configs['enable_gamification'] ?? '1') == '1')
@@ -180,6 +182,20 @@
 
                                 if (response.ok) {
                                     this.currentTheme = themeId;
+                                    const theme = data.theme;
+
+                                    // Apply CSS Variables in Real-time
+                                    const root = document.documentElement;
+                                    root.style.setProperty('--brand-primary', theme.primary_color);
+                                    root.style.setProperty('--brand-secondary', theme.secondary_color);
+                                    root.style.setProperty('--brand-dark', theme.dark_color || theme.primary_color);
+                                    root.style.setProperty('--brand-glow', theme.glow_color);
+                                    root.style.setProperty('--brand-bg', theme.bg_color);
+                                    root.style.setProperty('--brand-surface', theme.surface_color || '#ffffff');
+                                    root.style.setProperty('--brand-text', theme.text_color);
+                                    root.style.setProperty('--sidebar-header', `linear-gradient(135deg, ${theme.primary_color}, ${theme.dark_color || theme.primary_color})`);
+                                    
+                                    // Also update body class for any specific theme-based styles
                                     document.body.className = document.body.className.replace(/theme-\w+/g, 'theme-' + themeId);
                                     
                                     const Toast = Swal.mixin({
@@ -223,59 +239,37 @@
                     </div>
 
                     <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-6 relative z-10">
-                        @php
-                            $user = Auth::user();
-                            $examsCount = $user->examAttempts()->whereNotNull('submitted_at')->count();
-                            $hasFlash = $user->achievements()->where('slug', 'the_flash')->exists();
-
-                            $themes = [
-                                ['id' => 'indigo', 'name' => 'Classic Indigo', 'primary' => '#4f46e5', 'dark' => '#4338ca', 'locked' => false, 'desc' => 'Default'],
-                                ['id' => 'slate', 'name' => 'Modern Slate', 'primary' => '#475569', 'dark' => '#1e293b', 'locked' => false, 'desc' => 'Free'],
-                                ['id' => 'ocean', 'name' => 'Calm Ocean', 'primary' => '#0ea5e9', 'dark' => '#075985', 'locked' => false, 'desc' => 'Free'],
-                                ['id' => 'violet', 'name' => 'Ethereal Violet', 'primary' => '#8b5cf6', 'dark' => '#6d28d9', 'locked' => false, 'desc' => 'Free'],
-                                ['id' => 'emerald', 'name' => 'Nature Emerald', 'primary' => '#10b981', 'dark' => '#065f46', 'locked' => $user->current_level < 5, 'desc' => 'Level 5'],
-                                ['id' => 'volcano', 'name' => 'Active Volcano', 'primary' => '#ef4444', 'dark' => '#7f1d1d', 'locked' => $user->current_level < 15, 'desc' => 'Level 15'],
-                                ['id' => 'rose', 'name' => 'Sakura Rose', 'primary' => '#f43f5e', 'dark' => '#9f1239', 'locked' => $user->current_level < 25, 'desc' => 'Level 25'],
-                                ['id' => 'amber', 'name' => 'Royal Amber', 'primary' => '#f59e0b', 'dark' => '#92400e', 'locked' => $user->current_level < 35, 'desc' => 'Level 35'],
-                                ['id' => 'midnight', 'name' => 'Midnight Dark', 'primary' => '#6366f1', 'dark' => '#0f172a', 'locked' => $user->current_level < 45, 'desc' => 'Level 45'],
-                                ['id' => 'cyberpunk', 'name' => 'Cyberpunk FX', 'primary' => '#ff00ff', 'dark' => '#2d002d', 'locked' => !$hasFlash, 'desc' => 'The Flash'],
-                            ];
-                        @endphp
                         @foreach($themes as $theme)
                             <div class="flex flex-col items-center gap-3">
                                 <button 
-                                    @click="switchTheme('{{ $theme['id'] }}', {{ $theme['locked'] ? 'true' : 'false' }})"
-                                    :class="currentTheme === '{{ $theme['id'] }}' ? 'ring-4 ring-[var(--brand-primary)] shadow-[0_0_20px_var(--brand-glow)] scale-105' : 'hover:scale-110 opacity-80 hover:opacity-100'"
-                                    class="relative w-full aspect-square rounded-2xl border-2 border-white shadow-xl transition-all duration-300 overflow-hidden {{ $theme['locked'] ? 'cursor-not-allowed grayscale' : 'cursor-pointer' }}"
-                                    style="background: linear-gradient(135deg, {{ $theme['primary'] }} 50%, {{ $theme['dark'] }} 50%)">
+                                    @click="switchTheme('{{ $theme->slug }}', {{ $theme->is_locked ? 'true' : 'false' }})"
+                                    :class="currentTheme === '{{ $theme->slug }}' ? 'ring-4 ring-[var(--brand-primary)] shadow-[0_0_20px_var(--brand-glow)] scale-105' : 'hover:scale-110 opacity-80 hover:opacity-100'"
+                                    class="relative w-full aspect-square rounded-2xl border-2 border-white shadow-xl transition-all duration-300 overflow-hidden {{ $theme->is_locked ? 'cursor-not-allowed grayscale' : 'cursor-pointer' }}"
+                                    style="background: linear-gradient(135deg, {{ $theme->primary_color }} 50%, {{ $theme->dark_color ?? $theme->primary_color }} 50%)">
                                     
-                                    @if($theme['locked'])
+                                    @if($theme->is_locked)
                                         <div class="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[1px]">
                                             <i class="fas fa-lock text-white text-base"></i>
                                         </div>
                                     @endif
 
                                     <!-- Loading Spinner -->
-                                    <div x-show="isLoading === '{{ $theme['id'] }}'" class="absolute inset-0 bg-white/40 flex items-center justify-center">
+                                    <div x-show="isLoading === '{{ $theme->slug }}'" class="absolute inset-0 bg-white/40 flex items-center justify-center">
                                         <div class="w-6 h-6 border-4 border-[var(--brand-primary)] border-t-transparent rounded-full animate-spin"></div>
                                     </div>
                                 </button>
                                 <div class="text-center space-y-0.5">
-                                    <p class="text-[9px] font-black uppercase tracking-tighter" :class="currentTheme === '{{ $theme['id'] }}' ? 'text-[var(--brand-primary)]' : 'text-gray-900'">{{ $theme['name'] }}</p>
-                                    @if($theme['locked'])
-                                        <p class="text-[7px] font-bold text-gray-400 uppercase">{{ $theme['desc'] }}</p>
+                                    <p class="text-[9px] font-black uppercase tracking-tighter" :class="currentTheme === '{{ $theme->slug }}' ? 'text-[var(--brand-primary)]' : 'text-gray-900'">{{ $theme->name }}</p>
+                                    @if($theme->is_locked)
+                                        <p class="text-[7px] font-bold text-gray-400 uppercase leading-none">{{ $theme->lock_reason }}</p>
+                                    @elseif($theme->is_unlocked_by_default)
+                                        <p class="text-[7px] font-bold text-emerald-500 uppercase leading-none">Free</p>
                                     @endif
                                 </div>
                             </div>
                         @endforeach
                     </div>
                 </div>
-                @elseif(($configs['enable_gamification'] ?? '1') == '0')
-                    <div class="lg:col-span-2 bg-[var(--brand-glow)]/20 rounded-[2.5rem] p-12 text-center border-l-4 border-[var(--brand-primary)] shadow-md shadow-[var(--brand-glow)]">
-                        <i class="fas fa-lock text-[var(--brand-primary)]/30 text-4xl mb-4"></i>
-                        <h3 class="text-xl font-black text-[var(--brand-primary)] uppercase italic mb-2">Gelar & Tema Tidak Tersedia</h3>
-                        <p class="text-sm text-[var(--brand-primary)]/60 font-medium max-w-md mx-auto">Admin menonaktifkan fitur Gamifikasi. Hubungi Admin untuk mengaktifkan kembali skema warna kustom.</p>
-                    </div>
                 @endif
 
                 <!-- Section 4: Avatar Spesial (Reward) -->

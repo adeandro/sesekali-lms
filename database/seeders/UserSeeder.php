@@ -14,22 +14,26 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         // Create superadmin
-        User::create([
-            'name' => 'Super Admin',
-            'email' => 'superadmin@localhost',
-            'password' => Hash::make('password'),
-            'role' => 'superadmin',
-            'is_active' => true,
-        ]);
+        User::updateOrCreate(
+            ['email' => 'superadmin@localhost'],
+            [
+                'name' => 'Super Admin',
+                'password' => Hash::make('password'),
+                'role' => 'superadmin',
+                'is_active' => true,
+            ]
+        );
 
         // Create admin
-        User::create([
-            'name' => 'Admin User',
-            'email' => 'admin@localhost',
-            'password' => Hash::make('password'),
-            'role' => 'admin',
-            'is_active' => true,
-        ]);
+        User::updateOrCreate(
+            ['email' => 'admin@localhost'],
+            [
+                'name' => 'Admin User',
+                'password' => Hash::make('password'),
+                'role' => 'admin',
+                'is_active' => true,
+            ]
+        );
 
         // Create 50 students with NIS and grade/class_group
         $classes = ['10A', '10B', '10C', '11A', '11B', '11C', '12A', '12B', '12C'];
@@ -48,16 +52,18 @@ class UserSeeder extends Seeder
             $grade = substr($class, 0, -1); // Get all but last character (e.g., "10" from "10A")
             $classGroup = substr($class, -1); // Get last character (e.g., "A" from "10A")
 
-            User::create([
-                'name' => $name,
-                'email' => "student" . str_pad($i, 2, '0', STR_PAD_LEFT) . "@school.local",
-                'password' => Hash::make('password'),
-                'nis' => (string)($baseNis + $i),
-                'grade' => $grade,
-                'class_group' => $classGroup,
-                'role' => 'student',
-                'is_active' => true,
-            ]);
+            User::updateOrCreate(
+                ['email' => "student" . str_pad($i, 2, '0', STR_PAD_LEFT) . "@school.local"],
+                [
+                    'name' => $name,
+                    'password' => Hash::make('password'),
+                    'nis' => (string)($baseNis + $i),
+                    'grade' => $grade,
+                    'class_group' => $classGroup,
+                    'role' => 'student',
+                    'is_active' => true,
+                ]
+            );
         }
 
         // Create 30 additional students for grade 12
@@ -70,16 +76,18 @@ class UserSeeder extends Seeder
             $grade = '12';
             $classGroup = substr($class, -1); // Get last character (e.g., "A" from "12A")
 
-            User::create([
-                'name' => $name,
-                'email' => "student" . str_pad($i, 2, '0', STR_PAD_LEFT) . "@school.local",
-                'password' => Hash::make('password'),
-                'nis' => (string)($baseNis + $i),
-                'grade' => $grade,
-                'class_group' => $classGroup,
-                'role' => 'student',
-                'is_active' => true,
-            ]);
+            User::updateOrCreate(
+                ['email' => "student" . str_pad($i, 2, '0', STR_PAD_LEFT) . "@school.local"],
+                [
+                    'name' => $name,
+                    'password' => Hash::make('password'),
+                    'nis' => (string)($baseNis + $i),
+                    'grade' => $grade,
+                    'class_group' => $classGroup,
+                    'role' => 'student',
+                    'is_active' => true,
+                ]
+            );
         }
     }
 }

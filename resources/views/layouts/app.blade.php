@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/intersect@3.x.x/dist/cdn.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -346,6 +347,23 @@
         }
 
         /* =====================================================
+           DYNAMIC THEME INJECTION (Database Driven)
+        ===================================================== */
+        @if(isset($activeTheme))
+        :root, .theme-{{ $activeTheme->slug }} {
+            --brand-primary:      {{ $activeTheme->primary_color }};
+            --brand-secondary:    {{ $activeTheme->secondary_color }};
+            --brand-dark:         {{ $activeTheme->dark_color ?? $activeTheme->primary_color }};
+            --brand-glow:         {{ $activeTheme->glow_color }};
+            --brand-bg:           {{ $activeTheme->bg_color }};
+            --brand-surface:      {{ $activeTheme->surface_color ?? '#ffffff' }};
+            --brand-text:         {{ $activeTheme->text_color }};
+            --brand-text-accent:  #ffffff;
+            --sidebar-header:     linear-gradient(135deg, {{ $activeTheme->primary_color }}, {{ $activeTheme->dark_color ?? $activeTheme->primary_color }});
+        }
+        @endif
+
+        /* =====================================================
            GAMIFICATION KILL SWITCH — Force Indigo for students
            CSS layer: non-student themes remain usable by role.
         ===================================================== */
@@ -531,13 +549,7 @@
                             @else
                                 <!-- Standard Avatar (Kill Switch Active or Non-Student) -->
                                 <div class="w-12 h-12 rounded-full border-2 border-white shadow-sm overflow-hidden bg-white">
-                                    @if(Auth::user()->has_avatar)
-                                        <img src="{{ Auth::user()->avatar_url }}" alt="Formal Photo" class="w-full h-full object-cover">
-                                    @else
-                                        <div class="w-full h-full bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center text-white text-[10px] font-black italic leading-none">
-                                            {{ Auth::user()->initials }}
-                                        </div>
-                                    @endif
+                                    <img src="{{ Auth::user()->photo_url }}" alt="Formal Photo" class="w-full h-full object-cover">
                                 </div>
                             @endif
                         </div>
@@ -718,6 +730,39 @@
                     </a>
                 @endif
 
+                @if(Auth::user()->role === 'superadmin')
+                <!-- ── Gamification Center (Superadmin Only) ── -->
+                <div class="pt-4 pb-1">
+                    <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">🏆 Gamification Center</p>
+                </div>
+
+                <div x-data="{ open: {{ request()->routeIs('admin.gamification.*') ? 'true' : 'false' }} }">
+                    <button @click="open = !open"
+                            class="w-full flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition {{ request()->routeIs('admin.gamification.*') ? 'menu-item-active' : '' }}">
+                        <i class="fas fa-trophy w-5 text-lg mr-3"></i>
+                        <span class="font-medium flex-1 text-left">Gamification</span>
+                        <i class="fas fa-chevron-down text-xs transition-transform duration-200" :class="open ? 'rotate-180' : ''"></i>
+                    </button>
+                    <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" class="ml-4 mt-1 space-y-0.5">
+                        <a href="{{ route('admin.gamification.settings') }}"
+                           class="flex items-center px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition {{ request()->routeIs('admin.gamification.settings') ? 'submenu-item-active' : '' }}">
+                            <i class="fas fa-sliders-h w-4 mr-2.5 text-sm"></i>
+                            <span class="font-medium">Global Settings</span>
+                        </a>
+                        <a href="{{ route('admin.gamification.achievements') }}"
+                           class="flex items-center px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition {{ request()->routeIs('admin.gamification.achievements*') ? 'submenu-item-active' : '' }}">
+                            <i class="fas fa-medal w-4 mr-2.5 text-sm"></i>
+                            <span class="font-medium">Achievement Manager</span>
+                        </a>
+                        <a href="{{ route('admin.gamification.themes') }}"
+                           class="flex items-center px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition {{ request()->routeIs('admin.gamification.themes*') ? 'submenu-item-active' : '' }}">
+                            <i class="fas fa-palette w-4 mr-2.5 text-sm"></i>
+                            <span class="font-medium">Theme Manager</span>
+                        </a>
+                    </div>
+                </div>
+                @endif
+
                 <!-- Divider -->
                 <div class="my-4 border-t border-gray-200"></div>
 
@@ -767,6 +812,75 @@
                         <h1 class="text-2xl font-bold text-gray-900">@yield('page-title', 'Dashboard')</h1>
                     </div> -->
                     <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-4">
+                        @if(Auth::user()->role === 'student' && ($configs['enable_gamification'] ?? '1') == '1')
+                        {{-- Notification Bell --}}
+                        <div x-data="{ open: false }" class="relative">
+                            <button @click="open = !open" @click.away="open = false" class="relative p-2 text-gray-400 hover:text-[var(--brand-primary)] bg-gray-50 hover:bg-[var(--brand-glow)] rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-2">
+                                <i class="fas fa-bell text-lg"></i>
+                                @if(Auth::user()->unreadNotifications->count() > 0)
+                                    <span class="absolute top-1.5 right-1.5 flex h-2.5 w-2.5">
+                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                                        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500 border-2 border-white"></span>
+                                    </span>
+                                @endif
+                            </button>
+
+                            {{-- Dropdown --}}
+                            <div x-show="open" 
+                                 x-transition:enter="transition ease-out duration-200"
+                                 x-transition:enter-start="opacity-0 scale-95 -translate-y-2"
+                                 x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                                 x-transition:leave="transition ease-in duration-150"
+                                 x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                                 x-transition:leave-end="opacity-0 scale-95 -translate-y-2"
+                                 class="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] border border-gray-100 overflow-hidden z-[60]" style="display: none;">
+                                
+                                <div class="bg-gray-50 px-4 py-3 border-b border-gray-100 flex justify-between items-center">
+                                    <h3 class="text-[11px] font-black uppercase tracking-widest text-gray-900">Notifikasi</h3>
+                                    @if(Auth::user()->unreadNotifications->count() > 0)
+                                        <span class="bg-[var(--brand-primary)] text-white text-[9px] font-bold px-2 py-0.5 rounded-full">{{ Auth::user()->unreadNotifications->count() }} Baru</span>
+                                    @endif
+                                </div>
+                                
+                                <div class="max-h-[300px] overflow-y-auto">
+                                    @forelse(Auth::user()->notifications()->take(10)->get() as $notification)
+                                        <div class="p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors {{ is_null($notification->read_at) ? 'bg-[var(--brand-glow)]/50' : '' }}">
+                                            <div class="flex gap-3">
+                                                <div class="mt-0.5 shadow-sm bg-white w-8 h-8 rounded-full flex items-center justify-center shrink-0">
+                                                    <i class="{{ $notification->data['icon'] ?? 'fas fa-bell text-gray-400' }}"></i>
+                                                </div>
+                                                <div>
+                                                    <p class="text-xs font-bold text-gray-900 mb-0.5 leading-tight">{{ $notification->data['title'] ?? 'Pesan Sistem' }}</p>
+                                                    <p class="text-[10px] text-gray-500 leading-snug">{{ $notification->data['subtitle'] ?? '' }}</p>
+                                                    @if(isset($notification->data['reward']) && $notification->data['reward'])
+                                                        <p class="text-[9px] font-bold text-[var(--brand-primary)] mt-1 tracking-wide">{{ $notification->data['reward'] }}</p>
+                                                    @endif
+                                                    <p class="text-[9px] text-gray-400 mt-2">{{ $notification->created_at->diffForHumans() }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @empty
+                                        <div class="p-6 text-center">
+                                            <div class="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 mx-auto mb-2">
+                                                <i class="fas fa-bell-slash"></i>
+                                            </div>
+                                            <p class="text-xs text-gray-500 font-medium">Belum ada notifikasi</p>
+                                        </div>
+                                    @endforelse
+                                </div>
+                                <div class="p-2 border-t border-gray-50 bg-gray-50/50">
+                                    <form action="{{ route('student.notifications.read') }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="w-full text-center text-[10px] items-center justify-center font-bold text-gray-500 hover:text-[var(--brand-primary)] transition p-2">
+                                            Tandai semua dibaca <i class="fas fa-check-double ml-1"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+
                         <div class="hidden sm:flex items-center gap-3">
                             <div class="text-right">
                                 <p class="text-sm font-black text-gray-900 uppercase tracking-wide leading-none group-hover:text-[var(--brand-primary)]">{{ Auth::user()->name }}</p>
@@ -954,5 +1068,8 @@
     <script src="{{ asset('js/delete-modal.js') }}"></script>
     <!-- Avatar Generator -->
     <script src="https://cdn.jsdelivr.net/npm/@multiavatar/multiavatar/multiavatar.min.js"></script>
+    @if(Auth::user()->role === 'student' && \App\Models\Setting::get('enable_gamification', '1') == '1')
+        <x-celebration-modal />
+    @endif
 </body>
 </html>

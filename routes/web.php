@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\ExamProgressController;
 use App\Http\Controllers\Admin\TokenController;
 use App\Http\Controllers\Admin\MonitoringController;
 use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\GamificationController;
 use App\Http\Controllers\UserPreferenceController;
 
 // Public routes
@@ -80,6 +81,7 @@ Route::middleware('auth')->group(function () {
 
         // Student Dashboard
         Route::get('/student', [StudentDashboardController::class, 'index'])->name('student.dashboard');
+        Route::post('/student/notifications/read', [StudentDashboardController::class, 'markNotificationsRead'])->name('student.notifications.read');
 
         // Profile & Avatar Management
         Route::get('/student/profile', [\App\Http\Controllers\Student\AvatarController::class, 'index'])->name('student.profile');
@@ -217,6 +219,27 @@ Route::middleware('auth')->group(function () {
             Route::post('settings', [SettingController::class, 'update'])->name('settings.update');
             Route::post('settings/profile', [SettingController::class, 'updateProfile'])->name('settings.update-profile');
             Route::delete('settings/signature', [SettingController::class, 'deleteSignature'])->name('settings.delete-signature');
+
+            // Gamification Center
+            Route::prefix('gamification')->name('gamification.')->group(function () {
+                Route::get('settings', [GamificationController::class, 'globalSettings'])->name('settings');
+                Route::post('settings', [GamificationController::class, 'updateGlobalSettings'])->name('settings.update');
+                Route::get('achievements', [GamificationController::class, 'achievements'])->name('achievements');
+                Route::get('achievements/create', [GamificationController::class, 'createAchievement'])->name('achievements.create');
+                Route::post('achievements', [GamificationController::class, 'storeAchievement'])->name('achievements.store');
+                Route::get('achievements/{achievement}/edit', [GamificationController::class, 'editAchievement'])->name('achievements.edit');
+                Route::post('achievements/{achievement}', [GamificationController::class, 'updateAchievement'])->name('achievements.update');
+                Route::delete('achievements/{achievement}', [GamificationController::class, 'destroyAchievement'])->name('achievements.destroy');
+
+                // Themes Management
+                Route::get('themes', [GamificationController::class, 'themes'])->name('themes');
+                Route::get('themes/create', [GamificationController::class, 'createTheme'])->name('themes.create');
+                Route::post('themes', [GamificationController::class, 'storeTheme'])->name('themes.store');
+                Route::get('themes/{theme}/edit', [GamificationController::class, 'editTheme'])->name('themes.edit');
+                Route::post('themes/{theme}', [GamificationController::class, 'updateTheme'])->name('themes.update');
+                Route::delete('themes/{theme}', [GamificationController::class, 'destroyTheme'])->name('themes.destroy');
+            });
         });
     });
 });
+
