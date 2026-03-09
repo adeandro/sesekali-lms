@@ -106,7 +106,9 @@
                             </td>
                             <td class="px-8 py-6">
                                 <div class="flex items-center gap-4" x-data>
-                                    <div x-html="multiavatar('{{ $student['avatar_seed'] }}')" class="w-10 h-10 rounded-xl border border-gray-100 shadow-sm bg-white overflow-hidden"></div>
+                                    <div class="w-10 h-10 rounded-xl border border-gray-100 shadow-sm bg-white overflow-hidden">
+                                        <img src="{{ $student['photo_url'] }}" alt="Profile" class="w-full h-full object-cover">
+                                    </div>
                                     <div>
                                         <p class="text-sm font-bold text-gray-900 leading-none student-name">{{ $student['student_name'] }}</p>
                                         <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 student-nis">NIS: {{ $student['nis'] }}</p>

@@ -8,7 +8,7 @@
     name: '{{ $theme->name }}',
     primary: '{{ $theme->primary_color }}',
     secondary: '{{ $theme->secondary_color }}',
-    glow: '{{ $theme->glow_color }}',
+    accent: '{{ $theme->glow_color }}',
     bg: '{{ $theme->bg_color }}',
     text: '{{ $theme->text_color }}',
     isUnlocked: {{ $theme->is_unlocked_by_default ? 'true' : 'false' }},
@@ -118,12 +118,12 @@
                         </div>
                     </div>
 
-                    {{-- Glow --}}
+                    {{-- Accent (Glow) --}}
                     <div class="space-y-2">
-                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Glow / Shadow Color</label>
+                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Glow / Shadow Color (Accent)</label>
                         <div class="flex gap-3">
-                            <input type="color" name="glow_color" x-model="glow" class="h-14 w-14 rounded-xl cursor-pointer bg-white border border-gray-100 p-1 shadow-sm">
-                            <input type="text" x-model="glow" class="flex-1 px-5 py-3 bg-gray-50 border border-gray-100 rounded-xl font-mono text-sm uppercase font-bold text-gray-600">
+                            <input type="color" name="glow_color" x-model="accent" class="h-14 w-14 rounded-xl cursor-pointer bg-white border border-gray-100 p-1 shadow-sm">
+                            <input type="text" x-model="accent" class="flex-1 px-5 py-3 bg-gray-50 border border-gray-100 rounded-xl font-mono text-sm uppercase font-bold text-gray-600">
                         </div>
                         <p class="text-[8px] text-gray-400 pl-1 font-medium italic">* Disarankan menggunakan warna transparan / lebih muda dari Primary.</p>
                     </div>
@@ -163,8 +163,8 @@
                     <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Live Preview: <span x-text="name"></span></h3>
                     
                     {{-- Student Dashboard Mockup --}}
-                    <div class="rounded-[2.5rem] border border-gray-100 shadow-2xl overflow-hidden bg-white transition-all duration-500"
-                         :style="`background-color: ${bg}; border-color: ${glow};`"
+                    <div class="rounded-[2.5rem] border border-gray-100 shadow-2xl overflow-hidden transition-all duration-500"
+                         :style="`background-color: ${bg}; border-color: ${accent}; min-height: 500px;`"
                          style="min-height: 500px;">
                         
                         {{-- Mock Header --}}
@@ -172,12 +172,12 @@
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-3">
                                     <div class="w-12 h-12 rounded-2xl bg-white shadow-lg flex items-center justify-center border transition-all"
-                                         :style="`border-color: ${glow};` font-size: 20px;">
-                                        <i class="fas fa-crown" :style="`color: ${primary};` text-shadow: 0 0 10px ${glow};"></i>
+                                         :style="`border-color: ${accent}; font-size: 20px;`">
+                                        <i class="fas fa-crown" :style="`color: ${primary}; text-shadow: 0 0 10px ${accent}; font-size: 20px;`"></i>
                                     </div>
                                     <div class="space-y-1">
-                                        <div class="h-4 w-32 rounded-lg opacity-80" :style="`background-color: ${primary};` opacity: 0.1"></div>
-                                        <div class="h-3 w-20 rounded-lg opacity-80" :style="`background-color: ${text};` opacity: 0.2"></div>
+                                        <div class="h-4 w-32 rounded-lg opacity-80" :style="`background-color: ${primary}; opacity: 0.1; box-shadow: 0 8px 15px ${accent};` "></div>
+                                        <div class="h-3 w-20 rounded-lg opacity-80" :style="`background-color: ${text}; opacity: 0.2; box-shadow: 0 8px 15px ${accent};` "></div>
                                     </div>
                                 </div>
                                 <div class="w-10 h-10 rounded-full bg-gray-50 border border-gray-100"></div>
@@ -185,41 +185,41 @@
 
                             {{-- Mock Welcome Card --}}
                             <div class="p-8 rounded-[2rem] border relative overflow-hidden transition-all duration-500 group"
-                                 :style="`background-color: #ffffff; border-color: ${glow};` 
-                                         box-shadow: 0 20px 40px -10px ${glow};">
+                                 :style="`background-color: #ffffff; border-color: ${accent}; box-shadow: 0 20px 40px -10px ${accent};` ">
                                 
                                 <div class="relative z-10 space-y-3">
                                     <div class="flex items-center gap-2">
                                         <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest text-white" 
-                                              :style="`background: linear-gradient(135deg, ${primary}, ${secondary}); shadow: 0 8px 15px ${glow};` 
-                                                      box-shadow: 0 8px 15px ${glow};">PRO THEME</span>
+                                              :style="`background: linear-gradient(135deg, ${primary}, ${secondary}); box-shadow: 0 8px 15px ${accent};` ">PRO THEME</span>
                                     </div>
                                     <h4 class="text-2xl font-black italic tracking-tighter" :style="`color: ${text};`"><span x-text="name"></span></h4>
-                                    <p class="text-[9px] font-bold opacity-60 leading-relaxed max-w-[80%]" :style="`color: ${text};` opacity: 0.6">
+                                    <p class="text-[9px] font-bold opacity-60 leading-relaxed max-w-[80%]" :style="`color: ${text}; opacity: 0.6;` ">
                                         "Visual baru, semangat baru. Mari taklukkan tantangan hari ini."
                                     </p>
                                 </div>
-                                <div class="absolute -right-10 -bottom-10 w-40 h-40 rounded-full blur-3xl opacity-20" :style="`background-color: ${primary};` opacity: 0.3"></div>
+                                <div class="absolute -right-10 -bottom-10 w-40 h-40 rounded-full blur-3xl opacity-20" :style="`background-color: ${primary}; opacity: 0.3; box-shadow: 0 8px 15px ${accent};` "></div>
                             </div>
 
                             {{-- Mock Stats --}}
                             <div class="grid grid-cols-2 gap-4">
-                                <div class="p-5 rounded-3xl bg-white border border-gray-50 shadow-sm flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-xl flex items-center justify-center transition-all bg-[var(--mock-glow)]" :style="`background-color: ${glow};` background: ${glow};">
-                                        <i class="fas fa-bolt text-xs" :style="`color: ${primary};` opacity: 0.8"></i>
+                                <div class="p-5 rounded-3xl border border-gray-50 shadow-sm flex items-center gap-3"
+                                     :style="`background-color: #ffffff;`">
+                                    <div class="w-10 h-10 rounded-xl flex items-center justify-center transition-all bg-[var(--mock-glow)]" :style="`background-color: ${accent}; background: ${accent}; box-shadow: 0 8px 15px ${accent};` ">
+                                        <i class="fas fa-bolt text-xs" :style="`color: ${primary}; opacity: 0.8;` "></i>
                                     </div>
                                     <div>
-                                        <div class="h-2 w-12 rounded-full mb-1" :style="`background-color: ${text};` opacity: 0.1"></div>
-                                        <div class="h-3 w-8 rounded-full" :style="`background-color: ${primary};` opacity: 0.6"></div>
+                                        <div class="h-2 w-12 rounded-full mb-1" :style="`background-color: ${text}; opacity: 0.1;`"></div>
+                                        <div class="h-3 w-8 rounded-full" :style="`background-color: ${primary}; opacity: 0.6;`"></div>
                                     </div>
                                 </div>
-                                <div class="p-5 rounded-3xl bg-white border border-gray-50 shadow-sm flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-xl flex items-center justify-center transition-all" :style="`background-color: ${primary};` background: ${primary};">
+                                <div class="p-5 rounded-3xl border border-gray-50 shadow-sm flex items-center gap-3"
+                                     :style="`background-color: #ffffff;`">
+                                    <div class="w-10 h-10 rounded-xl flex items-center justify-center transition-all" :style="`background-color: ${primary}; background: ${primary}; box-shadow: 0 8px 15px ${accent};` ">
                                         <i class="fas fa-trophy text-xs text-white"></i>
                                     </div>
                                     <div>
-                                        <div class="h-2 w-10 rounded-full mb-1" :style="`background-color: ${text};` opacity: 0.1"></div>
-                                        <div class="h-3 w-6 rounded-full" :style="`background-color: ${secondary};` opacity: 0.8"></div>
+                                        <div class="h-2 w-10 rounded-full mb-1" :style="`background-color: ${text}; opacity: 0.1;` "></div>
+                                        <div class="h-3 w-6 rounded-full" :style="`background-color: ${secondary}; opacity: 0.8;` "></div>
                                     </div>
                                 </div>
                             </div>
@@ -227,7 +227,7 @@
 
                         {{-- Mock Footer Bar --}}
                         <div class="mt-8 mx-6 p-1 bg-white/50 backdrop-blur-md rounded-2xl border border-gray-100 flex gap-1">
-                            <div class="flex-1 h-12 rounded-xl flex items-center justify-center" :style="`background-color: ${glow}; color: ${primary};` opacity: 0.9">
+                            <div class="flex-1 h-12 rounded-xl flex items-center justify-center" :style="`background-color: ${accent}; color: ${primary}; opacity: 0.9; box-shadow: 0 8px 15px ${accent};` ">
                                 <i class="fas fa-house-user text-sm"></i>
                             </div>
                             <div class="flex-1 h-12 rounded-xl flex items-center justify-center text-gray-300">

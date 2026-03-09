@@ -10,7 +10,7 @@
         <div class="space-y-1">
             <p class="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400">📍 Dashboard — Superadmin</p>
             <h2 class="text-2xl font-black tracking-tight" style="color: var(--brand-text);">
-                Selamat {{ $greetingWord }}, <span style="color: var(--brand-primary);">Super Admin!</span> {{ $greetingEmoji }}
+                Selamat {{ $greetingWord }}, <span style="color: var(--brand-primary);">{{ auth()->user()->full_name }}!</span> {{ $greetingEmoji }}
             </h2>
             <p class="text-sm font-bold text-gray-500">{{ $greetingMotif }}</p>
         </div>

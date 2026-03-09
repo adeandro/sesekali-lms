@@ -76,18 +76,18 @@ class AchievementService
     // DYNAMIC CRITERIA CHECKERS
     // ─────────────────────────────────────────
 
-    protected function checkExamCount(User $user, float $targetCount): bool
+    public function checkExamCount(User $user, float $targetCount): bool
     {
         $count = $user->examAttempts()->where('status', 'submitted')->count();
         return $count >= $targetCount;
     }
 
-    protected function checkFinalScore(ExamAttempt $attempt, float $targetScore): bool
+    public function checkFinalScore(ExamAttempt $attempt, float $targetScore): bool
     {
         return $attempt->final_score >= $targetScore;
     }
 
-    protected function checkConsecutivePass(User $user, float $targetConsecutive): bool
+    public function checkConsecutivePass(User $user, float $targetConsecutive): bool
     {
         $attempts = $user->examAttempts()
             ->with(['exam.subject'])
@@ -110,7 +110,7 @@ class AchievementService
         return true;
     }
 
-    protected function checkFirstSubmit(ExamAttempt $attempt): bool
+    public function checkFirstSubmit(ExamAttempt $attempt): bool
     {
         $firstAttempt = ExamAttempt::where('exam_session_id', $attempt->exam_session_id)
             ->where('status', 'submitted')
@@ -120,7 +120,7 @@ class AchievementService
         return $firstAttempt && $firstAttempt->id === $attempt->id;
     }
 
-    protected function checkCompletionTimePct(ExamAttempt $attempt, float $targetPct): bool
+    public function checkCompletionTimePct(ExamAttempt $attempt, float $targetPct): bool
     {
         $kkm = $attempt->exam->subject->kkm ?? 75;
         if ($attempt->final_score < $kkm) {
@@ -144,7 +144,7 @@ class AchievementService
         return false;
     }
 
-    protected function checkScoreIncrease(ExamAttempt $attempt, float $targetIncrease): bool
+    public function checkScoreIncrease(ExamAttempt $attempt, float $targetIncrease): bool
     {
         $previousAttempt = $attempt->student->examAttempts()
             ->where('status', 'submitted')
@@ -160,7 +160,7 @@ class AchievementService
         return false;
     }
 
-    protected function checkSubmissionHour(ExamAttempt $attempt, float $targetHour): bool
+    public function checkSubmissionHour(ExamAttempt $attempt, float $targetHour): bool
     {
         if ($attempt->submitted_at) {
             $submittedWIB = $attempt->submitted_at->copy()->setTimezone('Asia/Jakarta');
@@ -169,7 +169,7 @@ class AchievementService
         return false;
     }
 
-    protected function checkAvgScore(User $user, float $targetAvg): bool
+    public function checkAvgScore(User $user, float $targetAvg): bool
     {
         $avg = $user->examAttempts()->where('status', 'submitted')->avg('final_score');
         return $avg && $avg >= $targetAvg;

@@ -96,7 +96,8 @@
                 <table class="min-w-full divide-y divide-gray-100">
                     <thead class="bg-gray-50/50">
                         <tr>
-                            <th class="px-6 py-4 text-left text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Profil</th>
+                            <th class="px-6 py-4 text-left text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Foto Resmi</th>
+                            <th class="px-6 py-4 text-left text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Avatar</th>
                             <th class="px-6 py-4 text-left text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Identitas</th>
                             <th class="px-6 py-4 text-left text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Kelas & Rombel</th>
                             <th class="px-6 py-4 text-left text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Akses</th>
@@ -108,11 +109,20 @@
                         @forelse($students as $student)
                             <tr class="hover:bg-indigo-50/30 transition-colors group">
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="flex items-center">
-                                        <div class="h-12 w-12 flex-shrink-0">
-                                            <img src="{{ $student->photo_url }}" alt="Avatar" class="h-12 w-12 rounded-xl object-cover ring-2 ring-white shadow-sm">
-                                        </div>
+                                    <div class="h-10 w-10 flex-shrink-0">
+                                        <img src="{{ $student->photo_url }}" alt="Formal" class="h-10 w-10 rounded-xl object-cover ring-2 ring-white shadow-sm">
                                     </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    @if($student->avatar_upload || ($student->custom_avatar && !$student->is_avatar_seed))
+                                        <div class="h-10 w-10 flex-shrink-0">
+                                            <img src="{{ $student->avatar_url }}" alt="Avatar" class="h-10 w-10 rounded-full object-cover ring-2 ring-white shadow-sm">
+                                        </div>
+                                    @elseif($student->is_avatar_seed)
+                                        <div x-data x-html="multiavatar('{{ $student->avatar_seed }}')" class="h-10 w-10 rounded-full border border-gray-100 shadow-sm bg-white overflow-hidden"></div>
+                                    @else
+                                        <span class="text-[10px] font-bold text-gray-400 italic">Belum Set</span>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="text-sm font-bold text-gray-900">{{ $student->formatted_name }}</div>

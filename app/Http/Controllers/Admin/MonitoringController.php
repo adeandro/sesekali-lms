@@ -46,6 +46,7 @@ class MonitoringController extends Controller
                 'avatar_seed' => $attempt->student->avatar_seed,
                 'is_avatar_seed' => $attempt->student->is_avatar_seed,
                 'avatar_url' => $attempt->student->avatar_url,
+                'photo_url' => $attempt->student->photo_url,
                 'exam_type' => $this->getExamType($attempt),
                 'score_mc' => $attempt->score_mc,
                 'score_essay' => $attempt->score_essay,
