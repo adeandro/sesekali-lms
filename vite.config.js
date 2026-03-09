@@ -15,4 +15,15 @@ export default defineConfig({
             ignored: ['**/storage/framework/views/**'],
         },
     },
+    build: {
+        cssMinify: 'lightningcss',
+        target: 'esnext',
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    vendor: ['axios', 'canvas-confetti']
+                }
+            }
+        }
+    }
 });

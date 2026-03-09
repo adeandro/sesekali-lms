@@ -1,11 +1,467 @@
 @import 'tailwindcss';
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
-@source '../**/*.blade.php';
-@source '../**/*.js';
+/* ============================================================
+   SOURCE SCANNING — Tell Tailwind v4 where to find classes
+   ============================================================ */
+@source "../../resources/views/**/*.blade.php";
+@source "../../app/**/*.php";
+@source "../../resources/js/**/*.js";
+@source "../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php";
+@source "../../storage/framework/views/*.php";
 
+/* ============================================================
+   @THEME — CSS-First Configuration (replaces tailwind.config.js)
+   ============================================================ */
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    /* Typography */
+    --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+        'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+
+    /* Brand Color Aliases — Dynamic (set by theme engine in app.blade.php) */
+    --color-brand-primary:     var(--brand-primary,      #4f46e5);
+    --color-brand-secondary:   var(--brand-secondary,    #818cf8);
+    --color-brand-dark:        var(--brand-dark,         #3730a3);
+    --color-brand-glow:        var(--brand-glow,         rgba(79, 70, 229, 0.2));
+    --color-brand-bg:          var(--brand-bg,           #f8faff);
+    --color-brand-surface:     var(--brand-surface,      #ffffff);
+    --color-brand-text:        var(--brand-text,         #1e293b);
+    --color-brand-accent:      var(--brand-text-accent,  #ffffff);
+
+    /* Map Tailwind's Indigo palette → Brand Colors so all bg-indigo-* classes
+       automatically follow the active theme without any !important overrides */
+    --color-indigo-50:  color-mix(in srgb, var(--brand-primary, #4f46e5) 10%, white);
+    --color-indigo-100: color-mix(in srgb, var(--brand-primary, #4f46e5) 15%, white);
+    --color-indigo-200: color-mix(in srgb, var(--brand-primary, #4f46e5) 25%, white);
+    --color-indigo-300: var(--brand-secondary, #818cf8);
+    --color-indigo-400: var(--brand-secondary, #818cf8);
+    --color-indigo-500: var(--brand-primary,   #4f46e5);
+    --color-indigo-600: var(--brand-primary,   #4f46e5);
+    --color-indigo-700: var(--brand-primary,   #4f46e5);
+    --color-indigo-800: var(--brand-dark,      #3730a3);
+    --color-indigo-900: var(--brand-dark,      #3730a3);
+    --color-indigo-950: var(--brand-dark,      #3730a3);
+}
+
+/* ============================================================
+   @LAYER BASE — Global resets + Theme Engine CSS Variables
+   ============================================================ */
+@layer base {
+    *, *::before, *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    html, body {
+        height: 100%;
+        width: 100%;
+        overflow-x: hidden;
+    }
+
+    body {
+        font-family: var(--font-sans);
+        background-color: var(--brand-bg, #f8faff);
+        color: var(--brand-text, #1e293b);
+        transition: background-color 0.5s ease, color 0.4s ease;
+        display: flex;
+        flex-direction: column;
+    }
+
+    main { flex: 1; }
+
+    /* ── Theme Engine v2 ─────────────────────────────────────
+       All theme classes always defined; role-based access
+       is enforced at the PHP controller level.
+    ──────────────────────────────────────────────────────── */
+
+    /* Base / Indigo (default) */
+    :root, .theme-indigo {
+        --brand-primary:     #4f46e5;
+        --brand-secondary:   #818cf8;
+        --brand-dark:        #3730a3;
+        --brand-glow:        rgba(79, 70, 229, 0.2);
+        --brand-bg:          #f8faff;
+        --brand-surface:     #ffffff;
+        --brand-text:        #1e293b;
+        --brand-text-accent: #ffffff;
+        --sidebar-header:    linear-gradient(135deg, #4f46e5, #3730a3);
+    }
+
+    /* Emerald — Student only (Lv 5+) */
+    .theme-emerald {
+        --brand-primary:     #10b981;
+        --brand-secondary:   #34d399;
+        --brand-dark:        #065f46;
+        --brand-glow:        rgba(16, 185, 129, 0.18);
+        --brand-bg:          #f0fdf9;
+        --brand-surface:     #f9fffd;
+        --brand-text:        #064e3b;
+        --brand-text-accent: #ffffff;
+        --sidebar-header:    linear-gradient(135deg, #10b981, #065f46);
+    }
+
+    /* Rose — Student only (Lv 25+) */
+    .theme-rose {
+        --brand-primary:     #f43f5e;
+        --brand-secondary:   #fb7185;
+        --brand-dark:        #9f1239;
+        --brand-glow:        rgba(244, 63, 94, 0.18);
+        --brand-bg:          #fff5f7;
+        --brand-surface:     #fffbfc;
+        --brand-text:        #4c0519;
+        --brand-text-accent: #ffffff;
+        --sidebar-header:    linear-gradient(135deg, #f43f5e, #9f1239);
+    }
+
+    /* Amber — Student only (Lv 35+) */
+    .theme-amber {
+        --brand-primary:     #d97706;
+        --brand-secondary:   #f59e0b;
+        --brand-dark:        #78350f;
+        --brand-glow:        rgba(217, 119, 6, 0.18);
+        --brand-bg:          #fffbf0;
+        --brand-surface:     #fffdf7;
+        --brand-text:        #451a03;
+        --brand-text-accent: #ffffff;
+        --sidebar-header:    linear-gradient(135deg, #d97706, #78350f);
+    }
+
+    /* Violet — Student only */
+    .theme-violet {
+        --brand-primary:     #7c3aed;
+        --brand-secondary:   #a78bfa;
+        --brand-dark:        #4c1d95;
+        --brand-glow:        rgba(124, 58, 237, 0.18);
+        --brand-bg:          #f7f4ff;
+        --brand-surface:     #fbf9ff;
+        --brand-text:        #2e1065;
+        --brand-text-accent: #ffffff;
+        --sidebar-header:    linear-gradient(135deg, #7c3aed, #4c1d95);
+    }
+
+    /* Midnight — Student only (Lv 45+) — Dark Theme */
+    .theme-midnight {
+        --brand-primary:     #818cf8;
+        --brand-secondary:   #a5b4fc;
+        --brand-dark:        #0f172a;
+        --brand-glow:        rgba(129, 140, 248, 0.25);
+        --brand-bg:          #0f172a;
+        --brand-surface:     #1e293b;
+        --brand-text:        #e2e8f0;
+        --brand-text-accent: #1e293b;
+        --sidebar-header:    linear-gradient(135deg, #1e293b, #0f0f1a);
+    }
+
+    /* Cyberpunk — Student only (Achievement: The Flash) — Dark Theme */
+    .theme-cyberpunk {
+        --brand-primary:     #e040fb;
+        --brand-secondary:   #00e5ff;
+        --brand-dark:        #12002b;
+        --brand-glow:        rgba(224, 64, 251, 0.3);
+        --brand-bg:          #06000e;
+        --brand-surface:     #130025;
+        --brand-text:        #f0e6ff;
+        --brand-text-accent: #06000e;
+        --sidebar-header:    linear-gradient(135deg, #e040fb, #00e5ff);
+    }
+
+    /* Volcano — Student only (Lv 15+) */
+    .theme-volcano {
+        --brand-primary:     #ef4444;
+        --brand-secondary:   #f87171;
+        --brand-dark:        #7f1d1d;
+        --brand-glow:        rgba(239, 68, 68, 0.18);
+        --brand-bg:          #fffafa;
+        --brand-surface:     #fff8f8;
+        --brand-text:        #450a0a;
+        --brand-text-accent: #ffffff;
+        --sidebar-header:    linear-gradient(135deg, #ef4444, #7f1d1d);
+    }
+
+    /* Slate — Professional (Admin/Teacher/Student) */
+    .theme-slate {
+        --brand-primary:     #475569;
+        --brand-secondary:   #94a3b8;
+        --brand-dark:        #1e293b;
+        --brand-glow:        rgba(71, 85, 105, 0.15);
+        --brand-bg:          #f6f8fa;
+        --brand-surface:     #f9fbfc;
+        --brand-text:        #1e293b;
+        --brand-text-accent: #ffffff;
+        --sidebar-header:    linear-gradient(135deg, #334155, #1e293b);
+    }
+
+    /* Ocean — Professional (Admin/Teacher/Student) */
+    .theme-ocean {
+        --brand-primary:     #0284c7;
+        --brand-secondary:   #38bdf8;
+        --brand-dark:        #0c4a6e;
+        --brand-glow:        rgba(2, 132, 199, 0.18);
+        --brand-bg:          #f0f9ff;
+        --brand-surface:     #f5fbff;
+        --brand-text:        #0c2a3e;
+        --brand-text-accent: #ffffff;
+        --sidebar-header:    linear-gradient(135deg, #0284c7, #0c4a6e);
+    }
+
+    /* ── Global Theme Application ───────────────────────── */
+    main { background-color: var(--brand-bg) !important; }
+
+    @media print {
+        aside, nav, header, footer,
+        #sidebar, #sidebarOverlay { display: none !important; }
+        .flex { display: block !important; }
+        main { width: 100% !important; margin: 0 !important; padding: 0 !important; }
+    }
+
+    /* ── Keyframe Animations ─────────────────────────────── */
+    @keyframes fire-spin {
+        0%   { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    @keyframes crown-bounce {
+        0%, 100% { transform: translateY(0); }
+        50%       { transform: translateY(-3px); }
+    }
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50%       { transform: translateY(-8px); }
+    }
+    @keyframes premium-shine {
+        0%   { transform: translateX(-100%) skewX(-15deg); }
+        100% { transform: translateX(200%) skewX(-15deg); }
+    }
+    @keyframes aura-pulse {
+        0%, 100% { opacity: 0.5; transform: scale(1); }
+        50%       { opacity: 1;   transform: scale(1.05); }
+    }
+    @keyframes spin {
+        0%   { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    @keyframes shine {
+        0%   { transform: translateX(-100%) rotate(30deg); }
+        100% { transform: translateX(100%)  rotate(30deg); }
+    }
+    @keyframes gradient {
+        0%   { background-position: 0%   50%; }
+        50%  { background-position: 100% 50%; }
+        100% { background-position: 0%   50%; }
+    }
+}
+
+/* ============================================================
+   @UTILITY — Reusable component classes (DRY • Tailwind v4)
+   ============================================================ */
+
+/* ── Login / Auth ───────────────────────────────────────── */
+@utility glass-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+@utility animated-bg {
+    background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+    background-size: 400% 400%;
+    animation: gradient 15s ease infinite;
+}
+
+/* ── Premium Motion / Shine ─────────────────────────────── */
+@utility premium-motion {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@utility gpu-accelerated {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+}
+
+@utility premium-shine {
+    position: relative;
+    overflow: hidden;
+
+    &::after {
+        content: '';
+        position: absolute;
+        top: 0; left: -100%;
+        width: 50%; height: 100%;
+        background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.1), transparent);
+        transform: skewX(-15deg);
+        transition: none;
+    }
+
+    .group:hover &::after {
+        animation: premium-shine 0.75s ease-in-out forwards;
+    }
+}
+
+@utility crown-bounce {
+    animation: crown-bounce 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    will-change: transform;
+}
+
+@utility animate-float-slow {
+    animation: float 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    will-change: transform;
+}
+
+@utility sovereign-ring {
+    position: relative;
+    transform: translateZ(0);
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.5);
+    border-radius: 50%;
+
+    &::before {
+        content: '';
+        position: absolute;
+        inset: -4px;
+        border-radius: 50%;
+        box-shadow: 0 0 15px rgba(245, 158, 11, 0.4), inset 0 0 10px rgba(251, 191, 36, 0.2);
+        animation: aura-pulse 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        z-index: -1;
+        will-change: transform, opacity;
+    }
+}
+
+@utility frame-shine {
+    position: relative;
+    overflow: hidden;
+
+    &::after {
+        content: "";
+        position: absolute;
+        top: -50%; left: -50%;
+        width: 200%; height: 200%;
+        background: linear-gradient(45deg, transparent 45%, rgba(255,255,255,0.6) 50%, transparent 55%);
+        animation: shine 3s infinite;
+    }
+}
+
+/* ── Sidebar ────────────────────────────────────────────── */
+@utility sidebar-transition {
+    transition: transform 0.3s ease-in-out;
+}
+
+@utility sidebar-hidden {
+    transform: translateX(-100%);
+}
+
+@utility sidebar-mobile-overlay {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+    pointer-events: none;
+
+    &.active {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+    }
+}
+
+@utility sidebar-header-gradient {
+    background: var(--sidebar-header);
+}
+
+@utility menu-item-active {
+    background-color: var(--brand-glow) !important;
+    border-left: 4px solid var(--brand-primary) !important;
+    color: var(--brand-primary) !important;
+    font-weight: 900 !important;
+    opacity: 1 !important;
+}
+
+@utility submenu-item {
+    padding-inline: 1rem;
+    padding-block: 0.5rem;
+    font-size: 0.875rem;
+    color: rgb(55 65 81);
+    border-radius: 0.375rem;
+    transition: background-color 0.15s ease;
+
+    &:hover {
+        background-color: rgb(243 244 246);
+    }
+}
+
+@utility submenu-item-active {
+    background-color: var(--brand-glow) !important;
+    color: var(--brand-primary) !important;
+    font-weight: 800 !important;
+}
+
+/* ── Loading Spinner ─────────────────────────────────────── */
+@utility spinner {
+    width: 40px; height: 40px;
+    border: 4px solid var(--brand-glow);
+    border-top-color: var(--brand-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Loading Overlay — hidden by default, shown via JS on form submit */
+@layer base {
+    #loading-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(255, 255, 255, 0.7);
+        z-index: 9999;
+        backdrop-filter: blur(2px);
+    }
+}
+
+/* ── Theme-Aware Components ─────────────────────────────── */
+@utility theme-active-frame {
+    border-color: var(--brand-primary) !important;
+}
+
+@utility theme-active-glow {
+    box-shadow: 0 0 20px var(--brand-glow), 0 0 40px var(--brand-glow);
+}
+
+@utility theme-surface-card {
+    background-color: var(--brand-surface) !important;
+}
+
+@utility theme-text-accent {
+    color: var(--brand-text-accent) !important;
+}
+
+@utility theme-soft-shadow {
+    box-shadow: 0 4px 24px -4px var(--brand-glow), 0 1px 4px rgba(0,0,0,0.04);
+}
+
+@utility theme-primary-btn {
+    background-color: var(--brand-primary) !important;
+    color: var(--brand-text-accent) !important;
+    box-shadow: 0 4px 20px -4px var(--brand-glow) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &:hover {
+        opacity: 0.92;
+        transform: translateY(-2px);
+        box-shadow: 0 12px 30px -6px var(--brand-glow) !important;
+    }
+}
+
+@utility theme-secondary-btn {
+    background-color: var(--brand-glow) !important;
+    color: var(--brand-primary) !important;
+    transition: all 0.3s ease;
+
+    &:hover {
+        background-color: var(--brand-primary) !important;
+        color: var(--brand-text-accent) !important;
+    }
+}
+
+@utility theme-card-hover {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+    &:hover {
+        transform: scale(1.02) translateY(-2px);
+        box-shadow: 0 12px 40px -8px var(--brand-glow) !important;
+    }
 }
