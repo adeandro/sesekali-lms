@@ -24,18 +24,8 @@ class StudentDashboardController extends Controller
         $completedExams = $user->examAttempts()->whereNotNull('submitted_at')->count();
         $avgScore = $user->examAttempts()->whereNotNull('final_score')->avg('final_score') ?? 0;
         
-        // 2. Global Leaderboard (Top 10)
-        $leaderboard = \App\Models\User::where('role', 'student')
-            ->where('is_active', true)
-            ->withSum(['examAttempts as total_score' => function($query) {
-                $query->whereNotNull('submitted_at');
-            }], 'final_score')
-            ->orderByDesc('total_score')
-            ->take(10)
-            ->get();
-
-        // 3. Local Leaderboard (Same Grade)
-        $localLeaderboard = \App\Models\User::where('role', 'student')
+        // 2. Angkatan Leaderboard (Same Grade)
+        $angkatanLeaderboard = \App\Models\User::where('role', 'student')
             ->where('is_active', true)
             ->where('grade', $user->grade)
             ->withSum(['examAttempts as total_score' => function($query) {
@@ -44,10 +34,23 @@ class StudentDashboardController extends Controller
             ->orderByDesc('total_score')
             ->take(10)
             ->get();
-
-        // 4. Current Student Rank (Global & Local)
-        $allRankedStudents = \App\Models\User::where('role', 'student')
+            
+        // 3.1 Class Leaderboard (Same Grade & Class Group)
+        $classLeaderboard = \App\Models\User::where('role', 'student')
             ->where('is_active', true)
+            ->where('grade', $user->grade)
+            ->where('class_group', $user->class_group)
+            ->withSum(['examAttempts as total_score' => function($query) {
+                $query->whereNotNull('submitted_at');
+            }], 'final_score')
+            ->orderByDesc('total_score')
+            ->take(10)
+            ->get();
+
+        // 4. Current Student Rank (Angkatan & Class)
+        $angkatanRankedStudents = \App\Models\User::where('role', 'student')
+            ->where('is_active', true)
+            ->where('grade', $user->grade)
             ->withSum(['examAttempts as total_score' => function($query) {
                 $query->whereNotNull('submitted_at');
             }], 'final_score')
@@ -55,13 +58,14 @@ class StudentDashboardController extends Controller
             ->pluck('id')
             ->toArray();
         
-        $currentRank = array_search($user->id, $allRankedStudents) !== false 
-            ? array_search($user->id, $allRankedStudents) + 1 
+        $currentAngkatanRank = array_search($user->id, $angkatanRankedStudents) !== false 
+            ? array_search($user->id, $angkatanRankedStudents) + 1 
             : '-';
 
-        $localRankedStudents = \App\Models\User::where('role', 'student')
+        $classRankedStudents = \App\Models\User::where('role', 'student')
             ->where('is_active', true)
             ->where('grade', $user->grade)
+            ->where('class_group', $user->class_group)
             ->withSum(['examAttempts as total_score' => function($query) {
                 $query->whereNotNull('submitted_at');
             }], 'final_score')
@@ -69,8 +73,8 @@ class StudentDashboardController extends Controller
             ->pluck('id')
             ->toArray();
         
-        $currentLocalRank = array_search($user->id, $localRankedStudents) !== false 
-            ? array_search($user->id, $localRankedStudents) + 1 
+        $currentClassRank = array_search($user->id, $classRankedStudents) !== false 
+            ? array_search($user->id, $classRankedStudents) + 1 
             : '-';
 
         // 5. Badges (Dynamic active only)
@@ -130,8 +134,8 @@ class StudentDashboardController extends Controller
             'completed_exams' => $completedExams,
             'available_exams' => $availableExams->count(),
             'avg_score' => round($avgScore, 1),
-            'current_rank' => $currentRank,
-            'current_local_rank' => $currentLocalRank,
+            'current_angkatan_rank' => $currentAngkatanRank,
+            'current_class_rank' => $currentClassRank,
             'greeting' => $greeting,
             'motivational_text' => $motivationalText
         ];
@@ -140,8 +144,8 @@ class StudentDashboardController extends Controller
             'stats', 
             'availableExams', 
             'recentResults', 
-            'leaderboard', 
-            'localLeaderboard',
+            'angkatanLeaderboard', 
+            'classLeaderboard',
             'earnedAchievements', 
             'allAchievements'
         ));

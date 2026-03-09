@@ -26,6 +26,7 @@ class User extends Authenticatable
         'nis',
         'jenjang',
         'grade',
+        'class_group',
         'is_active',
         'photo',
         'custom_avatar',

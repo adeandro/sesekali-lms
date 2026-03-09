@@ -62,10 +62,10 @@
                             </span>
                         @endif
                     <span class="px-4 py-1.5 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-[10px] font-black uppercase tracking-widest">
-                        G-Rank #{{ $stats['current_rank'] }}
+                        A-Rank #{{ $stats['current_angkatan_rank'] }}
                     </span>
                     <span class="px-4 py-1.5 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-[10px] font-black uppercase tracking-widest">
-                        L-Rank #{{ $stats['current_local_rank'] }}
+                        C-Rank #{{ $stats['current_class_rank'] }}
                     </span>
                 </div>
 
@@ -85,18 +85,14 @@
             </div>
 
             <!-- Header Stats -->
-            <div class="grid grid-cols-3 gap-3 w-full md:w-auto">
-                <div class="bg-white/10 backdrop-blur-xl border border-white/10 p-4 rounded-3xl text-center min-w-[100px]">
-                    <p class="text-[8px] font-black uppercase tracking-widest text-white/70 mb-1">Top Lokal</p>
-                    <p class="text-xl font-black text-white">#{{ $stats['current_local_rank'] }}</p>
+            <div class="grid grid-cols-2 gap-3 w-full md:w-auto">
+                <div class="bg-white/10 backdrop-blur-xl border border-white/10 p-4 rounded-3xl text-center min-w-[120px]">
+                    <p class="text-[8px] font-black uppercase tracking-widest text-white/70 mb-1">Rank Angkatan</p>
+                    <p class="text-xl font-black text-white">#{{ $stats['current_angkatan_rank'] }}</p>
                 </div>
-                <div class="bg-white/10 backdrop-blur-xl border border-white/10 p-4 rounded-3xl text-center min-w-[100px]">
-                    <p class="text-[8px] font-black uppercase tracking-widest text-white/70 mb-1">Rata-rata</p>
-                    <p class="text-xl font-black text-white">{{ intval($stats['avg_score']) }}</p>
-                </div>
-                <div class="bg-white/10 backdrop-blur-xl border border-white/10 p-4 rounded-3xl text-center min-w-[100px]">
-                    <p class="text-[8px] font-black uppercase tracking-widest text-white/70 mb-1">TopGlobal</p>
-                    <p class="text-xl font-black text-white">#{{ $stats['current_rank'] }}</p>
+                <div class="bg-white/10 backdrop-blur-xl border border-white/10 p-4 rounded-3xl text-center min-w-[120px]">
+                    <p class="text-[8px] font-black uppercase tracking-widest text-white/70 mb-1">Rank Kelas</p>
+                    <p class="text-xl font-black text-white">#{{ $stats['current_class_rank'] }}</p>
                 </div>
             </div>
         </div>
@@ -335,7 +331,7 @@
 
             <!-- Leaderboards (Hall of Fame) -->
             @if(($configs['enable_leaderboard'] ?? '1') == '1')
-            <div class="relative group bg-white border border-transparent rounded-[2.5rem] p-8 shadow-2xl shadow-[var(--brand-glow)] overflow-hidden" x-data="{ tab: 'global' }">
+            <div class="relative group bg-white border border-transparent rounded-[2.5rem] p-8 shadow-2xl shadow-[var(--brand-glow)] overflow-hidden" x-data="{ tab: 'angkatan' }">
                 <!-- Animated Background Blob -->
                 <div class="absolute -top-20 -left-20 w-64 h-64 rounded-full blur-3xl animate-pulse opacity-30" style="background-color: var(--brand-glow);"></div>
                 <div class="absolute -bottom-20 -right-20 w-64 h-64 bg-purple-200/30 rounded-full blur-3xl animate-pulse" style="animation-delay: 2s"></div>
@@ -351,14 +347,14 @@
                         
                         <!-- Tabs -->
                         <div class="flex bg-gray-100/50 p-1.5 rounded-2xl">
-                            <button @click="tab = 'global'" :class="tab === 'global' ? 'bg-white shadow-sm text-[var(--brand-primary)]' : 'text-gray-500'" class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all">Top Global</button>
-                            <button @click="tab = 'local'" :class="tab === 'local' ? 'bg-white shadow-sm text-[var(--brand-primary)]' : 'text-gray-500'" class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all">Top Lokal</button>
+                            <button @click="tab = 'angkatan'" :class="tab === 'angkatan' ? 'bg-white shadow-sm text-[var(--brand-primary)]' : 'text-gray-500'" class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all">Angkatan</button>
+                            <button @click="tab = 'class'" :class="tab === 'class' ? 'bg-white shadow-sm text-[var(--brand-primary)]' : 'text-gray-500'" class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all">Kelas</button>
                         </div>
                     </div>
 
-                    <!-- Global Leaderboard -->
-                    <div class="space-y-3" x-show="tab === 'global'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-4" x-transition:enter-end="opacity-100 translate-x-0">
-                        @foreach($leaderboard as $index => $student)
+                    <!-- Angkatan Leaderboard -->
+                    <div class="space-y-3" x-show="tab === 'angkatan'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-4" x-transition:enter-end="opacity-100 translate-x-0">
+                        @forelse($angkatanLeaderboard as $index => $student)
                             <div class="flex items-center gap-4 p-3 rounded-2xl transition-all duration-300 hover:bg-white/60 {{ Auth::id() === $student->id ? 'bg-white/80 scale-[1.02] shadow-sm' : '' }}" style="{{ Auth::id() === $student->id ? 'border: 1px solid var(--brand-glow); ring: 2px solid var(--brand-glow);' : '' }}">
                                 <div class="w-10 h-10 flex items-center justify-center text-sm font-black relative">
                                     @if($index === 0)
@@ -417,12 +413,19 @@
                                     <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Skor: {{ number_format($student->total_score, 0) }}</p>
                                 </div>
                             </div>
-                        @endforeach
+                        @empty
+                            <div class="text-center py-10">
+                                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Belum ada peringkat</p>
+                            </div>
+                        @endforelse
                     </div>
 
-                    <!-- Local Leaderboard -->
-                    <div class="space-y-3" x-show="tab === 'local'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-4" x-transition:enter-end="opacity-100 translate-x-0" style="display: none;">
-                        @forelse($localLeaderboard as $index => $student)
+                    <!-- Local Leaderboard (Dihapus/Diganti ke Angkatan) -->
+                    {{-- @forelse($localLeaderboard as $index => $student) ... @endforelse --}}
+
+                    <!-- Class Leaderboard -->
+                    <div class="space-y-3" x-show="tab === 'class'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-4" x-transition:enter-end="opacity-100 translate-x-0" style="display: none;">
+                        @forelse($classLeaderboard as $index => $student)
                             <div class="flex items-center gap-4 p-3 rounded-2xl transition-all duration-300 hover:bg-white/60 {{ Auth::id() === $student->id ? 'bg-white/80 border-[var(--brand-glow)] ring-2 ring-[var(--brand-glow)]/50 scale-[1.02]' : '' }}">
                                 <div class="w-10 h-10 flex items-center justify-center text-sm font-black relative">
                                     @if($index === 0)
