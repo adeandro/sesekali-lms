@@ -201,6 +201,32 @@
                     </a>
                 @endif
 
+                {{-- ── Communication Hub (all roles) ── --}}
+                <div class="pt-4 pb-2">
+                    <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">💬 Komunikasi</p>
+                </div>
+
+                {{-- Announcements --}}
+                <a href="{{ route('communication.announcements.index') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition {{ request()->routeIs('communication.announcements*') ? 'menu-item-active' : '' }}">
+                    <i class="fas fa-bullhorn w-5 text-lg mr-3"></i>
+                    <span class="font-medium">Pengumuman</span>
+                    @if(request()->routeIs('communication.announcements*'))
+                        <i class="fas fa-chevron-right ml-auto"></i>
+                    @endif
+                </a>
+
+                {{-- Direct Messages with unread badge --}}
+                @php $__unread = auth()->user()->unreadMessagesCount(); @endphp
+                <a href="{{ route('communication.messages.inbox') }}" class="relative flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition {{ request()->routeIs('communication.messages*') ? 'menu-item-active' : '' }}">
+                    <i class="fas fa-envelope w-5 text-lg mr-3"></i>
+                    <span class="font-medium">Pesan</span>
+                    @if($__unread > 0)
+                        <span class="ml-auto unread-badge">{{ $__unread > 99 ? '99+' : $__unread }}</span>
+                    @elseif(request()->routeIs('communication.messages*'))
+                        <i class="fas fa-chevron-right ml-auto"></i>
+                    @endif
+                </a>
+
                 <!-- Management Section (Teacher & Superadmin) -->
                 @if(in_array(Auth::user()->role, ['teacher', 'superadmin']))
                     <div class="pt-4 pb-2">
@@ -382,7 +408,10 @@
                         <div x-data="{ open: false }" class="relative">
                             <button @click="open = !open" @click.away="open = false" class="relative p-2 text-gray-400 hover:text-[var(--brand-primary)] bg-gray-50 hover:bg-[var(--brand-glow)] rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-2">
                                 <i class="fas fa-bell text-lg"></i>
-                                @if(Auth::user()->unreadNotifications->count() > 0)
+                                @php
+                                    $totalUnread = Auth::user()->unreadNotifications->count() + Auth::user()->unreadMessagesCount();
+                                @endphp
+                                @if($totalUnread > 0)
                                     <span class="absolute top-1.5 right-1.5 flex h-2.5 w-2.5">
                                         <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
                                         <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500 border-2 border-white"></span>
@@ -456,9 +485,13 @@
                 </div>
             </nav>
 
-            <!-- Page Content -->
+            {{-- Page Content --}}
             <main class="flex-1 overflow-y-auto">
                 <div class="p-4 lg:p-8 max-w-7xl mx-auto w-full">
+                    {{-- Announcement Banner: student-facing active announcements --}}
+                    @if(auth()->check() && auth()->user()->role === 'student')
+                        <x-announcement-banner />
+                    @endif
                     @yield('content')
                 </div>
             </main>
@@ -634,6 +667,10 @@
     <script src="https://cdn.jsdelivr.net/npm/@multiavatar/multiavatar/multiavatar.min.js"></script>
     @if(Auth::user()->role === 'student' && \App\Models\Setting::get('enable_gamification', '1') == '1')
         <x-celebration-modal />
+    @endif
+    {{-- Urgent Announcement Modal: blocks interaction until user acknowledges --}}
+    @if(Auth::user()->role === 'student')
+        <x-urgent-announcement-modal />
     @endif
 </body>
 </html>

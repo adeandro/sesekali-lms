@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -110,6 +111,43 @@ class User extends Authenticatable
     public function actionLogs()
     {
         return $this->hasMany(ActionLog::class, 'admin_id');
+    }
+
+    // ── Communication Hub Relationships ──────────────────────
+
+    /**
+     * Announcements created by this user.
+     */
+    public function announcements(): HasMany
+    {
+        return $this->hasMany(Announcement::class, 'user_id');
+    }
+
+    /**
+     * Messages sent by this user.
+     */
+    public function sentMessages(): HasMany
+    {
+        return $this->hasMany(Message::class, 'sender_id');
+    }
+
+    /**
+     * Messages received by this user.
+     */
+    public function receivedMessages(): HasMany
+    {
+        return $this->hasMany(Message::class, 'receiver_id');
+    }
+
+    /**
+     * Count of unread messages (root + replies) addressed to this user.
+     */
+    public function unreadMessagesCount(): int
+    {
+        return Message::where('receiver_id', $this->id)
+                      ->where('is_read', false)
+                      ->withoutTrashed()
+                      ->count();
     }
 
 

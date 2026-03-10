@@ -5,8 +5,12 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Schema;
+use App\Models\Announcement;
+use App\Models\Message;
 use App\Models\Setting;
 use App\Models\User;
+use App\Policies\AnnouncementPolicy;
+use App\Policies\MessagePolicy;
 use App\Policies\StudentPolicy;
 use Illuminate\Support\Facades\Gate;
 
@@ -27,6 +31,8 @@ class AppServiceProvider extends ServiceProvider
     {
         Schema::defaultStringLength(191);
         Gate::policy(User::class, StudentPolicy::class);
+        Gate::policy(Announcement::class, AnnouncementPolicy::class);
+        Gate::policy(Message::class, MessagePolicy::class);
 
         // Global Configurations with View Composer
         View::composer('*', function ($view) {

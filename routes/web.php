@@ -20,6 +20,8 @@ use App\Http\Controllers\Admin\MonitoringController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\GamificationController;
 use App\Http\Controllers\UserPreferenceController;
+use App\Http\Controllers\Communication\AnnouncementController;
+use App\Http\Controllers\Communication\MessageController;
 
 // Public routes
 Route::get('/', function () {
@@ -241,5 +243,30 @@ Route::middleware('auth')->group(function () {
             });
         });
     });
-});
 
+    // ── Communication Hub ────────────────────────────────────────────
+    // Accessible by ALL authenticated roles: student, teacher, superadmin
+    Route::prefix('communication')->name('communication.')->group(function () {
+
+        // Announcements (all roles read; staff create/delete)
+        Route::get('announcements', [AnnouncementController::class, 'index'])->name('announcements.index');
+        Route::middleware('role:superadmin,teacher')->group(function () {
+            Route::get('announcements/create', [AnnouncementController::class, 'create'])->name('announcements.create');
+            Route::post('announcements', [AnnouncementController::class, 'store'])->name('announcements.store');
+            Route::delete('announcements/{announcement}', [AnnouncementController::class, 'destroy'])->name('announcements.destroy');
+            Route::post('announcements/{announcement}/toggle', [AnnouncementController::class, 'toggleActive'])->name('announcements.toggle');
+        });
+        Route::delete('announcements/{announcement}/force', [AnnouncementController::class, 'permanentDelete'])
+             ->name('announcements.force-delete')
+             ->middleware('role:superadmin');
+
+        // Direct Messaging (all roles inbox; students reply-only)
+        Route::get('messages', [MessageController::class, 'inbox'])->name('messages.inbox');
+        Route::get('messages/{rootId}', [MessageController::class, 'thread'])->name('messages.thread')->where('rootId', '[0-9]+');
+        Route::post('messages', [MessageController::class, 'send'])->name('messages.send');
+        Route::post('messages/{rootId}/read', [MessageController::class, 'markRead'])->name('messages.read')->where('rootId', '[0-9]+');
+        Route::delete('messages/{message}', [MessageController::class, 'deleteMessage'])->name('messages.delete');
+        Route::delete('messages/{message}/thread', [MessageController::class, 'deleteThread'])->name('messages.delete-thread');
+    });
+
+}); // end auth middleware group
