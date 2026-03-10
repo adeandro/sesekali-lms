@@ -184,19 +184,16 @@
 
             <!-- Achievement Badges -->
             @if($configs['enable_gamification'] ?? true)
-            <div class="bg-white rounded-[2.5rem] p-8 border-l-4 border-[var(--brand-primary)] shadow-md shadow-[var(--brand-glow)] relative overflow-hidden group">
-                <!-- Achievement Background Glow -->
-                <div class="absolute -top-10 -right-10 w-40 h-40 bg-[var(--brand-glow)] rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
-                
-                <div class="flex items-center justify-between mb-8 relative">
-                    <h3 class="text-lg font-black text-gray-900 uppercase tracking-widest flex items-center gap-3">
-                        <i class="fas fa-award text-[var(--brand-primary)]"></i>
+            <div class="relative group">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-black text-gray-900 flex items-center gap-3 uppercase tracking-wider">
+                        <span class="w-2 h-8 bg-[var(--brand-primary)] rounded-full"></span>
                         Achievement Kamu
                     </h3>
                     <span class="text-[10px] font-black text-[var(--brand-primary)] bg-[var(--brand-glow)] px-3 py-1 rounded-full uppercase">{{ count($earnedAchievements) }}/{{ count($allAchievements) }} Terkumpul</span>
                 </div>
 
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 relative z-10" style="content-visibility: auto;">
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 relative z-10 p-8" style="content-visibility: auto;">
                     @foreach($allAchievements as $achievement)
                         @php 
                             $isEarned = isset($earnedAchievements[$achievement->slug]); 
@@ -216,67 +213,13 @@
                                     $progress = $target > 0 ? min(100, round(($current / $target) * 100)) : 0;
                                 }
                             }
-
-                            $iconColor = $achievement->color ?: '#6366f1';
                         @endphp
-                        <div class="group relative bg-[#0f172a]/95 border border-white/5 rounded-2xl p-6 transition-all duration-300 premium-motion shadow-lg hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)] hover:-translate-y-1 overflow-hidden gpu-accelerated premium-shine will-change-transform"
-                             title="{{ $achievement->description }}">
-                            
-                            <!-- Minimalist Progress Ring (Top Right) -->
-                            <div class="absolute top-4 right-4 w-10 h-10 flex items-center justify-center z-20">
-                                @if($progress >= 100)
-                                    <div class="w-7 h-7 rounded-full bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center shadow-[0_0_15px_rgba(16,185,129,0.4)] animate-pulse">
-                                        <i class="fas fa-check text-emerald-400 text-[8px]"></i>
-                                    </div>
-                                @else
-                                    <svg class="w-full h-full transform -rotate-90">
-                                        <circle cx="20" cy="20" r="14" stroke="currentColor" stroke-width="2" fill="transparent" class="text-white/5" />
-                                        <circle cx="20" cy="20" r="14" stroke="[var(--brand-primary)]" stroke-width="2" fill="transparent" 
-                                                stroke-dasharray="88" stroke-dashoffset="{{ 88 - (88 * $progress / 100) }}" 
-                                                class="transition-all duration-1000" />
-                                    </svg>
-                                    <span class="absolute text-[8px] font-bold text-white/60">{{ $progress }}%</span>
-                                @endif
-                            </div>
-
-                            <!-- Card Content (Center Aligned) -->
-                            <div class="flex flex-col items-center text-center space-y-4 pt-2 relative z-10">
-                                
-                                <!-- Icon Area -->
-                                <div class="relative">
-                                    @if(!$isEarned)
-                                         <div class="absolute inset-0 bg-gray-500 opacity-5 blur-2xl rounded-full"></div>
-                                    @endif
-                                    
-                                    <div class="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-3xl shadow-none transition-all duration-500 premium-motion relative z-10 overflow-hidden
-                                         {{ $isEarned ? 'group-hover:animate-float-slow group-hover:scale-110 drop-shadow-[0_0_15px_'. $iconColor . '40]' : 'opacity-30 grayscale shadow-none' }}" 
-                                         style="background-color: {{ $isEarned ? $iconColor : 'rgba(255,255,255,0.05)' }};">
-                                        
-                                        @if($achievement->icon_url)
-                                            <img src="{{ $achievement->icon_url }}" alt="Icon" class="w-full h-full object-cover">
-                                        @else
-                                            <i class="{{ $achievement->icon ?: 'fas fa-trophy' }}"></i>
-                                        @endif
-                                    </div>
-                                </div>
-
-                                <!-- Text Details -->
-                                <div class="space-y-1 w-full">
-                                    <h4 class="text-sm font-extrabold tracking-tight uppercase leading-tight {{ $isEarned ? 'text-white' : 'text-slate-500' }} line-clamp-1">
-                                        {{ $achievement->display_title }}
-                                    </h4>
-                                    <p class="text-[11px] font-medium text-slate-400 leading-tight line-clamp-2 min-h-[1.5rem]">
-                                        {{ $achievement->description }}
-                                    </p>
-                                    <p class="text-[9px] text-slate-500/80 italic mt-2 line-clamp-2 font-serif">
-                                        "{{ $achievement->lore_text ?: 'Langkah nyata menuju puncak intelektual.' }}"
-                                    </p>
-                                </div>
-                            </div>
-
-                            <!-- Decorative background glow (Simplified) -->
-                            <div class="absolute -bottom-10 -right-10 w-32 h-32 bg-[var(--brand-primary)] opacity-0 group-hover:opacity-10 blur-[80px] rounded-full transition-opacity duration-300 pointer-events-none"></div>
-                        </div>
+                        
+                        <x-achievement-card 
+                            :achievement="$achievement" 
+                            :is-unlocked="$isEarned" 
+                            :progress="$progress" 
+                        />
                     @endforeach
                 </div>
             </div>
@@ -331,7 +274,7 @@
 
             <!-- Leaderboards (Hall of Fame) -->
             @if(($configs['enable_leaderboard'] ?? '1') == '1')
-            <div class="relative group bg-white border border-transparent rounded-[2.5rem] p-8 shadow-2xl shadow-[var(--brand-glow)] overflow-hidden" x-data="{ tab: 'angkatan' }">
+            <div class="relative group bg-white border border-transparent rounded-[2.5rem] p-8 shadow-xl shadow-[var(--brand-glow)] overflow-hidden" x-data="{ tab: 'angkatan' }">
                 <!-- Animated Background Blob -->
                 <div class="absolute -top-20 -left-20 w-64 h-64 rounded-full blur-3xl animate-pulse opacity-30" style="background-color: var(--brand-glow);"></div>
                 <div class="absolute -bottom-20 -right-20 w-64 h-64 bg-purple-200/30 rounded-full blur-3xl animate-pulse" style="animation-delay: 2s"></div>

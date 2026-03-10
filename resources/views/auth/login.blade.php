@@ -12,19 +12,19 @@
 <body class="animated-bg min-h-screen flex items-center justify-center p-6">
     <!-- Main Login Container -->
     <div class="w-full max-w-lg">
-        <div class="glass-card rounded-[3rem] shadow-2xl p-8 md:p-12 space-y-10 relative overflow-hidden">
+        <div class="glass-card rounded-[2rem] md:rounded-[3rem] shadow-2xl p-6 md:p-8 space-y-6 md:space-y-8 relative overflow-hidden">
             <!-- Decoration -->
             <div class="absolute -top-24 -right-24 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl"></div>
             <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-pink-500/10 rounded-full blur-2xl"></div>
 
             <!-- Header Section -->
-            <div class="text-center space-y-8">
+            <div class="text-center space-y-4 md:space-y-6">
                 <!-- Branding: Pure Logo with Drop Shadow -->
                 <div class="group inline-block">
                     @if(isset($configs['logo']))
-                        <img src="{{ asset('storage/' . $configs['logo']) }}" alt="Logo" class="h-28 w-auto object-contain drop-shadow-[0_20px_35px_rgba(0,0,0,0.15)] group-hover:drop-shadow-[0_25px_50px_rgba(0,0,0,0.25)] group-hover:scale-105 transition-all duration-700 ease-out">
+                        <img src="{{ asset('storage/' . $configs['logo']) }}" alt="Logo" class="h-20 md:h-24 w-auto object-contain drop-shadow-[0_20px_35px_rgba(0,0,0,0.15)] group-hover:drop-shadow-[0_25px_50px_rgba(0,0,0,0.25)] group-hover:scale-105 transition-all duration-700 ease-out">
                     @else
-                        <div class="h-24 w-24 bg-white/10 backdrop-blur-sm rounded-[2rem] flex items-center justify-center text-white drop-shadow-2xl group-hover:scale-110 transition-all duration-700">
+                        <div class="h-20 w-20 md:h-24 md:w-24 bg-white/10 backdrop-blur-sm rounded-[2rem] flex items-center justify-center text-white drop-shadow-2xl group-hover:scale-110 transition-all duration-700">
                             <i class="fas fa-graduation-cap text-5xl"></i>
                         </div>
                     @endif
@@ -59,12 +59,12 @@
                 </div>
             @else
                 <div class="text-center">
-                    <p class="text-xs font-bold text-gray-500 leading-relaxed max-w-xs mx-auto">Selamat datang kembali! Silakan masukkan kredensial Anda untuk melanjutkan sesi.</p>
+                    <!-- <p class="text-xs font-bold text-gray-500 leading-relaxed max-w-xs mx-auto">Selamat datang kembali! Silakan masukkan kredensial Anda untuk melanjutkan sesi.</p> -->
                 </div>
             @endif
 
             <!-- Form Section -->
-            <form action="{{ route('login') }}" method="POST" class="space-y-6">
+            <form action="{{ route('login') }}" method="POST" class="space-y-4 md:space-y-5">
                 @csrf
 
                 <div class="space-y-2">
@@ -78,7 +78,7 @@
                             id="username" 
                             name="username" 
                             value="{{ old('username') }}"
-                            class="w-full bg-gray-50/50 pl-14 pr-8 py-5 border-2 border-gray-100 rounded-3xl focus:border-indigo-600 focus:bg-white focus:outline-none transition-all font-bold text-gray-900 placeholder:text-gray-200"
+                            class="w-full bg-gray-50/50 pl-14 pr-8 py-3 md:py-4 border-2 border-gray-300 rounded-3xl focus:border-indigo-600 focus:bg-white focus:outline-none transition-all font-bold text-gray-900 placeholder:text-gray-200"
                             placeholder="Contoh: 12345678"
                             required
                         >
@@ -95,7 +95,7 @@
                             type="password" 
                             id="password" 
                             name="password" 
-                            class="w-full bg-gray-50/50 pl-14 pr-14 py-5 border-2 border-gray-100 rounded-3xl focus:border-indigo-600 focus:bg-white focus:outline-none transition-all font-bold text-gray-900 placeholder:text-gray-200"
+                            class="w-full bg-gray-50/50 pl-14 pr-14 py-3 md:py-4 border-2 border-gray-300 rounded-3xl focus:border-indigo-600 focus:bg-white focus:outline-none transition-all font-bold text-gray-900 placeholder:text-gray-200"
                             placeholder="••••••••"
                             required
                         >
@@ -123,18 +123,18 @@
 
                 <button 
                     type="submit"
-                    class="w-full py-5 bg-indigo-600 text-white rounded-[2rem] text-[11px] font-black uppercase tracking-[0.3em] shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3 group"
+                    class="w-full py-3 md:py-4 bg-indigo-600 text-white rounded-[2rem] text-[11px] font-black uppercase tracking-[0.3em] shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3 group"
                 >
                     Akses Sekarang <i class="fas fa-arrow-right text-[10px] group-hover:translate-x-1 transition-transform"></i>
                 </button>
             </form>
 
             <!-- Footer Text -->
-            <div class="text-center pt-4">
+            <!-- <div class="text-center pt-4">
                 <p class="text-[9px] font-black text-gray-300 uppercase tracking-[0.3em] leading-relaxed">
                     Sistem Ujian Terintegrasi • <span class="text-indigo-400 font-bold">{{ date('Y') }}</span>
                 </p>
-            </div>
+            </div> -->
         </div>
 
         <!-- System Status Labels -->
