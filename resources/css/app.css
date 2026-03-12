@@ -59,6 +59,8 @@
         padding: 0;
     }
 
+    [x-cloak] { display: none !important; }
+
     html, body {
         height: 100%;
         width: 100%;
@@ -347,7 +349,64 @@
 
 /* ── Sidebar ────────────────────────────────────────────── */
 @utility sidebar-transition {
-    transition: transform 0.3s ease-in-out;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@utility nav-item {
+    display: flex;
+    align-items: center;
+    padding-inline: 1rem;
+    padding-block: 0.75rem;
+    color: #4b5563; /* text-gray-600 */
+    font-weight: 500;
+    border-radius: 0.75rem;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+
+    &:hover {
+        background-color: #f3f4f6; /* bg-gray-100 */
+        color: var(--brand-primary);
+    }
+
+    &.menu-item-active {
+        background-color: var(--brand-glow) !important;
+        color: var(--brand-primary) !important;
+        font-weight: 900 !important;
+        border-right: none;
+        border-left: 4px solid var(--brand-primary) !important;
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+    }
+}
+
+@utility nav-group-label {
+    padding-inline: 1rem;
+    padding-top: 1.5rem;
+    padding-bottom: 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: #9ca3af; /* text-gray-400 */
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+/* Custom Scrollbar for Sidebar */
+#sidebar::-webkit-scrollbar {
+    width: 5px;
+}
+
+#sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#sidebar::-webkit-scrollbar-thumb {
+    background: var(--brand-glow);
+    border-radius: 10px;
+}
+
+#sidebar::-webkit-scrollbar-thumb:hover {
+    background: var(--brand-primary);
+    opacity: 0.5;
 }
 
 @utility sidebar-hidden {

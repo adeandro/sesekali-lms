@@ -13,6 +13,7 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/intersect@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         /* ---- Runtime Theme Injection (Database-driven / PHP-rendered) ---- */
@@ -168,221 +169,153 @@
             </div>
 
             <!-- Navigation Menu -->
-            <nav class="p-4 space-y-1">
+            <nav class="flex-1 px-4 py-4 space-y-1 overflow-y-auto custom-scrollbar">
                 
-                <!-- Dashboard -->
-                <a href="{{ route('dashboard') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition {{ request()->routeIs('dashboard*') ? 'menu-item-active' : '' }}">
+                {{-- ── 1. DASHBOARD ── --}}
+                <div class="nav-group-label">Dashboard</div>
+                <a href="{{ route('dashboard') }}" class="nav-item {{ request()->routeIs('dashboard*') ? 'menu-item-active' : '' }}">
                     <i class="fas fa-th-large w-5 text-lg mr-3"></i>
-                    <span class="font-medium">Beranda</span>
+                    <span>Beranda</span>
                 </a>
 
-                <!-- Student Section (Module 5) -->
-                @if(Auth::user()->role === 'student')
-                    <div class="pt-4 pb-2">
-                        <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Ujian</p>
-                    </div>
-
-                    <!-- Available Exams -->
-                    <a href="{{ route('student.exams.index') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition {{ request()->routeIs('student.exams.*') ? 'menu-item-active' : '' }}">
-                        <i class="fas fa-file-alt w-5 text-lg mr-3"></i>
-                        <span class="font-medium">Ujian Saya</span>
-                        @if(request()->routeIs('student.exams.*'))
-                            <i class="fas fa-chevron-right ml-auto"></i>
-                        @endif
-                    </a>
-
-                    <!-- Exam Results (Module 6) -->
-                    <a href="{{ route('student.results') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition {{ request()->routeIs('student.results*') ? 'menu-item-active' : '' }}">
-                        <i class="fas fa-chart-line w-5 text-lg mr-3"></i>
-                        <span class="font-medium">Hasil Ujian Saya</span>
-                        @if(request()->routeIs('student.results*'))
-                            <i class="fas fa-chevron-right ml-auto"></i>
-                        @endif
-                    </a>
-                @endif
-
-                {{-- ── Communication Hub (all roles) ── --}}
-                <div class="pt-4 pb-2">
-                    <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">💬 Komunikasi</p>
-                </div>
-
-                {{-- Announcements --}}
-                <a href="{{ route('communication.announcements.index') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition {{ request()->routeIs('communication.announcements*') ? 'menu-item-active' : '' }}">
+                {{-- ── 2. COMMUNICATION ── --}}
+                <div class="nav-group-label">Communication</div>
+                <a href="{{ route('communication.announcements.index') }}" class="nav-item {{ request()->routeIs('communication.announcements*') ? 'menu-item-active' : '' }}">
                     <i class="fas fa-bullhorn w-5 text-lg mr-3"></i>
-                    <span class="font-medium">Pengumuman</span>
-                    @if(request()->routeIs('communication.announcements*'))
-                        <i class="fas fa-chevron-right ml-auto"></i>
-                    @endif
+                    <span>Pengumuman</span>
                 </a>
-
-                {{-- Direct Messages with unread badge --}}
                 @php $__unread = auth()->user()->unreadMessagesCount(); @endphp
-                <a href="{{ route('communication.messages.inbox') }}" class="relative flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition {{ request()->routeIs('communication.messages*') ? 'menu-item-active' : '' }}">
+                <a href="{{ route('communication.messages.inbox') }}" class="nav-item {{ request()->routeIs('communication.messages*') ? 'menu-item-active' : '' }}">
                     <i class="fas fa-envelope w-5 text-lg mr-3"></i>
-                    <span class="font-medium">Pesan</span>
+                    <span class="flex-1">Pesan</span>
                     @if($__unread > 0)
-                        <span class="ml-auto unread-badge">{{ $__unread > 99 ? '99+' : $__unread }}</span>
-                    @elseif(request()->routeIs('communication.messages*'))
-                        <i class="fas fa-chevron-right ml-auto"></i>
+                        <span class="unread-badge">{{ $__unread > 99 ? '99+' : $__unread }}</span>
                     @endif
                 </a>
 
-                <!-- Management Section (Teacher & Superadmin) -->
-                @if(in_array(Auth::user()->role, ['teacher', 'superadmin']))
-                    <div class="pt-4 pb-2">
-                        <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Manajemen LMS</p>
-                    </div>
-
-                    <!-- Teacher Management (Superadmin Only) -->
-                    @if(Auth::user()->role === 'superadmin')
-                    <a href="{{ route('superadmin.teachers.index') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition {{ request()->routeIs('superadmin.teachers.*') ? 'menu-item-active' : '' }}">
-                        <i class="fas fa-chalkboard-teacher w-5 text-lg mr-3"></i>
-                        <span class="font-medium">Manajemen Guru</span>
-                        @if(request()->routeIs('superadmin.teachers.*'))
-                            <i class="fas fa-chevron-right ml-auto"></i>
-                        @endif
-                    </a>
-                    @endif
-
-                    <!-- Students Management (Superadmin Only) -->
-                    @if(Auth::user()->role === 'superadmin')
-                    <a href="{{ route('admin.students.index') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition {{ request()->routeIs('admin.students.*') ? 'menu-item-active' : '' }}">
-                        <i class="fas fa-users w-5 text-lg mr-3"></i>
-                        <span class="font-medium">Siswa</span>
-                        @if(request()->routeIs('admin.students.*'))
-                            <i class="fas fa-chevron-right ml-auto"></i>
-                        @endif
-                    </a>
-                    @endif
-
-                    <!-- Subjects Management (Superadmin Only) -->
-                    @if(Auth::user()->role === 'superadmin')
-                    <a href="{{ route('admin.subjects.index') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition {{ request()->routeIs('admin.subjects.*') ? 'menu-item-active' : '' }}">
-                        <i class="fas fa-book w-5 text-lg mr-3"></i>
-                        <span class="font-medium">Mata Pelajaran</span>
-                        @if(request()->routeIs('admin.subjects.*'))
-                            <i class="fas fa-chevron-right ml-auto"></i>
-                        @endif
-                    </a>
-                    @endif
-
-                    <!-- Questions Management -->
-                    <a href="{{ route('admin.questions.index') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition {{ request()->routeIs('admin.questions.*') ? 'menu-item-active' : '' }}">
-                        <i class="fas fa-question-circle w-5 text-lg mr-3"></i>
-                        <span class="font-medium">Soal</span>
-                        @if(request()->routeIs('admin.questions.*'))
-                            <i class="fas fa-chevron-right ml-auto"></i>
-                        @endif
-                    </a>
-
-                    <!-- Exams Management (Module 4) -->
-                    <a href="{{ route('admin.exams.index') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition {{ request()->routeIs('admin.exams.*') ? 'menu-item-active' : '' }}">
-                        <i class="fas fa-file-alt w-5 text-lg mr-3"></i>
-                        <span class="font-medium">Ujian</span>
-                        @if(request()->routeIs('admin.exams.*'))
-                            <i class="fas fa-chevron-right ml-auto"></i>
-                        @endif
-                    </a>
-
-                    <!-- Exam Results (Module 6) -->
-                    <a href="{{ route('admin.results.index') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition {{ request()->routeIs('admin.results.*') ? 'menu-item-active' : '' }}">
-                        <i class="fas fa-chart-line w-5 text-lg mr-3"></i>
-                        <span class="font-medium">Hasil</span>
-                        @if(request()->routeIs('admin.results.*'))
-                            <i class="fas fa-chevron-right ml-auto"></i>
-                        @endif
-                    </a>
-
-                    <!-- Divider -->
-                    <div class="my-4 border-t border-gray-200"></div>
-
-                    <!-- Monitoring & Security Section (Module - Monitoring) -->
-                    <div class="pb-2">
-                        <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">🔒 Pengawasan & Keamanan</p>
-                    </div>
-
-                    <!-- Kelola Token - Generate & Manage tokens -->
-                    <a href="{{ route('admin.tokens.index') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition {{ request()->routeIs('admin.tokens.*') ? 'menu-item-active' : '' }}">
-                        <i class="fas fa-key w-5 text-lg mr-3"></i>
-                        <span class="font-medium">Kelola Token</span>
-                        @if(request()->routeIs('admin.tokens.*'))
-                            <i class="fas fa-chevron-right ml-auto"></i>
-                        @endif
-                    </a>
-
-                    <!-- Pantau Ujian - Links to monitoring exams list -->
-                    <a href="{{ route('admin.monitor-exams.index') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition {{ request()->routeIs('admin.monitor-exams.*') ? 'menu-item-active' : '' }}">
-                        <i class="fas fa-video w-5 text-lg mr-3"></i>
-                        <span class="font-medium">Pantau Ujian</span>
-                        @if(request()->routeIs('admin.monitor-exams.*'))
-                            <i class="fas fa-chevron-right ml-auto"></i>
-                        @endif
-                    </a>
-                @endif
-
-                @if(Auth::user()->role === 'superadmin')
-                <!-- ── Gamification Center (Superadmin Only) ── -->
-                <div class="pt-4 pb-1">
-                    <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">🏆 Gamification Center</p>
-                </div>
-
-                <div x-data="{ open: {{ request()->routeIs('admin.gamification.*') ? 'true' : 'false' }} }">
-                    <button @click="open = !open"
-                            class="w-full flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition {{ request()->routeIs('admin.gamification.*') ? 'menu-item-active' : '' }}">
-                        <i class="fas fa-trophy w-5 text-lg mr-3"></i>
-                        <span class="font-medium flex-1 text-left">Gamification</span>
-                        <i class="fas fa-chevron-down text-xs transition-transform duration-200" :class="open ? 'rotate-180' : ''"></i>
+                {{-- ── 3. ACADEMIC (LMS) - Collapsible ── --}}
+                <div class="pt-2" x-data="{ 
+                    open: sessionStorage.getItem('sidebar_academic_open') === 'true' || {{ (request()->routeIs('superadmin.teachers.*') || request()->routeIs('admin.students.*') || request()->routeIs('admin.subjects.*') || request()->routeIs('admin.questions.*') || request()->routeIs('admin.exams.*') || request()->routeIs('admin.results.*') || request()->routeIs('student.exams.*') || request()->routeIs('student.results*')) ? 'true' : 'false' }}
+                }" x-init="$watch('open', value => sessionStorage.setItem('sidebar_academic_open', value))">
+                    <button @click="open = !open" 
+                            class="w-full nav-item justify-between {{ (request()->routeIs('superadmin.teachers.*') || request()->routeIs('admin.students.*') || request()->routeIs('admin.subjects.*') || request()->routeIs('admin.questions.*') || request()->routeIs('admin.exams.*') || request()->routeIs('admin.results.*') || request()->routeIs('student.exams.*') || request()->routeIs('student.results*')) ? 'bg-gray-50' : '' }}">
+                        <div class="flex items-center">
+                            <i class="fas fa-graduation-cap w-5 text-lg mr-3"></i>
+                            <span class="font-bold text-[11px] uppercase tracking-widest">Academic (LMS)</span>
+                        </div>
+                        <i class="fas fa-chevron-down text-xs transition-transform duration-300" :class="open ? 'rotate-180' : ''"></i>
                     </button>
-                    <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" class="ml-4 mt-1 space-y-0.5">
-                        <a href="{{ route('admin.gamification.settings') }}"
-                           class="flex items-center px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition {{ request()->routeIs('admin.gamification.settings') ? 'submenu-item-active' : '' }}">
-                            <i class="fas fa-sliders-h w-4 mr-2.5 text-sm"></i>
-                            <span class="font-medium">Global Settings</span>
-                        </a>
-                        <a href="{{ route('admin.gamification.achievements') }}"
-                           class="flex items-center px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition {{ request()->routeIs('admin.gamification.achievements*') ? 'submenu-item-active' : '' }}">
-                            <i class="fas fa-medal w-4 mr-2.5 text-sm"></i>
-                            <span class="font-medium">Achievement Manager</span>
-                        </a>
-                        <a href="{{ route('admin.gamification.themes') }}"
-                           class="flex items-center px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition {{ request()->routeIs('admin.gamification.themes*') ? 'submenu-item-active' : '' }}">
-                            <i class="fas fa-palette w-4 mr-2.5 text-sm"></i>
-                            <span class="font-medium">Theme Manager</span>
-                        </a>
+
+                    <div x-show="open" x-cloak x-collapse class="mt-1 ml-4 space-y-1 border-l-2 border-gray-100 pl-2">
+                        @if(Auth::user()->role === 'superadmin')
+                            <a href="{{ route('superadmin.teachers.index') }}" class="nav-item py-2 text-sm {{ request()->routeIs('superadmin.teachers.*') ? 'menu-item-active' : '' }}">
+                                <i class="fas fa-chalkboard-teacher w-4 mr-2"></i>
+                                <span>Guru</span>
+                            </a>
+                            <a href="{{ route('admin.students.index') }}" class="nav-item py-2 text-sm {{ request()->routeIs('admin.students.*') ? 'menu-item-active' : '' }}">
+                                <i class="fas fa-users w-4 mr-2"></i>
+                                <span>Siswa</span>
+                            </a>
+                            <a href="{{ route('admin.subjects.index') }}" class="nav-item py-2 text-sm {{ request()->routeIs('admin.subjects.*') ? 'menu-item-active' : '' }}">
+                                <i class="fas fa-book w-4 mr-2"></i>
+                                <span>Mapel</span>
+                            </a>
+                        @endif
+
+                        @if(in_array(Auth::user()->role, ['teacher', 'superadmin']))
+                            <a href="{{ route('admin.questions.index') }}" class="nav-item py-2 text-sm {{ request()->routeIs('admin.questions.*') ? 'menu-item-active' : '' }}">
+                                <i class="fas fa-question-circle w-4 mr-2"></i>
+                                <span>Soal</span>
+                            </a>
+                            <a href="{{ route('admin.exams.index') }}" class="nav-item py-2 text-sm {{ request()->routeIs('admin.exams.*') ? 'menu-item-active' : '' }}">
+                                <i class="fas fa-file-alt w-4 mr-2"></i>
+                                <span>Ujian</span>
+                            </a>
+                            <a href="{{ route('admin.results.index') }}" class="nav-item py-2 text-sm {{ request()->routeIs('admin.results.*') ? 'menu-item-active' : '' }}">
+                                <i class="fas fa-chart-line w-4 mr-2"></i>
+                                <span>Hasil</span>
+                            </a>
+                        @endif
+
+                        @if(Auth::user()->role === 'student')
+                            <a href="{{ route('student.exams.index') }}" class="nav-item py-2 text-sm {{ request()->routeIs('student.exams.*') ? 'menu-item-active' : '' }}">
+                                <i class="fas fa-file-alt w-4 mr-2"></i>
+                                <span>Ujian Saya</span>
+                            </a>
+                            <a href="{{ route('student.results') }}" class="nav-item py-2 text-sm {{ request()->routeIs('student.results*') ? 'menu-item-active' : '' }}">
+                                <i class="fas fa-chart-line w-4 mr-2"></i>
+                                <span>Hasil Saya</span>
+                            </a>
+                        @endif
                     </div>
                 </div>
+
+                {{-- ── 4. SYSTEM ── --}}
+                @if(in_array(Auth::user()->role, ['teacher', 'superadmin']))
+                    <div class="nav-group-label">System</div>
+                    <a href="{{ route('admin.tokens.index') }}" class="nav-item {{ request()->routeIs('admin.tokens.*') ? 'menu-item-active' : '' }}">
+                        <i class="fas fa-key w-5 text-lg mr-3"></i>
+                        <span>Kelola Token</span>
+                    </a>
+                    <a href="{{ route('admin.monitor-exams.index') }}" class="nav-item {{ request()->routeIs('admin.monitor-exams.*') ? 'menu-item-active' : '' }}">
+                        <i class="fas fa-video w-5 text-lg mr-3"></i>
+                        <span>Pantau Ujian</span>
+                    </a>
                 @endif
 
-                <!-- Divider -->
-                <div class="my-4 border-t border-gray-200"></div>
-
-                <!-- Account Section -->
-                <div class="pb-2">
-                    <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Akun</p>
-                </div>
-
+                {{-- ── 5. GAMIFICATION - Collapsible ── --}}
                 @if(Auth::user()->role === 'superadmin')
-                <!-- Settings -->
-                <a href="{{ route('admin.settings.index') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition {{ request()->routeIs('admin.settings.*') ? 'menu-item-active' : '' }}">
-                    <i class="fas fa-cog w-5 text-lg mr-3"></i>
-                    <span class="font-medium">Pengaturan</span>
-                </a>
-                @elseif(Auth::user()->role === 'teacher')
-                <a href="{{ route('teacher.settings.index') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition {{ request()->routeIs('teacher.settings.*') ? 'menu-item-active' : '' }}">
-                    <i class="fas fa-user-cog w-5 text-lg mr-3"></i>
-                    <span class="font-medium">Pengaturan</span>
-                </a>
-                @elseif(Auth::user()->role === 'student')
-                <a href="{{ route('student.profile') }}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition {{ request()->routeIs('student.profile') ? 'menu-item-active' : '' }}">
-                    <i class="fas fa-user-circle w-5 text-lg mr-3"></i>
-                    <span class="font-medium">Pengaturan Profil</span>
-                </a>
+                    <div class="pt-2" x-data="{ 
+                        open: sessionStorage.getItem('sidebar_gamification_open') === 'true' || {{ request()->routeIs('admin.gamification.*') ? 'true' : 'false' }}
+                    }" x-init="$watch('open', value => sessionStorage.setItem('sidebar_gamification_open', value))">
+                        <button @click="open = !open" 
+                                class="w-full nav-item justify-between {{ request()->routeIs('admin.gamification.*') ? 'bg-gray-50' : '' }}">
+                            <div class="flex items-center">
+                                <i class="fas fa-trophy w-5 text-lg mr-3"></i>
+                                <span class="font-bold text-[11px] uppercase tracking-widest">Gamification</span>
+                            </div>
+                            <i class="fas fa-chevron-down text-xs transition-transform duration-300" :class="open ? 'rotate-180' : ''"></i>
+                        </button>
+
+                        <div x-show="open" x-cloak x-collapse class="mt-1 ml-4 space-y-1 border-l-2 border-gray-100 pl-2">
+                            <a href="{{ route('admin.gamification.settings') }}" class="nav-item py-2 text-sm {{ request()->routeIs('admin.gamification.settings') ? 'menu-item-active' : '' }}">
+                                <i class="fas fa-sliders-h w-4 mr-2"></i>
+                                <span>Settings</span>
+                            </a>
+                            <a href="{{ route('admin.gamification.achievements') }}" class="nav-item py-2 text-sm {{ request()->routeIs('admin.gamification.achievements*') ? 'menu-item-active' : '' }}">
+                                <i class="fas fa-medal w-4 mr-2"></i>
+                                <span>Achievements</span>
+                            </a>
+                            <a href="{{ route('admin.gamification.themes') }}" class="nav-item py-2 text-sm {{ request()->routeIs('admin.gamification.themes*') ? 'menu-item-active' : '' }}">
+                                <i class="fas fa-palette w-4 mr-2"></i>
+                                <span>Themes</span>
+                            </a>
+                        </div>
+                    </div>
                 @endif
 
-                <!-- Logout -->
+                {{-- ── ACCOUNT & OTHERS ── --}}
+                <div class="nav-group-label">Account</div>
+                @if(Auth::user()->role === 'superadmin')
+                    <a href="{{ route('admin.settings.index') }}" class="nav-item {{ request()->routeIs('admin.settings.*') ? 'menu-item-active' : '' }}">
+                        <i class="fas fa-cog w-5 text-lg mr-3"></i>
+                        <span>Pengaturan</span>
+                    </a>
+                @elseif(Auth::user()->role === 'teacher')
+                    <a href="{{ route('teacher.settings.index') }}" class="nav-item {{ request()->routeIs('teacher.settings.*') ? 'menu-item-active' : '' }}">
+                        <i class="fas fa-user-cog w-5 text-lg mr-3"></i>
+                        <span>Pengaturan</span>
+                    </a>
+                @elseif(Auth::user()->role === 'student')
+                    <a href="{{ route('student.profile') }}" class="nav-item {{ request()->routeIs('student.profile') ? 'menu-item-active' : '' }}">
+                        <i class="fas fa-user-circle w-5 text-lg mr-3"></i>
+                        <span>Profil</span>
+                    </a>
+                @endif
+                
                 <form action="{{ route('logout') }}" method="POST" class="block">
                     @csrf
-                    <button type="submit" class="w-full flex items-center px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition font-medium">
+                    <button type="submit" class="w-full nav-item text-red-600 hover:bg-red-50">
                         <i class="fas fa-sign-out-alt w-5 text-lg mr-3"></i>
                         <span>Keluar</span>
                     </button>
