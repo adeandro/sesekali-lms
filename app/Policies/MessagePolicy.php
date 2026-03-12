@@ -55,7 +55,8 @@ class MessagePolicy
     }
 
     /**
-     * Superadmin can delete any thread; thread participants can delete their own.
+     * Only superadmin or the original sender (teacher/superadmin) can delete a thread.
+     * Receivers (students) cannot delete threads — only the initiator can.
      */
     public function deleteThread(User $user, Message $message): bool
     {
@@ -63,7 +64,7 @@ class MessagePolicy
             return true;
         }
 
-        return $message->sender_id === $user->id
-            || $message->receiver_id === $user->id;
+        // Only the sender (who initiated the thread) can delete it
+        return $message->sender_id === $user->id;
     }
 }

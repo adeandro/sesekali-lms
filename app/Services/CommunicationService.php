@@ -18,7 +18,7 @@ class CommunicationService
      */
     public function createAnnouncement(User $author, array $data): Announcement
     {
-        return Announcement::create([
+        $announcement = Announcement::create([
             'user_id'         => $author->id,
             'title'           => $data['title'],
             'content'         => $data['content'],
@@ -28,6 +28,28 @@ class CommunicationService
             'expires_at'      => $data['expires_at'] ?? null,
             'is_active'       => true,
         ]);
+
+        // Dispatch notification
+        $query = User::where('is_active', true);
+
+        if ($data['target_role'] !== 'all') {
+            $query->where('role', $data['target_role']);
+        }
+
+        if (!empty($data['target_class_id'])) {
+            $query->where('class_group', $data['target_class_id']);
+        }
+
+        $query->chunk(100, function ($users) use ($announcement) {
+            foreach ($users as $user) {
+                // Avoid notifying the author themselves
+                if ($user->id !== $announcement->user_id) {
+                    $user->notify(new \App\Notifications\InfoNotification($announcement));
+                }
+            }
+        });
+
+        return $announcement;
     }
 
     /**
@@ -72,7 +94,7 @@ class CommunicationService
         ?string $attachmentPath = null,
         ?int $parentId = null
     ): Message {
-        return Message::create([
+        $message = Message::create([
             'sender_id'       => $sender->id,
             'receiver_id'     => $receiverId,
             'body'            => $body,
@@ -80,6 +102,13 @@ class CommunicationService
             'is_read'         => false,
             'parent_id'       => $parentId,
         ]);
+
+        $receiver = User::find($receiverId);
+        if ($receiver) {
+            $receiver->notify(new \App\Notifications\MessageNotification($message, $sender));
+        }
+
+        return $message;
     }
 
     /**

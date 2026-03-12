@@ -157,5 +157,29 @@ function confirmDeleteMsg(id) {
         }
     });
 }
+
+function confirmDeleteThread() {
+    Swal.fire({
+        icon: 'warning',
+        title: 'Hapus Percakapan?',
+        html: `<p class="text-sm text-gray-600 mt-1">Seluruh percakapan beserta semua balasannya akan dihapus. Tindakan ini tidak dapat dibatalkan.</p>`,
+        showCancelButton: true,
+        confirmButtonText: '<i class="fas fa-trash-alt mr-2"></i> Ya, Hapus',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#6b7280',
+        reverseButtons: true,
+        focusCancel: true,
+        customClass: {
+            popup:   'rounded-3xl shadow-2xl border-0',
+            confirm: 'rounded-xl px-6 py-2.5 font-black text-xs uppercase tracking-wide',
+            cancel:  'rounded-xl px-6 py-2.5 font-bold text-xs',
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('del-thread-main').submit();
+        }
+    });
+}
 </script>
 @endsection

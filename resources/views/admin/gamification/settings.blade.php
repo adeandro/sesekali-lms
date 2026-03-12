@@ -30,6 +30,11 @@
                   text-gray-500 hover:bg-gray-50">
             <i class="fas fa-medal text-sm"></i> Achievement Manager
         </a>
+        <a href="{{ route('admin.gamification.themes') }}"
+           class="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300
+                  text-gray-500 hover:bg-gray-50">
+            <i class="fas fa-palette text-sm"></i> Theme Manager
+        </a>
     </div>
 
     {{-- Alerts --}}

@@ -193,7 +193,7 @@
                     <span class="text-[10px] font-black text-[var(--brand-primary)] bg-[var(--brand-glow)] px-3 py-1 rounded-full uppercase">{{ count($earnedAchievements) }}/{{ count($allAchievements) }} Terkumpul</span>
                 </div>
 
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 relative z-10 p-8" style="content-visibility: auto;">
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 relative z-10 p-8">
                     @foreach($allAchievements as $achievement)
                         @php 
                             $isEarned = isset($earnedAchievements[$achievement->slug]); 
@@ -275,9 +275,13 @@
             <!-- Leaderboards (Hall of Fame) -->
             @if(($configs['enable_leaderboard'] ?? '1') == '1')
             <div class="relative group bg-white border border-transparent rounded-[2.5rem] p-8 shadow-xl shadow-[var(--brand-glow)] overflow-hidden" x-data="{ tab: 'angkatan' }">
-                <!-- Animated Background Blob -->
-                <div class="absolute -top-20 -left-20 w-64 h-64 rounded-full blur-3xl animate-pulse opacity-30" style="background-color: var(--brand-glow);"></div>
-                <div class="absolute -bottom-20 -right-20 w-64 h-64 bg-purple-200/30 rounded-full blur-3xl animate-pulse" style="animation-delay: 2s"></div>
+                <!-- Background Blob (Static) -->
+                <div class="absolute -top-20 -left-20 opacity-30 pointer-events-none">
+                    <div class="w-64 h-64 rounded-full blur-3xl" style="background-color: var(--brand-glow);"></div>
+                </div>
+                <div class="absolute -bottom-20 -right-20 pointer-events-none">
+                    <div class="w-64 h-64 bg-purple-200/30 rounded-full blur-3xl"></div>
+                </div>
 
                 <div class="relative">
                     <div class="flex flex-col gap-6 mb-8">
@@ -298,7 +302,7 @@
                     <!-- Angkatan Leaderboard -->
                     <div class="space-y-3" x-show="tab === 'angkatan'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-4" x-transition:enter-end="opacity-100 translate-x-0">
                         @forelse($angkatanLeaderboard as $index => $student)
-                            <div class="flex items-center gap-4 p-3 rounded-2xl transition-all duration-300 hover:bg-white/60 {{ Auth::id() === $student->id ? 'bg-white/80 scale-[1.02] shadow-sm' : '' }}" style="{{ Auth::id() === $student->id ? 'border: 1px solid var(--brand-glow); ring: 2px solid var(--brand-glow);' : '' }}">
+                            <div class="flex items-center gap-4 p-3 rounded-2xl transition-all duration-300 hover:bg-white/60 {{ Auth::id() === $student->id ? 'bg-white/80 scale-[1.02] shadow-sm border border-[var(--brand-glow)] ring-2 ring-[var(--brand-glow)]/50 z-10 relative' : 'border border-transparent' }}">
                                 <div class="w-10 h-10 flex items-center justify-center text-sm font-black relative">
                                     @if($index === 0)
                                         <i class="fas fa-crown text-amber-500 text-xl drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]"></i>
@@ -341,8 +345,8 @@
                                          </div>
                                      @endif
                                     @if($index < 3)
-                                        <div class="absolute -inset-1 rounded-full opacity-30 blur-sm animate-pulse
-                                            @if($index === 0) bg-amber-400 @elseif($index === 1) bg-slate-400 @else bg-orange-400 @endif">
+                                        <div class="absolute -inset-1 rounded-full blur-md pointer-events-none
+                                            @if($index === 0) bg-amber-400/30 @elseif($index === 1) bg-slate-400/30 @else bg-orange-400/30 @endif">
                                         </div>
                                     @endif
                                 </div>
@@ -369,7 +373,7 @@
                     <!-- Class Leaderboard -->
                     <div class="space-y-3" x-show="tab === 'class'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-4" x-transition:enter-end="opacity-100 translate-x-0" style="display: none;">
                         @forelse($classLeaderboard as $index => $student)
-                            <div class="flex items-center gap-4 p-3 rounded-2xl transition-all duration-300 hover:bg-white/60 {{ Auth::id() === $student->id ? 'bg-white/80 border-[var(--brand-glow)] ring-2 ring-[var(--brand-glow)]/50 scale-[1.02]' : '' }}">
+                            <div class="flex items-center gap-4 p-3 rounded-2xl transition-all duration-300 hover:bg-white/60 {{ Auth::id() === $student->id ? 'bg-white/80 scale-[1.02] shadow-sm border border-[var(--brand-glow)] ring-2 ring-[var(--brand-glow)]/50 z-10 relative' : 'border border-transparent' }}">
                                 <div class="w-10 h-10 flex items-center justify-center text-sm font-black relative">
                                     @if($index === 0)
                                         <i class="fas fa-medal text-amber-500 text-xl drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]"></i>
@@ -412,8 +416,8 @@
                                          </div>
                                      @endif
                                     @if($index < 3)
-                                        <div class="absolute -inset-1 rounded-full opacity-30 blur-sm animate-pulse
-                                            @if($index === 0) bg-amber-400 @elseif($index === 1) bg-slate-400 @else bg-orange-400 @endif">
+                                        <div class="absolute -inset-1 rounded-full blur-md pointer-events-none
+                                            @if($index === 0) bg-amber-400/30 @elseif($index === 1) bg-slate-400/30 @else bg-orange-400/30 @endif">
                                         </div>
                                     @endif
                                 </div>

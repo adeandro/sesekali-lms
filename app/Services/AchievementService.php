@@ -231,12 +231,13 @@ class AchievementService
             ]);
 
             // Database Notification
-            $user->notify(new \App\Notifications\GamificationUnlocked([
-                'type' => 'level_up',
-                'title' => 'Level Up!',
-                'subtitle' => 'Selamat, kamu berhasil mencapai Level ' . $newLevel,
-                'icon' => 'fas fa-arrow-up text-indigo-500',
-            ]));
+            $user->notify(new \App\Notifications\GamificationNotification(
+                'level_up',
+                'Level Up! 🎉',
+                'Kamu berhasil mencapai Level ' . $newLevel . ($user->level_title ? ' — ' . $user->level_title : ''),
+                'fas fa-arrow-up',
+                $user->level_title ? 'Peringkat: ' . $user->level_title : null
+            ));
         }
     }
 
@@ -261,32 +262,34 @@ class AchievementService
                 'reward' => '+' . $xpReward . ' EXP',
             ]);
 
-            // Database Notification
-            $user->notify(new \App\Notifications\GamificationUnlocked([
-                'type' => 'achievement',
-                'title' => 'Piala Diperoleh!',
-                'subtitle' => 'Kamu mendapatkan piala: ' . $achievement->title,
-                'icon' => 'fas fa-medal text-amber-500',
-                'reward' => '+' . $xpReward . ' EXP',
-            ]));
+            // Database Notification — Achievement
+            $user->notify(new \App\Notifications\GamificationNotification(
+                'achievement',
+                'Achievement Unlocked! 🏅',
+                $achievement->title,
+                $achievement->icon ?? 'fas fa-medal',
+                '+' . $xpReward . ' EXP'
+            ));
 
             // Process Special Item Unlocks
             if ($achievement->slug === 'social_media_king') {
-                $user->notify(new \App\Notifications\GamificationUnlocked([
-                    'type' => 'item_unlock',
-                    'title' => 'Avatar Terbuka!',
-                    'subtitle' => 'Avatar Eksklusif CyberPro telah tersedia di profilmu.',
-                    'icon' => 'fas fa-user-astronaut text-purple-500',
-                ]));
+                $user->notify(new \App\Notifications\GamificationNotification(
+                    'item',
+                    'Avatar Terbuka!',
+                    'Avatar Eksklusif CyberPro telah tersedia di profilmu.',
+                    'fas fa-user-astronaut',
+                    null
+                ));
             }
 
             if ($achievement->slug === 'night_owl') {
-                $user->notify(new \App\Notifications\GamificationUnlocked([
-                    'type' => 'item_unlock',
-                    'title' => 'Tema Terbuka!',
-                    'subtitle' => 'Tema Dark Mode (Midnight) & Volcano kini dapat kamu gunakan.',
-                    'icon' => 'fas fa-moon text-blue-500',
-                ]));
+                $user->notify(new \App\Notifications\GamificationNotification(
+                    'theme',
+                    'Tema Terbuka!',
+                    'Tema Dark Mode (Midnight) & Volcano kini dapat kamu gunakan.',
+                    'fas fa-moon',
+                    null
+                ));
             }
             
             return true;

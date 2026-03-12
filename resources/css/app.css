@@ -46,6 +46,7 @@
     --color-chat-sent-text:     var(--brand-text-accent, #ffffff);
     --color-chat-received:      #f1f5f9;   /* slate-100 */
     --color-chat-received-text: #1e293b;   /* slate-800 */
+    --color-notification-unread: #f43f5e; /* rose-500 */
 }
 
 /* ============================================================

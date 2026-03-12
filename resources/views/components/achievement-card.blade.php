@@ -12,7 +12,7 @@
     $shouldShowActions = $isAdminMode;
 @endphp
 
-<div class="group relative achievement-card rounded-[2rem] p-5 {{ $isGrayscale ? 'opacity-80 grayscale' : '' }}"
+<div class="group relative achievement-card bg-white border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-500 rounded-[2rem] p-5 overflow-hidden {{ $isGrayscale ? 'opacity-80 grayscale hover:grayscale-0' : '' }}"
      @if(!$isAdminMode) title="{{ $achievement->description }}" @endif>
     
     <!-- Status ribbon (Admin Mode - Top Right) -->

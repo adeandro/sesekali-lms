@@ -249,6 +249,25 @@ Route::middleware('auth')->group(function () {
     Route::prefix('communication')->name('communication.')->group(function () {
 
         // Announcements (all roles read; staff create/delete)
+        Route::post('notifications/read-all', function () {
+            auth()->user()->unreadNotifications->markAsRead();
+            return back();
+        })->name('notifications.read.all');
+
+        // Polling endpoint for Alpine.js Toast
+        Route::get('notifications/latest-unread', function () {
+            if (!auth()->check()) return response()->json(['notification' => null, 'unread_count' => 0]);
+            
+            $user = auth()->user();
+            $notification = $user->unreadNotifications()->latest()->first();
+            $unreadCount = $user->unreadNotifications->count();
+            
+            return response()->json([
+                'notification' => $notification,
+                'unread_count' => $unreadCount
+            ]);
+        })->name('notifications.latest');
+
         Route::get('announcements', [AnnouncementController::class, 'index'])->name('announcements.index');
         Route::middleware('role:superadmin,teacher')->group(function () {
             Route::get('announcements/create', [AnnouncementController::class, 'create'])->name('announcements.create');

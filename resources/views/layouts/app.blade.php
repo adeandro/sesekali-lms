@@ -403,20 +403,17 @@
                     </div> -->
                     <div class="flex items-center gap-4">
                     <div class="flex items-center gap-4">
-                        @if(Auth::user()->role === 'student' && ($configs['enable_gamification'] ?? '1') == '1')
-                        {{-- Notification Bell --}}
-                        <div x-data="{ open: false }" class="relative">
+                        {{-- Universal Notification Bell --}}
+                        <div x-data="{ 
+                            open: false, 
+                            unreadCount: {{ Auth::user()->unreadNotifications->count() }} 
+                        }" class="relative">
                             <button @click="open = !open" @click.away="open = false" class="relative p-2 text-gray-400 hover:text-[var(--brand-primary)] bg-gray-50 hover:bg-[var(--brand-glow)] rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-2">
                                 <i class="fas fa-bell text-lg"></i>
-                                @php
-                                    $totalUnread = Auth::user()->unreadNotifications->count() + Auth::user()->unreadMessagesCount();
-                                @endphp
-                                @if($totalUnread > 0)
-                                    <span class="absolute top-1.5 right-1.5 flex h-2.5 w-2.5">
-                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                                        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500 border-2 border-white"></span>
-                                    </span>
-                                @endif
+                                <span x-show="unreadCount > 0" x-cloak class="absolute top-0 right-0 p-1 flex items-center justify-center">
+                                    <span class="absolute inline-flex h-full w-full rounded-full bg-[var(--color-notification-unread,theme(colors.rose.400))] opacity-75 animate-ping"></span>
+                                    <span class="relative inline-flex items-center justify-center rounded-full h-4 w-4 bg-[var(--color-notification-unread,theme(colors.rose.500))] text-white text-[8px] font-black border-2 border-white" x-text="unreadCount > 99 ? '99+' : unreadCount"></span>
+                                </span>
                             </button>
 
                             {{-- Dropdown --}}
@@ -431,48 +428,92 @@
                                 
                                 <div class="bg-gray-50 px-4 py-3 border-b border-gray-100 flex justify-between items-center">
                                     <h3 class="text-[11px] font-black uppercase tracking-widest text-gray-900">Notifikasi</h3>
-                                    @if(Auth::user()->unreadNotifications->count() > 0)
-                                        <span class="bg-[var(--brand-primary)] text-white text-[9px] font-bold px-2 py-0.5 rounded-full">{{ Auth::user()->unreadNotifications->count() }} Baru</span>
-                                    @endif
                                 </div>
                                 
-                                <div class="max-h-[300px] overflow-y-auto">
-                                    @forelse(Auth::user()->notifications()->take(10)->get() as $notification)
-                                        <div class="p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors {{ is_null($notification->read_at) ? 'bg-[var(--brand-glow)]/50' : '' }}">
+                                <div class="max-h-[350px] overflow-y-auto">
+                                    @php
+                                        $notifications = Auth::user()->notifications()->take(10)->get();
+                                    @endphp
+                                    @forelse($notifications as $notification)
+                                        @php
+                                            $data    = $notification->data;
+                                            $type    = $data['type']     ?? 'info';
+                                            $cat     = $data['category'] ?? null;
+
+                                            // Use pre-built icon_color/icon_bg from payload (new canonical classes)
+                                            // Fall back to old-style mapping for backward compatibility
+                                            if (!empty($data['icon_color'])) {
+                                                $icon   = ($data['icon'] ?? 'fas fa-bell') . ' ' . $data['icon_color'];
+                                                $iconBg = $data['icon_bg'] ?? 'bg-gray-50';
+                                            } else {
+                                                // Legacy fallback mapping
+                                                $icon   = 'fas fa-bell text-gray-400';
+                                                $iconBg = 'bg-gray-100';
+                                                if ($type === 'new_message' || $type === 'message') {
+                                                    $icon   = 'fas fa-envelope text-blue-500';
+                                                    $iconBg = 'bg-blue-50';
+                                                } elseif ($type === 'global_announcement' || $type === 'info') {
+                                                    $icon   = 'fas fa-bullhorn text-emerald-500';
+                                                    $iconBg = 'bg-emerald-50';
+                                                } elseif ($type === 'gamification') {
+                                                    if ($cat === 'achievement') { $icon = 'fas fa-trophy text-amber-500';   $iconBg = 'bg-amber-50'; }
+                                                    elseif ($cat === 'level_up') { $icon = 'fas fa-arrow-up text-purple-500'; $iconBg = 'bg-purple-50'; }
+                                                    elseif ($cat === 'theme')    { $icon = 'fas fa-paint-brush text-emerald-500'; $iconBg = 'bg-emerald-50'; }
+                                                    elseif ($cat === 'item')     { $icon = 'fas fa-unlock text-indigo-500'; $iconBg = 'bg-indigo-50'; }
+                                                    else { $icon = 'fas fa-star text-amber-400'; $iconBg = 'bg-amber-50'; }
+                                                } elseif ($type === 'achievement_unlocked') {
+                                                    $icon = 'fas fa-trophy text-amber-500'; $iconBg = 'bg-amber-50';
+                                                } elseif ($type === 'level_up') {
+                                                    $icon = 'fas fa-arrow-up text-purple-500'; $iconBg = 'bg-purple-50';
+                                                }
+                                            }
+
+                                            $actionUrl = $data['action_url'] ?? null;
+                                        @endphp
+                                        @if($actionUrl)
+                                        <a href="{{ $actionUrl }}" class="block p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors {{ is_null($notification->read_at) ? 'bg-[var(--brand-glow)]/30' : '' }}">
+                                        @else
+                                        <div class="p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors {{ is_null($notification->read_at) ? 'bg-[var(--brand-glow)]/30' : '' }}">
+                                        @endif
                                             <div class="flex gap-3">
-                                                <div class="mt-0.5 shadow-sm bg-white w-8 h-8 rounded-full flex items-center justify-center shrink-0">
-                                                    <i class="{{ $notification->data['icon'] ?? 'fas fa-bell text-gray-400' }}"></i>
+                                                <div class="mt-0.5 shadow-sm {{ $iconBg }} w-8 h-8 rounded-full flex items-center justify-center shrink-0">
+                                                    <i class="{{ $icon }} text-sm"></i>
                                                 </div>
-                                                <div>
-                                                    <p class="text-xs font-bold text-gray-900 mb-0.5 leading-tight">{{ $notification->data['title'] ?? 'Pesan Sistem' }}</p>
-                                                    <p class="text-[10px] text-gray-500 leading-snug">{{ $notification->data['subtitle'] ?? '' }}</p>
-                                                    @if(isset($notification->data['reward']) && $notification->data['reward'])
-                                                        <p class="text-[9px] font-bold text-[var(--brand-primary)] mt-1 tracking-wide">{{ $notification->data['reward'] }}</p>
-                                                    @endif
-                                                    <p class="text-[9px] text-gray-400 mt-2">{{ $notification->created_at->diffForHumans() }}</p>
+                                                <div class="flex-1 min-w-0">
+                                                    <p class="text-xs font-bold text-gray-900 mb-0.5 leading-tight truncate">{{ $notification->data['title'] ?? 'Pesan Sistem' }}</p>
+                                                    <p class="text-[10px] text-gray-500 leading-snug line-clamp-2">
+                                                        {{ $notification->data['body'] ?? $notification->data['subtitle'] ?? '' }}
+                                                    </p>
+                                                    <p class="text-[9px] text-gray-400 mt-1">{{ $notification->created_at->diffForHumans() }}</p>
                                                 </div>
                                             </div>
+                                        @if($actionUrl)
+                                        </a>
+                                        @else
                                         </div>
+                                        @endif
                                     @empty
                                         <div class="p-6 text-center">
                                             <div class="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 mx-auto mb-2">
                                                 <i class="fas fa-bell-slash"></i>
                                             </div>
-                                            <p class="text-xs text-gray-500 font-medium">Belum ada notifikasi</p>
+                                            <p class="text-xs text-gray-500 font-medium">Belum ada notifikasi baru</p>
                                         </div>
                                     @endforelse
                                 </div>
+                                
+                                @if($notifications->count() > 0)
                                 <div class="p-2 border-t border-gray-50 bg-gray-50/50">
-                                    <form action="{{ route('student.notifications.read') }}" method="POST">
+                                    <form action="{{ route('communication.notifications.read.all') }}" method="POST">
                                         @csrf
                                         <button type="submit" class="w-full text-center text-[10px] items-center justify-center font-bold text-gray-500 hover:text-[var(--brand-primary)] transition p-2">
                                             Tandai semua dibaca <i class="fas fa-check-double ml-1"></i>
                                         </button>
                                     </form>
                                 </div>
+                                @endif
                             </div>
                         </div>
-                        @endif
 
                         <div class="hidden sm:flex items-center gap-3">
                             <div class="text-right">
@@ -486,7 +527,7 @@
             </nav>
 
             {{-- Page Content --}}
-            <main class="flex-1 overflow-y-auto">
+            <main class="flex-1 overflow-y-auto relative">
                 <div class="p-4 lg:p-8 max-w-7xl mx-auto w-full">
                     {{-- Announcement Banner: student-facing active announcements --}}
                     @if(auth()->check() && auth()->user()->role === 'student')
@@ -494,6 +535,9 @@
                     @endif
                     @yield('content')
                 </div>
+                
+                {{-- Toast Notification Overlay --}}
+                <x-toast-notification />
             </main>
         </div>
     </div>
