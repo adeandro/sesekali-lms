@@ -116,6 +116,7 @@ class StudentDashboardController extends Controller
                 $q->whereNull('jenjang')
                   ->orWhere('jenjang', $user->grade);
             })
+            ->where('end_time', '>', now())
             ->with(['subject'])
             ->orderBy('start_time', 'asc')
             ->take(6)

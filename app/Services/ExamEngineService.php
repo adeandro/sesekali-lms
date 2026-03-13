@@ -23,7 +23,10 @@ class ExamEngineService
         $now = now();
 
         return Exam::where('status', 'published')
-            ->where('jenjang', $student->grade)  // Filter by student's grade level
+            ->where(function($q) use ($student) {
+                $q->whereNull('jenjang')
+                  ->orWhere('jenjang', $student->grade);
+            })
             ->where(function ($query) use ($student, $now) {
                 // Show exams that haven't ended yet
                 $query->where('end_time', '>=', $now)
