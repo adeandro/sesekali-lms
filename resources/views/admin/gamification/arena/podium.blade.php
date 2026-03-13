@@ -37,18 +37,20 @@
         @if($winners->count() >= 2)
         <div class="podium-2 flex flex-col items-center">
             @if($room->mode === 'class')
-                <div class="w-16 h-16 rounded-full bg-gradient-to-br from-slate-400 to-gray-500 flex items-center justify-center shadow-xl mb-3 ring-4 ring-slate-300/20">
+                <div class="w-16 h-16 rounded-full bg-gradient-to-br from-slate-400 to-gray-500 flex items-center justify-center mb-3 border-4 theme-elite-silver">
                     <i class="fas fa-ship text-white text-2xl"></i>
                 </div>
-                <p class="text-sm font-black text-white text-center mb-2">{{ $winners[1]['class_id'] }}</p>
-                <p class="text-xs text-gray-400 mb-3">{{ number_format($winners[1]['progress'], 1) }}%</p>
+                <p class="text-sm font-black text-slate-200 text-center mb-2">{{ $winners[1]['class_id'] }}</p>
+                <p class="text-xs text-slate-400 mb-3">{{ number_format($winners[1]['progress'], 1) }}%</p>
             @else
-                <img src="{{ $winners[1]->user->photo_url }}" class="w-16 h-16 rounded-full object-cover mb-3 ring-4 ring-slate-300/30 shadow-xl">
-                <p class="text-sm font-black text-white mb-2">{{ $winners[1]->user->name }}</p>
+                <img src="{{ $winners[1]->user->photo_url }}" class="w-16 h-16 rounded-full object-cover mb-3 border-4 theme-elite-silver">
+                <p class="text-sm font-black text-slate-200 mb-2 text-center">{{ $winners[1]->user->name }}</p>
             @endif
             <div class="w-28 h-24 bg-gradient-to-b from-slate-500 to-slate-700 rounded-t-2xl flex flex-col items-center justify-center shadow-2xl border-2 border-slate-400/30">
                 <span class="text-4xl font-black text-slate-200">2</span>
-                <span class="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Silver</span>
+                <span class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Silver</span>
+                <span class="text-[9px] text-emerald-400 font-bold bg-white/5 px-2 py-0.5 rounded-full border border-emerald-500/20 mb-1">+{{ $room->settings['rewards']['rank_2']['exp'] ?? 300 }} EXP</span>
+                <span class="text-[9px] text-yellow-400 font-bold bg-white/5 px-2 py-0.5 rounded-full border border-yellow-500/20 mb-2">+{{ $room->settings['rewards']['rank_2']['gold'] ?? 500 }} Gold</span>
             </div>
         </div>
         @endif
@@ -58,18 +60,20 @@
         <div class="podium-1 flex flex-col items-center -mt-8">
             <div class="text-4xl mb-1">👑</div>
             @if($room->mode === 'class')
-                <div class="w-20 h-20 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-2xl mb-3 ring-8 ring-amber-400/30 animate-pulse">
+                <div class="w-20 h-20 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mb-3 border-[6px] theme-legendary-glow">
                     <i class="fas fa-ship text-white text-2xl"></i>
                 </div>
-                <p class="text-base font-black text-white text-center mb-2">{{ $winners[0]['class_id'] }}</p>
+                <p class="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-500 text-center mb-2 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]">{{ $winners[0]['class_id'] }}</p>
                 <p class="text-sm text-amber-400 font-black mb-3">{{ number_format($winners[0]['progress'], 1) }}%</p>
             @else
-                <img src="{{ $winners[0]->user->photo_url }}" class="w-20 h-20 rounded-full object-cover mb-3 ring-8 ring-amber-400/30 shadow-2xl">
-                <p class="text-base font-black text-white mb-2">{{ $winners[0]->user->name }}</p>
+                <img src="{{ $winners[0]->user->photo_url }}" class="w-20 h-20 rounded-full object-cover mb-3 border-[6px] theme-legendary-glow">
+                <p class="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-500 text-center mb-2 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]">{{ $winners[0]->user->name }}</p>
             @endif
             <div class="w-32 h-32 bg-gradient-to-b from-amber-400 to-amber-600 rounded-t-2xl flex flex-col items-center justify-center shadow-2xl border-2 border-amber-300/40">
                 <span class="text-5xl font-black text-amber-100">1</span>
-                <span class="text-[10px] text-amber-200 uppercase tracking-widest font-bold">Champion</span>
+                <span class="text-[10px] text-amber-200 uppercase tracking-widest font-bold mb-1">Champion</span>
+                <span class="text-[10px] text-emerald-300 font-bold bg-white/10 px-2 py-0.5 rounded-full border border-emerald-400/30 mb-1 shadow-lg">+{{ $room->settings['rewards']['rank_1']['exp'] ?? 500 }} EXP</span>
+                <span class="text-[10px] text-yellow-300 font-bold bg-white/10 px-2 py-0.5 rounded-full border border-yellow-400/30 mb-2 shadow-lg">+{{ $room->settings['rewards']['rank_1']['gold'] ?? 1000 }} Gold</span>
             </div>
         </div>
         @endif
@@ -78,18 +82,20 @@
         @if($winners->count() >= 3)
         <div class="podium-3 flex flex-col items-center">
             @if($room->mode === 'class')
-                <div class="w-14 h-14 rounded-full bg-gradient-to-br from-orange-700 to-amber-900 flex items-center justify-center shadow-xl mb-3 ring-4 ring-orange-700/20">
+                <div class="w-14 h-14 rounded-full bg-gradient-to-br from-orange-700 to-amber-900 flex items-center justify-center mb-3 border-4 theme-master-bronze">
                     <i class="fas fa-ship text-white text-xl"></i>
                 </div>
-                <p class="text-sm font-black text-white text-center mb-2">{{ $winners[2]['class_id'] }}</p>
-                <p class="text-xs text-gray-400 mb-3">{{ number_format($winners[2]['progress'], 1) }}%</p>
+                <p class="text-sm font-black text-orange-200 text-center mb-2">{{ $winners[2]['class_id'] }}</p>
+                <p class="text-xs text-orange-400 mb-3">{{ number_format($winners[2]['progress'], 1) }}%</p>
             @else
-                <img src="{{ $winners[2]->user->photo_url }}" class="w-14 h-14 rounded-full object-cover mb-3 ring-4 ring-orange-700/30 shadow-xl">
-                <p class="text-sm font-black text-white mb-2">{{ $winners[2]->user->name }}</p>
+                <img src="{{ $winners[2]->user->photo_url }}" class="w-14 h-14 rounded-full object-cover mb-3 border-4 theme-master-bronze">
+                <p class="text-sm font-black text-orange-200 mb-2 text-center">{{ $winners[2]->user->name }}</p>
             @endif
             <div class="w-24 h-16 bg-gradient-to-b from-orange-700 to-orange-900 rounded-t-2xl flex flex-col items-center justify-center shadow-2xl border-2 border-orange-600/30">
                 <span class="text-3xl font-black text-orange-200">3</span>
-                <span class="text-[10px] text-orange-400 uppercase tracking-widest font-bold">Bronze</span>
+                <span class="text-[10px] text-orange-400 uppercase tracking-widest font-bold mb-1">Bronze</span>
+                <span class="text-[8px] text-emerald-500 font-bold bg-black/10 px-2 py-0.5 rounded-full mb-0.5">+{{ $room->settings['rewards']['rank_3']['exp'] ?? 200 }} EXP</span>
+                <span class="text-[8px] text-yellow-500 font-bold bg-black/10 px-2 py-0.5 rounded-full mb-1">+{{ $room->settings['rewards']['rank_3']['gold'] ?? 250 }} Gold</span>
             </div>
         </div>
         @endif

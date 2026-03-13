@@ -31,7 +31,8 @@ class ArenaController extends Controller
     public function create()
     {
         $exams = Exam::where('status', 'published')->orderBy('title')->get();
-        return view('admin.gamification.arena.create', compact('exams'));
+        $themes = \App\Models\Theme::where('is_active', true)->orderBy('id')->get();
+        return view('admin.gamification.arena.create', compact('exams', 'themes'));
     }
 
     // ── Admin: Store Room ─────────────────────────────────────────────────
@@ -47,13 +48,24 @@ class ArenaController extends Controller
             'duration_minutes' => 'required|integer|min:5|max:180',
             'penalty_hp'       => 'required|integer|min:5|max:50',
             'lock_on_start'    => 'boolean',
+            'rewards'          => 'required|array',
+            'rewards.*.exp'    => 'required|integer|min:0',
+            'rewards.*.gold'   => 'nullable|integer|min:0',
+            'rewards.*.theme'  => 'nullable|string',
         ]);
 
         DB::transaction(function () use ($validated, $request) {
             $room = BattleRoom::create([
-                ...$validated,
-                'created_by'  => Auth::id(),
+                'name'             => $validated['name'],
+                'mode'             => $validated['mode'],
+                'source_type'      => $validated['source_type'],
+                'source_id'        => $validated['source_id'],
+                'winner_count'     => $validated['winner_count'],
+                'duration_minutes' => $validated['duration_minutes'],
+                'penalty_hp'       => $validated['penalty_hp'],
+                'created_by'    => Auth::id(),
                 'lock_on_start' => $request->boolean('lock_on_start', true),
+                'settings'      => ['rewards' => $validated['rewards']],
             ]);
 
             // Pre-load questions from exam
@@ -456,13 +468,36 @@ class ArenaController extends Controller
                 }
             }
 
-            // Grant EXP for top 3
-            $topParticipants = $room->participants()->whereIn('rank', [1, 2, 3])->with('user')->get();
-            foreach ($topParticipants as $p) {
-                $expBonus = match ($p->rank) {
-                    1 => 200, 2 => 150, 3 => 100, default => 0,
-                };
-                $p->user->increment('total_exp', $expBonus);
+            // Grant EXP and Theme Rewards
+            $participants = $room->participants()->with('user')->get();
+            $rewards = $room->settings['rewards'] ?? [];
+            
+            foreach ($participants as $p) {
+                // Determine Reward based on Rank
+                if ($p->rank === 1) {
+                    $config = $rewards['rank_1'] ?? ['exp' => 500, 'gold' => 1000, 'theme' => 'legendary-golden'];
+                } elseif ($p->rank === 2) {
+                    $config = $rewards['rank_2'] ?? ['exp' => 300, 'gold' => 500, 'theme' => 'elite-silver'];
+                } elseif ($p->rank === 3) {
+                    $config = $rewards['rank_3'] ?? ['exp' => 200, 'gold' => 250, 'theme' => 'master-bronze'];
+                } else {
+                    $config = $rewards['participant'] ?? ['exp' => 100, 'gold' => 50, 'theme' => 'survivor-common'];
+                }
+
+                $expBonus = (int) ($config['exp'] ?? 0);
+                $goldBonus = (int) ($config['gold'] ?? 0);
+                $theme = $config['theme'] ?? null;
+
+                // Apply Rewards
+                if ($expBonus > 0) {
+                    $p->user->increment('total_exp', $expBonus);
+                }
+                if ($goldBonus > 0) {
+                    $p->user->increment('gold', $goldBonus);
+                }
+                if ($theme) {
+                    $p->user->update(['ui_theme' => $theme]);
+                }
             }
         });
     }

@@ -16,11 +16,13 @@ class BattleRoom extends Model
         'name', 'code', 'mode', 'source_type', 'source_id', 'created_by',
         'winner_count', 'duration_minutes', 'penalty_hp', 'lock_on_start',
         'status', 'started_at', 'ended_at', 'total_questions', 'question_ids',
+        'settings',
     ];
 
     protected $casts = [
         'lock_on_start'  => 'boolean',
         'question_ids'   => 'array',
+        'settings'       => 'array',
         'started_at'     => 'datetime',
         'ended_at'       => 'datetime',
     ];

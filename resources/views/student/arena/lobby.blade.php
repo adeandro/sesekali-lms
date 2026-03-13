@@ -56,7 +56,32 @@
             </div>
         </div>
 
-        <div class="text-[10px] text-gray-600 font-mono" x-text="'Checking status...'"></div>
+        {{-- Prize Pool --}}
+        @php
+            $rewards = $room->settings['rewards'] ?? [];
+            $r1 = $rewards['rank_1'] ?? ['exp' => 500, 'gold' => 1000];
+            $r2 = $rewards['rank_2'] ?? ['exp' => 300, 'gold' => 500];
+            $r3 = $rewards['rank_3'] ?? ['exp' => 200, 'gold' => 250];
+        @endphp
+        <div class="text-left space-y-2 mt-4 pt-4 border-t border-white/10">
+            <p class="text-[10px] font-black uppercase tracking-widest text-amber-500"><i class="fas fa-gift mr-1"></i> Prize Pool</p>
+            <div class="space-y-1.5">
+                <div class="flex items-center justify-between text-[11px] bg-white/5 p-2 rounded-lg border border-amber-500/20">
+                    <span class="text-amber-400 font-bold"><i class="fas fa-crown w-4"></i> Juara 1</span>
+                    <span class="text-gray-300">{{ $r1['exp'] }} EXP &bull; <span class="text-yellow-400">{{ $r1['gold'] }} Gold</span></span>
+                </div>
+                <div class="flex items-center justify-between text-[11px] bg-white/5 p-2 rounded-lg border border-slate-300/20">
+                    <span class="text-slate-300 font-bold"><i class="fas fa-medal w-4"></i> Juara 2</span>
+                    <span class="text-gray-300">{{ $r2['exp'] }} EXP &bull; <span class="text-yellow-400">{{ $r2['gold'] }} Gold</span></span>
+                </div>
+                <div class="flex items-center justify-between text-[11px] bg-white/5 p-2 rounded-lg border border-orange-700/30">
+                    <span class="text-orange-400 font-bold"><i class="fas fa-award w-4"></i> Juara 3</span>
+                    <span class="text-gray-300">{{ $r3['exp'] }} EXP &bull; <span class="text-yellow-400">{{ $r3['gold'] }} Gold</span></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-[10px] text-gray-600 font-mono mt-4" x-text="'Checking status...'"></div>
     </div>
 </div>
 @endsection

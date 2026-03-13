@@ -37,21 +37,43 @@ class AvatarController extends Controller
                 $reason = '';
 
                 if (!$theme->is_unlocked_by_default) {
-                    // Check Level
-                    if ($user->current_level < $theme->min_level) {
-                        $locked = true;
-                        $reason = "Level {$theme->min_level}";
-                    }
-                    
-                    // Check Achievement
-                    if ($theme->required_achievement_id) {
-                        $hasAchievement = $user->achievements()
-                            ->where('achievements.id', $theme->required_achievement_id)
-                            ->exists();
-                        
-                        if (!$hasAchievement) {
+                    $arenaThemes = [
+                        'legendary-golden' => ['rank' => 1, 'name' => 'Juara 1 Battle Arena'],
+                        'elite-silver' => ['rank' => 2, 'name' => 'Juara 2 Battle Arena'],
+                        'master-bronze' => ['rank' => 3, 'name' => 'Juara 3 Battle Arena'],
+                        'survivor-common' => ['rank' => null, 'name' => 'Partisipan Battle Arena'],
+                    ];
+
+                    if (array_key_exists($theme->slug, $arenaThemes)) {
+                        $req = $arenaThemes[$theme->slug];
+                        $query = \App\Models\BattleParticipant::where('user_id', $user->id);
+                        if ($req['rank']) {
+                            // Can be Rank 1 in individual or Rank 1 as part of a winning Fleet
+                            $query->where('rank', $req['rank']);
+                        }
+                        $hasEarned = $query->exists();
+
+                        if (!$hasEarned) {
                             $locked = true;
-                            $reason = $theme->requiredAchievement->title ?? "Achievement Required";
+                            $reason = $req['name'];
+                        }
+                    } else {
+                        // Normal Themes check Level
+                        if ($user->current_level < $theme->min_level) {
+                            $locked = true;
+                            $reason = "Level {$theme->min_level}";
+                        }
+                        
+                        // Normal Themes check Achievement
+                        if ($theme->required_achievement_id) {
+                            $hasAchievement = $user->achievements()
+                                ->where('achievements.id', $theme->required_achievement_id)
+                                ->exists();
+                            
+                            if (!$hasAchievement) {
+                                $locked = true;
+                                $reason = $theme->requiredAchievement->title ?? "Achievement Required";
+                            }
                         }
                     }
                 }
@@ -231,18 +253,37 @@ class AvatarController extends Controller
 
         // Unlock Validation
         if (!$theme->is_unlocked_by_default) {
-            if ($user->current_level < $theme->min_level) {
-                return $this->themeError("Tema \"{$theme->name}\" terbuka di Level {$theme->min_level}!");
-            }
+            $arenaThemes = [
+                'legendary-golden' => ['rank' => 1, 'name' => 'Juara 1 Battle Arena'],
+                'elite-silver' => ['rank' => 2, 'name' => 'Juara 2 Battle Arena'],
+                'master-bronze' => ['rank' => 3, 'name' => 'Juara 3 Battle Arena'],
+                'survivor-common' => ['rank' => null, 'name' => 'Partisipan Battle Arena'],
+            ];
 
-            if ($theme->required_achievement_id) {
-                $hasAchievement = $user->achievements()
-                    ->where('achievements.id', $theme->required_achievement_id)
-                    ->exists();
+            if (array_key_exists($theme->slug, $arenaThemes)) {
+                $req = $arenaThemes[$theme->slug];
+                $query = \App\Models\BattleParticipant::where('user_id', $user->id);
+                if ($req['rank']) {
+                    $query->where('rank', $req['rank']);
+                }
                 
-                if (!$hasAchievement) {
-                    $achievementTitle = $theme->requiredAchievement->title ?? 'Pencapaian Tertentu';
-                    return $this->themeError("Tema \"{$theme->name}\" terkunci! Kamu butuh achievement '{$achievementTitle}'.");
+                if (!$query->exists()) {
+                    return $this->themeError("Tema \"{$theme->name}\" terkunci! Kamu harus menjadi {$req['name']}.");
+                }
+            } else {
+                if ($user->current_level < $theme->min_level) {
+                    return $this->themeError("Tema \"{$theme->name}\" terbuka di Level {$theme->min_level}!");
+                }
+
+                if ($theme->required_achievement_id) {
+                    $hasAchievement = $user->achievements()
+                        ->where('achievements.id', $theme->required_achievement_id)
+                        ->exists();
+                    
+                    if (!$hasAchievement) {
+                        $achievementTitle = $theme->requiredAchievement->title ?? 'Pencapaian Tertentu';
+                        return $this->themeError("Tema \"{$theme->name}\" terkunci! Kamu butuh achievement '{$achievementTitle}'.");
+                    }
                 }
             }
         }

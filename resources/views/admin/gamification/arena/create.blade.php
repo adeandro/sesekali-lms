@@ -109,6 +109,107 @@
             </div>
         </div>
 
+        {{-- Reward Settings --}}
+        <div class="bg-white rounded-[1.5rem] border border-gray-100 shadow-sm p-6 space-y-5">
+            <h2 class="text-xs font-black uppercase tracking-widest text-gray-400">Pengaturan Hadiah (Reward)</h2>
+
+            {{-- Rank 1 --}}
+            <div class="p-4 bg-amber-50 border border-amber-200 rounded-2xl space-y-3">
+                <p class="text-xs font-black text-amber-800 uppercase tracking-widest"><i class="fas fa-crown text-amber-500 mr-1"></i> Juara 1</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">EXP</label>
+                        <input type="number" name="rewards[rank_1][exp]" value="{{ old('rewards.rank_1.exp', 500) }}" min="0" class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-amber-400 focus:border-transparent transition">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">Gold</label>
+                        <input type="number" name="rewards[rank_1][gold]" value="{{ old('rewards.rank_1.gold', 1000) }}" min="0" class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-amber-400 focus:border-transparent transition">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">Tema Avatar</label>
+                        <select name="rewards[rank_1][theme]" class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-amber-400 bg-white">
+                            <option value="">-- Tanpa Tema --</option>
+                            @foreach($themes as $theme)
+                                <option value="{{ $theme->slug }}" {{ old('rewards.rank_1.theme', 'legendary-golden') === $theme->slug ? 'selected' : '' }}>{{ $theme->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Rank 2 --}}
+            <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+                <p class="text-xs font-black text-slate-600 uppercase tracking-widest"><i class="fas fa-medal text-slate-400 mr-1"></i> Juara 2</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">EXP</label>
+                        <input type="number" name="rewards[rank_2][exp]" value="{{ old('rewards.rank_2.exp', 300) }}" min="0" class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-slate-400 focus:border-transparent transition">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">Gold</label>
+                        <input type="number" name="rewards[rank_2][gold]" value="{{ old('rewards.rank_2.gold', 500) }}" min="0" class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-slate-400 focus:border-transparent transition">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">Tema Avatar</label>
+                        <select name="rewards[rank_2][theme]" class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-slate-400 bg-white">
+                            <option value="">-- Tanpa Tema --</option>
+                            @foreach($themes as $theme)
+                                <option value="{{ $theme->slug }}" {{ old('rewards.rank_2.theme', 'elite-silver') === $theme->slug ? 'selected' : '' }}>{{ $theme->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Rank 3 --}}
+            <div class="p-4 bg-orange-50 border border-orange-200 rounded-2xl space-y-3">
+                <p class="text-xs font-black text-orange-800 uppercase tracking-widest"><i class="fas fa-award text-orange-500 mr-1"></i> Juara 3</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">EXP</label>
+                        <input type="number" name="rewards[rank_3][exp]" value="{{ old('rewards.rank_3.exp', 200) }}" min="0" class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-orange-400 focus:border-transparent transition">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">Gold</label>
+                        <input type="number" name="rewards[rank_3][gold]" value="{{ old('rewards.rank_3.gold', 250) }}" min="0" class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-orange-400 focus:border-transparent transition">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">Tema Avatar</label>
+                        <select name="rewards[rank_3][theme]" class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-orange-400 bg-white">
+                            <option value="">-- Tanpa Tema --</option>
+                            @foreach($themes as $theme)
+                                <option value="{{ $theme->slug }}" {{ old('rewards.rank_3.theme', 'master-bronze') === $theme->slug ? 'selected' : '' }}>{{ $theme->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Participant --}}
+            <div class="p-4 bg-gray-50 border border-gray-200 rounded-2xl space-y-3">
+                <p class="text-xs font-black text-gray-600 uppercase tracking-widest"><i class="fas fa-users text-gray-400 mr-1"></i> Partisipan Finish</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">EXP</label>
+                        <input type="number" name="rewards[participant][exp]" value="{{ old('rewards.participant.exp', 100) }}" min="0" class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-gray-400 focus:border-transparent transition">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">Gold</label>
+                        <input type="number" name="rewards[participant][gold]" value="{{ old('rewards.participant.gold', 50) }}" min="0" class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-gray-400 focus:border-transparent transition">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">Tema Avatar</label>
+                        <select name="rewards[participant][theme]" class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-gray-400 bg-white">
+                            <option value="">-- Tanpa Tema --</option>
+                            @foreach($themes as $theme)
+                                <option value="{{ $theme->slug }}" {{ old('rewards.participant.theme', 'survivor-common') === $theme->slug ? 'selected' : '' }}>{{ $theme->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <button type="submit"
                 class="w-full py-4 bg-gradient-to-r from-red-500 to-orange-500 text-white font-black text-sm uppercase tracking-widest rounded-2xl shadow-lg hover:shadow-orange-500/30 hover:-translate-y-0.5 transition-all duration-200">
             <i class="fas fa-rocket mr-2"></i> Buat Battle Room & Buka Lobby

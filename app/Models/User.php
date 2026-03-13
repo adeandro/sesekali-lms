@@ -34,6 +34,7 @@ class User extends Authenticatable
         'avatar_upload',
         'role',
         'total_exp',
+        'gold',
         'current_level',
         'ui_theme',
     ];
@@ -270,6 +271,23 @@ class User extends Authenticatable
      */
     public function getAvatarFrameClassAttribute(): string
     {
+        // 1. Check for Battle Arena Gamification Themes
+        $theme = $this->ui_theme ?? '';
+        
+        if ($theme === 'legendary-golden') {
+            return 'theme-legendary-glow ring-4 ring-amber-500/50';
+        }
+        if ($theme === 'elite-silver') {
+            return 'theme-elite-silver ring-4 ring-slate-300/50';
+        }
+        if ($theme === 'master-bronze') {
+            return 'theme-master-bronze ring-4 ring-orange-700/50';
+        }
+        if ($theme === 'survivor-common') {
+            return 'theme-survivor-common ring-4 ring-neutral-500/30';
+        }
+
+        // 2. Default Level-based Frames
         $level = $this->current_level;
         
         if ($level >= 31) {
