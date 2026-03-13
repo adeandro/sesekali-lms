@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use App\Notifications\GamificationNotification;
 
 class ArenaController extends Controller
 {
@@ -510,8 +511,14 @@ class ArenaController extends Controller
                 if ($goldBonus > 0) {
                     $p->user->increment('gold', $goldBonus);
                 }
-                if ($theme) {
+                if ($theme && $p->user->ui_theme !== $theme) {
                     $p->user->update(['ui_theme' => $theme]);
+                    $p->user->notify(new GamificationNotification(
+                        'Tema Baru Terbuka!',
+                        "Kamu mendapatkan tema eksklusif: {$theme} dari Battle Arena!",
+                        'fa-palette',
+                        'bg-purple-100 text-purple-600'
+                    ));
                 }
 
                 // Handle Physical Reward Generation
@@ -525,13 +532,20 @@ class ArenaController extends Controller
                     }
 
                     if ($isEligible) {
-                        RewardCoupon::create([
+                        $coupon = RewardCoupon::create([
                             'user_id'        => $p->user_id,
                             'battle_room_id' => $room->id,
                             'description'    => $physical['description'],
                             'code'           => Str::upper(Str::random(10)),
                             'status'         => 'active',
                         ]);
+
+                        $p->user->notify(new GamificationNotification(
+                            'Kupon Hadiah Fisik!',
+                            "Kamu memenangkan: {$physical['description']}. Segera klaim di menu Kupon Fisik!",
+                            'fa-ticket-alt',
+                            'bg-amber-100 text-amber-600'
+                        ));
                     }
                 }
             }
