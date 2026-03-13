@@ -9,9 +9,11 @@ use App\Models\BattleAnswer;
 use App\Models\Exam;
 use App\Models\Question;
 use App\Models\User;
+use App\Models\RewardCoupon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class ArenaController extends Controller
 {
@@ -52,9 +54,22 @@ class ArenaController extends Controller
             'rewards.*.exp'    => 'required|integer|min:0',
             'rewards.*.gold'   => 'nullable|integer|min:0',
             'rewards.*.theme'  => 'nullable|string',
+            'physical_reward.enabled'     => 'nullable|boolean',
+            'physical_reward.description' => 'required_if:physical_reward.enabled,1|nullable|string|max:150',
+            'physical_reward.eligibility' => 'required_if:physical_reward.enabled,1|nullable|in:rank_1,top_3',
         ]);
 
         DB::transaction(function () use ($validated, $request) {
+            $settings = ['rewards' => $validated['rewards']];
+            
+            // Map physical reward cleanly if enabled
+            if (!empty($validated['physical_reward']['enabled'])) {
+                $settings['physical_reward'] = [
+                    'description' => $validated['physical_reward']['description'],
+                    'eligibility' => $validated['physical_reward']['eligibility'],
+                ];
+            }
+
             $room = BattleRoom::create([
                 'name'             => $validated['name'],
                 'mode'             => $validated['mode'],
@@ -65,7 +80,7 @@ class ArenaController extends Controller
                 'penalty_hp'       => $validated['penalty_hp'],
                 'created_by'    => Auth::id(),
                 'lock_on_start' => $request->boolean('lock_on_start', true),
-                'settings'      => ['rewards' => $validated['rewards']],
+                'settings'      => $settings,
             ]);
 
             // Pre-load questions from exam
@@ -497,6 +512,27 @@ class ArenaController extends Controller
                 }
                 if ($theme) {
                     $p->user->update(['ui_theme' => $theme]);
+                }
+
+                // Handle Physical Reward Generation
+                $physical = $room->settings['physical_reward'] ?? null;
+                if ($physical) {
+                    $isEligible = false;
+                    if ($physical['eligibility'] === 'rank_1' && $p->rank === 1) {
+                        $isEligible = true;
+                    } elseif ($physical['eligibility'] === 'top_3' && $p->rank <= 3) {
+                        $isEligible = true;
+                    }
+
+                    if ($isEligible) {
+                        RewardCoupon::create([
+                            'user_id'        => $p->user_id,
+                            'battle_room_id' => $room->id,
+                            'description'    => $physical['description'],
+                            'code'           => Str::upper(Str::random(10)),
+                            'status'         => 'active',
+                        ]);
+                    }
                 }
             }
         });

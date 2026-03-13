@@ -208,6 +208,37 @@
                     </div>
                 </div>
             </div>
+            {{-- Physical Reward (Voucher) --}}
+            <div class="px-4 py-5 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-2xl border border-yellow-200" x-data="{ physicalReward: {{ old('physical_reward.enabled', 0) ? 'true' : 'false' }} }">
+                <div class="flex items-center justify-between mb-4 pb-4 border-b border-yellow-200/50">
+                    <div>
+                        <h3 class="text-sm font-black text-amber-800 flex items-center gap-2">
+                            <i class="fas fa-ticket-alt text-amber-500"></i> Include Physical Reward
+                        </h3>
+                        <p class="text-[10px] text-amber-700/70 mt-0.5">Berikan voucher hadiah fisik (misal: Voucher Kantin) kepada pemenang.</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="physical_reward[enabled]" value="1" class="sr-only peer" x-model="physicalReward">
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-amber-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                    </label>
+                </div>
+
+                <div x-show="physicalReward" x-collapse>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-bold text-amber-800 uppercase tracking-wide mb-1">Deskripsi Reward</label>
+                            <input type="text" name="physical_reward[description]" value="{{ old('physical_reward.description') }}" placeholder="Contoh: Voucher Jajan Kantin Rp 5.000" class="w-full px-4 py-2.5 rounded-xl border border-yellow-300 text-sm focus:ring-amber-400 focus:border-amber-400 bg-white placeholder:text-yellow-600/40">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-amber-800 uppercase tracking-wide mb-1">Penerima Voucher</label>
+                            <select name="physical_reward[eligibility]" class="w-full px-4 py-2.5 rounded-xl border border-yellow-300 text-sm focus:ring-amber-400 focus:border-amber-400 bg-white">
+                                <option value="rank_1" {{ old('physical_reward.eligibility') == 'rank_1' ? 'selected' : '' }}>Hanya Juara 1 (Satu Pemenang)</option>
+                                <option value="top_3" {{ old('physical_reward.eligibility') == 'top_3' ? 'selected' : '' }}>Juara 1, 2, dan 3 (Tiga Pemenang)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <button type="submit"

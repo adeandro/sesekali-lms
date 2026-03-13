@@ -246,6 +246,10 @@
                                 <i class="fas fa-chart-line w-4 mr-2"></i>
                                 <span>Hasil Saya</span>
                             </a>
+                            <a href="{{ route('student.coupons.index') }}" class="nav-item flex items-center py-2 text-sm {{ request()->routeIs('student.coupons.*') ? 'menu-item-active' : '' }}">
+                                <i class="fas fa-ticket-alt w-4 mr-2"></i>
+                                <span>Kupon Fisik</span>
+                            </a>
                             <a href="#" onclick="document.getElementById('arenaJoinModal').classList.remove('hidden'); return false;"
                                class="nav-item py-2 text-sm {{ request()->routeIs('student.arena.*') ? 'menu-item-active' : '' }}">
                                 <i class="fas fa-fist-raised w-4 mr-2"></i>
@@ -299,6 +303,10 @@
                             <a href="{{ route('admin.gamification.arena.index') }}" class="nav-item py-2 text-sm {{ request()->routeIs('admin.gamification.arena*') ? 'menu-item-active' : '' }}">
                                 <i class="fas fa-fist-raised w-4 mr-2"></i>
                                 <span>Battle Arena</span>
+                            </a>
+                            <a href="{{ route('admin.gamification.coupons.index') }}" class="nav-item py-2 text-sm {{ request()->routeIs('admin.gamification.coupons*') ? 'menu-item-active' : '' }}">
+                                <i class="fas fa-ticket-alt w-4 mr-2"></i>
+                                <span>Kupon Hadiah</span>
                             </a>
                         </div>
                     </div>

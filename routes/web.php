@@ -140,6 +140,9 @@ Route::middleware('auth')->group(function () {
         Route::post('student/arena/{room}/battle/{participant}/submit', [ArenaController::class, 'submitAnswer'])->name('student.arena.submit');
         Route::post('student/arena/{room}/battle/{participant}/heartbeat', [ArenaController::class, 'heartbeat'])->name('student.arena.heartbeat');
         Route::post('student/arena/{room}/battle/{participant}/tab-penalty', [ArenaController::class, 'tabPenalty'])->name('student.arena.tab-penalty');
+
+        // Digital Coupon Wallet
+        Route::get('student/coupons', [\App\Http\Controllers\Student\CouponController::class, 'index'])->name('student.coupons.index');
     });
 
     // Subject & Question Management routes
@@ -264,6 +267,12 @@ Route::middleware('auth')->group(function () {
                     Route::get('{room}/podium', [ArenaController::class, 'podium'])->name('podium');
                     Route::get('{room}/debriefing', [ArenaController::class, 'debriefing'])->name('debriefing');
                     Route::delete('{room}', [ArenaController::class, 'destroy'])->name('destroy');
+                });
+
+                // ── Physical Reward Coupons ──────────────────────────────────
+                Route::prefix('coupons')->name('coupons.')->group(function () {
+                    Route::get('/', [\App\Http\Controllers\Admin\CouponController::class, 'index'])->name('index');
+                    Route::post('{coupon}/claim', [\App\Http\Controllers\Admin\CouponController::class, 'claim'])->name('claim');
                 });
             });
         });
