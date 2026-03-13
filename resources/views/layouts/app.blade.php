@@ -246,6 +246,12 @@
                                 <i class="fas fa-chart-line w-4 mr-2"></i>
                                 <span>Hasil Saya</span>
                             </a>
+                            <a href="#" onclick="document.getElementById('arenaJoinModal').classList.remove('hidden'); return false;"
+                               class="nav-item py-2 text-sm {{ request()->routeIs('student.arena.*') ? 'menu-item-active' : '' }}">
+                                <i class="fas fa-fist-raised w-4 mr-2"></i>
+                                <span>Battle Arena</span>
+                                <span class="ml-auto text-[9px] font-black bg-red-500 text-white px-1.5 py-0.5 rounded-full uppercase tracking-widest">LIVE</span>
+                            </a>
                         @endif
                     </div>
                 </div>
@@ -289,6 +295,10 @@
                             <a href="{{ route('admin.gamification.themes') }}" class="nav-item py-2 text-sm {{ request()->routeIs('admin.gamification.themes*') ? 'menu-item-active' : '' }}">
                                 <i class="fas fa-palette w-4 mr-2"></i>
                                 <span>Themes</span>
+                            </a>
+                            <a href="{{ route('admin.gamification.arena.index') }}" class="nav-item py-2 text-sm {{ request()->routeIs('admin.gamification.arena*') ? 'menu-item-active' : '' }}">
+                                <i class="fas fa-fist-raised w-4 mr-2"></i>
+                                <span>Battle Arena</span>
                             </a>
                         </div>
                     </div>
@@ -647,6 +657,38 @@
     @endif
     {{-- Urgent Announcement Modal: blocks interaction until user acknowledges --}}
     @if(Auth::user()->role === 'student')
+        {{-- Battle Arena Join Modal --}}
+        <div id="arenaJoinModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
+            <div class="bg-gray-900 border border-white/10 rounded-[2rem] shadow-2xl w-full max-w-sm p-8 space-y-6 relative">
+                <button onclick="document.getElementById('arenaJoinModal').classList.add('hidden')"
+                        class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-gray-400 hover:text-white flex items-center justify-center transition">
+                    <i class="fas fa-times text-xs"></i>
+                </button>
+
+                <div class="text-center space-y-2">
+                    <div class="w-16 h-16 rounded-full bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center mx-auto shadow-xl shadow-orange-500/30">
+                        <i class="fas fa-fist-raised text-white text-2xl"></i>
+                    </div>
+                    <h2 class="text-xl font-black text-white tracking-tight">Join Battle Arena</h2>
+                    <p class="text-gray-400 text-xs">Masukkan kode 6 karakter dari gurumu.</p>
+                </div>
+
+                <form action="{{ route('student.arena.join') }}" method="POST" class="no-loading space-y-4">
+                    @csrf
+                    <div>
+                        <input type="text" name="code" maxlength="6" placeholder="XXXXXX"
+                               autocomplete="off" autocapitalize="characters"
+                               oninput="this.value = this.value.toUpperCase()"
+                               class="w-full text-center text-2xl font-black tracking-[0.4em] uppercase bg-white/5 border border-white/10 text-white rounded-2xl py-4 px-4 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition placeholder:text-gray-600"
+                               required>
+                    </div>
+                    <button type="submit"
+                            class="w-full py-3.5 bg-gradient-to-r from-red-500 to-orange-500 text-white font-black text-sm uppercase tracking-widest rounded-2xl shadow-lg hover:shadow-orange-500/30 hover:-translate-y-0.5 transition-all">
+                        <i class="fas fa-door-open mr-2"></i> Masuk ke Lobby
+                    </button>
+                </form>
+            </div>
+        </div>
         <x-urgent-announcement-modal />
     @endif
 </body>

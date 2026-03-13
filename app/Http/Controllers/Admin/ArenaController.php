@@ -1,0 +1,469 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\BattleRoom;
+use App\Models\BattleParticipant;
+use App\Models\BattleAnswer;
+use App\Models\Exam;
+use App\Models\Question;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+
+class ArenaController extends Controller
+{
+    // ── Admin: Room Index ─────────────────────────────────────────────────
+
+    public function index()
+    {
+        $rooms = BattleRoom::with('creator')
+            ->orderByDesc('created_at')
+            ->paginate(15);
+
+        return view('admin.gamification.arena.index', compact('rooms'));
+    }
+
+    // ── Admin: Create Room Form ───────────────────────────────────────────
+
+    public function create()
+    {
+        $exams = Exam::where('status', 'published')->orderBy('title')->get();
+        return view('admin.gamification.arena.create', compact('exams'));
+    }
+
+    // ── Admin: Store Room ─────────────────────────────────────────────────
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name'             => 'required|string|max:100',
+            'mode'             => 'required|in:individual,group,class',
+            'source_type'      => 'required|in:exam,question_bank',
+            'source_id'        => 'nullable|exists:exams,id',
+            'winner_count'     => 'required|integer|min:1|max:10',
+            'duration_minutes' => 'required|integer|min:5|max:180',
+            'penalty_hp'       => 'required|integer|min:5|max:50',
+            'lock_on_start'    => 'boolean',
+        ]);
+
+        DB::transaction(function () use ($validated, $request) {
+            $room = BattleRoom::create([
+                ...$validated,
+                'created_by'  => Auth::id(),
+                'lock_on_start' => $request->boolean('lock_on_start', true),
+            ]);
+
+            // Pre-load questions from exam
+            if ($room->source_type === 'exam' && $room->source_id) {
+                $exam = Exam::with('questions')->find($room->source_id);
+                if ($exam) {
+                    $ids = $exam->questions->pluck('id')->toArray();
+                    $room->update([
+                        'question_ids'    => $ids,
+                        'total_questions' => count($ids),
+                    ]);
+                }
+            }
+        });
+
+        $room = BattleRoom::where('created_by', Auth::id())->latest()->first();
+        return redirect()->route('admin.gamification.arena.lobby', $room)
+            ->with('success', 'Battle Room "' . $room->name . '" berhasil dibuat!');
+    }
+
+    // ── Admin: Lobby View ─────────────────────────────────────────────────
+
+    public function lobby(BattleRoom $room)
+    {
+        $room->load(['participants.user']);
+
+        // Group participants by class for Fleet display
+        $fleetGroups = $room->participants->groupBy('class_id');
+
+        return view('admin.gamification.arena.lobby', compact('room', 'fleetGroups'));
+    }
+
+    // ── Admin: Ignite (Start Battle) ──────────────────────────────────────
+
+    public function ignite(BattleRoom $room)
+    {
+        if ($room->status !== 'waiting') {
+            return back()->with('error', 'Battle sudah dimulai atau selesai.');
+        }
+
+        if ($room->participants()->count() === 0) {
+            return back()->with('error', 'Belum ada peserta yang bergabung.');
+        }
+
+        $room->update([
+            'status'     => 'ongoing',
+            'started_at' => now(),
+        ]);
+
+        return redirect()->route('admin.gamification.arena.spectator', $room)
+            ->with('success', 'Battle dimulai! 🔥');
+    }
+
+    // ── Admin: Spectator (Live Track) ─────────────────────────────────────
+
+    public function spectator(BattleRoom $room)
+    {
+        $room->load(['participants.user']);
+        return view('admin.gamification.arena.spectator', compact('room'));
+    }
+
+    // ── Admin: Spectator Poll (AJAX – called by wire:poll) ────────────────
+
+    public function spectatorData(BattleRoom $room)
+    {
+        $room->load(['participants.user']);
+
+        $data = [
+            'status'            => $room->status,
+            'remaining_seconds' => $room->remainingSeconds(),
+            'is_sudden_death'   => $room->isSuddenDeath(),
+            'fleet'             => array_values($room->fleetProgress()),
+            'participants'      => $room->participants->map(fn ($p) => [
+                'id'            => $p->id,
+                'name'          => $p->user->name,
+                'class_id'      => $p->class_id,
+                'hp'            => $p->hp,
+                'correct'       => $p->correct_count,
+                'status'        => $p->status,
+                'progress'      => $p->progressPercent($room->total_questions),
+                'avatar_url'    => $p->user->photo_url,
+            ]),
+        ];
+
+        // Auto-finish check
+        if ($room->status === 'ongoing') {
+            $this->checkAutoFinish($room);
+            $room->refresh();
+            $data['status'] = $room->status;
+        }
+
+        return response()->json($data);
+    }
+
+    // ── Admin: Force Finish ───────────────────────────────────────────────
+
+    public function finish(BattleRoom $room)
+    {
+        $this->finalizeRoom($room);
+        return redirect()->route('admin.gamification.arena.podium', $room);
+    }
+
+    // ── Admin: Podium ─────────────────────────────────────────────────────
+
+    public function podium(BattleRoom $room)
+    {
+        $room->load(['participants.user']);
+
+        if ($room->mode === 'class') {
+            // Fleet podium — ranked by fleet progress
+            $fleet   = collect($room->fleetProgress())->values();
+            $winners = $fleet->take(3);
+            return view('admin.gamification.arena.podium', compact('room', 'winners'));
+        }
+
+        // Individual / Group podium
+        $winners = $room->participants()
+            ->with('user')
+            ->whereNotNull('rank')
+            ->orderBy('rank')
+            ->take(3)
+            ->get();
+
+        return view('admin.gamification.arena.podium', compact('room', 'winners'));
+    }
+
+    // ── Admin: Debriefing ─────────────────────────────────────────────────
+
+    public function debriefing(BattleRoom $room)
+    {
+        // Questions with most wrong answers
+        $toughest = BattleAnswer::with('question')
+            ->where('is_correct', false)
+            ->whereIn('battle_participant_id', $room->participants()->pluck('id'))
+            ->selectRaw('question_id, COUNT(*) as wrong_count')
+            ->groupBy('question_id')
+            ->orderByDesc('wrong_count')
+            ->take(10)
+            ->get();
+
+        return view('admin.gamification.arena.debriefing', compact('room', 'toughest'));
+    }
+
+    // ── Admin: Delete Room ────────────────────────────────────────────────
+
+    public function destroy(BattleRoom $room)
+    {
+        $room->delete();
+        return redirect()->route('admin.gamification.arena.index')
+            ->with('success', 'Battle Room dihapus.');
+    }
+
+    // ── Student: Join Lobby ───────────────────────────────────────────────
+
+    public function studentJoin(Request $request)
+    {
+        $request->validate(['code' => 'required|string|size:6']);
+        $room = BattleRoom::where('code', strtoupper($request->code))
+            ->whereIn('status', ['waiting'])
+            ->firstOrFail();
+
+        return redirect()->route('student.arena.lobby', $room);
+    }
+
+    public function studentLobby(BattleRoom $room)
+    {
+        $user = Auth::user();
+
+        // Register participant if not already there
+        $participant = BattleParticipant::firstOrCreate(
+            ['battle_room_id' => $room->id, 'user_id' => $user->id],
+            [
+                'class_id'    => $user->grade . ($user->class_group ? '-' . $user->class_group : ''),
+                'hp'          => 100,
+                'status'      => 'active',
+                'last_seen_at' => now(),
+            ]
+        );
+
+        // Redirect to battle if already started
+        if (in_array($room->status, ['ongoing'])) {
+            return redirect()->route('student.arena.battle', [$room, $participant]);
+        }
+
+        return view('student.arena.lobby', compact('room', 'participant'));
+    }
+
+    // ── Student: Lobby Status Poll ────────────────────────────────────────
+
+    public function studentLobbyStatus(BattleRoom $room)
+    {
+        $participant = BattleParticipant::where('battle_room_id', $room->id)
+            ->where('user_id', Auth::id())
+            ->first();
+
+        $participant?->update(['last_seen_at' => now()]);
+
+        return response()->json([
+            'status' => $room->status,
+            'participant_id' => $participant?->id,
+        ]);
+    }
+
+    // ── Student: Battle View ──────────────────────────────────────────────
+
+    public function battle(BattleRoom $room, BattleParticipant $participant)
+    {
+        // Security: participant must belong to auth user
+        abort_if($participant->user_id !== Auth::id(), 403);
+        abort_if($room->status === 'waiting', 302, route('student.arena.lobby', $room));
+
+        if (in_array($room->status, ['finished']) || $participant->status === 'disqualified') {
+            return view('student.arena.finished', compact('room', 'participant'));
+        }
+
+        // Fetch current question
+        $questionIds = $room->question_ids ?? [];
+        $idx         = $participant->current_question_index;
+        $questionId  = $questionIds[$idx] ?? null;
+        $question    = $questionId ? Question::find($questionId) : null;
+
+        if (!$question) {
+            // All questions answered
+            $participant->update(['status' => 'finished', 'finished_at' => now()]);
+            $this->checkAutoFinish($room);
+            return view('student.arena.finished', compact('room', 'participant'));
+        }
+
+        // Shuffle options if needed (randomize_options from source exam)
+        $options = [
+            'a' => $question->option_a,
+            'b' => $question->option_b,
+            'c' => $question->option_c,
+            'd' => $question->option_d,
+            'e' => $question->option_e,
+        ];
+        $options = array_filter($options);
+
+        return view('student.arena.battle', compact('room', 'participant', 'question', 'options'));
+    }
+
+    // ── Student: Submit Answer (AJAX) ─────────────────────────────────────
+
+    public function submitAnswer(Request $request, BattleRoom $room, BattleParticipant $participant)
+    {
+        abort_if($participant->user_id !== Auth::id(), 403);
+
+        if ($room->status !== 'ongoing' || $participant->status !== 'active') {
+            return response()->json(['error' => 'Battle tidak aktif atau Anda sudah gugur.'], 422);
+        }
+
+        $request->validate(['answer' => 'required|in:a,b,c,d,e']);
+
+        $questionIds = $room->question_ids ?? [];
+        $idx         = $participant->current_question_index;
+        $questionId  = $questionIds[$idx] ?? null;
+
+        if (!$questionId) {
+            return response()->json(['error' => 'Soal tidak ditemukan.'], 422);
+        }
+
+        $question  = Question::findOrFail($questionId);
+        $isCorrect = strtolower($request->answer) === strtolower($question->correct_answer);
+
+        // Determine HP delta
+        $penalty  = $room->penalty_hp;
+        if ($room->isSuddenDeath()) $penalty *= 2; // Sudden Death!
+        $hpDelta  = $isCorrect ? 0 : -$penalty;
+
+        DB::transaction(function () use ($participant, $questionId, $request, $isCorrect, $hpDelta) {
+            BattleAnswer::create([
+                'battle_participant_id' => $participant->id,
+                'question_id'          => $questionId,
+                'chosen_option'        => $request->answer,
+                'is_correct'           => $isCorrect,
+                'hp_delta'             => $hpDelta,
+                'answered_at'          => now(),
+            ]);
+
+            // Update participant stats
+            $updates = ['current_question_index' => $participant->current_question_index + 1];
+            if ($isCorrect) $updates['correct_count'] = $participant->correct_count + 1;
+            else $updates['wrong_count'] = $participant->wrong_count + 1;
+
+            $participant->update($updates);
+            $participant->refresh();
+
+            // Apply HP damage
+            if ($hpDelta < 0) {
+                $participant->applyHpDelta($hpDelta);
+            }
+        });
+
+        $participant->refresh();
+        $room->refresh();
+
+        // Check if participant finished all questions
+        if ($participant->current_question_index >= count($room->question_ids ?? [])) {
+            $participant->update(['status' => 'finished', 'finished_at' => now()]);
+            $this->checkAutoFinish($room);
+        }
+
+        // Award EXP for correct answer
+        if ($isCorrect) {
+            $participant->user->increment('total_exp', 5);
+        }
+
+        return response()->json([
+            'is_correct'  => $isCorrect,
+            'hp'          => $participant->hp,
+            'status'      => $participant->status,
+            'next_index'  => $participant->current_question_index,
+            'sudden_death'=> $room->isSuddenDeath(),
+        ]);
+    }
+
+    // ── Student: Tab Focus Penalty ────────────────────────────────────────
+
+    public function tabPenalty(BattleRoom $room, BattleParticipant $participant)
+    {
+        abort_if($participant->user_id !== Auth::id(), 403);
+
+        if ($room->status !== 'ongoing' || $participant->status !== 'active') {
+            return response()->json(['ok' => false]);
+        }
+
+        DB::transaction(function () use ($participant) {
+            $participant->applyHpDelta(-10);
+        });
+
+        $participant->refresh();
+
+        return response()->json([
+            'hp'     => $participant->hp,
+            'status' => $participant->status,
+        ]);
+    }
+
+    // ── Student: Heartbeat ────────────────────────────────────────────────
+
+    public function heartbeat(BattleRoom $room, BattleParticipant $participant)
+    {
+        abort_if($participant->user_id !== Auth::id(), 403);
+        $participant->update(['last_seen_at' => now()]);
+
+        return response()->json([
+            'status'          => $room->status,
+            'hp'              => $participant->hp,
+            'participant_status' => $participant->status,
+            'remaining'       => $room->remainingSeconds(),
+            'sudden_death'    => $room->isSuddenDeath(),
+        ]);
+    }
+
+    // ── Internal: Auto-finish Logic ───────────────────────────────────────
+
+    protected function checkAutoFinish(BattleRoom $room): void
+    {
+        $room->refresh();
+        if ($room->status !== 'ongoing') return;
+
+        $active = $room->participants()->where('status', 'active')->count();
+        $timeUp = $room->remainingSeconds() <= 0;
+        $allDone = $room->participants()->whereIn('status', ['active'])->count() === 0;
+
+        if ($timeUp || $allDone) {
+            $this->finalizeRoom($room);
+        }
+    }
+
+    protected function finalizeRoom(BattleRoom $room): void
+    {
+        if ($room->status === 'finished') return;
+
+        DB::transaction(function () use ($room) {
+            $room->update(['status' => 'finished', 'ended_at' => now()]);
+
+            if ($room->mode === 'class') {
+                // Rank fleets
+                $fleet = $room->fleetProgress();
+                $rank  = 1;
+                foreach ($fleet as $classId => $data) {
+                    // Award rank to all members of this fleet
+                    $room->participants()
+                        ->where('class_id', $classId)
+                        ->update(['rank' => $rank]);
+                    $rank++;
+                }
+            } else {
+                // Individual / Group: rank by correct_count desc then wrong_count asc
+                $participants = $room->participants()
+                    ->orderByDesc('correct_count')
+                    ->orderBy('wrong_count')
+                    ->orderBy('finished_at')
+                    ->get();
+
+                $rank = 1;
+                foreach ($participants as $p) {
+                    $p->update(['rank' => $rank++]);
+                }
+            }
+
+            // Grant EXP for top 3
+            $topParticipants = $room->participants()->whereIn('rank', [1, 2, 3])->with('user')->get();
+            foreach ($topParticipants as $p) {
+                $expBonus = match ($p->rank) {
+                    1 => 200, 2 => 150, 3 => 100, default => 0,
+                };
+                $p->user->increment('total_exp', $expBonus);
+            }
+        });
+    }
+}

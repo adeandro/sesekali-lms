@@ -1,0 +1,118 @@
+@extends('layouts.app')
+
+@section('title', 'Buat Battle Room')
+
+@section('content')
+<div class="max-w-2xl mx-auto space-y-6">
+    <div>
+        <a href="{{ route('admin.gamification.arena.index') }}" class="inline-flex items-center gap-1.5 text-xs font-bold text-gray-400 hover:text-gray-700 transition mb-4">
+            <i class="fas fa-arrow-left"></i> Kembali
+        </a>
+        <h1 class="text-2xl font-black text-gray-900 uppercase tracking-tight">Buat Battle Room</h1>
+        <p class="text-sm text-gray-500 mt-1">Konfigurasikan pertarungan epik berikutnya.</p>
+    </div>
+
+    <form action="{{ route('admin.gamification.arena.store') }}" method="POST" class="space-y-5">
+        @csrf
+
+        {{-- Room Name --}}
+        <div class="bg-white rounded-[1.5rem] border border-gray-100 shadow-sm p-6 space-y-5">
+            <h2 class="text-xs font-black uppercase tracking-widest text-gray-400">Identitas Room</h2>
+
+            <div>
+                <label class="block text-xs font-black text-gray-700 uppercase tracking-widest mb-1.5">Nama Sesi <span class="text-red-500">*</span></label>
+                <input type="text" name="name" value="{{ old('name') }}" placeholder="e.g. Grand Battle Semester Ganjil"
+                       class="w-full px-4 py-3 rounded-2xl border border-gray-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition" required>
+                @error('name') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+            </div>
+
+            <div>
+                <label class="block text-xs font-black text-gray-700 uppercase tracking-widest mb-1.5">Mode Pertarungan <span class="text-red-500">*</span></label>
+                <div class="grid grid-cols-3 gap-3">
+                    @foreach(['individual' => ['icon'=>'fa-user','label'=>'Individual','desc'=>'Siswa vs Siswa'], 'group' => ['icon'=>'fa-users','label'=>'Group','desc'=>'Kelompok Acak'], 'class' => ['icon'=>'fa-ship','label'=>'Fleet Mode','desc'=>'Perang Antar Kelas']] as $val => $opt)
+                    <label class="cursor-pointer">
+                        <input type="radio" name="mode" value="{{ $val }}" {{ old('mode', 'class') === $val ? 'checked' : '' }} class="peer sr-only" required>
+                        <div class="peer-checked:ring-2 peer-checked:ring-orange-400 peer-checked:bg-orange-50 border border-gray-200 rounded-2xl p-4 text-center hover:border-orange-300 transition-all">
+                            <i class="fas {{ $opt['icon'] }} text-2xl text-gray-400 peer-checked:text-orange-500 mb-2 block"></i>
+                            <p class="text-xs font-black text-gray-900">{{ $opt['label'] }}</p>
+                            <p class="text-[10px] text-gray-400 mt-0.5">{{ $opt['desc'] }}</p>
+                        </div>
+                    </label>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+
+        {{-- Source --}}
+        <div class="bg-white rounded-[1.5rem] border border-gray-100 shadow-sm p-6 space-y-4">
+            <h2 class="text-xs font-black uppercase tracking-widest text-gray-400">Sumber Soal</h2>
+            <div>
+                <label class="block text-xs font-black text-gray-700 uppercase tracking-widest mb-1.5">Tipe Sumber</label>
+                <select name="source_type" id="source_type"
+                        class="w-full px-4 py-3 rounded-2xl border border-gray-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-orange-400 transition bg-white">
+                    <option value="exam" {{ old('source_type', 'exam') === 'exam' ? 'selected' : '' }}>📄 Dari Ujian (Exam)</option>
+                </select>
+            </div>
+            <div id="exam-select">
+                <label class="block text-xs font-black text-gray-700 uppercase tracking-widest mb-1.5">Ujian <span class="text-red-500">*</span></label>
+                <select name="source_id"
+                        class="w-full px-4 py-3 rounded-2xl border border-gray-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-orange-400 transition bg-white">
+                    <option value="">— Pilih Ujian —</option>
+                    @foreach($exams as $exam)
+                    <option value="{{ $exam->id }}" {{ old('source_id') == $exam->id ? 'selected' : '' }}>
+                        {{ $exam->title }} ({{ $exam->total_questions }} soal)
+                    </option>
+                    @endforeach
+                </select>
+                @error('source_id') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+            </div>
+        </div>
+
+        {{-- Settings --}}
+        <div class="bg-white rounded-[1.5rem] border border-gray-100 shadow-sm p-6 space-y-5">
+            <h2 class="text-xs font-black uppercase tracking-widest text-gray-400">Pengaturan Battle</h2>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-black text-gray-700 uppercase tracking-widest mb-1.5">Target Juara</label>
+                    <input type="number" name="winner_count" value="{{ old('winner_count', 3) }}" min="1" max="10"
+                           class="w-full px-4 py-3 rounded-2xl border border-gray-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-orange-400 transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-black text-gray-700 uppercase tracking-widest mb-1.5">Durasi (menit)</label>
+                    <input type="number" name="duration_minutes" value="{{ old('duration_minutes', 30) }}" min="5" max="180"
+                           class="w-full px-4 py-3 rounded-2xl border border-gray-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-orange-400 transition">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-black text-gray-700 uppercase tracking-widest mb-1.5">
+                    Penalti HP per Jawaban Salah
+                    <span class="ml-2 text-orange-500">-{{ old('penalty_hp', 20) }} HP</span>
+                </label>
+                <input type="range" name="penalty_hp" value="{{ old('penalty_hp', 20) }}" min="5" max="50" step="5"
+                       class="w-full accent-orange-500" oninput="this.previousElementSibling.querySelector('span').textContent = '-' + this.value + ' HP'">
+                <div class="flex justify-between text-[10px] text-gray-400 mt-1">
+                    <span>-5 HP</span><span>-50 HP</span>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
+                <div>
+                    <p class="text-xs font-black text-gray-900">Kunci Room Saat Dimulai</p>
+                    <p class="text-[10px] text-gray-400 mt-0.5">Siswa tidak bisa join setelah battle berlangsung</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="lock_on_start" value="1" {{ old('lock_on_start', '1') ? 'checked' : '' }} class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-orange-500 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                </label>
+            </div>
+        </div>
+
+        <button type="submit"
+                class="w-full py-4 bg-gradient-to-r from-red-500 to-orange-500 text-white font-black text-sm uppercase tracking-widest rounded-2xl shadow-lg hover:shadow-orange-500/30 hover:-translate-y-0.5 transition-all duration-200">
+            <i class="fas fa-rocket mr-2"></i> Buat Battle Room & Buka Lobby
+        </button>
+    </form>
+</div>
+@endsection

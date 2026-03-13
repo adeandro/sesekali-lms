@@ -22,6 +22,7 @@ use App\Http\Controllers\Admin\GamificationController;
 use App\Http\Controllers\UserPreferenceController;
 use App\Http\Controllers\Communication\AnnouncementController;
 use App\Http\Controllers\Communication\MessageController;
+use App\Http\Controllers\Admin\ArenaController;
 
 // Public routes
 Route::get('/', function () {
@@ -130,6 +131,15 @@ Route::middleware('auth')->group(function () {
 
         // Student Results routes
         Route::get('student/results', [StudentResultController::class, 'index'])->name('student.results');
+
+        // ── Student Battle Arena ──────────────────────────────────────────
+        Route::post('student/arena/join', [ArenaController::class, 'studentJoin'])->name('student.arena.join');
+        Route::get('student/arena/{room}/lobby', [ArenaController::class, 'studentLobby'])->name('student.arena.lobby');
+        Route::get('student/arena/{room}/lobby/status', [ArenaController::class, 'studentLobbyStatus'])->name('student.arena.lobby.status');
+        Route::get('student/arena/{room}/battle/{participant}', [ArenaController::class, 'battle'])->name('student.arena.battle');
+        Route::post('student/arena/{room}/battle/{participant}/submit', [ArenaController::class, 'submitAnswer'])->name('student.arena.submit');
+        Route::post('student/arena/{room}/battle/{participant}/heartbeat', [ArenaController::class, 'heartbeat'])->name('student.arena.heartbeat');
+        Route::post('student/arena/{room}/battle/{participant}/tab-penalty', [ArenaController::class, 'tabPenalty'])->name('student.arena.tab-penalty');
     });
 
     // Subject & Question Management routes
@@ -240,6 +250,21 @@ Route::middleware('auth')->group(function () {
                 Route::get('themes/{theme}/edit', [GamificationController::class, 'editTheme'])->name('themes.edit');
                 Route::post('themes/{theme}', [GamificationController::class, 'updateTheme'])->name('themes.update');
                 Route::delete('themes/{theme}', [GamificationController::class, 'destroyTheme'])->name('themes.destroy');
+
+                // ── Battle Arena ──────────────────────────────────────────────
+                Route::prefix('arena')->name('arena.')->group(function () {
+                    Route::get('/', [ArenaController::class, 'index'])->name('index');
+                    Route::get('create', [ArenaController::class, 'create'])->name('create');
+                    Route::post('/', [ArenaController::class, 'store'])->name('store');
+                    Route::get('{room}/lobby', [ArenaController::class, 'lobby'])->name('lobby');
+                    Route::post('{room}/ignite', [ArenaController::class, 'ignite'])->name('ignite');
+                    Route::get('{room}/spectator', [ArenaController::class, 'spectator'])->name('spectator');
+                    Route::get('{room}/spectator/data', [ArenaController::class, 'spectatorData'])->name('spectator.data');
+                    Route::post('{room}/finish', [ArenaController::class, 'finish'])->name('finish');
+                    Route::get('{room}/podium', [ArenaController::class, 'podium'])->name('podium');
+                    Route::get('{room}/debriefing', [ArenaController::class, 'debriefing'])->name('debriefing');
+                    Route::delete('{room}', [ArenaController::class, 'destroy'])->name('destroy');
+                });
             });
         });
     });
