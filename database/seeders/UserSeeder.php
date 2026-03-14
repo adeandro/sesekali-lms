@@ -20,7 +20,7 @@ class UserSeeder extends Seeder
                 'name' => 'Super Admin',
                 'password' => Hash::make('password'),
                 'role' => 'superadmin',
-                'is_active' => true,
+                'status' => 'Aktif',
             ]
         );
 
@@ -31,7 +31,7 @@ class UserSeeder extends Seeder
                 'name' => 'Admin User',
                 'password' => Hash::make('password'),
                 'role' => 'admin',
-                'is_active' => true,
+                'status' => 'Aktif',
             ]
         );
 
@@ -61,7 +61,7 @@ class UserSeeder extends Seeder
                     'grade' => $grade,
                     'class_group' => $classGroup,
                     'role' => 'student',
-                    'is_active' => true,
+                    'status' => 'Aktif',
                 ]
             );
         }
@@ -85,7 +85,7 @@ class UserSeeder extends Seeder
                     'grade' => $grade,
                     'class_group' => $classGroup,
                     'role' => 'student',
-                    'is_active' => true,
+                    'status' => 'Aktif',
                 ]
             );
         }

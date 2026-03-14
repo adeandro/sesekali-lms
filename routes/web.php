@@ -23,6 +23,7 @@ use App\Http\Controllers\UserPreferenceController;
 use App\Http\Controllers\Communication\AnnouncementController;
 use App\Http\Controllers\Communication\MessageController;
 use App\Http\Controllers\Admin\ArenaController;
+use App\Http\Controllers\Admin\AlumniController;
 
 // Public routes
 Route::get('/', function () {
@@ -226,8 +227,17 @@ Route::middleware('auth')->group(function () {
             Route::get('students/upload-photos', [StudentController::class, 'uploadPhotosForm'])->name('students.upload-photos');
             Route::post('students/upload-photos', [StudentController::class, 'uploadPhotos'])->name('students.upload-photos.post');
 
+            // ── Annual Migration & Re-Mapping ────────────────────────────────
+            Route::get('students/migration', [StudentController::class, 'initialisasiMigrasi'])->name('students.migration');
+            Route::post('students/migration/execute', [StudentController::class, 'executeMigration'])->name('students.migration.execute');
+            Route::get('students/export/remapping-template', [StudentController::class, 'exportRemapping'])->name('students.export.remapping');
+            Route::post('students/import/remap', [StudentController::class, 'importRemap'])->name('students.import.remap');
+
             // Resource routes last
             Route::resource('students', StudentController::class);
+
+            // Alumni management
+            Route::get('alumni', [AlumniController::class, 'index'])->name('alumni.index');
 
             // Settings Management
             Route::get('settings', [SettingController::class, 'index'])->name('settings.index');

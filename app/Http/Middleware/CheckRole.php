@@ -22,9 +22,9 @@ class CheckRole
         $user = auth()->user();
 
         // Check if user is active
-        if (!$user->is_active) {
+        if ($user->status !== 'Aktif') {
             auth()->logout();
-            return redirect()->route('login')->with('error', 'Your account has been deactivated.');
+            return redirect()->route('login')->with('error', "Akun Anda berstatus {$user->status}, silakan hubungi admin.");
         }
 
         // Check if user has required role

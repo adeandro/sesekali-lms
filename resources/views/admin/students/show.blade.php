@@ -71,9 +71,9 @@
                             <p class="text-indigo-600 font-mono text-sm font-bold mt-1">NIS: {{ $student->nis }}</p>
                         </div>
                         <div class="flex flex-col items-end gap-2">
-                            <span class="px-4 py-1 rounded-full text-xs font-bold ring-1 ring-inset {{ $student->is_active ? 'bg-emerald-50 text-emerald-700 ring-emerald-200' : 'bg-rose-50 text-rose-700 ring-rose-200' }}">
-                                <i class="fas {{ $student->is_active ? 'fa-check-circle' : 'fa-times-circle' }} mr-1"></i>
-                                {{ $student->is_active ? 'Akun Aktif' : 'Akun Nonaktif' }}
+                            <span class="px-4 py-1 rounded-full text-xs font-bold ring-1 ring-inset {{ $student->status === 'Aktif' ? 'bg-emerald-50 text-emerald-700 ring-emerald-200' : 'bg-rose-50 text-rose-700 ring-rose-200' }}">
+                                <i class="fas {{ $student->status === 'Aktif' ? 'fa-check-circle' : 'fa-times-circle' }} mr-1"></i>
+                                {{ $student->status === 'Aktif' ? 'Akun Aktif' : 'Akun Nonaktif' }}
                             </span>
                             <p class="text-[10px] text-gray-400">Terdaftar sejak {{ $student->created_at->translatedFormat('d F Y') }}</p>
                         </div>
@@ -137,14 +137,14 @@
                                         </div>
                                         <div>
                                             <p class="text-[10px] text-gray-500 font-bold uppercase tracking-tighter">Status Login</p>
-                                            <p class="text-sm font-bold text-gray-800">{{ $student->is_active ? 'Dizinkan' : 'Dilarang' }}</p>
+                                            <p class="text-sm font-bold text-gray-800">{{ $student->status === 'Aktif' ? 'Dizinkan' : 'Dilarang' }}</p>
                                         </div>
                                     </div>
                                     <form action="{{ route('admin.students.toggleActive', $student) }}" method="POST">
                                         @csrf
                                         @method('PUT')
-                                        <button type="submit" class="text-xs font-bold {{ $student->is_active ? 'text-rose-600' : 'text-emerald-600' }} hover:opacity-80 transition-opacity">
-                                            {{ $student->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
+                                        <button type="submit" class="text-xs font-bold {{ $student->status === 'Aktif' ? 'text-rose-600' : 'text-emerald-600' }} hover:opacity-80 transition-opacity">
+                                            {{ $student->status === 'Aktif' ? 'Nonaktifkan' : 'Aktifkan' }}
                                         </button>
                                     </form>
                                 </div>

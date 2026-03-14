@@ -89,7 +89,7 @@
                                     </span>
                                 @endif
 
-                                @if($teacher->is_active)
+                                @if($teacher->status === 'Aktif')
                                     <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-100 text-emerald-700 text-[10px] font-black uppercase tracking-widest">
                                         <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span> Aktif
                                     </span>

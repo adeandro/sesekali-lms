@@ -54,12 +54,11 @@ class SuperAdminTeacherController extends Controller
             'password' => 'required|string|min:8|confirmed',
             'subject_ids' => 'nullable|array',
             'subject_ids.*' => 'exists:subjects,id',
-            'is_active' => 'boolean',
+            'status' => 'required|string|in:Aktif,Nonaktif',
         ]);
 
         $validated['role'] = 'teacher';
         $validated['password'] = Hash::make($validated['password']);
-        $validated['is_active'] = $request->has('is_active');
 
         $user = User::create($validated);
 
@@ -102,7 +101,7 @@ class SuperAdminTeacherController extends Controller
             'password' => 'nullable|string|min:8|confirmed',
             'subject_ids' => 'nullable|array',
             'subject_ids.*' => 'exists:subjects,id',
-            'is_active' => 'boolean',
+            'status' => 'required|string|in:Aktif,Nonaktif',
         ]);
 
         if ($request->filled('password')) {
@@ -110,8 +109,6 @@ class SuperAdminTeacherController extends Controller
         } else {
             unset($validated['password']);
         }
-
-        $validated['is_active'] = $request->has('is_active');
 
         $teacher->update($validated);
         

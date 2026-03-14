@@ -30,7 +30,7 @@ class CommunicationService
         ]);
 
         // Dispatch notification
-        $query = User::where('is_active', true);
+        $query = User::where('status', 'Aktif');
 
         if ($data['target_role'] !== 'all') {
             $query->where('role', $data['target_role']);
@@ -166,7 +166,7 @@ class CommunicationService
         }
 
         return User::where('role', 'student')
-                   ->where('is_active', true)
+                   ->where('status', 'Aktif')
                    ->orderBy('name')
                    ->get(['id', 'name', 'class_group', 'grade']);
     }

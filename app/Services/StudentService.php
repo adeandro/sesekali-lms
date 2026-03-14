@@ -74,7 +74,7 @@ class StudentService
             'class_group' => $classGroup,
             'photo' => $data['photo'] ?? null,
             'role' => 'student',
-            'is_active' => true,
+            'status' => 'Aktif',
         ]);
 
         return [
@@ -115,7 +115,7 @@ class StudentService
                 'class_group' => $classGroup,
                 'photo' => $data['photo'] ?? null,
                 'role' => 'student',
-                'is_active' => true,
+                'status' => 'Aktif',
             ]
         );
 

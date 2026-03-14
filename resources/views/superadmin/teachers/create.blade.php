@@ -94,9 +94,10 @@
 
                 <!-- Status Aktif -->
                 <div class="flex items-center gap-2">
-                    <input type="checkbox" name="is_active" id="is_active" value="1" checked
+                    <input type="hidden" name="status" value="Nonaktif">
+                    <input type="checkbox" name="status" id="status" value="Aktif" checked
                         class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                    <label for="is_active" class="text-sm font-medium text-gray-700">Akun ini aktif</label>
+                    <label for="status" class="text-sm font-medium text-gray-700">Akun ini aktif</label>
                 </div>
 
                 <div class="pt-6 border-t border-gray-100 flex justify-end gap-3">

@@ -25,7 +25,7 @@ class UpdateStudentRequest extends FormRequest
             'name' => 'required|string|max:255',
             'grade' => 'required|string|in:10,11,12',
             'class_group' => 'required|string|max:10',
-            'is_active' => 'required|boolean',
+            'status' => 'required|string|in:Aktif,Nonaktif',
             'photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'password' => 'nullable|string|min:4|max:255',
         ];

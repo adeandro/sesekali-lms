@@ -3,14 +3,20 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Exports\StudentExport;
+use App\Exports\RemappingTemplateExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ImportStudentRequest;
 use App\Http\Requests\StoreStudentRequest;
 use App\Http\Requests\UpdateStudentRequest;
 use App\Imports\StudentImport;
+use App\Imports\RemappingImport;
+use App\Models\ClassRoom;
+use App\Models\MigrationLog;
 use App\Models\User;
 use App\Services\StudentService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -87,7 +93,11 @@ class StudentController extends Controller
      */
     public function index(Request $request)
     {
-        $query = User::where('role', 'student');
+        // Default view: only Aktif students (Alumni and Nonaktif have separate pages)
+        $statusFilter = $request->input('status', 'Aktif');
+
+        $query = User::where('role', 'student')
+            ->where('status', $statusFilter);
 
         // Search
         if ($request->filled('search')) {
@@ -103,17 +113,29 @@ class StudentController extends Controller
             $query->where('grade', $request->input('grade'));
         }
 
-        // Get grades for filter dropdown
+        // Get grades for filter dropdown (only for current status group)
         $classes = User::where('role', 'student')
+            ->where('status', $statusFilter)
             ->distinct()
             ->whereNotNull('grade')
             ->orderBy('grade')
             ->pluck('grade');
 
+        // Status counts for tab badges
+        $statusCounts = [
+            'Aktif'    => User::where('role', 'student')->where('status', 'Aktif')->count(),
+            'Nonaktif' => User::where('role', 'student')->where('status', 'Nonaktif')->count(),
+        ];
+
         // Pagination
         $students = $query->orderBy('nis')->paginate(15)->withQueryString();
 
-        return view('admin.students.index', compact('students', 'classes'));
+        // Unmapped counter: only Aktif students without class_group need re-mapping
+        $unmappedCount = ($statusFilter === 'Aktif')
+            ? User::where('role', 'student')->where('status', 'Aktif')->whereNull('class_group')->count()
+            : 0;
+
+        return view('admin.students.index', compact('students', 'classes', 'unmappedCount', 'statusFilter', 'statusCounts'));
     }
 
     /**
@@ -263,9 +285,14 @@ class StudentController extends Controller
     /**
      * Export students to Excel
      */
-    public function export()
+    public function export(Request $request)
     {
-        return Excel::download(new StudentExport(), 'students-' . date('Y-m-d') . '.xlsx');
+        $scope    = $request->input('scope', 'all');
+        $filename = $scope === 'unmapped'
+            ? 'students-remapping-template-' . date('Y-m-d') . '.xlsx'
+            : 'students-' . date('Y-m-d') . '.xlsx';
+
+        return Excel::download(new StudentExport($scope), $filename);
     }
 
     /**
@@ -290,13 +317,13 @@ class StudentController extends Controller
     {
         $this->authorize('update', $student);
 
+        $newStatus = $student->status === 'Aktif' ? 'Nonaktif' : 'Aktif';
+
         $student->update([
-            'is_active' => !$student->is_active,
+            'status' => $newStatus,
         ]);
 
-        $status = $student->is_active ? 'activated' : 'deactivated';
-
-        return back()->with('success', "Status siswa berhasil " . ($student->is_active ? 'diaktifkan' : 'dinonaktifkan') . "!");
+        return back()->with('success', "Status siswa berhasil " . ($newStatus === 'Aktif' ? 'diaktifkan' : 'dinonaktifkan') . "!");
     }
 
     /**
@@ -416,5 +443,152 @@ class StudentController extends Controller
         } else {
             return redirect()->back()->with('error', 'Gagal membuka file ZIP.');
         }
+    }
+
+    // ── Annual Migration Methods ───────────────────────────────────────────────
+
+    /**
+     * Show the migration initiation confirmation page.
+     */
+    public function initialisasiMigrasi()
+    {
+        $stats = [
+            'grade_10' => User::where('role','student')->where('status', 'Aktif')->where('grade_level', 10)->count(),
+            'grade_11' => User::where('role','student')->where('status', 'Aktif')->where('grade_level', 11)->count(),
+            'grade_12' => User::where('role','student')->where('status', 'Aktif')->where('grade_level', 12)->count(),
+            'unmapped' => User::where('role','student')->where('status', 'Aktif')->whereNull('class_group')->count(),
+        ];
+
+        $recentLogs = MigrationLog::with('executor')
+            ->orderByDesc('executed_at')
+            ->take(5)
+            ->get();
+
+        return view('admin.students.migration', compact('stats', 'recentLogs'));
+    }
+
+    /**
+     * Execute the annual migration: promote grades, graduate grade 12, null class_id.
+     */
+    public function executeMigration(Request $request)
+    {
+        $request->validate([
+            'academic_year' => ['required', 'regex:/^\d{4}\/\d{4}$/'],
+            'confirm'       => 'required|in:MIGRASI',
+        ], [
+            'confirm.in' => 'Ketik MIGRASI untuk melanjutkan.',
+        ]);
+
+        $academicYear  = $request->input('academic_year');
+        $stayBehindIds = (array) $request->input('stay_behind_ids', []);
+
+        DB::transaction(function () use ($academicYear, $stayBehindIds) {
+
+            // 1. Graduate: Grade 12 → status='Alumni', is_active=false, class_group/class_id=null, alumni_year set
+            $grade12Query = User::where('role', 'student')
+                ->where('status', 'Aktif')
+                ->where('grade_level', 12);
+            if (!empty($stayBehindIds)) {
+                $grade12Query->whereNotIn('id', $stayBehindIds);
+            }
+            $grade12Count = $grade12Query->count();
+            $grade12Query->update([
+                'status'      => 'Alumni',
+                'class_group' => null,
+                'class_id'    => null,
+                'alumni_year' => $academicYear,
+            ]);
+
+            MigrationLog::create([
+                'action_type'    => 'graduate',
+                'executed_by'    => Auth::id(),
+                'affected_count' => $grade12Count,
+                'academic_year'  => $academicYear,
+                'notes'          => ['stay_behind_ids' => $stayBehindIds],
+                'executed_at'    => now(),
+            ]);
+
+            // 2. Promote: grade_level 10→11, 11→12; nullify class_group & class_id for re-mapping
+            $promoteQuery = User::where('role', 'student')
+                ->where('status', 'Aktif')
+                ->whereIn('grade_level', [10, 11]);
+            if (!empty($stayBehindIds)) {
+                $promoteQuery->whereNotIn('id', $stayBehindIds);
+            }
+
+            $promoteCount = $promoteQuery->count();
+            $promoteQuery->get()->each(function (User $student) {
+                $student->update([
+                    'grade_level' => $student->grade_level + 1,
+                    'grade'       => (string) ($student->grade_level + 1),  // keep grade string in sync
+                    'class_group' => null,  // Must re-map after promotion
+                    'class_id'    => null,
+                ]);
+            });
+
+            MigrationLog::create([
+                'action_type'    => 'promote',
+                'executed_by'    => Auth::id(),
+                'affected_count' => $promoteCount,
+                'academic_year'  => $academicYear,
+                'notes'          => ['stay_behind_ids' => $stayBehindIds],
+                'executed_at'    => now(),
+            ]);
+
+            // 3. Stay-behind: keep grade_level but null class_group so they also need re-mapping
+            if (!empty($stayBehindIds)) {
+                User::whereIn('id', $stayBehindIds)
+                    ->where('role', 'student')
+                    ->update([
+                        'class_group' => null,
+                        'class_id'    => null,
+                    ]);
+            }
+        });
+
+        return redirect()->route('admin.students.index')
+            ->with('success', '✅ Migrasi tahunan berhasil! Kelas 12 diarsipkan, kelas 10-11 dinaikkan. Silakan lakukan Re-mapping Rombel.');
+    }
+
+    /**
+     * Download the re-mapping template (unmapped students + valid class list).
+     */
+    public function exportRemapping()
+    {
+        return Excel::download(
+            new RemappingTemplateExport(),
+            'template-remapping-' . date('Y-m-d') . '.xlsx'
+        );
+    }
+
+    /**
+     * Process a re-mapping Excel import: update class_id for each student.
+     */
+    public function importRemap(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
+        ]);
+
+        $importer = new RemappingImport();
+        Excel::import($importer, $request->file('file'));
+
+        if (!empty($importer->errors)) {
+            return redirect()->route('admin.students.importForm')
+                ->with('remap_errors', $importer->errors)
+                ->with('remap_tab', true);
+        }
+
+        MigrationLog::create([
+            'action_type'    => 'remap',
+            'executed_by'    => Auth::id(),
+            'affected_count' => $importer->successCount,
+            'academic_year'  => date('Y') . '/' . (date('Y') + 1),
+            'notes'          => ['duration_seconds' => $importer->duration],
+            'executed_at'    => now(),
+        ]);
+
+        return redirect()->route('admin.students.index')
+            ->with('success', "✅ Re-mapping berhasil! {$importer->successCount} siswa dipetakan dalam {$importer->duration} detik.");
     }
 }

@@ -14,7 +14,7 @@ class SuperAdminDashboardController extends Controller
         $superadminCount = User::where('role', 'superadmin')->count();
         $teacherCount = User::where('role', 'teacher')->count();
         $studentCount = User::where('role', 'student')->count();
-        $activeUsersCount = User::where('is_active', true)->count();
+        $activeUsersCount = User::where('status', 'Aktif')->count();
 
         // Time-based WIB greeting (timezone is already Asia/Jakarta)
         $hour = Carbon::now()->hour;

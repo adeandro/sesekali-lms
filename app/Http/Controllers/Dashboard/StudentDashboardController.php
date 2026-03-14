@@ -26,7 +26,7 @@ class StudentDashboardController extends Controller
         
         // 2. Angkatan Leaderboard (Same Grade)
         $angkatanLeaderboard = \App\Models\User::where('role', 'student')
-            ->where('is_active', true)
+            ->where('status', 'Aktif')
             ->where('grade', $user->grade)
             ->withSum(['examAttempts as total_score' => function($query) {
                 $query->whereNotNull('submitted_at');
@@ -37,7 +37,7 @@ class StudentDashboardController extends Controller
             
         // 3.1 Class Leaderboard (Same Grade & Class Group)
         $classLeaderboard = \App\Models\User::where('role', 'student')
-            ->where('is_active', true)
+            ->where('status', 'Aktif')
             ->where('grade', $user->grade)
             ->where('class_group', $user->class_group)
             ->withSum(['examAttempts as total_score' => function($query) {
@@ -49,7 +49,7 @@ class StudentDashboardController extends Controller
 
         // 4. Current Student Rank (Angkatan & Class)
         $angkatanRankedStudents = \App\Models\User::where('role', 'student')
-            ->where('is_active', true)
+            ->where('status', 'Aktif')
             ->where('grade', $user->grade)
             ->withSum(['examAttempts as total_score' => function($query) {
                 $query->whereNotNull('submitted_at');
@@ -63,7 +63,7 @@ class StudentDashboardController extends Controller
             : '-';
 
         $classRankedStudents = \App\Models\User::where('role', 'student')
-            ->where('is_active', true)
+            ->where('status', 'Aktif')
             ->where('grade', $user->grade)
             ->where('class_group', $user->class_group)
             ->withSum(['examAttempts as total_score' => function($query) {

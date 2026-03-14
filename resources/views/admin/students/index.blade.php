@@ -35,7 +35,12 @@
                     <!-- Floating Wrapper to Close the Hover Gap -->
                     <div class="absolute right-0 pt-2 w-56 z-30 hidden group-hover:block animate-slideUp">
                         <div class="bg-white rounded-xl shadow-xl border border-gray-100 py-2 overflow-hidden">
-                            <button type="button" onclick="confirmResetAllPasswords()" class="w-full text-left px-4 py-2 text-sm text-orange-600 hover:bg-orange-50 font-medium flex items-center gap-3 transition-colors">
+                            <a href="{{ route('admin.students.migration') }}" class="w-full text-left px-4 py-2 text-sm text-purple-600 hover:bg-purple-50 font-bold flex items-center gap-3 transition-colors">
+                                <i class="fas fa-graduation-cap w-5 text-center"></i>
+                                <span>Migrasi Tahunan</span>
+                            </a>
+                            <hr class="my-2 border-gray-100">
+                            <button type="button" onclick="confirmResetAllPasswords()" class="w-full text-left px-4 py-2 text-sm text-amber-600 hover:bg-amber-50 font-bold flex items-center gap-3 transition-colors">
                                 <i class="fas fa-key w-5 text-center"></i> 
                                 <span>Atur Ulang Password</span>
                             </button>
@@ -52,6 +57,60 @@
 
         <form id="resetAllPasswordsForm" action="{{ route('admin.students.resetAllPasswords') }}" method="POST" class="hidden no-loading">@csrf</form>
         <form id="deleteAllStudentsForm" action="{{ route('admin.students.deleteAll') }}" method="POST" class="hidden no-loading">@csrf @method('DELETE')</form>
+
+        {{-- ── Status Tabs ──────────────────────────────────────────────── --}}
+        <div class="flex items-center gap-1 bg-white rounded-2xl border border-gray-100 shadow-sm p-1.5 w-fit">
+            <a href="{{ route('admin.students.index', array_merge(request()->except(['status','page']), ['status'=>'Aktif'])) }}"
+               class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all
+                      {{ ($statusFilter ?? 'Aktif') === 'Aktif' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50' }}">
+                <i class="fas fa-user-check"></i> Aktif
+                <span class="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-black
+                             {{ ($statusFilter ?? 'Aktif') === 'Aktif' ? 'bg-indigo-500 text-white' : 'bg-gray-100 text-gray-600' }}">
+                    {{ $statusCounts['Aktif'] ?? 0 }}
+                </span>
+            </a>
+            <a href="{{ route('admin.students.index', array_merge(request()->except(['status','page']), ['status'=>'Nonaktif'])) }}"
+               class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all
+                      {{ ($statusFilter ?? '') === 'Nonaktif' ? 'bg-rose-500 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50' }}">
+                <i class="fas fa-user-slash"></i> Nonaktif
+                <span class="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-black
+                             {{ ($statusFilter ?? '') === 'Nonaktif' ? 'bg-rose-400 text-white' : 'bg-gray-100 text-gray-600' }}">
+                    {{ $statusCounts['Nonaktif'] ?? 0 }}
+                </span>
+            </a>
+            <a href="{{ route('admin.alumni.index') }}"
+               class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all text-gray-500 hover:bg-emerald-50 hover:text-emerald-700">
+                <i class="fas fa-graduation-cap"></i> Alumni
+                <i class="fas fa-external-link-alt text-[8px] opacity-50"></i>
+            </a>
+        </div>
+
+        {{-- ── Unmapped Students Banner ─────────────────────────────── --}}
+        @if(($unmappedCount ?? 0) > 0)
+            <div class="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-exclamation text-amber-600"></i>
+                    </div>
+                    <div>
+                        <p class="font-black text-amber-800 text-sm">
+                            {{ number_format($unmappedCount) }} siswa belum memiliki kelas — perlu Re-mapping!
+                        </p>
+                        <p class="text-amber-600 text-xs mt-0.5">Kemungkinan setelah Migrasi Tahunan. Unduh template, isi class_id, lalu impor ulang.</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <a href="{{ route('admin.students.export.remapping') }}"
+                       class="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 text-white text-xs font-black rounded-xl hover:bg-amber-600 transition uppercase tracking-widest">
+                        <i class="fas fa-download"></i> Unduh Template
+                    </a>
+                    <a href="{{ route('admin.students.importForm') }}#remap"
+                       class="inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-amber-300 text-amber-700 text-xs font-black rounded-xl hover:bg-amber-50 transition uppercase tracking-widest">
+                        <i class="fas fa-file-import"></i> Import Remap
+                    </a>
+                </div>
+            </div>
+        @endif
 
         <!-- Search and Filter -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
@@ -145,8 +204,8 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-center">
                                     <span class="inline-flex px-2 py-1 text-[10px] font-extrabold rounded-md uppercase tracking-wider
-                                        {{ $student->is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700' }}">
-                                        {{ $student->is_active ? 'Aktif' : 'Nonaktif' }}
+                                        {{ $student->status === 'Aktif' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700' }}">
+                                        {{ $student->status === 'Aktif' ? 'Aktif' : 'Nonaktif' }}
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -157,8 +216,8 @@
                                         <button type="button" onclick="confirmResetPassword({{ $student->id }}, '{{ $student->name }}')" class="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-all" title="Atur Ulang Password">
                                             <i class="fas fa-key text-lg"></i>
                                         </button>
-                                        <button type="button" onclick="confirmToggleActive({{ $student->id }}, '{{ $student->name }}', {{ $student->is_active ? 'true' : 'false' }})" class="p-2 {{ $student->is_active ? 'text-rose-600 hover:bg-rose-50' : 'text-emerald-600 hover:bg-emerald-50' }} rounded-lg transition-all" title="{{ $student->is_active ? 'Nonaktifkan' : 'Aktifkan' }}">
-                                            <i class="fas {{ $student->is_active ? 'fa-user-slash' : 'fa-user-check' }} text-lg"></i>
+                                        <button type="button" onclick="confirmToggleActive({{ $student->id }}, '{{ $student->name }}', {{ $student->status === 'Aktif' ? 'true' : 'false' }})" class="p-2 {{ $student->status === 'Aktif' ? 'text-rose-600 hover:bg-rose-50' : 'text-emerald-600 hover:bg-emerald-50' }} rounded-lg transition-all" title="{{ $student->status === 'Aktif' ? 'Nonaktifkan' : 'Aktifkan' }}">
+                                            <i class="fas {{ $student->status === 'Aktif' ? 'fa-user-slash' : 'fa-user-check' }} text-lg"></i>
                                         </button>
                                         <button type="button" onclick="confirmDeleteStudent({{ $student->id }}, '{{ $student->name }}')" class="p-2 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all" title="Hapus">
                                             <i class="fas fa-trash-alt text-lg"></i>

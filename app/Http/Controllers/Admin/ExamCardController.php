@@ -15,7 +15,7 @@ class ExamCardController extends Controller
     {
         // Get active students matching the exam's grade level (jenjang)
         $allStudents = \App\Models\User::where('role', 'student')
-            ->where('is_active', true)
+            ->where('status', 'Aktif')
             ->where('grade', $exam->jenjang) // Filter by grade matching exam
             ->orderBy('grade', 'asc')
             ->orderBy('class_group', 'asc')
@@ -86,7 +86,7 @@ class ExamCardController extends Controller
     {
         // Get active students matching the exam's grade level (jenjang)
         $students = \App\Models\User::where('role', 'student')
-            ->where('is_active', true)
+            ->where('status', 'Aktif')
             ->where('grade', $exam->jenjang)
             ->orderBy('grade', 'asc')
             ->orderBy('class_group', 'asc')

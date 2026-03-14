@@ -117,7 +117,7 @@ class StudentImport implements ToCollection, WithHeadingRow
                     'class_group' => $data['class_group'],
                     'photo' => $data['photo'],
                     'role' => 'student',
-                    'is_active' => true,
+                    'status' => 'Aktif',
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];

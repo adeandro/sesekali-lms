@@ -27,8 +27,9 @@ class User extends Authenticatable
         'nis',
         'jenjang',
         'grade',
+        'grade_level',
         'class_group',
-        'is_active',
+        'class_id',
         'photo',
         'custom_avatar',
         'avatar_upload',
@@ -37,6 +38,8 @@ class User extends Authenticatable
         'gold',
         'current_level',
         'ui_theme',
+        'alumni_year',
+        'status',
     ];
 
     /**
@@ -59,9 +62,32 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'is_active' => 'boolean',
             'is_signature_active' => 'boolean',
         ];
+    }
+
+    /**
+     * The "booted" method of the model.
+     * Handle cleanup of related uploaded files.
+     */
+    protected static function booted()
+    {
+        static::deleting(function ($user) {
+            // Delete standard photo profile
+            if ($user->photo && \Illuminate\Support\Facades\Storage::disk('public')->exists('profiles/' . $user->photo)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete('profiles/' . $user->photo);
+            }
+
+            // Delete specific uploaded avatar
+            if ($user->avatar_upload && \Illuminate\Support\Facades\Storage::disk('public')->exists($user->avatar_upload)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($user->avatar_upload);
+            }
+
+            // Delete legacy multiavatar images if applicable (path starts with avatars/multiavatar/)
+            if ($user->custom_avatar && str_starts_with($user->custom_avatar, 'avatars/multiavatar/') && \Illuminate\Support\Facades\Storage::disk('public')->exists($user->custom_avatar)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($user->custom_avatar);
+            }
+        });
     }
 
     /**
@@ -70,6 +96,14 @@ class User extends Authenticatable
     public function examAttempts()
     {
         return $this->hasMany(ExamAttempt::class, 'student_id');
+    }
+
+    /**
+     * Get the classroom (rombel) this student belongs to.
+     */
+    public function classroom()
+    {
+        return $this->belongsTo(ClassRoom::class, 'class_id');
     }
 
     /**

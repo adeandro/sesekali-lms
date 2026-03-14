@@ -39,9 +39,10 @@ class LoginController extends Controller
         }
 
         // Check if user exists and is active
-        if (!$user || !$user->is_active) {
+        if (!$user || $user->status !== 'Aktif') {
+            $statusStr = $user ? $user->status : 'tidak ditemukan';
             return back()->withErrors([
-                'username' => 'Invalid credentials or account is deactivated.',
+                'username' => "Akun Anda berstatus {$statusStr}, silakan hubungi admin.",
             ])->onlyInput('username');
         }
 

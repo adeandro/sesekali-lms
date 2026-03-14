@@ -11,7 +11,7 @@ class AdminDashboardController extends Controller
     {
         $totalUsers = User::count();
         $studentCount = User::where('role', 'student')->count();
-        $activeUsersCount = User::where('is_active', true)->count();
+        $activeUsersCount = User::where('status', 'Aktif')->count();
 
         return view('dashboard.admin', compact(
             'totalUsers',
