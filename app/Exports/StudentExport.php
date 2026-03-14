@@ -22,8 +22,9 @@ class StudentExport implements FromCollection, WithHeadings, WithStyles, ShouldA
     public function collection(): Collection
     {
         $query = User::where('role', 'student')
+            ->where('status', '!=', 'Alumni')
             ->with('classroom')
-            ->orderBy('grade_level')
+            ->orderBy('grade')
             ->orderBy('class_group')
             ->orderBy('nis');
 
@@ -36,12 +37,11 @@ class StudentExport implements FromCollection, WithHeadings, WithStyles, ShouldA
                 'student_id'    => $student->id,
                 'nis'           => $student->nis,
                 'name'          => $student->name,
-                'current_grade' => $student->grade_level,
+                'current_grade' => $student->grade,
                 'class_group'   => $student->class_group ?? '',
-                'class_id'      => $student->class_id ?? '',
                 'class_name'    => $student->classroom?->name ?? (
-                    $student->grade_level && $student->class_group
-                        ? $student->grade_level . '-' . $student->class_group
+                    $student->grade && $student->class_group
+                        ? $student->grade . '-' . $student->class_group
                         : '— Belum Dipetakan —'
                 ),
                 'status'        => $student->status,
@@ -57,7 +57,6 @@ class StudentExport implements FromCollection, WithHeadings, WithStyles, ShouldA
             'Nama',
             'Grade Saat Ini',
             'Class Group',
-            'class_id',
             'Nama Kelas',
             'Status',
         ];

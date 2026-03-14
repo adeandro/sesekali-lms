@@ -127,8 +127,12 @@ class StudentController extends Controller
             'Nonaktif' => User::where('role', 'student')->where('status', 'Nonaktif')->count(),
         ];
 
-        // Pagination
-        $students = $query->orderBy('nis')->paginate(15)->withQueryString();
+        // Pagination: Sort by Grade and Class Group
+        $students = $query->orderBy('grade')
+            ->orderBy('class_group')
+            ->orderBy('name')
+            ->paginate(15)
+            ->withQueryString();
 
         // Unmapped counter: only Aktif students without class_group need re-mapping
         $unmappedCount = ($statusFilter === 'Aktif')
@@ -465,6 +469,7 @@ class StudentController extends Controller
             'grade_10'     => User::where('role', 'student')->where('status', 'Aktif')->where('grade', '10')->count(),
             'grade_11'     => User::where('role', 'student')->where('status', 'Aktif')->where('grade', '11')->count(),
             'grade_12'     => User::where('role', 'student')->where('status', 'Aktif')->where('grade', '12')->count(),
+            'unmapped'     => User::where('role', 'student')->where('status', 'Aktif')->whereNull('class_id')->count(),
         ];
 
         $recentLogs = MigrationLog::with('executor')
@@ -559,52 +564,11 @@ class StudentController extends Controller
             });
 
             return redirect()->route('admin.students.index')
-                ->with('success', 'Migrasi tahunan berhasil dieksekusi! Semua siswa telah diproses dan siap untuk dipetakan ulang (Re-mapping).');
+                ->with('success', 'Migrasi tahunan berhasil dieksekusi! Semua siswa telah diproses. Silakan gunakan fitur Ekspor/Impor di Daftar Siswa untuk melakukan pemetaan kelas baru (Re-mapping).');
 
         } catch (\Exception $e) {
             return back()->with('error', 'Gagal mengeksekusi migrasi: ' . $e->getMessage());
         }
     }
 
-    /**
-     * Download the re-mapping template (unmapped students + valid class list).
-     */
-    public function exportRemapping()
-    {
-        return Excel::download(
-            new RemappingTemplateExport(),
-            'template-remapping-' . date('Y-m-d') . '.xlsx'
-        );
-    }
-
-    /**
-     * Process a re-mapping Excel import: update class_id for each student.
-     */
-    public function importRemap(Request $request)
-    {
-        $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
-        ]);
-
-        $importer = new RemappingImport();
-        Excel::import($importer, $request->file('file'));
-
-        if (!empty($importer->errors)) {
-            return redirect()->route('admin.students.importForm')
-                ->with('remap_errors', $importer->errors)
-                ->with('remap_tab', true);
-        }
-
-        MigrationLog::create([
-            'action_type'    => 'remap',
-            'executed_by'    => Auth::id(),
-            'affected_count' => $importer->successCount,
-            'academic_year'  => date('Y') . '/' . (date('Y') + 1),
-            'notes'          => ['duration_seconds' => $importer->duration],
-            'executed_at'    => now(),
-        ]);
-
-        return redirect()->route('admin.students.index')
-            ->with('success', "✅ Re-mapping berhasil! {$importer->successCount} siswa dipetakan dalam {$importer->duration} detik.");
-    }
 }

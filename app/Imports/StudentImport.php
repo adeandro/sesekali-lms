@@ -39,10 +39,18 @@ class StudentImport implements ToCollection, WithHeadingRow
         $defaultPassword = 'password_default';
         $hashedPassword = \Illuminate\Support\Facades\Hash::make($defaultPassword);
         
-        // Efficient Duplicate Check: Load existing NIS and Email into lookup tables
-        $existingStudents = User::select('nis', 'email')->get();
-        $existingNis = $existingStudents->pluck('nis')->filter()->flip()->toArray();
-        $existingEmails = $existingStudents->pluck('email')->filter()->flip()->toArray();
+        // Efficient Lookup: Load existing NIS and Emails
+        $existingStudents = User::where('role', 'student')->select('id', 'nis', 'email')->get();
+        $existingNisMap = $existingStudents->pluck('id', 'nis')->filter()->toArray();
+        $existingEmailMap = $existingStudents->pluck('id', 'email')->filter()->toArray();
+
+        // Class Lookup: Load all classes for mapping
+        $classes = \App\Models\ClassRoom::all();
+        $classLookup = [];
+        foreach ($classes as $class) {
+            $key = trim($class->grade) . '|' . trim($class->section);
+            $classLookup[$key] = $class->id;
+        }
         
         // Track NISSes and Emails within THIS import to handle duplicates in the file
         $fileNisses = [];
@@ -55,8 +63,8 @@ class StudentImport implements ToCollection, WithHeadingRow
 
                 $data = [
                     'nis' => $nisString,
-                    'name' => trim($row['full_name'] ?? $row['name'] ?? ''),
-                    'grade' => $row['grade'] ?? null,
+                    'name' => trim($row['nama'] ?? $row['full_name'] ?? $row['name'] ?? ''),
+                    'grade' => $row['grade_saat_ini'] ?? $row['grade'] ?? null,
                     'class_group' => $row['class_group'] ?? $row['class group'] ?? null,
                     'photo' => $row['foto'] ?? $row['photo'] ?? null,
                 ];
@@ -80,13 +88,35 @@ class StudentImport implements ToCollection, WithHeadingRow
                     continue;
                 }
 
-                // Check for duplicates in the database (Efficient lookup)
-                if (isset($existingNis[$data['nis']]) || isset($existingEmails[$email])) {
-                    $this->skippedCount++;
-                    $this->skipped[] = array_merge($data, [
-                        'row' => $rowNumber,
-                        'reason' => 'Sudah ada di database',
+                // Check for existing records to decide Create vs Update
+                $existingId = $existingNisMap[$data['nis']] ?? $existingEmailMap[$email] ?? null;
+
+                // Mark as seen in this file
+                $fileNisses[$data['nis']] = true;
+                $fileEmails[$email] = true;
+
+                // Class Matching: Find class_id from grade and section
+                $classKey = trim($data['grade']) . '|' . trim($data['class_group']);
+                $classId = $classLookup[$classKey] ?? null;
+
+                if ($existingId) {
+                    // UPDATE path
+                    $user = User::find($existingId);
+                    $user->update([
+                        'name' => $data['name'],
+                        'grade' => $data['grade'],
+                        'class_group' => $data['class_group'],
+                        'class_id' => $classId,
+                        'photo' => $data['photo'] ?? $user->photo,
                     ]);
+
+                    // Tambahkan ke daftar untuk ditampilkan di UI
+                    $this->students[] = [
+                        'student' => $user,
+                        'is_update' => true
+                    ];
+
+                    $this->successCount++;
                     $rowNumber++;
                     continue;
                 }
@@ -115,6 +145,7 @@ class StudentImport implements ToCollection, WithHeadingRow
                     'nis' => $data['nis'],
                     'grade' => $data['grade'],
                     'class_group' => $data['class_group'],
+                    'class_id' => $classId,
                     'photo' => $data['photo'],
                     'role' => 'student',
                     'status' => 'Aktif',

@@ -141,84 +141,6 @@
             </div>
         </div>
 
-        {{-- ══════════════════════════════════════════════════════════════ --}}
-        {{-- Re-mapping Rombel Section                                      --}}
-        {{-- ══════════════════════════════════════════════════════════════ --}}
-        <div id="remap" class="bg-white rounded-3xl shadow-sm border border-amber-100 overflow-hidden scroll-mt-6">
-            <div class="px-8 py-5 border-b border-amber-100 bg-amber-50/60 flex items-center gap-3">
-                <div class="w-9 h-9 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">
-                    <i class="fas fa-sitemap"></i>
-                </div>
-                <div>
-                    <h2 class="font-black text-amber-900 text-sm uppercase tracking-widest">Import Re-mapping Rombel</h2>
-                    <p class="text-amber-600 text-xs mt-0.5">Gunakan setelah Migrasi Tahunan — isi kolom <b>Class Group</b> lalu upload.</p>
-                </div>
-                <a href="{{ route('admin.students.export.remapping') }}"
-                   class="ml-auto inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 text-white text-xs font-black rounded-xl hover:bg-amber-600 transition uppercase tracking-widest flex-shrink-0">
-                    <i class="fas fa-download"></i> Unduh Template
-                </a>
-            </div>
-
-            <div class="p-8 space-y-6">
-                {{-- How-to steps --}}
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    @foreach([
-                        ['step'=>'1','title'=>'Unduh Template','desc'=>'Klik "Unduh Template" di atas. Sheet 1 berisi siswa belum dipetakan (class_group kosong).','color'=>'amber'],
-                        ['step'=>'2','title'=>'Isi Class Group','desc'=>'Pada kolom <b>Class Group (ISI INI)</b> yang diblok kuning, isi angka atau huruf rombel (contoh: A, B, IPA-1).','color'=>'amber'],
-                        ['step'=>'3','title'=>'Upload & Proses','desc'=>'Upload file yang sudah diisi. Sistem akan mencari class_id otomatis dan memvalidasi grade. Jika ada error, TIDAK ada yang disimpan.','color'=>'rose'],
-                    ] as $s)
-                    <div class="bg-{{ $s['color'] }}-50 border border-{{ $s['color'] }}-100 rounded-2xl p-4">
-                        <span class="inline-flex w-6 h-6 rounded-full bg-{{ $s['color'] }}-400 text-white text-[10px] font-black items-center justify-center mb-2">{{ $s['step'] }}</span>
-                        <p class="font-black text-{{ $s['color'] }}-900 text-xs">{{ $s['title'] }}</p>
-                        <p class="text-{{ $s['color'] }}-700 text-[11px] mt-1 leading-relaxed">{!! $s['desc'] !!}</p>
-                    </div>
-                    @endforeach
-                </div>
-
-                {{-- Validation errors from previous attempt --}}
-                @if(session('remap_errors'))
-                    <div class="bg-rose-50 border border-rose-200 rounded-2xl p-5 space-y-2">
-                        <p class="font-black text-rose-800 text-sm flex items-center gap-2">
-                            <i class="fas fa-times-circle text-rose-500"></i>
-                            Import dibatalkan — ditemukan {{ count(session('remap_errors')) }} error:
-                        </p>
-                        <ul class="list-disc list-inside space-y-0.5 max-h-48 overflow-y-auto">
-                            @foreach(session('remap_errors') as $err)
-                                <li class="text-rose-700 text-xs">{{ $err['error'] }}</li>
-                            @endforeach
-                        </ul>
-                        <p class="text-rose-500 text-[11px]">Perbaiki semua baris di atas, lalu upload ulang.</p>
-                    </div>
-                @endif
-
-                {{-- Upload Form --}}
-                <form action="{{ route('admin.students.import.remap') }}" method="POST"
-                      enctype="multipart/form-data" id="remap-form">
-                    @csrf
-                    <div class="mb-6">
-                        <label for="remap-file"
-                               class="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-amber-200 rounded-3xl cursor-pointer bg-amber-50/30 hover:bg-amber-50 hover:border-amber-400 transition-all">
-                            <div class="flex flex-col items-center gap-2">
-                                <div class="w-12 h-12 bg-white rounded-2xl shadow-sm border border-amber-100 flex items-center justify-center text-amber-500">
-                                    <i class="fas fa-cloud-upload-alt text-xl"></i>
-                                </div>
-                                <p class="text-sm text-gray-700 font-bold">Upload Template Re-mapping</p>
-                                <p class="text-xs text-gray-400">.xlsx / .xls / .csv — Maks 10MB</p>
-                            </div>
-                            <input id="remap-file" name="file" type="file"
-                                   accept=".xlsx,.xls,.csv" required class="hidden"
-                                   onchange="handleRemapFileSelected(this)">
-                        </label>
-                        <p id="remap-file-name" class="text-xs font-bold text-amber-700 mt-2 hidden"></p>
-                    </div>
-
-                    <button type="submit"
-                            class="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-sm uppercase tracking-widest rounded-2xl shadow-md hover:shadow-amber-400/40 hover:-translate-y-0.5 transition-all">
-                        <i class="fas fa-sitemap mr-2"></i> Proses Re-mapping Rombel
-                    </button>
-                </form>
-            </div>
-        </div>
     </div>
 
     <script>
@@ -243,13 +165,6 @@
             document.getElementById('file-info').classList.add('hidden');
         }
 
-        function handleRemapFileSelected(input) {
-            const label = document.getElementById('remap-file-name');
-            if (input.files && input.files[0]) {
-                label.textContent = '📎 ' + input.files[0].name;
-                label.classList.remove('hidden');
-            }
-        }
 
         document.getElementById('import-form').addEventListener('submit', function(e) {
             const progressBlock = document.getElementById('progress-block');
@@ -274,13 +189,6 @@
             }, 500);
         });
 
-        // Auto-scroll to remap section if redirected back with remap errors
-        @if(session('remap_tab') || request()->is('*#remap'))
-            document.addEventListener('DOMContentLoaded', () => {
-                const el = document.getElementById('remap');
-                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            });
-        @endif
     </script>
 
     <style>

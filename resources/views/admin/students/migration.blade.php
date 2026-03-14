@@ -57,6 +57,25 @@
             </div>
         </div>
 
+        @if(($stats['unmapped'] ?? 0) > 0)
+            <!-- Re-mapping Notice -->
+            <div class="bg-amber-50 border border-amber-200 rounded-2xl p-6 flex flex-col md:flex-row items-start md:items-center gap-6 animate-pulse-subtle">
+                <div class="w-16 h-16 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-600 shrink-0 shadow-sm">
+                    <i class="fas fa-exclamation-circle text-3xl"></i>
+                </div>
+                <div class="flex-1">
+                    <h3 class="text-lg font-black text-amber-900 mb-1">
+                        {{ $stats['unmapped'] }} siswa belum memiliki kelas — perlu Re-mapping!
+                    </h3>
+                    <p class="text-amber-700 text-sm leading-relaxed">
+                        Kemungkinan setelah Migrasi Tahunan. Untuk mengatur kelas siswa, silakan gunakan fitur <b>Ekspor/Impor</b> yang sudah ada di halaman 
+                        <a href="{{ route('admin.students.index') }}" class="font-black underline hover:text-amber-900 transition-colors">Daftar Siswa</a>. 
+                        Unduh template, isi kolom <code>class_id</code>, lalu impor kembali.
+                    </p>
+                </div>
+            </div>
+        @endif
+
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- Left: Student List for Retention -->
             <div class="lg:col-span-2 space-y-6">

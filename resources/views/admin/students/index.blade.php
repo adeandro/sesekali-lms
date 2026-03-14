@@ -96,18 +96,10 @@
                         <p class="font-black text-amber-800 text-sm">
                             {{ number_format($unmappedCount) }} siswa belum memiliki kelas — perlu Re-mapping!
                         </p>
-                        <p class="text-amber-600 text-xs mt-0.5">Kemungkinan setelah Migrasi Tahunan. Unduh template, isi class_id, lalu impor ulang.</p>
+                        <p class="text-amber-600 text-xs mt-0.5 italic">
+                            Kemungkinan setelah Migrasi Tahunan. Silakan gunakan fitur <b>Ekspor/Impor</b> di atas untuk melakukan pemetaan kelas baru.
+                        </p>
                     </div>
-                </div>
-                <div class="flex items-center gap-2 flex-shrink-0">
-                    <a href="{{ route('admin.students.export.remapping') }}"
-                       class="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 text-white text-xs font-black rounded-xl hover:bg-amber-600 transition uppercase tracking-widest">
-                        <i class="fas fa-download"></i> Unduh Template
-                    </a>
-                    <a href="{{ route('admin.students.importForm') }}#remap"
-                       class="inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-amber-300 text-amber-700 text-xs font-black rounded-xl hover:bg-amber-50 transition uppercase tracking-widest">
-                        <i class="fas fa-file-import"></i> Import Remap
-                    </a>
                 </div>
             </div>
         @endif

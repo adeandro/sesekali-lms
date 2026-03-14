@@ -230,8 +230,6 @@ Route::middleware('auth')->group(function () {
             // ── Annual Migration & Re-Mapping ────────────────────────────────
             Route::get('students/migration', [StudentController::class, 'migration'])->name('students.migration');
             Route::post('students/migration/execute', [StudentController::class, 'executeAnnualMigration'])->name('students.migration.execute');
-            Route::get('students/export/remapping-template', [StudentController::class, 'exportRemapping'])->name('students.export.remapping');
-            Route::post('students/import/remap', [StudentController::class, 'importRemap'])->name('students.import.remap');
 
             // Resource routes last
             Route::resource('students', StudentController::class);

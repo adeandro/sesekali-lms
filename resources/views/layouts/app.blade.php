@@ -212,13 +212,9 @@
                                 <i class="fas fa-chalkboard-teacher w-4 mr-2"></i>
                                 <span>Guru</span>
                             </a>
-                            <a href="{{ route('admin.students.index') }}" class="nav-item py-2 text-sm {{ (request()->routeIs('admin.students.*') && !request()->routeIs('admin.students.migration')) ? 'menu-item-active' : '' }}">
+                            <a href="{{ route('admin.students.index') }}" class="nav-item py-2 text-sm {{ request()->routeIs('admin.students.*') ? 'menu-item-active' : '' }}">
                                 <i class="fas fa-users w-4 mr-2"></i>
                                 <span>Siswa</span>
-                            </a>
-                            <a href="{{ route('admin.students.migration') }}" class="nav-item py-2 text-sm {{ request()->routeIs('admin.students.migration') ? 'menu-item-active' : '' }}">
-                                <i class="fas fa-graduation-cap w-4 mr-2 text-indigo-500"></i>
-                                <span>Migrasi Tahunan</span>
                             </a>
                             <a href="{{ route('admin.subjects.index') }}" class="nav-item py-2 text-sm {{ request()->routeIs('admin.subjects.*') ? 'menu-item-active' : '' }}">
                                 <i class="fas fa-book w-4 mr-2"></i>

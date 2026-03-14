@@ -48,7 +48,7 @@
             <div class="bg-white rounded-3xl p-6 border-b-4 border-emerald-500 shadow-sm transition-transform hover:scale-[1.02]">
                 <p class="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Berhasil</p>
                 <p class="text-4xl font-black text-gray-900">{{ $success_count }}</p>
-                <p class="text-xs text-gray-400 mt-1 font-medium italic">Siswa baru ditambahkan</p>
+                <p class="text-xs text-gray-400 mt-1 font-medium italic">Siswa Berhasil Diproses</p>
             </div>
 
             <div class="bg-white rounded-3xl p-6 border-b-4 border-amber-500 shadow-sm transition-transform hover:scale-[1.02]">
@@ -77,7 +77,7 @@
                         <div class="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600">
                             <i class="fas fa-user-plus"></i>
                         </div>
-                        Siswa Berhasil Ditambahkan ({{ $success_count }})
+                        Siswa Berhasil Diproses ({{ $success_count }})
                     </h3>
                     <button onclick="window.print()" class="text-xs font-bold text-emerald-700 hover:underline">
                         <i class="fas fa-print mr-1"></i> Cetak Laporan
@@ -88,25 +88,41 @@
                         <thead>
                             <tr class="bg-gray-50/50">
                                 <th class="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">NIS</th>
+                                <th class="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
                                 <th class="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Nama Lengkap</th>
                                 <th class="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Kelas</th>
-                                <th class="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Password Default</th>
+                                <th class="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Password</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-50">
                             @foreach($students as $item)
                                 <tr class="hover:bg-indigo-50/30 transition-colors">
                                     <td class="px-8 py-4 text-sm font-bold text-gray-900">{{ $item['student']->nis }}</td>
+                                    <td class="px-8 py-4">
+                                        @if($item['is_update'] ?? false)
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-amber-100 text-amber-700 uppercase tracking-tight">
+                                                UPDATE
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-emerald-100 text-emerald-700 uppercase tracking-tight">
+                                                BARU
+                                            </span>
+                                        @endif
+                                    </td>
                                     <td class="px-8 py-4 text-sm font-medium text-gray-600">{{ $item['student']->name }}</td>
                                     <td class="px-8 py-4 text-center">
                                         <span class="inline-flex items-center px-3 py-1 rounded-lg text-[10px] font-black bg-indigo-100 text-indigo-700 uppercase tracking-tight">
                                             {{ $item['student']->grade }} - {{ $item['student']->class_group }}
                                         </span>
                                     </td>
-                                    <td class="px-8 py-4">
-                                        <code class="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-xl font-mono text-xs font-bold border border-gray-200">
-                                            {{ $item['password'] }}
-                                        </code>
+                                    <td class="px-8 py-4 text-right">
+                                        @if($item['is_update'] ?? false)
+                                            <span class="text-[10px] font-bold text-gray-400 italic">Tetap / Tak Berubah</span>
+                                        @else
+                                            <code class="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-xl font-mono text-xs font-bold border border-gray-200">
+                                                {{ $item['password'] }}
+                                            </code>
+                                        @endif
                                     </td>
                                 </tr>
                             @endforeach
