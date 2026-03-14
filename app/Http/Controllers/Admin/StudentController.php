@@ -448,15 +448,23 @@ class StudentController extends Controller
     // ── Annual Migration Methods ───────────────────────────────────────────────
 
     /**
-     * Show the migration initiation confirmation page.
+     * Show the annual migration management page.
      */
-    public function initialisasiMigrasi()
+    public function migration()
     {
+        // Get active students from Grade 10 and 11 for manual retention selection
+        $students = User::where('role', 'student')
+            ->where('status', 'Aktif')
+            ->whereIn('grade', ['10', '11'])
+            ->orderBy('grade', 'desc')
+            ->orderBy('name')
+            ->get();
+
         $stats = [
-            'grade_10' => User::where('role','student')->where('status', 'Aktif')->where('grade_level', 10)->count(),
-            'grade_11' => User::where('role','student')->where('status', 'Aktif')->where('grade_level', 11)->count(),
-            'grade_12' => User::where('role','student')->where('status', 'Aktif')->where('grade_level', 12)->count(),
-            'unmapped' => User::where('role','student')->where('status', 'Aktif')->whereNull('class_group')->count(),
+            'total_active' => User::where('role', 'student')->where('status', 'Aktif')->count(),
+            'grade_10'     => User::where('role', 'student')->where('status', 'Aktif')->where('grade', '10')->count(),
+            'grade_11'     => User::where('role', 'student')->where('status', 'Aktif')->where('grade', '11')->count(),
+            'grade_12'     => User::where('role', 'student')->where('status', 'Aktif')->where('grade', '12')->count(),
         ];
 
         $recentLogs = MigrationLog::with('executor')
@@ -464,90 +472,98 @@ class StudentController extends Controller
             ->take(5)
             ->get();
 
-        return view('admin.students.migration', compact('stats', 'recentLogs'));
+        return view('admin.students.migration', compact('students', 'stats', 'recentLogs'));
     }
 
     /**
-     * Execute the annual migration: promote grades, graduate grade 12, null class_id.
+     * Execute the annual migration process.
      */
-    public function executeMigration(Request $request)
+    public function executeAnnualMigration(Request $request)
     {
-        $request->validate([
-            'academic_year' => ['required', 'regex:/^\d{4}\/\d{4}$/'],
-            'confirm'       => 'required|in:MIGRASI',
-        ], [
-            'confirm.in' => 'Ketik MIGRASI untuk melanjutkan.',
-        ]);
+        // Validation: Ensure there are active students to migrate
+        $activeCount = User::where('role', 'student')->where('status', 'Aktif')->count();
+        if ($activeCount === 0) {
+            return back()->with('error', 'Tidak ada siswa aktif yang dapat dimigrasi.');
+        }
 
-        $academicYear  = $request->input('academic_year');
-        $stayBehindIds = (array) $request->input('stay_behind_ids', []);
+        $retentionIds = (array) $request->input('retention_ids', []);
+        $academicYear = date('Y') . '/' . (date('Y') + 1);
 
-        DB::transaction(function () use ($academicYear, $stayBehindIds) {
+        try {
+            DB::transaction(function () use ($retentionIds, $academicYear) {
+                // 1. GRADUATE GRADE 12: Status -> Alumni, class_id = NULL
+                $graduatingCount = User::where('role', 'student')
+                    ->where('status', 'Aktif')
+                    ->where('grade', '12')
+                    ->update([
+                        'status'      => 'Alumni',
+                        'class_id'    => null,
+                        'class_group' => null,
+                        'alumni_year' => $academicYear,
+                    ]);
 
-            // 1. Graduate: Grade 12 → status='Alumni', is_active=false, class_group/class_id=null, alumni_year set
-            $grade12Query = User::where('role', 'student')
-                ->where('status', 'Aktif')
-                ->where('grade_level', 12);
-            if (!empty($stayBehindIds)) {
-                $grade12Query->whereNotIn('id', $stayBehindIds);
-            }
-            $grade12Count = $grade12Query->count();
-            $grade12Query->update([
-                'status'      => 'Alumni',
-                'class_group' => null,
-                'class_id'    => null,
-                'alumni_year' => $academicYear,
-            ]);
+                // 2. PROMOTE GRADE 10 & 11 (Normal): Upgrade Grade, Set class_id = NULL
+                // Grade 11 -> 12
+                $promote11Count = User::where('role', 'student')
+                    ->where('status', 'Aktif')
+                    ->where('grade', '11')
+                    ->whereNotIn('id', $retentionIds)
+                    ->update([
+                        'grade_level' => 12,
+                        'grade'       => '12',
+                        'class_id'    => null,
+                        'class_group' => null,
+                    ]);
 
-            MigrationLog::create([
-                'action_type'    => 'graduate',
-                'executed_by'    => Auth::id(),
-                'affected_count' => $grade12Count,
-                'academic_year'  => $academicYear,
-                'notes'          => ['stay_behind_ids' => $stayBehindIds],
-                'executed_at'    => now(),
-            ]);
+                // Grade 10 -> 11
+                $promote10Count = User::where('role', 'student')
+                    ->where('status', 'Aktif')
+                    ->where('grade', '10')
+                    ->whereNotIn('id', $retentionIds)
+                    ->update([
+                        'grade_level' => 11,
+                        'grade'       => '11',
+                        'class_id'    => null,
+                        'class_group' => null,
+                    ]);
 
-            // 2. Promote: grade_level 10→11, 11→12; nullify class_group & class_id for re-mapping
-            $promoteQuery = User::where('role', 'student')
-                ->where('status', 'Aktif')
-                ->whereIn('grade_level', [10, 11]);
-            if (!empty($stayBehindIds)) {
-                $promoteQuery->whereNotIn('id', $stayBehindIds);
-            }
+                // 3. HANDLE RETENTION: Keep Grade, but set class_id = NULL for re-mapping
+                $retentionCount = 0;
+                if (!empty($retentionIds)) {
+                    $retentionCount = User::whereIn('id', $retentionIds)
+                        ->where('role', 'student')
+                        ->where('status', 'Aktif')
+                        ->update([
+                            'class_id'    => null,
+                            'class_group' => null,
+                        ]);
+                }
 
-            $promoteCount = $promoteQuery->count();
-            $promoteQuery->get()->each(function (User $student) {
-                $student->update([
-                    'grade_level' => $student->grade_level + 1,
-                    'grade'       => (string) ($student->grade_level + 1),  // keep grade string in sync
-                    'class_group' => null,  // Must re-map after promotion
-                    'class_id'    => null,
+                // 4. LOGGING: Record migration history
+                MigrationLog::create([
+                    'action_type'    => 'promote',
+                    'executed_by'    => Auth::id(),
+                    'affected_count' => ($graduatingCount + $promote11Count + $promote10Count + $retentionCount),
+                    'academic_year'  => $academicYear,
+                    'notes' => [
+                        'graduated' => $graduatingCount,
+                        'promoted'  => ($promote11Count + $promote10Count),
+                        'retained'  => $retentionCount,
+                        'retention_ids' => $retentionIds,
+                    ],
+                    'executed_at' => now(),
                 ]);
+
+                // 5. RESET CACHE: Clear relevant caches
+                \Illuminate\Support\Facades\Cache::flush();
             });
 
-            MigrationLog::create([
-                'action_type'    => 'promote',
-                'executed_by'    => Auth::id(),
-                'affected_count' => $promoteCount,
-                'academic_year'  => $academicYear,
-                'notes'          => ['stay_behind_ids' => $stayBehindIds],
-                'executed_at'    => now(),
-            ]);
+            return redirect()->route('admin.students.index')
+                ->with('success', 'Migrasi tahunan berhasil dieksekusi! Semua siswa telah diproses dan siap untuk dipetakan ulang (Re-mapping).');
 
-            // 3. Stay-behind: keep grade_level but null class_group so they also need re-mapping
-            if (!empty($stayBehindIds)) {
-                User::whereIn('id', $stayBehindIds)
-                    ->where('role', 'student')
-                    ->update([
-                        'class_group' => null,
-                        'class_id'    => null,
-                    ]);
-            }
-        });
-
-        return redirect()->route('admin.students.index')
-            ->with('success', '✅ Migrasi tahunan berhasil! Kelas 12 diarsipkan, kelas 10-11 dinaikkan. Silakan lakukan Re-mapping Rombel.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal mengeksekusi migrasi: ' . $e->getMessage());
+        }
     }
 
     /**

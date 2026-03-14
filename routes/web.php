@@ -228,8 +228,8 @@ Route::middleware('auth')->group(function () {
             Route::post('students/upload-photos', [StudentController::class, 'uploadPhotos'])->name('students.upload-photos.post');
 
             // ── Annual Migration & Re-Mapping ────────────────────────────────
-            Route::get('students/migration', [StudentController::class, 'initialisasiMigrasi'])->name('students.migration');
-            Route::post('students/migration/execute', [StudentController::class, 'executeMigration'])->name('students.migration.execute');
+            Route::get('students/migration', [StudentController::class, 'migration'])->name('students.migration');
+            Route::post('students/migration/execute', [StudentController::class, 'executeAnnualMigration'])->name('students.migration.execute');
             Route::get('students/export/remapping-template', [StudentController::class, 'exportRemapping'])->name('students.export.remapping');
             Route::post('students/import/remap', [StudentController::class, 'importRemap'])->name('students.import.remap');
 
