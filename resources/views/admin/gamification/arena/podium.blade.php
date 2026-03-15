@@ -50,7 +50,6 @@
                 <span class="text-4xl font-black text-slate-200">2</span>
                 <span class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Silver</span>
                 <span class="text-[9px] text-emerald-400 font-bold bg-white/5 px-2 py-0.5 rounded-full border border-emerald-500/20 mb-1">+{{ $room->settings['rewards']['rank_2']['exp'] ?? 300 }} EXP</span>
-                <span class="text-[9px] text-yellow-400 font-bold bg-white/5 px-2 py-0.5 rounded-full border border-yellow-500/20 mb-2">+{{ $room->settings['rewards']['rank_2']['gold'] ?? 500 }} Gold</span>
             </div>
         </div>
         @endif
@@ -73,7 +72,6 @@
                 <span class="text-5xl font-black text-amber-100">1</span>
                 <span class="text-[10px] text-amber-200 uppercase tracking-widest font-bold mb-1">Champion</span>
                 <span class="text-[10px] text-emerald-300 font-bold bg-white/10 px-2 py-0.5 rounded-full border border-emerald-400/30 mb-1 shadow-lg">+{{ $room->settings['rewards']['rank_1']['exp'] ?? 500 }} EXP</span>
-                <span class="text-[10px] text-yellow-300 font-bold bg-white/10 px-2 py-0.5 rounded-full border border-yellow-400/30 mb-2 shadow-lg">+{{ $room->settings['rewards']['rank_1']['gold'] ?? 1000 }} Gold</span>
             </div>
         </div>
         @endif
@@ -95,7 +93,6 @@
                 <span class="text-3xl font-black text-orange-200">3</span>
                 <span class="text-[10px] text-orange-400 uppercase tracking-widest font-bold mb-1">Bronze</span>
                 <span class="text-[8px] text-emerald-500 font-bold bg-black/10 px-2 py-0.5 rounded-full mb-0.5">+{{ $room->settings['rewards']['rank_3']['exp'] ?? 200 }} EXP</span>
-                <span class="text-[8px] text-yellow-500 font-bold bg-black/10 px-2 py-0.5 rounded-full mb-1">+{{ $room->settings['rewards']['rank_3']['gold'] ?? 250 }} Gold</span>
             </div>
         </div>
         @endif

@@ -25,9 +25,9 @@ class StudentDashboardController extends Controller
         $avgScore = $user->examAttempts()->whereNotNull('final_score')->avg('final_score') ?? 0;
         
         // 2. Angkatan Leaderboard (Same Grade)
-        $angkatanLeaderboard = \App\Models\User::where('role', 'student')
-            ->where('status', 'Aktif')
-            ->where('grade', $user->grade)
+        $angkatanLeaderboard = \App\Models\User::where('role', '=', 'student', 'and')
+            ->where('status', '=', 'Aktif', 'and')
+            ->where('grade', '=', $user->grade, 'and')
             ->select('users.*')
             ->withAvg(['examAttempts as avg_score' => function($q) {
                 $q->whereNotNull('submitted_at');
@@ -36,16 +36,18 @@ class StudentDashboardController extends Controller
                 $q->whereNotNull('submitted_at');
             }])
             ->selectRaw('(COALESCE((SELECT AVG(final_score) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL), 0) + 
-                (SELECT COUNT(*) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) * 2) as performance_points')
+                (SELECT COUNT(*) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) * 2 +
+                ((SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id) * 1 +
+                 (SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id AND `rank` = 1) * 5)) as performance_points')
             ->orderByDesc('performance_points')
             ->take(10)
             ->get();
             
         // 3.1 Class Leaderboard (Same Grade & Class Group)
-        $classLeaderboard = \App\Models\User::where('role', 'student')
-            ->where('status', 'Aktif')
-            ->where('grade', $user->grade)
-            ->where('class_group', $user->class_group)
+        $classLeaderboard = \App\Models\User::where('role', '=', 'student', 'and')
+            ->where('status', '=', 'Aktif', 'and')
+            ->where('grade', '=', $user->grade, 'and')
+            ->where('class_group', '=', $user->class_group, 'and')
             ->select('users.*')
             ->withAvg(['examAttempts as avg_score' => function($q) {
                 $q->whereNotNull('submitted_at');
@@ -54,14 +56,16 @@ class StudentDashboardController extends Controller
                 $q->whereNotNull('submitted_at');
             }])
             ->selectRaw('(COALESCE((SELECT AVG(final_score) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL), 0) + 
-                (SELECT COUNT(*) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) * 2) as performance_points')
+                (SELECT COUNT(*) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) * 2 +
+                ((SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id) * 1 +
+                 (SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id AND `rank` = 1) * 5)) as performance_points')
             ->orderByDesc('performance_points')
             ->take(10)
             ->get();
 
         // 3.2 Global Leaderboard
-        $globalLeaderboard = \App\Models\User::where('role', 'student')
-            ->where('status', 'Aktif')
+        $globalLeaderboard = \App\Models\User::where('role', '=', 'student', 'and')
+            ->where('status', '=', 'Aktif', 'and')
             ->select('users.*')
             ->withAvg(['examAttempts as avg_score' => function($q) {
                 $q->whereNotNull('submitted_at');
@@ -70,19 +74,23 @@ class StudentDashboardController extends Controller
                 $q->whereNotNull('submitted_at');
             }])
             ->selectRaw('(COALESCE((SELECT AVG(final_score) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL), 0) + 
-                (SELECT COUNT(*) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) * 2) as performance_points')
+                (SELECT COUNT(*) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) * 2 +
+                ((SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id) * 1 +
+                 (SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id AND `rank` = 1) * 5)) as performance_points')
             ->orderByDesc('performance_points')
             ->take(10)
             ->get();
 
         // 4. Current Student Rank (Angkatan & Class)
-        $angkatanRankedStudents = \App\Models\User::where('role', 'student')
-            ->where('status', 'Aktif')
-            ->where('grade', $user->grade)
-            ->withSum(['examAttempts as total_score' => function($query) {
-                $query->whereNotNull('submitted_at');
-            }], 'final_score')
-            ->orderByDesc('total_score')
+        $angkatanRankedStudents = \App\Models\User::where('role', '=', 'student')
+            ->where('status', '=', 'Aktif')
+            ->where('grade', '=', $user->grade)
+            ->select('id')
+            ->selectRaw('(COALESCE((SELECT AVG(final_score) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL), 0) + 
+                (SELECT COUNT(*) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) * 2 +
+                ((SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id) * 1 +
+                 (SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id AND `rank` = 1) * 5)) as performance_points')
+            ->orderByDesc('performance_points')
             ->pluck('id')
             ->toArray();
         
@@ -90,14 +98,16 @@ class StudentDashboardController extends Controller
             ? array_search($user->id, $angkatanRankedStudents) + 1 
             : '-';
 
-        $classRankedStudents = \App\Models\User::where('role', 'student')
-            ->where('status', 'Aktif')
-            ->where('grade', $user->grade)
-            ->where('class_group', $user->class_group)
-            ->withSum(['examAttempts as total_score' => function($query) {
-                $query->whereNotNull('submitted_at');
-            }], 'final_score')
-            ->orderByDesc('total_score')
+        $classRankedStudents = \App\Models\User::where('role', '=', 'student', 'and')
+            ->where('status', '=', 'Aktif', 'and')
+            ->where('grade', '=', $user->grade, 'and')
+            ->where('class_group', '=', $user->class_group, 'and')
+            ->select('id')
+            ->selectRaw('(COALESCE((SELECT AVG(final_score) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL), 0) + 
+                (SELECT COUNT(*) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) * 2 +
+                ((SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id) * 1 +
+                 (SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id AND `rank` = 1) * 5)) as performance_points')
+            ->orderByDesc('performance_points')
             ->pluck('id')
             ->toArray();
         
@@ -106,7 +116,7 @@ class StudentDashboardController extends Controller
             : '-';
 
         // 5. Badges (Dynamic active only)
-        $allAchievements = \App\Models\Achievement::where('is_active', true)->orderBy('created_at', 'asc')->get();
+        $allAchievements = \App\Models\Achievement::where('is_active', '=', true)->orderBy('created_at', 'asc')->get();
         $earnedAchievements = $user->achievements->keyBy('slug');
 
         // 6. Greeting (WIB)
@@ -134,15 +144,15 @@ class StudentDashboardController extends Controller
 
         // 7. Available Exams
         $submittedExamIds = $user->examAttempts()
-            ->where('status', 'submitted')
+            ->where('status', '=', 'submitted', 'and')
             ->pluck('exam_id')
             ->toArray();
 
-        $availableExams = Exam::where('status', 'published')
+        $availableExams = Exam::where('status', '=', 'published')
             ->whereNotIn('id', $submittedExamIds)
             ->where(function($q) use ($user) {
                 $q->whereNull('jenjang')
-                  ->orWhere('jenjang', $user->grade);
+                  ->orWhere('jenjang', '=', $user->grade);
             })
             ->where('end_time', '>', now())
             ->with(['subject'])
@@ -150,10 +160,9 @@ class StudentDashboardController extends Controller
             ->take(6)
             ->get();
 
-        // 8. Recent Results
         $recentResults = $user->examAttempts()
             ->with('exam.subject')
-            ->where('status', 'submitted')
+            ->where('status', '=', 'submitted', 'and')
             ->orderBy('submitted_at', 'DESC')
             ->take(5)
             ->get();

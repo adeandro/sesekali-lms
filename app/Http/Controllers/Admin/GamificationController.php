@@ -22,6 +22,7 @@ class GamificationController extends Controller
         'submission_hour'     => 'Jam Submit ≥ nilai (WIB)',
         'custom_avatar'       => 'Menggunakan Avatar Kustom',
         'avg_score'           => 'Rata-rata Nilai Semua Ujian',
+        'arena_win_count'     => 'Jumlah Menang Battle Arena (Juara 1)',
     ];
 
     // ─────────────────────────────────────────

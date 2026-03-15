@@ -122,10 +122,6 @@
                         <input type="number" name="rewards[rank_1][exp]" value="{{ old('rewards.rank_1.exp', 500) }}" min="0" class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-amber-400 focus:border-transparent transition">
                     </div>
                     <div>
-                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">Gold</label>
-                        <input type="number" name="rewards[rank_1][gold]" value="{{ old('rewards.rank_1.gold', 1000) }}" min="0" class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-amber-400 focus:border-transparent transition">
-                    </div>
-                    <div>
                         <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">Tema Avatar</label>
                         <select name="rewards[rank_1][theme]" class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-amber-400 bg-white">
                             <option value="">-- Tanpa Tema --</option>
@@ -144,10 +140,6 @@
                     <div>
                         <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">EXP</label>
                         <input type="number" name="rewards[rank_2][exp]" value="{{ old('rewards.rank_2.exp', 300) }}" min="0" class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-slate-400 focus:border-transparent transition">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">Gold</label>
-                        <input type="number" name="rewards[rank_2][gold]" value="{{ old('rewards.rank_2.gold', 500) }}" min="0" class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-slate-400 focus:border-transparent transition">
                     </div>
                     <div>
                         <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">Tema Avatar</label>
@@ -170,10 +162,6 @@
                         <input type="number" name="rewards[rank_3][exp]" value="{{ old('rewards.rank_3.exp', 200) }}" min="0" class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-orange-400 focus:border-transparent transition">
                     </div>
                     <div>
-                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">Gold</label>
-                        <input type="number" name="rewards[rank_3][gold]" value="{{ old('rewards.rank_3.gold', 250) }}" min="0" class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-orange-400 focus:border-transparent transition">
-                    </div>
-                    <div>
                         <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">Tema Avatar</label>
                         <select name="rewards[rank_3][theme]" class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-orange-400 bg-white">
                             <option value="">-- Tanpa Tema --</option>
@@ -192,10 +180,6 @@
                     <div>
                         <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">EXP</label>
                         <input type="number" name="rewards[participant][exp]" value="{{ old('rewards.participant.exp', 100) }}" min="0" class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-gray-400 focus:border-transparent transition">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">Gold</label>
-                        <input type="number" name="rewards[participant][gold]" value="{{ old('rewards.participant.gold', 50) }}" min="0" class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-gray-400 focus:border-transparent transition">
                     </div>
                     <div>
                         <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1">Tema Avatar</label>

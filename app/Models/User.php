@@ -35,7 +35,6 @@ class User extends Authenticatable
         'avatar_upload',
         'role',
         'total_exp',
-        'gold',
         'current_level',
         'ui_theme',
         'alumni_year',

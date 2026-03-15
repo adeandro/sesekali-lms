@@ -53,7 +53,6 @@ class ArenaController extends Controller
             'lock_on_start'    => 'boolean',
             'rewards'          => 'required|array',
             'rewards.*.exp'    => 'required|integer|min:0',
-            'rewards.*.gold'   => 'nullable|integer|min:0',
             'rewards.*.theme'  => 'nullable|string',
             'physical_reward.enabled'     => 'nullable|boolean',
             'physical_reward.description' => 'required_if:physical_reward.enabled,1|nullable|string|max:150',
@@ -491,26 +490,25 @@ class ArenaController extends Controller
             foreach ($participants as $p) {
                 // Determine Reward based on Rank
                 if ($p->rank === 1) {
-                    $config = $rewards['rank_1'] ?? ['exp' => 500, 'gold' => 1000, 'theme' => 'legendary-golden'];
+                    $config = $rewards['rank_1'] ?? ['exp' => 500, 'theme' => 'legendary-golden'];
                 } elseif ($p->rank === 2) {
-                    $config = $rewards['rank_2'] ?? ['exp' => 300, 'gold' => 500, 'theme' => 'elite-silver'];
+                    $config = $rewards['rank_2'] ?? ['exp' => 300, 'theme' => 'elite-silver'];
                 } elseif ($p->rank === 3) {
-                    $config = $rewards['rank_3'] ?? ['exp' => 200, 'gold' => 250, 'theme' => 'master-bronze'];
+                    $config = $rewards['rank_3'] ?? ['exp' => 200, 'theme' => 'master-bronze'];
                 } else {
-                    $config = $rewards['participant'] ?? ['exp' => 100, 'gold' => 50, 'theme' => 'survivor-common'];
+                    $config = $rewards['participant'] ?? ['exp' => 100, 'theme' => 'survivor-common'];
                 }
 
                 $expBonus = (int) ($config['exp'] ?? 0);
-                $goldBonus = (int) ($config['gold'] ?? 0);
                 $theme = $config['theme'] ?? null;
 
                 // Apply Rewards
                 if ($expBonus > 0) {
-                    $p->user->increment('total_exp', $expBonus);
+                    app(\App\Services\AchievementService::class)->awardXp($p->user, $expBonus);
                 }
-                if ($goldBonus > 0) {
-                    $p->user->increment('gold', $goldBonus);
-                }
+
+                // Check for achievements (including the new arena_win_count)
+                app(\App\Services\AchievementService::class)->checkAchievements($p->user);
                 if ($theme && $p->user->ui_theme !== $theme) {
                     $p->user->update(['ui_theme' => $theme]);
                     $p->user->notify(new GamificationNotification(

@@ -18,7 +18,7 @@ class AchievementService
         $user = $attempt->student;
 
         // Fetch all active achievements
-        $activeAchievements = Achievement::where('is_active', true)->get();
+        $activeAchievements = Achievement::where('is_active', '=', true, 'and')->get();
 
         foreach ($activeAchievements as $achievement) {
             $type  = $achievement->criteria_type;
@@ -51,8 +51,8 @@ class AchievementService
      */
     public function checkAchievements(User $user)
     {
-        $activeAchievements = Achievement::where('is_active', true)
-                                         ->whereIn('criteria_type', ['exam_count', 'avg_score', 'custom_avatar'])
+        $activeAchievements = Achievement::where('is_active', '=', true, 'and')
+                                         ->whereIn('criteria_type', ['exam_count', 'avg_score', 'custom_avatar', 'arena_win_count'])
                                          ->get();
 
         foreach ($activeAchievements as $achievement) {
@@ -60,10 +60,11 @@ class AchievementService
             $value = (float) $achievement->criteria_value;
 
             $shouldAward = match ($type) {
-                'exam_count'    => $this->checkExamCount($user, $value),
-                'avg_score'     => $this->checkAvgScore($user, $value),
-                'custom_avatar' => $this->checkAvatarAchievement($user),
-                default         => false,
+                'exam_count'      => $this->checkExamCount($user, $value),
+                'avg_score'       => $this->checkAvgScore($user, $value),
+                'custom_avatar'   => $this->checkAvatarAchievement($user),
+                'arena_win_count' => $this->checkArenaWinCount($user, $value),
+                default           => false,
             };
 
             if ($shouldAward) {
@@ -78,7 +79,7 @@ class AchievementService
 
     public function checkExamCount(User $user, float $targetCount): bool
     {
-        $count = $user->examAttempts()->where('status', 'submitted')->count();
+        $count = $user->examAttempts()->where('status', '=', 'submitted', 'and')->count();
         return $count >= $targetCount;
     }
 
@@ -112,8 +113,8 @@ class AchievementService
 
     public function checkFirstSubmit(ExamAttempt $attempt): bool
     {
-        $firstAttempt = ExamAttempt::where('exam_session_id', $attempt->exam_session_id)
-            ->where('status', 'submitted')
+        $firstAttempt = ExamAttempt::where('exam_session_id', '=', $attempt->exam_session_id, 'and')
+            ->where('status', '=', 'submitted', 'and')
             ->orderBy('submitted_at', 'ASC')
             ->first();
 
@@ -147,9 +148,9 @@ class AchievementService
     public function checkScoreIncrease(ExamAttempt $attempt, float $targetIncrease): bool
     {
         $previousAttempt = $attempt->student->examAttempts()
-            ->where('status', 'submitted')
-            ->where('id', '!=', $attempt->id)
-            ->where('submitted_at', '<', $attempt->submitted_at)
+            ->where('status', '=', 'submitted', 'and')
+            ->where('id', '!=', $attempt->id, 'and')
+            ->where('submitted_at', '<', $attempt->submitted_at, 'and')
             ->orderBy('submitted_at', 'DESC')
             ->first();
 
@@ -171,8 +172,17 @@ class AchievementService
 
     public function checkAvgScore(User $user, float $targetAvg): bool
     {
-        $avg = $user->examAttempts()->where('status', 'submitted')->avg('final_score');
+        $avg = $user->examAttempts()->where('status', '=', 'submitted', 'and')->avg('final_score');
         return $avg && $avg >= $targetAvg;
+    }
+
+    public function checkArenaWinCount(User $user, float $targetCount): bool
+    {
+        // One way to count is checking BattleParticipant where rank = 1
+        $count = \App\Models\BattleParticipant::where('user_id', '=', $user->id, 'and')
+            ->where('rank', '=', 1, 'and')
+            ->count();
+        return $count >= $targetCount;
     }
 
     public function checkAvatarAchievement(User $user)
@@ -186,8 +196,8 @@ class AchievementService
         }
 
         if ($hasCustomAvatar) {
-            $achievement = Achievement::where('slug', 'social_media_king')->first();
-            if ($achievement && !$user->achievements()->where('achievement_id', $achievement->id)->exists()) {
+            $achievement = Achievement::where('slug', '=', 'social_media_king', 'and')->first();
+            if ($achievement && !$user->achievements()->where('achievement_id', '=', $achievement->id, 'and')->exists()) {
                 $this->awardBadge($user, $achievement);
             }
         }
@@ -243,7 +253,7 @@ class AchievementService
 
     protected function awardBadge(User $user, Achievement $achievement): bool
     {
-        if (!$user->achievements()->where('achievement_id', $achievement->id)->exists()) {
+        if (!$user->achievements()->where('achievement_id', '=', $achievement->id, 'and')->exists()) {
             $user->achievements()->attach($achievement->id, [
                 'achieved_at' => Carbon::now(),
                 'created_at'  => Carbon::now(),

@@ -41,11 +41,13 @@ class LeaderboardController extends Controller
         if ($gradeLevel && $tab === 'liga') {
             $myPoints = \App\Services\PointService::getFairScore($user);
             
-            $myRank = User::where('role', 'student')
-                ->where('status', 'Aktif')
-                ->where('grade_level', $gradeLevel)
+            $myRank = User::where('role', '=', 'student', 'and')
+                ->where('status', '=', 'Aktif', 'and')
+                ->where('grade_level', '=', $gradeLevel)
                 ->whereRaw('(COALESCE((SELECT AVG(final_score) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL), 0) + 
-                    (SELECT COUNT(*) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) * 2) > ?', [$myPoints])
+                    (SELECT COUNT(*) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) * 2 +
+                    ((SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id) * 1 +
+                     (SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id AND `rank` = 1) * 5)) > ?', [$myPoints])
                 ->count() + 1;
         }
 
@@ -76,7 +78,9 @@ class LeaderboardController extends Controller
                 $q->whereNotNull('submitted_at');
             }])
             ->selectRaw('(COALESCE((SELECT AVG(final_score) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL), 0) + 
-                (SELECT COUNT(*) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) * 2) as performance_points')
+                (SELECT COUNT(*) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) * 2 +
+                ((SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id) * 1 +
+                 (SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id AND `rank` = 1) * 5)) as performance_points')
             ->orderByDesc('performance_points')
             ->take(50)
             ->get()
@@ -101,8 +105,8 @@ class LeaderboardController extends Controller
     private function buildFleet(?int $gradeLevel): array
     {
         // For class ranking, we average the performance points of all students in that class
-        $fleets = User::where('role', 'student')
-            ->where('status', 'Aktif')
+        $fleets = User::where('role', '=', 'student', 'and')
+            ->where('status', '=', 'Aktif', 'and')
             ->when($gradeLevel, fn($q) => $q->where('grade_level', $gradeLevel))
             ->select(
                 'grade_level',
@@ -112,7 +116,9 @@ class LeaderboardController extends Controller
                 // Average APP of the class members
                 DB::raw('AVG(
                     (SELECT COALESCE(AVG(final_score), 0) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) + 
-                    (SELECT COUNT(*) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) * 2
+                    (SELECT COUNT(*) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) * 2 +
+                    ((SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id) * 1 +
+                     (SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id AND `rank` = 1) * 5)
                 ) as performance_points')
             )
             ->groupBy('grade_level', 'class_group')
