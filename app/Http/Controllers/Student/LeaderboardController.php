@@ -39,10 +39,13 @@ class LeaderboardController extends Controller
         // My current rank in liga (seasonal)
         $myRank = null;
         if ($gradeLevel && $tab === 'liga') {
+            $myPoints = \App\Services\PointService::getFairScore($user);
+            
             $myRank = User::where('role', 'student')
                 ->where('status', 'Aktif')
                 ->where('grade_level', $gradeLevel)
-                ->where('seasonal_exp', '>', $user->seasonal_exp)
+                ->whereRaw('(COALESCE((SELECT AVG(final_score) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL), 0) + 
+                    (SELECT COUNT(*) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) * 2) > ?', [$myPoints])
                 ->count() + 1;
         }
 
@@ -57,37 +60,74 @@ class LeaderboardController extends Controller
             $query->where('grade_level', $gradeLevel);
         }
 
-        return match ($tab) {
-            'fleet'  => $this->buildFleet($gradeLevel),
-            'career' => $query->orderByDesc('career_exp')->take(50)
-                ->get(['id','name','grade_level','class_group','career_exp','active_theme_id','current_level','custom_avatar','photo'])
-                ->values()->toArray(),
-            default  => $query->orderByDesc('seasonal_exp')->take(50) // 'liga'
-                ->get(['id','name','grade_level','class_group','seasonal_exp','active_theme_id','current_level','custom_avatar','photo'])
-                ->values()->toArray(),
-        };
+        if ($tab === 'hall') return [];
+
+        if ($tab === 'fleet') {
+            return $this->buildFleet($gradeLevel);
+        }
+
+        // Student ranking (Liga / Career)
+        return $query
+            ->select('users.*')
+            ->withAvg(['examAttempts as avg_score' => function($q) {
+                $q->whereNotNull('submitted_at');
+            }], 'final_score')
+            ->withCount(['examAttempts as total_sessions' => function($q) {
+                $q->whereNotNull('submitted_at');
+            }])
+            ->selectRaw('(COALESCE((SELECT AVG(final_score) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL), 0) + 
+                (SELECT COUNT(*) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) * 2) as performance_points')
+            ->orderByDesc('performance_points')
+            ->take(50)
+            ->get()
+            ->map(function($student) {
+                return [
+                    'id' => $student->id,
+                    'name' => $student->name,
+                    'grade_level' => $student->grade_level,
+                    'class_group' => $student->class_group,
+                    'active_theme_id' => $student->active_theme_id,
+                    'current_level' => $student->current_level,
+                    'custom_avatar' => $student->custom_avatar,
+                    'photo' => $student->photo,
+                    'performance_points' => $student->performance_points,
+                    'avg_score' => $student->avg_score,
+                    'total_sessions' => $student->total_sessions,
+                ];
+            })
+            ->values()->toArray();
     }
 
     private function buildFleet(?int $gradeLevel): array
     {
-        $query = DB::table('users')
-            ->where('role', 'student')
+        // For class ranking, we average the performance points of all students in that class
+        $fleets = User::where('role', 'student')
             ->where('status', 'Aktif')
+            ->when($gradeLevel, fn($q) => $q->where('grade_level', $gradeLevel))
             ->select(
-                'class_group',
                 'grade_level',
+                'class_group',
                 DB::raw('CONCAT(grade_level, "-", COALESCE(class_group,"?")) as fleet_id'),
                 DB::raw('COUNT(*) as member_count'),
-                DB::raw('AVG(seasonal_exp) as avg_seasonal_exp'),
-                DB::raw('SUM(seasonal_exp) as total_seasonal_exp'),
-                DB::raw('AVG(career_exp) as avg_career_exp')
+                // Average APP of the class members
+                DB::raw('AVG(
+                    (SELECT COALESCE(AVG(final_score), 0) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) + 
+                    (SELECT COUNT(*) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) * 2
+                ) as performance_points')
             )
-            ->groupBy('grade_level', 'class_group');
+            ->groupBy('grade_level', 'class_group')
+            ->orderByDesc('performance_points')
+            ->get();
 
-        if ($gradeLevel) {
-            $query->where('grade_level', $gradeLevel);
-        }
-
-        return $query->orderByDesc('avg_seasonal_exp')->get()->values()->toArray();
+        return $fleets->map(function($f) {
+            return [
+                'name' => "Kelas " . $f->grade_level . " " . $f->class_group,
+                'member_count' => $f->member_count,
+                'performance_points' => $f->performance_points,
+                'is_fleet' => true,
+                'grade_level' => $f->grade_level,
+                'class_group' => $f->class_group,
+            ];
+        })->toArray();
     }
 }

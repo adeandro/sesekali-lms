@@ -28,10 +28,16 @@ class StudentDashboardController extends Controller
         $angkatanLeaderboard = \App\Models\User::where('role', 'student')
             ->where('status', 'Aktif')
             ->where('grade', $user->grade)
-            ->withSum(['examAttempts as total_score' => function($query) {
-                $query->whereNotNull('submitted_at');
+            ->select('users.*')
+            ->withAvg(['examAttempts as avg_score' => function($q) {
+                $q->whereNotNull('submitted_at');
             }], 'final_score')
-            ->orderByDesc('total_score')
+            ->withCount(['examAttempts as total_sessions' => function($q) {
+                $q->whereNotNull('submitted_at');
+            }])
+            ->selectRaw('(COALESCE((SELECT AVG(final_score) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL), 0) + 
+                (SELECT COUNT(*) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) * 2) as performance_points')
+            ->orderByDesc('performance_points')
             ->take(10)
             ->get();
             
@@ -40,10 +46,32 @@ class StudentDashboardController extends Controller
             ->where('status', 'Aktif')
             ->where('grade', $user->grade)
             ->where('class_group', $user->class_group)
-            ->withSum(['examAttempts as total_score' => function($query) {
-                $query->whereNotNull('submitted_at');
+            ->select('users.*')
+            ->withAvg(['examAttempts as avg_score' => function($q) {
+                $q->whereNotNull('submitted_at');
             }], 'final_score')
-            ->orderByDesc('total_score')
+            ->withCount(['examAttempts as total_sessions' => function($q) {
+                $q->whereNotNull('submitted_at');
+            }])
+            ->selectRaw('(COALESCE((SELECT AVG(final_score) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL), 0) + 
+                (SELECT COUNT(*) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) * 2) as performance_points')
+            ->orderByDesc('performance_points')
+            ->take(10)
+            ->get();
+
+        // 3.2 Global Leaderboard
+        $globalLeaderboard = \App\Models\User::where('role', 'student')
+            ->where('status', 'Aktif')
+            ->select('users.*')
+            ->withAvg(['examAttempts as avg_score' => function($q) {
+                $q->whereNotNull('submitted_at');
+            }], 'final_score')
+            ->withCount(['examAttempts as total_sessions' => function($q) {
+                $q->whereNotNull('submitted_at');
+            }])
+            ->selectRaw('(COALESCE((SELECT AVG(final_score) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL), 0) + 
+                (SELECT COUNT(*) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) * 2) as performance_points')
+            ->orderByDesc('performance_points')
             ->take(10)
             ->get();
 
@@ -147,6 +175,7 @@ class StudentDashboardController extends Controller
             'recentResults', 
             'angkatanLeaderboard', 
             'classLeaderboard',
+            'globalLeaderboard',
             'earnedAchievements', 
             'allAchievements'
         ));

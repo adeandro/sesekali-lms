@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Hall of Fame & Leaderboard')
+@section('title', 'Leader Board')
 
 @section('content')
 <div class="space-y-5">
@@ -13,7 +13,7 @@
                 <i class="fas fa-trophy"></i>
                 @if($gradeLevel) Kelas {{ $gradeLevel }} · Liga Angkatan @else Semua Kelas @endif
             </p>
-            <h1 class="text-3xl font-black mt-1">Hall of Fame</h1>
+            <h1 class="text-3xl font-black mt-1">Leader Board</h1>
             <p class="text-amber-100 text-sm mt-1">Temukan posisimu di antara para pejuang terbaik!</p>
         </div>
         <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-white/10 rounded-full"></div>
@@ -29,7 +29,7 @@
 
     {{-- Tabs --}}
     <div class="flex gap-1 bg-gray-100 p-1.5 rounded-2xl w-fit mx-auto">
-        @foreach(['liga' => ['🏆','Liga Angkatan'], 'fleet' => ['🚢','Fleet Kelas'], 'career' => ['♾️','Career EXP'], 'hall' => ['🏛️','Hall of Fame']] as $key => [$icon, $label])
+        @foreach(['liga' => ['🏆','Liga Angkatan'], 'fleet' => ['🚢','Fleet Kelas'], 'career' => ['📈','Performance Rank'], 'hall' => ['🏛️','Hall of Fame']] as $key => [$icon, $label])
             <a href="?tab={{ $key }}"
                class="px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest transition
                       {{ $tab === $key ? 'bg-white shadow text-amber-600' : 'text-gray-500 hover:text-gray-700' }}">
@@ -113,11 +113,18 @@
                             {{ ucwords(strtolower($student['name'])) }}
                             @if($isMe)<span class="text-[9px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-black ml-1">Kamu</span>@endif
                         </p>
-                        <p class="text-[10px] text-gray-400">Lv.{{ $student['current_level'] }} · Kelas {{ $student['grade_level'] }}</p>
+                        @if($student['is_fleet'] ?? false)
+                            <p class="text-[10px] text-gray-400">{{ $student['member_count'] }} Anggota</p>
+                        @else
+                            <p class="text-[10px] text-gray-400">Lv.{{ $student['current_level'] ?? '?' }} · {{ number_format($student['avg_score'] ?? 0, 1) }} avg · {{ $student['total_sessions'] ?? 0 }} ujn</p>
+                        @endif
                     </div>
-                    <span class="font-black text-sm {{ $isCareer ? 'text-violet-600' : 'text-amber-600' }}">
-                        {{ number_format($student[$expKey] ?? 0) }} XP
-                    </span>
+                    <div class="text-right">
+                        <span class="font-black text-sm block {{ $isCareer ? 'text-violet-600' : 'text-amber-600' }}">
+                            {{ number_format($student['performance_points'] ?? 0, 1) }} APP
+                        </span>
+                        <p class="text-[8px] text-gray-400 uppercase font-black uppercase tracking-tighter">Perf. Points</p>
+                    </div>
                 </div>
             @empty
                 <div class="bg-white rounded-2xl border border-gray-100 px-6 py-12 text-center text-gray-400">

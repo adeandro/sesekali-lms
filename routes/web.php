@@ -24,6 +24,7 @@ use App\Http\Controllers\Communication\AnnouncementController;
 use App\Http\Controllers\Communication\MessageController;
 use App\Http\Controllers\Admin\ArenaController;
 use App\Http\Controllers\Admin\AlumniController;
+use App\Http\Controllers\Student\LeaderboardController;
 
 // Public routes
 Route::get('/', function () {
@@ -144,6 +145,9 @@ Route::middleware('auth')->group(function () {
 
         // Digital Coupon Wallet
         Route::get('student/coupons', [\App\Http\Controllers\Student\CouponController::class, 'index'])->name('student.coupons.index');
+
+        // Leaderboard
+        Route::get('student/leaderboard', [LeaderboardController::class, 'index'])->name('student.leaderboard');
     });
 
     // Subject & Question Management routes

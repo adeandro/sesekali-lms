@@ -274,7 +274,7 @@
 
             <!-- Leaderboards (Hall of Fame) -->
             @if(($configs['enable_leaderboard'] ?? '1') == '1')
-            <div class="relative group bg-white border border-transparent rounded-[2.5rem] p-8 shadow-xl shadow-[var(--brand-glow)] overflow-hidden" x-data="{ tab: 'angkatan' }">
+            <div class="relative group bg-white border border-transparent rounded-[2.5rem] p-8 shadow-xl shadow-[var(--brand-glow)] overflow-hidden" x-data="{ tab: 'global' }">
                 <!-- Background Blob (Static) -->
                 <div class="absolute -top-20 -left-20 opacity-30 pointer-events-none">
                     <div class="w-64 h-64 rounded-full blur-3xl" style="background-color: var(--brand-glow);"></div>
@@ -288,15 +288,88 @@
                         <div class="flex items-center justify-between">
                             <h3 class="text-lg font-black text-gray-900 uppercase tracking-widest flex items-center gap-3">
                                 <i class="fas fa-trophy text-amber-500"></i>
-                                Hall of Fame
+                                Leader Board
                             </h3>
                         </div>
                         
                         <!-- Tabs -->
                         <div class="flex bg-gray-100/50 p-1.5 rounded-2xl">
+                            <button @click="tab = 'global'" :class="tab === 'global' ? 'bg-white shadow-sm text-[var(--brand-primary)]' : 'text-gray-500'" class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all">Global</button>
                             <button @click="tab = 'angkatan'" :class="tab === 'angkatan' ? 'bg-white shadow-sm text-[var(--brand-primary)]' : 'text-gray-500'" class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all">Angkatan</button>
                             <button @click="tab = 'class'" :class="tab === 'class' ? 'bg-white shadow-sm text-[var(--brand-primary)]' : 'text-gray-500'" class="flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all">Kelas</button>
                         </div>
+                    </div>
+                    
+                    <!-- Global Leaderboard -->
+                    <div class="space-y-3" x-show="tab === 'global'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-4" x-transition:enter-end="opacity-100 translate-x-0">
+                        @forelse($globalLeaderboard as $index => $student)
+                            <div class="flex items-center gap-4 p-3 rounded-2xl transition-all duration-300 hover:bg-white/60 {{ Auth::id() === $student->id ? 'bg-white/80 scale-[1.02] shadow-sm border border-[var(--brand-glow)] ring-2 ring-[var(--brand-glow)]/50 z-10 relative' : 'border border-transparent' }}">
+                                <div class="w-10 h-10 flex items-center justify-center text-sm font-black relative">
+                                    @if($index === 0)
+                                        <i class="fas fa-crown text-amber-500 text-xl drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]"></i>
+                                    @elseif($index === 1)
+                                        <i class="fas fa-crown text-slate-400 text-lg drop-shadow-[0_0_8px_rgba(148,163,184,0.5)]"></i>
+                                    @elseif($index === 2)
+                                        <i class="fas fa-crown text-orange-400 text-lg drop-shadow-[0_0_8px_rgba(251,146,60,0.5)]"></i>
+                                    @else
+                                        <span class="text-gray-400">#{{ $index + 1 }}</span>
+                                    @endif
+                                </div>
+                                <div class="relative group/rank-avatar {{ $index === 0 ? 'sovereign-ring' : '' }}">
+                                    <div x-data="{ loaded: false, seed: '{{ $student->avatar_seed }}', hasAvatar: {{ $student->has_avatar ? 'true' : 'false' }}, isSeed: {{ $student->is_avatar_seed ? 'true' : 'false' }} }" x-intersect.once="loaded = true" 
+                                         class="w-10 h-10 rounded-full border-2 shadow-sm bg-white overflow-hidden transition-all duration-500 premium-motion relative z-10 gpu-accelerated
+                                         @if($index === 0) border-amber-300
+                                         @elseif($index === 1) border-slate-300 ring-4 ring-slate-100 shadow-[0_0_15px_rgba(203,213,225,0.3)]
+                                         @elseif($index === 2) border-orange-300 ring-4 ring-orange-100 shadow-[0_0_15px_rgba(253,186,116,0.3)]
+                                         @else border-white @endif">
+                                         <template x-if="loaded && isSeed">
+                                             <div x-html="multiavatar(seed)" class="w-full h-full animate-fadeIn"></div>
+                                         </template>
+                                         <template x-if="loaded && !isSeed && hasAvatar">
+                                             <img src="{{ $student->avatar_url }}" class="w-full h-full object-cover">
+                                         </template>
+                                         <template x-if="loaded && !isSeed && !hasAvatar">
+                                             <div class="w-full h-full bg-gradient-to-br from-[var(--brand-primary)] to-[var(--brand-dark)] flex items-center justify-center text-white text-[10px] font-black italic leading-none">
+                                                 {{ $student->initials }}
+                                             </div>
+                                         </template>
+                                    </div>
+                                     @if(($configs['enable_gamification'] ?? '1') == '1')
+                                         @if($index === 0)
+                                            <!-- Sovereign Crown -->
+                                            <div class="absolute -top-2 -right-2 text-amber-500 drop-shadow-sm z-20 text-xs crown-bounce">
+                                                <i class="fas fa-crown"></i>
+                                            </div>
+                                         @endif
+                                         <div class="absolute -bottom-1 -right-1 bg-[var(--brand-primary)] text-white text-[6px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-white shadow-sm z-10">
+                                             {{ $index + 1 }}
+                                         </div>
+                                     @endif
+                                    @if($index < 3)
+                                        <div class="absolute -inset-1 rounded-full blur-md pointer-events-none
+                                            @if($index === 0) bg-amber-400/30 @elseif($index === 1) bg-slate-400/30 @else bg-orange-400/30 @endif">
+                                        </div>
+                                    @endif
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-xs {{ $index === 0 ? 'font-extrabold tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-amber-600 drop-shadow-sm' : 'font-black text-gray-900' }} truncate">
+                                        {{ $student->formatted_name }}
+                                        @if(Auth::id() === $student->id)
+                                            <span class="ml-1 text-[8px] bg-[var(--brand-primary)] text-white px-1.5 py-0.5 rounded-full uppercase">Kamu</span>
+                                        @endif
+                                    </p>
+                                    <div class="flex items-center gap-2">
+                                        <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">PP: {{ number_format($student->performance_points, 1) }}</p>
+                                        <span class="text-[8px] text-gray-400">({{ number_format($student->avg_score, 1) }} avg · {{ $student->total_sessions }} ujian)</span>
+                                        <span class="text-[8px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-md uppercase font-black tracking-tighter">G-{{ $student->grade }} / {{ $student->class_group }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="text-center py-10">
+                                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Belum ada peringkat</p>
+                            </div>
+                        @endforelse
                     </div>
 
                     <!-- Angkatan Leaderboard -->
@@ -357,7 +430,10 @@
                                             <span class="ml-1 text-[8px] bg-[var(--brand-primary)] text-white px-1.5 py-0.5 rounded-full uppercase">Kamu</span>
                                         @endif
                                     </p>
-                                    <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Skor: {{ number_format($student->total_score, 0) }}</p>
+                                    <div class="flex items-center gap-2">
+                                        <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">PP: {{ number_format($student->performance_points, 1) }}</p>
+                                        <span class="text-[8px] text-gray-400">({{ number_format($student->avg_score, 1) }} avg)</span>
+                                    </div>
                                 </div>
                             </div>
                         @empty
@@ -428,7 +504,10 @@
                                             <span class="ml-1 text-[8px] bg-[var(--brand-primary)] text-white px-1.5 py-0.5 rounded-full uppercase">Kamu</span>
                                         @endif
                                     </p>
-                                    <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Skor: {{ number_format($student->total_score, 0) }}</p>
+                                    <div class="flex items-center gap-2">
+                                        <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">PP: {{ number_format($student->performance_points, 1) }}</p>
+                                        <span class="text-[8px] text-gray-400">({{ number_format($student->avg_score, 1) }} avg)</span>
+                                    </div>
                                 </div>
                             </div>
                         @empty

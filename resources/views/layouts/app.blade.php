@@ -250,6 +250,10 @@
                                 <i class="fas fa-ticket-alt w-4 mr-2"></i>
                                 <span>Kupon Fisik</span>
                             </a>
+                            <a href="{{ route('student.leaderboard') }}" class="nav-item py-2 text-sm {{ request()->routeIs('student.leaderboard') ? 'menu-item-active' : '' }}">
+                                <i class="fas fa-trophy w-4 mr-2"></i>
+                                <span>Leader Board</span>
+                            </a>
                             <a href="#" onclick="document.getElementById('arenaJoinModal').classList.remove('hidden'); return false;"
                                class="nav-item py-2 text-sm {{ request()->routeIs('student.arena.*') ? 'menu-item-active' : '' }}">
                                 <i class="fas fa-fist-raised w-4 mr-2"></i>
