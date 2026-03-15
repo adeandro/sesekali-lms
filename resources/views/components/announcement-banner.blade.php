@@ -18,10 +18,12 @@
         @foreach($normalBanners as $ann)
         <div
             x-show="!dismissed.includes({{ $ann->id }})"
+            x-cloak
             x-transition:leave="transition ease-in duration-200"
             x-transition:leave-start="opacity-100 scale-100"
             x-transition:leave-end="opacity-0 scale-95"
             class="announcement-banner announcement-banner-{{ $ann->type }} group"
+            style="display: none !important;"
         >
             {{-- Icon --}}
             <div class="shrink-0 mt-0.5">

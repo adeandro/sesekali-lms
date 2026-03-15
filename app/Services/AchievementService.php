@@ -15,35 +15,52 @@ class AchievementService
      */
     public function checkSubmissionAchievements(ExamAttempt $attempt)
     {
-        $user = $attempt->student;
+        try {
+            // Refresh student from DB to ensure we have latest data
+            $user = $attempt->student()->first();
+            if (!$user) return;
 
-        // Fetch all active achievements
-        $activeAchievements = Achievement::where('is_active', '=', true, 'and')->get();
+            // Fetch all active achievements
+            $activeAchievements = Achievement::where('is_active', true)->get();
 
-        foreach ($activeAchievements as $achievement) {
-            $type  = $achievement->criteria_type;
-            $value = (float) $achievement->criteria_value;
+            foreach ($activeAchievements as $achievement) {
+                $type  = $achievement->criteria_type;
+                $value = (float) $achievement->criteria_value;
 
-            $shouldAward = match ($type) {
-                'exam_count'          => $this->checkExamCount($user, $value),
-                'final_score'         => $this->checkFinalScore($attempt, $value),
-                'consecutive_pass'    => $this->checkConsecutivePass($user, $value),
-                'first_submit'        => $this->checkFirstSubmit($attempt),
-                'completion_time_pct' => $this->checkCompletionTimePct($attempt, $value),
-                'score_increase'      => $this->checkScoreIncrease($attempt, $value),
-                'submission_hour'     => $this->checkSubmissionHour($attempt, $value),
-                'avg_score'           => $this->checkAvgScore($user, $value),
-                default               => false,
-            };
+                $shouldAward = match ($type) {
+                    'exam_count'          => $this->checkExamCount($user, $value),
+                    'final_score'         => $this->checkFinalScore($attempt, $value),
+                    'consecutive_pass'    => $this->checkConsecutivePass($user, $value),
+                    'first_submit'        => $this->checkFirstSubmit($attempt),
+                    'completion_time_pct' => $this->checkCompletionTimePct($attempt, $value),
+                    'score_increase'      => $this->checkScoreIncrease($attempt, $value),
+                    'submission_hour'     => $this->checkSubmissionHour($attempt, $value),
+                    'avg_score'           => $this->checkAvgScore($user, $value),
+                    default               => false,
+                };
 
-            if ($shouldAward) {
-                $this->awardBadge($user, $achievement);
+                if ($shouldAward) {
+                    $this->awardBadge($user, $achievement);
+                }
             }
-        }
 
-        // Award XP for completion
-        $xpReward = 50 + ($attempt->correct_answers ?? 0);
-        $this->awardXp($user, $xpReward);
+            // Award XP for completion
+            // Fix: correct_answers column doesn't exist in exam_attempts, count from relation
+            $correctCount = $attempt->answers()
+                ->where('is_correct', true)
+                ->count();
+            
+            $xpReward = 50 + $correctCount;
+            $this->awardXp($user, $xpReward);
+
+        } catch (\Throwable $e) {
+            \Log::error('AchievementService::checkSubmissionAchievements error', [
+                'attempt_id' => $attempt->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            // Don't re-throw - don't let gamification errors break exam submission
+        }
     }
 
     /**
@@ -51,7 +68,7 @@ class AchievementService
      */
     public function checkAchievements(User $user)
     {
-        $activeAchievements = Achievement::where('is_active', '=', true, 'and')
+        $activeAchievements = Achievement::where('is_active', true)
                                          ->whereIn('criteria_type', ['exam_count', 'avg_score', 'custom_avatar', 'arena_win_count'])
                                          ->get();
 
@@ -80,7 +97,7 @@ class AchievementService
 
     public function checkExamCount(User $user, float $targetCount): bool
     {
-        $count = $user->examAttempts()->where('status', '=', 'submitted', 'and')->count();
+        $count = $user->examAttempts()->where('status', 'submitted')->count();
         return $count >= $targetCount;
     }
 
@@ -114,8 +131,8 @@ class AchievementService
 
     public function checkFirstSubmit(ExamAttempt $attempt): bool
     {
-        $firstAttempt = ExamAttempt::where('exam_session_id', '=', $attempt->exam_session_id, 'and')
-            ->where('status', '=', 'submitted', 'and')
+        $firstAttempt = ExamAttempt::where('exam_session_id', $attempt->exam_session_id)
+            ->where('status', 'submitted')
             ->orderBy('submitted_at', 'ASC')
             ->first();
 
@@ -149,9 +166,9 @@ class AchievementService
     public function checkScoreIncrease(ExamAttempt $attempt, float $targetIncrease): bool
     {
         $previousAttempt = $attempt->student->examAttempts()
-            ->where('status', '=', 'submitted', 'and')
-            ->where('id', '!=', $attempt->id, 'and')
-            ->where('submitted_at', '<', $attempt->submitted_at, 'and')
+            ->where('status', 'submitted')
+            ->where('id', '!=', $attempt->id)
+            ->where('submitted_at', '<', $attempt->submitted_at)
             ->orderBy('submitted_at', 'DESC')
             ->first();
 
@@ -173,15 +190,15 @@ class AchievementService
 
     public function checkAvgScore(User $user, float $targetAvg): bool
     {
-        $avg = $user->examAttempts()->where('status', '=', 'submitted', 'and')->avg('final_score');
+        $avg = $user->examAttempts()->where('status', 'submitted')->avg('final_score');
         return $avg && $avg >= $targetAvg;
     }
 
     public function checkArenaWinCount(User $user, float $targetCount): bool
     {
         // One way to count is checking BattleParticipant where rank = 1
-        $count = \App\Models\BattleParticipant::where('user_id', '=', $user->id, 'and')
-            ->where('rank', '=', 1, 'and')
+        $count = \App\Models\BattleParticipant::where('user_id', $user->id)
+            ->where('rank', 1)
             ->count();
         return $count >= $targetCount;
     }
@@ -202,8 +219,8 @@ class AchievementService
         }
 
         if ($hasCustomAvatar) {
-            $achievement = Achievement::where('slug', '=', 'social_media_king', 'and')->first();
-            if ($achievement && !$user->achievements()->where('achievement_id', '=', $achievement->id, 'and')->exists()) {
+            $achievement = Achievement::where('slug', 'social_media_king')->first();
+            if ($achievement && !$user->achievements()->where('achievement_id', $achievement->id)->exists()) {
                 $this->awardBadge($user, $achievement);
             }
         }
@@ -215,11 +232,20 @@ class AchievementService
 
     public function awardXp(User $user, int $amount)
     {
-        $oldLevel = $user->current_level;
+        // Refresh user from DB to avoid stale data
+        $user = $user->fresh();
+        if (!$user) return;
+
+        $oldLevel = $user->current_level ?? 1;
+
+        // Increment EXP
         $user->increment('total_exp', $amount);
         $user->increment('exp_total_alltime', $amount);
         
-        $newLevel = floor($user->total_exp / 100) + 1;
+        // Refresh again after increment to get updated values
+        $user = $user->fresh();
+        
+        $newLevel = (int) floor($user->total_exp / 100) + 1;
         
         if ($newLevel > $oldLevel) {
             $user->update(['current_level' => $newLevel]);
@@ -260,7 +286,7 @@ class AchievementService
 
     protected function awardBadge(User $user, Achievement $achievement): bool
     {
-        if (!$user->achievements()->where('achievement_id', '=', $achievement->id, 'and')->exists()) {
+        if (!$user->achievements()->where('achievement_id', $achievement->id)->exists()) {
             $user->achievements()->attach($achievement->id, [
                 'achieved_at' => Carbon::now(),
                 'created_at'  => Carbon::now(),

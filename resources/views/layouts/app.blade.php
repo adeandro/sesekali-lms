@@ -668,6 +668,10 @@
             @endforeach
             @php Session::forget('celebrations') @endphp
         @endif
+        // Open Arena Join Modal if session has open_arena_modal OR there are validation errors on 'code'
+        @if(Session::has('open_arena_modal') || $errors->has('code'))
+            document.getElementById('arenaJoinModal').classList.remove('hidden');
+        @endif
     </script>
     <script src="{{ asset('js/delete-modal.js') }}"></script>
     <!-- Avatar Generator -->
@@ -693,22 +697,84 @@
                     <p class="text-gray-400 text-xs">Masukkan kode 6 karakter dari gurumu.</p>
                 </div>
 
-                <form action="{{ route('student.arena.join') }}" method="POST" class="no-loading space-y-4">
+                <form id="arenaJoinForm" action="{{ route('student.arena.join') }}" method="POST" class="no-loading space-y-4">
                     @csrf
                     <div>
-                        <input type="text" name="code" maxlength="6" placeholder="XXXXXX"
+                        <input type="text" name="code" id="arenaCodeInput" maxlength="6" placeholder="XXXXXX"
+                               value="{{ old('code') }}"
                                autocomplete="off" autocapitalize="characters"
                                oninput="this.value = this.value.toUpperCase()"
-                               class="w-full text-center text-2xl font-black tracking-[0.4em] uppercase bg-white/5 border border-white/10 text-white rounded-2xl py-4 px-4 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition placeholder:text-gray-600"
+                               class="w-full text-center text-2xl font-black tracking-[0.4em] uppercase bg-white/5 border {{ $errors->has('code') ? 'border-red-500/50 ring-2 ring-red-500/20' : 'border-white/10' }} text-white rounded-2xl py-4 px-4 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition placeholder:text-gray-600"
                                required>
+                        <div id="arenaErrorContainer">
+                            @error('code')
+                                <p class="text-red-500 text-[10px] font-black uppercase tracking-widest mt-3 text-center animate-pulse">
+                                    <i class="fas fa-exclamation-triangle mr-1"></i> {{ $message }}
+                                </p>
+                            @enderror
+                        </div>
                     </div>
-                    <button type="submit"
-                            class="w-full py-3.5 bg-gradient-to-r from-red-500 to-orange-500 text-white font-black text-sm uppercase tracking-widest rounded-2xl shadow-lg hover:shadow-orange-500/30 hover:-translate-y-0.5 transition-all">
-                        <i class="fas fa-door-open mr-2"></i> Masuk ke Lobby
+                    <button type="submit" id="arenaJoinSubmitBtn"
+                            class="w-full py-3.5 bg-gradient-to-r from-red-500 to-orange-500 text-white font-black text-sm uppercase tracking-widest rounded-2xl shadow-lg hover:shadow-orange-500/30 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                        <span class="btn-text"><i class="fas fa-door-open mr-2"></i> Masuk ke Lobby</span>
+                        <span class="loading-text hidden"><i class="fas fa-spinner fa-spin mr-2"></i> Memeriksa...</span>
                     </button>
                 </form>
             </div>
         </div>
+
+        <script>
+            document.getElementById('arenaJoinForm')?.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const form = this;
+                const input = document.getElementById('arenaCodeInput');
+                const errorContainer = document.getElementById('arenaErrorContainer');
+                const submitBtn = document.getElementById('arenaJoinSubmitBtn');
+                const btnText = submitBtn.querySelector('.btn-text');
+                const loadingText = submitBtn.querySelector('.loading-text');
+
+                // Reset state
+                errorContainer.innerHTML = '';
+                input.classList.remove('border-red-500/50', 'ring-2', 'ring-red-500/20');
+                input.classList.add('border-white/10');
+                submitBtn.disabled = true;
+                btnText.classList.add('hidden');
+                loadingText.classList.remove('hidden');
+
+                fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({
+                        code: input.value
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.redirect) {
+                        window.location.href = data.redirect;
+                    } else {
+                        throw new Error(data.message || 'Terjadi kesalahan.');
+                    }
+                })
+                .catch(error => {
+                    errorContainer.innerHTML = `
+                        <p class="text-red-500 text-[10px] font-black uppercase tracking-widest mt-3 text-center animate-pulse">
+                            <i class="fas fa-exclamation-triangle mr-1"></i> ${error.message}
+                        </p>
+                    `;
+                    input.classList.add('border-red-500/50', 'ring-2', 'ring-red-500/20');
+                    input.classList.remove('border-white/10');
+                    submitBtn.disabled = false;
+                    btnText.classList.remove('hidden');
+                    loadingText.classList.add('hidden');
+                });
+            });
+        </script>
         <x-urgent-announcement-modal />
     @endif
     {{-- Exam overlays: rendered at body root to escape overflow-hidden/auto --}}

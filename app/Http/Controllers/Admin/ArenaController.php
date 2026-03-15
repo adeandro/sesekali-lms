@@ -246,9 +246,29 @@ class ArenaController extends Controller
     public function studentJoin(Request $request)
     {
         $request->validate(['code' => 'required|string|size:6']);
+        
         $room = BattleRoom::where('code', strtoupper($request->code))
             ->whereIn('status', ['waiting'])
-            ->firstOrFail();
+            ->first();
+
+        if (!$room) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Token tidak ditemukan atau sudah dimulai.'
+                ], 422);
+            }
+            return back()->withErrors(['code' => 'Token tidak ditemukan atau sudah dimulai.'])
+                         ->withInput()
+                         ->with('open_arena_modal', true);
+        }
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'redirect' => route('student.arena.lobby', $room)
+            ]);
+        }
 
         return redirect()->route('student.arena.lobby', $room);
     }
