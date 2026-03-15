@@ -39,6 +39,13 @@ class User extends Authenticatable
         'ui_theme',
         'alumni_year',
         'status',
+        'prestige_count',
+        'exp_total_alltime',
+        'current_season_id',
+        'rank_global',
+        'rank_delta',
+        'consecutive_exam_weeks',
+        'last_exam_week',
     ];
 
     /**

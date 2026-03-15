@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
-use App\Models\HistoricalWinner;
+use App\Models\HallOfFame;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -18,8 +18,8 @@ class LeaderboardController extends Controller
         $user  = Auth::user();
         $tab   = request('tab', 'liga'); // liga | fleet | career | hall
 
-        // Auto-filter by student's own grade_level
-        $gradeLevel = $user->grade_level ?? null;
+        // Auto-filter by student's own grade
+        $gradeLevel = $user->grade_level ?: $user->grade;
 
         $cacheKey = "leaderboard.student.{$tab}.grade_{$gradeLevel}";
 
@@ -27,11 +27,11 @@ class LeaderboardController extends Controller
             return $this->buildData($gradeLevel, $tab);
         });
 
-        // Hall of Fame: top 10 per season
+        // Hall of Fame: top 3 per season
         $hallOfFame = Cache::remember('leaderboard.hall_of_fame.student', self::CACHE_TTL, function () {
-            return HistoricalWinner::with(['user', 'season'])
+            return HallOfFame::with(['user', 'season'])
                 ->whereIn('rank', [1, 2, 3])
-                ->orderByDesc('archived_at')
+                ->orderByDesc('recorded_at')
                 ->take(18)
                 ->get();
         });
@@ -41,9 +41,12 @@ class LeaderboardController extends Controller
         if ($gradeLevel && $tab === 'liga') {
             $myPoints = \App\Services\PointService::getFairScore($user);
             
-            $myRank = User::where('role', '=', 'student', 'and')
-                ->where('status', '=', 'Aktif', 'and')
-                ->where('grade_level', '=', $gradeLevel)
+            $myRank = User::where('role', '=', 'student')
+                ->where('status', '=', 'Aktif')
+                ->where(function($q) use ($gradeLevel) {
+                    $q->where('grade_level', $gradeLevel)
+                      ->orWhere('grade', (string) $gradeLevel);
+                })
                 ->whereRaw('(COALESCE((SELECT AVG(final_score) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL), 0) + 
                     (SELECT COUNT(*) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) * 2 +
                     ((SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id) * 1 +
@@ -56,10 +59,13 @@ class LeaderboardController extends Controller
 
     private function buildData(?int $gradeLevel, string $tab): array
     {
-        $query = User::where('role', 'student')->where('status', 'Aktif');
+        $query = User::where('role', '=', 'student')->where('status', '=', 'Aktif');
 
         if ($gradeLevel) {
-            $query->where('grade_level', $gradeLevel);
+            $query->where(function($q) use ($gradeLevel) {
+                $q->where('grade_level', $gradeLevel)
+                  ->orWhere('grade', (string) $gradeLevel);
+            });
         }
 
         if ($tab === 'hall') return [];
@@ -88,7 +94,7 @@ class LeaderboardController extends Controller
                 return [
                     'id' => $student->id,
                     'name' => $student->name,
-                    'grade_level' => $student->grade_level,
+                    'grade_level' => $student->grade_level ?: $student->grade,
                     'class_group' => $student->class_group,
                     'active_theme_id' => $student->active_theme_id,
                     'current_level' => $student->current_level,
@@ -97,6 +103,8 @@ class LeaderboardController extends Controller
                     'performance_points' => $student->performance_points,
                     'avg_score' => $student->avg_score,
                     'total_sessions' => $student->total_sessions,
+                    'seasonal_exp' => $student->seasonal_exp,
+                    'career_exp' => $student->career_exp,
                 ];
             })
             ->values()->toArray();
@@ -104,36 +112,39 @@ class LeaderboardController extends Controller
 
     private function buildFleet(?int $gradeLevel): array
     {
-        // For class ranking, we average the performance points of all students in that class
-        $fleets = User::where('role', '=', 'student', 'and')
-            ->where('status', '=', 'Aktif', 'and')
-            ->when($gradeLevel, fn($q) => $q->where('grade_level', $gradeLevel))
-            ->select(
-                'grade_level',
-                'class_group',
-                DB::raw('CONCAT(grade_level, "-", COALESCE(class_group,"?")) as fleet_id'),
-                DB::raw('COUNT(*) as member_count'),
-                // Average APP of the class members
-                DB::raw('AVG(
-                    (SELECT COALESCE(AVG(final_score), 0) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) + 
-                    (SELECT COUNT(*) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) * 2 +
-                    ((SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id) * 1 +
-                     (SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id AND `rank` = 1) * 5)
-                ) as performance_points')
-            )
-            ->groupBy('grade_level', 'class_group')
-            ->orderByDesc('performance_points')
-            ->get();
+        $query = User::where('role', 'student')
+            ->where('status', 'Aktif')
+            ->select('*')
+            ->selectRaw('(COALESCE((SELECT AVG(final_score) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL), 0) + 
+                (SELECT COUNT(*) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) * 2 +
+                ((SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id) * 1 +
+                 (SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id AND `rank` = 1) * 5)) as performance_points');
 
-        return $fleets->map(function($f) {
-            return [
-                'name' => "Kelas " . $f->grade_level . " " . $f->class_group,
-                'member_count' => $f->member_count,
-                'performance_points' => $f->performance_points,
-                'is_fleet' => true,
-                'grade_level' => $f->grade_level,
-                'class_group' => $f->class_group,
-            ];
-        })->toArray();
+        if ($gradeLevel) {
+            $query->where(function($q) use ($gradeLevel) {
+                $q->where('grade_level', $gradeLevel)
+                  ->orWhere('grade', (string) $gradeLevel);
+            });
+        }
+
+        return $query->get()
+            ->groupBy(fn($u) => ($u->grade_level ?: $u->grade) . '-' . ($u->class_group ?: 'X'))
+            ->map(function($members) {
+                $first = $members->first();
+                $gl    = $first->grade_level ?: $first->grade;
+                $cg    = $first->class_group ?: 'X';
+
+                return [
+                    'name'               => "Kelas " . $gl . " " . $cg,
+                    'member_count'       => $members->count(),
+                    'performance_points' => $members->avg('performance_points'),
+                    'is_fleet'           => true,
+                    'grade_level'        => $gl,
+                    'class_group'        => $cg,
+                ];
+            })
+            ->sortByDesc('performance_points')
+            ->values()
+            ->toArray();
     }
 }

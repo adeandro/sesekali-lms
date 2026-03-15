@@ -312,6 +312,14 @@
                                 <i class="fas fa-ticket-alt w-4 mr-2"></i>
                                 <span>Kupon Hadiah</span>
                             </a>
+                            <a href="{{ route('admin.gamification.seasons.index') }}" class="nav-item py-2 text-sm {{ request()->routeIs('admin.gamification.seasons*') ? 'menu-item-active' : '' }}">
+                                <i class="fas fa-calendar-alt w-4 mr-2"></i>
+                                <span>Seasons</span>
+                            </a>
+                            <a href="{{ route('admin.gamification.leaderboard.index') }}" class="nav-item py-2 text-sm {{ request()->routeIs('admin.gamification.leaderboard*') ? 'menu-item-active' : '' }}">
+                                <i class="fas fa-trophy w-4 mr-2"></i>
+                                <span>Leaderboard</span>
+                            </a>
                         </div>
                     </div>
                 @endif
@@ -703,5 +711,7 @@
         </div>
         <x-urgent-announcement-modal />
     @endif
+    {{-- Exam overlays: rendered at body root to escape overflow-hidden/auto --}}
+    @stack('body-overlays')
 </body>
 </html>

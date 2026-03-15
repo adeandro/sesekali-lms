@@ -58,10 +58,11 @@ class AvatarController extends Controller
                             $reason = $req['name'];
                         }
                     } else {
-                        // Normal Themes check Level
-                        if ($user->current_level < $theme->min_level) {
+                        // Normal Themes check Level (Using Global Level calculated from all-time EXP)
+                        $globalLevel = floor($user->exp_total_alltime / 100) + 1;
+                        if ($globalLevel < $theme->min_level) {
                             $locked = true;
-                            $reason = "Level {$theme->min_level}";
+                            $reason = "Level {$theme->min_level} (Global)";
                         }
                         
                         // Normal Themes check Achievement
@@ -271,8 +272,9 @@ class AvatarController extends Controller
                     return $this->themeError("Tema \"{$theme->name}\" terkunci! Kamu harus menjadi {$req['name']}.");
                 }
             } else {
-                if ($user->current_level < $theme->min_level) {
-                    return $this->themeError("Tema \"{$theme->name}\" terbuka di Level {$theme->min_level}!");
+                $globalLevel = floor($user->exp_total_alltime / 100) + 1;
+                if ($globalLevel < $theme->min_level) {
+                    return $this->themeError("Tema \"{$theme->name}\" terbuka di Level {$theme->min_level} (Global)!");
                 }
 
                 if ($theme->required_achievement_id) {

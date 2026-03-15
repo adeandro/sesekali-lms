@@ -48,6 +48,12 @@
 
 <script>
     document.addEventListener('alpine:init', () => {
+        // Register the notifications store so components can safely watch it
+        // without causing an uncaught error when the store doesn't exist yet.
+        Alpine.store('notifications', {
+            latest: null,
+        });
+
         Alpine.data('notificationToast', () => ({
             toasts: [],
             lastNotificationId: null,

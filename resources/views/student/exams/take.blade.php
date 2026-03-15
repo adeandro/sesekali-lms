@@ -1,13 +1,11 @@
-@extends('layouts.app')
+@extends('layouts.exam')
 
 @section('title', 'Mengerjakan Ujian - SesekaliCBT')
 
 @section('page-title', $attempt->exam->title)
 
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 @section('styles')
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <style>
         /* Hide sidebar on exam taking page only */
         #sidebar {
@@ -231,49 +229,21 @@
 
         /* Anti-Cheating: Fullscreen Exit Overlay */
         #fullscreenOverlay {
-            display: none;
+            display: none;                    /* sembunyi by default */
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(20, 20, 20, 0.95) 100%);
-            z-index: 10000;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.97);
+            z-index: 99998;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             color: white;
             text-align: center;
-            font-size: 18px;
             padding: 20px;
-            pointer-events: auto;
-            overflow: hidden;
         }
 
         #fullscreenOverlay.active {
             display: flex;
-            flex-direction: column;
-        }
-
-        #fullscreenOverlay > div {
-            max-width: 600px;
-            padding: 40px;
-            background-color: rgba(255, 255, 255, 0.05);
-            border: 2px solid #ff4444;
-            border-radius: 12px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px 0 rgba(255, 68, 68, 0.3);
-            animation: slideDown 0.4s ease-out;
-        }
-
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-50px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
         }
 
         #fullscreenOverlay h2 {
@@ -318,21 +288,21 @@
         #readinessOverlay {
             display: flex;
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.95);
-            z-index: 11000;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            z-index: 99999;
             justify-content: center;
             align-items: center;
             padding: 20px;
-            backdrop-filter: blur(5px);
-            overflow-y: auto;
+            box-sizing: border-box;
         }
 
         #readinessOverlay.hidden {
-            display: none;
+            display: none !important;
         }
 
         #readinessOverlay > div {
@@ -345,14 +315,12 @@
         }
 
         @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(50px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(30px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
 
         #readinessOverlay h2 {
@@ -492,58 +460,7 @@
 @endsection
 
 @section('content')
-    <!-- Exam Readiness Gate - Block content until fullscreen -->
-    <div id="readinessOverlay" class="">
-        <div>
-            <h2>
-                <i class="fas fa-shield-alt"></i>
-                Konfirmasi Pengerjaan Ujian
-            </h2>
-            <p style="color: #4b5563; font-size: 15px; margin-bottom: 20px;">
-                Anda akan memasuki mode pengerjaan ujian yang aman dan terlindungi. Ujian akan dimulai dalam mode layar penuh untuk menjaga integritas ujian.
-            </p>
 
-            <div class="rules">
-                <strong style="color: #1f2937;">Tata Tertib Ujian:</strong>
-                <ol>
-                    <li><strong>Mode Layar Penuh Wajib</strong> - Ujian hanya dapat dikerjakan dalam mode fullscreen</li>
-                    <li><strong>Fokus pada Ujian</strong> - Dilarang pindah tab atau jendela selama ujian berlangsung</li>
-                    <li><strong>Dilarang Menyalin</strong> - Fungsi copy-paste dinonaktifkan untuk keamanan ujian</li>
-                    <li><strong>Dilarang Inspect Element</strong> - Akses developer tools dan view source tidak diizinkan</li>
-                    <li><strong>Batasan Pelanggaran</strong> - {{ $configs['max_violations'] ?? 3 }} pelanggaran akan otomatis submit ujian</li>
-                    <li><strong>Waktu Terbatas</strong> - Ujian akan otomatis submit jika waktu habis</li>
-                </ol>
-            </div>
-
-            <div class="warning">
-                <i class="fas fa-exclamation-triangle"></i>
-                <strong>Peringatan:</strong> Setiap pelanggaran akan dicatat di sistem dan dapat mempengaruhi nilai ujian Anda.
-            </div>
-
-            <div class="button-group">
-                <button id="startExamBtn" type="button">
-                    <i class="fas fa-play-circle"></i> SIAP, MULAI UJIAN
-                </button>
-                <button id="cancelExamBtn" type="button" onclick="window.history.back()">
-                    <i class="fas fa-arrow-left"></i> KEMBALI
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Anti-Cheating: Fullscreen Exit Overlay - Complete Screen Block -->
-    <div id="fullscreenOverlay" class="">
-        <div>
-            <h2>🛑 MODE UJIAN TIDAK AKTIF</h2>
-            <p style="color: #ff6b6b; font-weight: bold; margin-bottom: 20px;">Anda telah keluar dari mode layar penuh!</p>
-            <p>Ujian hanya dapat dikerjakan dalam mode <strong>layar penuh (Fullscreen)</strong> agar integritas ujian terjaga.</p>
-            <p style="margin-top: 15px; color: #ffa500;">Klik tombol di bawah untuk kembali ke mode ujian:</p>
-            <button id="returnFullscreenBtn" type="button">
-                <i class="fas fa-expand"></i> KEMBALI KE MODE UJIAN
-            </button>
-        </div>
-    </div>
-    </div>
 
     <!-- Anti-Cheating: Print Screen Overlay -->
     <div id="printscreenOverlay"></div>
@@ -783,6 +700,7 @@
         </div>
     </div>
 
+@push('scripts')
     <script>
         const attempt_id = {{ $attempt->id }};
         const exam_id = {{ $attempt->exam->id }};
@@ -800,6 +718,7 @@
         // Anti-Cheating state
         const FLOATING_WINDOW_COOLDOWN = 3000; // 3 detik
         let isFullscreen = false;
+        let examHasStarted = false;   // true setelah siswa klik SIAP & fullscreen aktif
         let tabSwitchWarnings = new Map();
         let isProcessingViolation = false;
 
@@ -820,17 +739,6 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            // [FIX] Bersihkan examAgreedFlag saat re-open terdeteksi.
-            // Jika violationCount di DB > 0, maka ini bukan sesi pertama;
-            // flag sessionStorage bisa saja stale dari sesi lama.
-            // Dengan membersihkannya, gating system akan meminta user klik tombol
-            // "Siap Mulai" lagi — yang juga sekaligus memberi fokus ke browser.
-            if (DB_VIOLATION_COUNT > 0) {
-                const examAgreedFlag = 'examAgreedAndInProgress_' + attempt_id;
-                sessionStorage.removeItem(examAgreedFlag);
-                console.log('🔄 Sesi re-opened terdeteksi: membersihkan sessionStorage flag untuk memaksa interaksi ulang.');
-            }
-
             // Setup gating system FIRST - prevent exam viewing until fullscreen
             setupGatingSystem();
 
@@ -846,116 +754,150 @@
          * Setup the gating system that blocks exam content until fullscreen is active
          */
         function setupGatingSystem() {
-            // Check if exam was already agreed in this session (e.g., after page refresh)
-            const examAgreedFlag = 'examAgreedAndInProgress_' + attempt_id;
-            if (sessionStorage.getItem(examAgreedFlag) === 'true') {
-                // Exam already agreed in this session, skip readiness overlay
-                hideReadinessOverlay();
-                showExamContent();
-                // Initialize exam features since we're resuming
-                initializeExamFeatures();
-                // Note: Fullscreen cannot be re-requested without user interaction (security restriction)
-                // The fullscreen detection system will handle if fullscreen was lost
-                // and user can click "Masuk Mode Fullscreen" button if needed
-                console.log('✅ Exam resumed from session - skipping readiness overlay');
-            } else {
-                // Bind the start button
-                const startBtn = document.getElementById('startExamBtn');
-                if (startBtn) {
-                    startBtn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        initiateExamWithFullscreen();
-                    });
-                }
+            // ALWAYS show readiness overlay on page load to assure user gesture for fullscreen
+            showReadinessOverlay();
+            
+            // Bind the start button
+            const startBtn = document.getElementById('startExamBtn');
+            if (startBtn) {
+                // Ensure event is only attached once
+                const newBtn = startBtn.cloneNode(true);
+                startBtn.parentNode.replaceChild(newBtn, startBtn);
+                newBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // [CRITICAL FIX] Request fullscreen strictly synchronously inside the click handler.
+                    // If placed inside an async function or after awaits, strict mobile browsers 
+                    // will drop the 'transient user activation' token and silently block it.
+                    const elem = document.documentElement;
+                    try {
+                        if (elem.requestFullscreen) {
+                            elem.requestFullscreen().catch(err => console.warn(err));
+                        } else if (elem.webkitRequestFullscreen) {
+                            elem.webkitRequestFullscreen();
+                        } else if (elem.mozRequestFullScreen) {
+                            elem.mozRequestFullScreen();
+                        } else if (elem.msRequestFullscreen) {
+                            elem.msRequestFullscreen();
+                        }
+                    } catch (err) {
+                        console.warn('Sync fullscreen request issue:', err);
+                    }
 
-                // Initially hide exam content
-                hideExamContent();
+                    // Proceed with initialization
+                    initiateExamWithFullscreen();
+                });
             }
 
-            // Start continuous fullscreen monitoring - ALWAYS, regardless of whether resuming or starting fresh
-            startContinuousFullscreenCheck();
+            // Initially hide exam content
+            hideExamContent();
 
             console.log('✅ Gating system initialized - exam content protected');
         }
 
-        /**
-         * Initiate exam with fullscreen request (Robust)
-         */
         async function initiateExamWithFullscreen() {
-            const elem = document.documentElement;
             const examAgreedFlag = 'examAgreedAndInProgress_' + attempt_id;
 
-            try {
-                // Mencoba masuk mode Fullscreen
-                if (elem.requestFullscreen) {
-                    await elem.requestFullscreen();
-                } else if (elem.webkitRequestFullscreen) {
-                    await elem.webkitRequestFullscreen();
-                } else if (elem.mozRequestFullScreen) {
-                    await elem.mozRequestFullScreen();
-                } else if (elem.msRequestFullscreen) {
-                    await elem.msRequestFullscreen();
-                }
-                
-                isFullscreen = true;
-                console.log('✅ Fullscreen activated via API');
-            } catch (err) {
-                console.warn('⚠️ Fullscreen request failed or blocked:', err.message);
-                // Jangan hentikan user jika fullscreen gagal
-            } finally {
-                // Proses mulai ujian tetap dilanjutkan
-                sessionStorage.setItem(examAgreedFlag, 'true');
-                hideReadinessOverlay();
-                initializeExamFeatures();
-                
-                if (!isFullscreen) {
-                    Swal.fire({
-                        icon: 'info',
-                        title: 'Mode Ujian Aktif',
-                        text: 'Gagal otomatis ke mode layar penuh. Silakan gunakan browser dalam mode maksimal untuk pengawasan terbaik.',
-                        confirmButtonText: 'Saya Mengerti',
-                        timer: 3000
-                    });
-                }
+            // Sembunyikan overlay readiness
+            hideReadinessOverlay();
+
+            // Tunggu browser konfirmasi fullscreen aktif (polling max 3 detik)
+            const success = await waitForFullscreen(3000);
+
+            // Set flag session
+            sessionStorage.setItem(examAgreedFlag, 'true');
+
+            // Init semua fitur ujian (konten soal, timer, dll)
+            initializeExamFeatures();
+
+            if (!success) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Mode Layar Penuh Gagal',
+                    text: 'Browser Anda memblokir layar penuh otomatis. Silakan gunakan dalam mode bebas.',
+                    confirmButtonText: 'Saya Mengerti',
+                    timer: 5000
+                });
             }
+        }
+
+        // [FIX 2] - waitForFullscreen
+        function waitForFullscreen(timeoutMs) {
+            return new Promise(function(resolve) {
+                var start = Date.now();
+                function check() {
+                    var inFs = document.fullscreenElement ||
+                               document.webkitFullscreenElement ||
+                               document.mozFullScreenElement ||
+                               document.msFullscreenElement;
+                    if (inFs) {
+                        isFullscreen = true;
+                        resolve(true);
+                    } else if (Date.now() - start >= timeoutMs) {
+                        // Timeout: lanjut saja meski fullscreen belum terkonfirmasi
+                        resolve(false);
+                    } else {
+                        setTimeout(check, 100);
+                    }
+                }
+                check();
+            });
         }
 
         /**
          * Initialize all exam features after fullscreen is confirmed
-         * This should only be called after fullscreen is active
          */
         function initializeExamFeatures() {
+            examHasStarted = true;    // Ujian resmi dimulai
+            // [FIX] Urutan eksekusi kritis untuk mencegah blank screen
+            // 1. Lepas blur dan buat kontainer tampil penuh
+            showExamContent();
+            
+            // 2. Tampilkan soal (sekarang sudah ada ruang fisik di DOM untuk dirender hitungannya)
+            showQuestion(current_question_index);
+            
+            // 3. Update navigator dan komponen lainnya
+            updateQuestionNav();
             initAntiCheating();
             initTimer();
             initEventListeners();
             initializeHeartbeat();
-            updateQuestionNav();
             setupConfetti();
-            showExamContent();
             
-            console.log('✅ Exam features initialized - including heartbeat system');
+            // [FIX] Tambahkan delay 1 detik sebelum memulai continuous check.
+            // Ini untuk memberi waktu browser menyelesaikan transisi animasi Fullscreen.
+            // Pencegahan race condition agar overlay tidak muncul prematur.
+            setTimeout(() => {
+                startContinuousFullscreenCheck();
+                console.log('⏱️ Continuous fullscreen monitoring started after settle delay');
+            }, 1500);
+            
+            console.log('✅ Exam features initialized');
         }
 
-        /**
-         * Continuous fullscreen check - every 1 second
-         * Prevents bypass via refresh or other methods
-         */
+        // [FIX 3] - startContinuousFullscreenCheck
         function startContinuousFullscreenCheck() {
-            setInterval(() => {
-                const isCurrentlyFullscreen = document.fullscreenElement || 
-                                             document.webkitFullscreenElement || 
-                                             document.mozFullScreenElement || 
-                                             document.msFullscreenElement;
+            // Flag internal: Monitoring baru benar-benar arming setelah 
+            // deteksi pertama kali masuk fullscreen.
+            var monitoringStarted = false;
 
-                if (!isCurrentlyFullscreen) {
-                    // Not in fullscreen - hide exam
-                    hideExamContent();
-                    showFullscreenOverlay();
-                } else {
-                    // In fullscreen - show exam
+            setInterval(function() {
+                var isCurrentlyFullscreen = document.fullscreenElement ||
+                                            document.webkitFullscreenElement ||
+                                            document.mozFullScreenElement ||
+                                            document.msFullscreenElement;
+
+                if (isCurrentlyFullscreen) {
+                    monitoringStarted = true;
                     showExamContent();
                     hideFullscreenOverlay();
+                    isFullscreen = true;
+                } else if (monitoringStarted && examHasStarted) {
+                    // Hanya tampil jika sebelumnya PERNAH fullscreen DAN ujian sudah dimulai
+                    hideExamContent();
+                    showFullscreenOverlay();
+                    isFullscreen = false;
                 }
             }, 1000);
         }
@@ -987,7 +929,6 @@
             const overlay = document.getElementById('readinessOverlay');
             if (overlay) {
                 overlay.classList.add('hidden');
-                overlay.style.display = 'none';
             }
         }
 
@@ -998,7 +939,6 @@
             const overlay = document.getElementById('readinessOverlay');
             if (overlay) {
                 overlay.classList.remove('hidden');
-                overlay.style.display = 'flex';
             }
         }
 
@@ -1023,25 +963,8 @@
             }
         }
 
-        /**
-         * Enter fullscreen mode (cross-browser compatible)
-         */
-        function enterFullscreenMode() {
-            const elem = document.documentElement;
-            const fullscreenPromise = elem.requestFullscreen?.() 
-                || elem.webkitRequestFullscreen?.() 
-                || elem.mozRequestFullScreen?.()
-                || elem.msRequestFullscreen?.()
-                || Promise.resolve();
-
-            Promise.resolve(fullscreenPromise)
-                .then(() => {
-                    isFullscreen = true;
-                    console.log('✅ Fullscreen mode activated');
-                })
-                .catch((err) => {
-                    console.warn('⚠️ Could not enter fullscreen:', err.message);
-                });
+        async function enterFullscreenMode() {
+            await robustFullscreenRequest();
         }
 
         /**
@@ -1178,7 +1101,20 @@
                 returnBtn.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    requestFullscreen();
+                    const elem = document.documentElement;
+                    try {
+                        if (elem.requestFullscreen) {
+                            elem.requestFullscreen().catch(err => console.warn(err));
+                        } else if (elem.webkitRequestFullscreen) {
+                            elem.webkitRequestFullscreen();
+                        } else if (elem.mozRequestFullScreen) {
+                            elem.mozRequestFullScreen();
+                        } else if (elem.msRequestFullscreen) {
+                            elem.msRequestFullscreen();
+                        }
+                    } catch (err) {
+                        console.warn('Sync fullscreen request issue:', err);
+                    }
                 });
             }
 
@@ -1227,40 +1163,7 @@
             }
         }
 
-        /**
-         * Request fullscreen (only call from button click handlers)
-         */
-        function requestFullscreen() {
-            const elem = document.documentElement;
-            
-            const requests = [
-                () => elem.requestFullscreen?.(),
-                () => elem.webkitRequestFullscreen?.(),
-                () => elem.mozRequestFullScreen?.(),
-                () => elem.msRequestFullscreen?.(),
-            ];
 
-            // Try each fullscreen method
-            for (let i = 0; i < requests.length; i++) {
-                try {
-                    const promise = requests[i]();
-                    if (promise) {
-                        promise
-                            .then(() => {
-                                isFullscreen = true;
-                                hideFullscreenOverlay();
-                                console.log('✅ Fullscreen mode activated');
-                            })
-                            .catch((err) => {
-                                console.warn('⚠️ Fullscreen request failed:', err.message);
-                            });
-                        return;
-                    }
-                } catch (e) {
-                    // Continue to next method
-                }
-            }
-        }
 
         /**
          * Handle fullscreen exit - comprehensive detection
@@ -1272,7 +1175,7 @@
                                          document.mozFullScreenElement || 
                                          document.msFullscreenElement;
 
-            if (!isCurrentlyFullscreen && isFullscreen) {
+            if (!isCurrentlyFullscreen && isFullscreen && examHasStarted) {
                 // ❌ STUDENT EXITED FULLSCREEN
                 isFullscreen = false;
                 violationCount++;
@@ -1316,9 +1219,6 @@
             const overlay = document.getElementById('fullscreenOverlay');
             if (overlay) {
                 overlay.classList.add('active');
-                // Ensure pointer events are enabled so button can be clicked
-                overlay.style.pointerEvents = 'auto';
-                overlay.style.display = 'flex';
             }
         }
 
@@ -1329,7 +1229,6 @@
             const overlay = document.getElementById('fullscreenOverlay');
             if (overlay) {
                 overlay.classList.remove('active');
-                overlay.style.display = 'none';
             }
         }
 
@@ -1564,7 +1463,7 @@
                             icon: 'info',
                             confirmButtonText: 'Mulai Ujian'
                         }).then(() => {
-                            requestFullscreen();
+                            robustFullscreenRequest();
                         });
                     }
                 }, 500);
@@ -1580,78 +1479,72 @@
 
         // Timer Management
         function initTimer() {
-            // Sync timer with server first
-            fetch(`/student/exams/{{ $attempt->id }}/remaining-time`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && !data.expired) {
-                        let totalSeconds = Math.floor(data.total_seconds);
-                        
-                        const timerInterval = setInterval(() => {
-                            totalSeconds--;
-                            
-                            const minutes = Math.floor(totalSeconds / 60);
-                            const seconds = Math.floor(totalSeconds % 60);
-                            const display = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-                            
-                            const timerEl = document.getElementById('timer');
-                            timerEl.textContent = display;
-                            
-                            // Update timer color based on remaining time
-                            timerEl.classList.remove('timer-normal', 'timer-warning', 'timer-critical');
-                            if (minutes <= 0 && seconds <= 30) {
-                                timerEl.classList.add('timer-critical');
-                            } else if (minutes <= 5) {
-                                timerEl.classList.add('timer-warning');
-                            } else {
-                                timerEl.classList.add('timer-normal');
-                            }
-                            
-                            if (totalSeconds <= 0) {
-                                clearInterval(timerInterval);
-                                autoSubmit('Waktu ujian habis. Ujian akan dikirim otomatis...');
-                            }
-                        }, 1000);
-                    } else if (data.expired) {
-                        autoSubmit('Waktu ujian telah habis. Ujian akan dikirim otomatis...');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error syncing timer:', error);
-                    // Fallback: use local timer from backend value
-                    let totalSeconds = Math.floor(remaining_minutes * 60);
+            console.log('⏱️ Initializing timer...');
+            
+            // Function to start the actual countdown
+            const startCountdown = (seconds) => {
+                let totalSeconds = Math.floor(seconds);
+                if (totalSeconds <= 0) {
+                    autoSubmit('Waktu ujian telah habis.');
+                    return;
+                }
+
+                console.log(`⏱️ Timer started with ${totalSeconds} seconds`);
+                
+                const timerInterval = setInterval(() => {
+                    totalSeconds--;
                     
-                    const timerInterval = setInterval(() => {
-                        totalSeconds--;
-                        
-                        const minutes = Math.floor(totalSeconds / 60);
-                        const seconds = Math.floor(totalSeconds % 60);
-                        const display = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-                        
-                        const timerEl = document.getElementById('timer');
+                    const minutes = Math.floor(totalSeconds / 60);
+                    const secondsLeft = Math.floor(totalSeconds % 60);
+                    const display = `${String(minutes).padStart(2, '0')}:${String(secondsLeft).padStart(2, '0')}`;
+                    
+                    const timerEl = document.getElementById('timer');
+                    if (timerEl) {
                         timerEl.textContent = display;
                         
                         // Update timer color based on remaining time
                         timerEl.classList.remove('timer-normal', 'timer-warning', 'timer-critical');
-                        if (minutes <= 0 && seconds <= 30) {
+                        if (minutes <= 0 && secondsLeft <= 30) {
                             timerEl.classList.add('timer-critical');
                         } else if (minutes <= 5) {
                             timerEl.classList.add('timer-warning');
                         } else {
                             timerEl.classList.add('timer-normal');
                         }
-                        
-                        if (totalSeconds <= 0) {
-                            clearInterval(timerInterval);
-                            autoSubmit('Waktu ujian habis. Ujian akan dikirim otomatis...');
-                        }
-                    }, 1000);
+                    }
+                    
+                    if (totalSeconds <= 0) {
+                        clearInterval(timerInterval);
+                        autoSubmit('Waktu ujian habis. Ujian akan dikirim otomatis...');
+                    }
+                }, 1000);
+            };
+
+            // Attempt to sync with server, but fallback to local if it fails
+            fetch(`/student/exams/{{ $attempt->id }}/remaining-time`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response non-ok');
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success && !data.expired) {
+                        startCountdown(data.total_seconds);
+                    } else if (data.expired) {
+                        autoSubmit('Waktu ujian telah habis. Ujian akan dikirim otomatis...');
+                    } else {
+                        throw new Error('Sync failed via data status');
+                    }
+                })
+                .catch(error => {
+                    console.error('⚠️ Timer sync failed, using local fallback:', error);
+                    // Fallback: use local timer from backend value ($remainingMinutes)
+                    startCountdown(remaining_minutes * 60);
                 });
         }
 
         // Event Listeners
         function initEventListeners() {
-            // Question answers
+            // Question answers - safe with forEach
             document.querySelectorAll('.question-answer').forEach(el => {
                 el.addEventListener('change', function() {
                     autosaveAnswer(this.dataset.questionId);
@@ -1659,15 +1552,25 @@
                 });
             });
 
-            // Navigation buttons
-            document.getElementById('prevBtn').addEventListener('click', previousQuestion);
-            document.getElementById('nextBtn').addEventListener('click', nextQuestion);
-            document.getElementById('submitBtn').addEventListener('click', submitExam);
-            
-            // Ragu-ragu button
-            document.getElementById('raguBtn').addEventListener('click', toggleRaguReview);
+            // Navigation buttons - with null-safety guards
+            const prevBtn = document.getElementById('prevBtn');
+            if (prevBtn) prevBtn.addEventListener('click', previousQuestion);
+            else console.warn('⚠️ prevBtn not found in DOM');
 
-            // Question navigator buttons
+            const nextBtn = document.getElementById('nextBtn');
+            if (nextBtn) nextBtn.addEventListener('click', nextQuestion);
+            else console.warn('⚠️ nextBtn not found in DOM');
+
+            const submitBtn = document.getElementById('submitBtn');
+            if (submitBtn) submitBtn.addEventListener('click', submitExam);
+            else console.warn('⚠️ submitBtn not found in DOM');
+
+            // Ragu-ragu button
+            const raguBtn = document.getElementById('raguBtn');
+            if (raguBtn) raguBtn.addEventListener('click', toggleRaguReview);
+            else console.warn('⚠️ raguBtn not found in DOM');
+
+            // Question navigator buttons - safe with forEach
             document.querySelectorAll('.question-nav-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const displayIndex = parseInt(this.dataset.displayIndex);
@@ -1675,9 +1578,7 @@
                 });
             });
 
-            // Preview submit confirmation
-            // REMOVED: beforeunload event to prevent "Leave Site" popup
-            // Already have SweetAlert confirmation when submitting
+            console.log('✅ Event listeners initialized');
         }
 
         // Question Navigation
@@ -2341,6 +2242,7 @@
                         
                         // Clear violation count before submission
                         sessionStorage.removeItem('examViolationCount_' + attempt_id);
+                        document.body.classList.remove('exam-active-fullscreen');
                         // Submit form
                         document.querySelector('#examForm').action = '/student/exams/' + attempt_id + '/submit';
                         document.querySelector('#examForm').method = 'POST';
@@ -2484,4 +2386,68 @@
             animate();
         }
     </script>
+@endpush
 @endsection
+
+@push('body-overlays')
+    <!-- Exam Readiness Gate - Block content until fullscreen -->
+    <div id="readinessOverlay">
+      <div class="bg-white rounded-2xl p-6 md:p-8 max-w-2xl w-full mx-4 shadow-2xl relative" style="animation: slideUp 0.4s ease-out">
+        <div class="absolute -top-12 left-1/2 -translate-x-1/2 bg-[var(--brand-primary)] w-24 h-24 rounded-full border-4 border-white shadow-lg flex items-center justify-center">
+          <i class="fas fa-shield-alt text-white text-4xl"></i>
+        </div>
+
+        <div class="mt-8 text-center">
+          <h2 class="text-2xl font-bold text-gray-900 mb-2">Konfirmasi Pengerjaan Ujian</h2>
+          <p class="text-gray-500 mb-6">Ujian akan dimulai dalam mode layar penuh untuk menjaga integritas ujian.</p>
+        </div>
+
+        <div class="bg-gray-50 rounded-xl p-5 mb-6 border border-gray-100">
+          <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <i class="fas fa-clipboard-list text-[var(--brand-primary)]"></i> TATA TERTIB UJIAN
+          </h3>
+          <ul class="space-y-3 text-sm text-gray-600">
+            <li class="flex items-start gap-3"><i class="fas fa-expand text-indigo-500 mt-1"></i> Mode Layar Penuh Wajib — ujian hanya bisa dikerjakan dalam fullscreen</li>
+            <li class="flex items-start gap-3"><i class="fas fa-eye text-emerald-500 mt-1"></i> Fokus pada Ujian — dilarang pindah tab atau jendela</li>
+            <li class="flex items-start gap-3"><i class="fas fa-copy text-rose-500 mt-1"></i> Dilarang Menyalin — fungsi copy-paste dinonaktifkan</li>
+            <li class="flex items-start gap-3"><i class="fas fa-code text-amber-500 mt-1"></i> Dilarang Inspect Element — developer tools tidak diizinkan</li>
+            <li class="flex items-start gap-3"><i class="fas fa-hand-paper text-orange-500 mt-1"></i> Batasan Pelanggaran — {{ $configs['max_violations'] ?? 3 }} pelanggaran akan otomatis submit</li>
+            <li class="flex items-start gap-3"><i class="fas fa-hourglass-half text-blue-500 mt-1"></i> Waktu Terbatas — ujian otomatis submit jika waktu habis</li>
+          </ul>
+        </div>
+
+        <div class="bg-amber-50 rounded-lg p-4 mb-8 border border-amber-200 flex gap-3 text-amber-800 text-sm">
+          <i class="fas fa-exclamation-triangle mt-0.5"></i>
+          <div><strong class="font-bold">Peringatan:</strong> Setiap pelanggaran dicatat di sistem dan dapat mempengaruhi nilai ujian Anda.</div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3">
+          <button id="startExamBtn" class="flex-1 bg-[var(--brand-primary)] hover:bg-[var(--brand-dark)] text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-[var(--brand-glow)] transition-all flex justify-center items-center gap-2">
+            <i class="fas fa-play"></i> SIAP, MULAI UJIAN
+          </button>
+          <button id="cancelExamBtn" onclick="window.history.back()" class="flex-1 bg-white hover:bg-gray-50 text-gray-700 font-bold py-3 px-6 rounded-xl border border-gray-200 transition-all flex justify-center items-center gap-2">
+            <i class="fas fa-times"></i> Kembali
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Anti-Cheating: Fullscreen Exit Overlay - Complete Screen Block -->
+    <div id="fullscreenOverlay">
+      <div class="max-w-lg w-full mx-4 rounded-3xl p-8" style="animation: slideDown 0.4s ease-out; background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(12px); border: 2px solid #ef4444; box-shadow: 0 0 40px rgba(239, 68, 68, 0.2);">
+        <div class="text-7xl mb-4 animate-bounce">🛑</div>
+        <h2 class="text-3xl font-black text-rose-500 mb-2 tracking-tight">MODE UJIAN TIDAK AKTIF</h2>
+        <p class="text-xl text-white font-medium mb-6">Anda telah keluar dari mode layar penuh!</p>
+        <p class="text-gray-300 text-sm leading-relaxed mb-8">Ujian hanya dapat dikerjakan dalam mode layar penuh (Fullscreen) agar integritas ujian terjaga.</p>
+        
+        <div class="bg-rose-500/10 rounded-xl p-4 mb-8">
+          <p class="text-rose-400 font-semibold text-sm">Klik tombol di bawah untuk kembali ke mode ujian:</p>
+        </div>
+
+        <button id="returnFullscreenBtn" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-4 px-8 rounded-xl shadow-lg shadow-rose-500/30 transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-3">
+          <i class="fas fa-expand text-xl"></i>
+          KEMBALI KE MODE UJIAN
+        </button>
+      </div>
+    </div>
+@endpush

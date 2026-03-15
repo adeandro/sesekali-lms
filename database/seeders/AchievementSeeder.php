@@ -141,6 +141,19 @@ class AchievementSeeder extends Seeder
                 'xp_reward'      => 500,
                 'is_active'      => true,
             ],
+            [
+                'slug'           => 'first_prestige',
+                'name'           => 'Prestige Pertama',
+                'title'          => 'The Awakened',
+                'description'    => 'Lakukan Prestige untuk pertama kalinya.',
+                'lore_text'      => 'Kelahiran kembali seorang master.',
+                'icon'           => 'fas fa-dna',
+                'color'          => '#f43f5e',
+                'criteria_type'  => 'prestige_count',
+                'criteria_value' => '1',
+                'xp_reward'      => 50,
+                'is_active'      => true,
+            ],
         ];
 
         foreach ($achievements as $achievement) {

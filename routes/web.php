@@ -25,6 +25,8 @@ use App\Http\Controllers\Communication\MessageController;
 use App\Http\Controllers\Admin\ArenaController;
 use App\Http\Controllers\Admin\AlumniController;
 use App\Http\Controllers\Student\LeaderboardController;
+use App\Http\Controllers\Admin\SeasonController;
+use App\Http\Controllers\Admin\LeaderboardController as AdminLeaderboardController;
 
 // Public routes
 Route::get('/', function () {
@@ -142,12 +144,19 @@ Route::middleware('auth')->group(function () {
         Route::post('student/arena/{room}/battle/{participant}/submit', [ArenaController::class, 'submitAnswer'])->name('student.arena.submit');
         Route::post('student/arena/{room}/battle/{participant}/heartbeat', [ArenaController::class, 'heartbeat'])->name('student.arena.heartbeat');
         Route::post('student/arena/{room}/battle/{participant}/tab-penalty', [ArenaController::class, 'tabPenalty'])->name('student.arena.tab-penalty');
+        Route::prefix('arena')->name('student.arena.')->group(function () {
+            Route::post('answer', [\App\Http\Controllers\Student\BattleController::class, 'answer'])->name('answer');
+            Route::post('powerup/activate', [\App\Http\Controllers\Student\BattleController::class, 'activatePowerup'])->name('powerup.activate');
+        });
 
         // Digital Coupon Wallet
         Route::get('student/coupons', [\App\Http\Controllers\Student\CouponController::class, 'index'])->name('student.coupons.index');
 
         // Leaderboard
         Route::get('student/leaderboard', [LeaderboardController::class, 'index'])->name('student.leaderboard');
+
+        // Prestige
+        Route::post('student/profile/prestige', [\App\Http\Controllers\Student\PrestigeController::class, 'prestige'])->name('student.prestige');
     });
 
     // Subject & Question Management routes
@@ -265,7 +274,14 @@ Route::middleware('auth')->group(function () {
                 Route::get('themes/{theme}/edit', [GamificationController::class, 'editTheme'])->name('themes.edit');
                 Route::post('themes/{theme}', [GamificationController::class, 'updateTheme'])->name('themes.update');
                 Route::delete('themes/{theme}', [GamificationController::class, 'destroyTheme'])->name('themes.destroy');
-
+                
+                // ── Leaderboard & Hall of Fame ──────────────────────────────
+                Route::prefix('leaderboard')->name('leaderboard.')->group(function () {
+                    Route::get('/', [AdminLeaderboardController::class, 'index'])->name('index');
+                    Route::get('hall-of-fame', [AdminLeaderboardController::class, 'hallOfFame'])->name('hall-of-fame');
+                    Route::post('refresh', [AdminLeaderboardController::class, 'refreshCache'])->name('refresh');
+                });
+                
                 // ── Battle Arena ──────────────────────────────────────────────
                 Route::prefix('arena')->name('arena.')->group(function () {
                     Route::get('/', [ArenaController::class, 'index'])->name('index');
@@ -279,6 +295,21 @@ Route::middleware('auth')->group(function () {
                     Route::get('{room}/podium', [ArenaController::class, 'podium'])->name('podium');
                     Route::get('{room}/debriefing', [ArenaController::class, 'debriefing'])->name('debriefing');
                     Route::delete('{room}', [ArenaController::class, 'destroy'])->name('destroy');
+                });
+
+                // ── Season Management ─────────────────────────────────────────
+                Route::prefix('seasons')->name('seasons.')->group(function () {
+                    Route::get('/', [SeasonController::class, 'index'])->name('index');
+                    Route::get('create', [SeasonController::class, 'create'])->name('create');
+                    Route::post('/', [SeasonController::class, 'store'])->name('store');
+                    Route::get('{season}/edit', [SeasonController::class, 'edit'])->name('edit');
+                    Route::put('{season}', [SeasonController::class, 'update'])->name('update');
+                    
+                    // Lifecycle actions
+                    Route::post('{season}/close', [SeasonController::class, 'close'])->name('close');
+                    Route::post('{season}/activate', [SeasonController::class, 'activate'])->name('activate');
+                    Route::post('start', [SeasonController::class, 'startNew'])->name('start');
+                    Route::delete('{season}', [SeasonController::class, 'destroy'])->name('destroy');
                 });
 
                 // ── Physical Reward Coupons ──────────────────────────────────

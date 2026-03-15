@@ -16,7 +16,7 @@ class BattleRoom extends Model
         'name', 'code', 'mode', 'source_type', 'source_id', 'created_by',
         'winner_count', 'duration_minutes', 'penalty_hp', 'lock_on_start',
         'status', 'started_at', 'ended_at', 'total_questions', 'question_ids',
-        'settings',
+        'settings', 'sudden_death_warning_seconds', 'sudden_death_trigger_seconds',
     ];
 
     protected $casts = [
@@ -25,6 +25,8 @@ class BattleRoom extends Model
         'settings'       => 'array',
         'started_at'     => 'datetime',
         'ended_at'       => 'datetime',
+        'sudden_death_warning_seconds' => 'integer',
+        'sudden_death_trigger_seconds' => 'integer',
     ];
 
     protected static function boot(): void
@@ -103,9 +105,11 @@ class BattleRoom extends Model
         return max(0, $this->duration_minutes * 60 - $elapsed);
     }
 
-    /** True if in last 2 minutes (Sudden Death) */
+    /** True if in last 2 minutes or custom trigger time (Sudden Death) */
     public function isSuddenDeath(): bool
     {
-        return $this->status === 'ongoing' && $this->remainingSeconds() <= 120;
+        if ($this->status === 'sudden_death') return true;
+        $trigger = $this->sudden_death_trigger_seconds ?? 120;
+        return $this->status === 'ongoing' && $this->remainingSeconds() <= $trigger;
     }
 }

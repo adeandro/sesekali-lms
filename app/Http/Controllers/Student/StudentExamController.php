@@ -115,7 +115,14 @@ class StudentExamController extends Controller
         $questions = ExamEngineService::getExamQuestions($attempt);
         $remainingMinutes = $attempt->getRemainingTimeMinutes();
 
-        return view('student.exams.take', compact('attempt', 'questions', 'remainingMinutes'));
+        // Get configurations for Javascript parsing
+        $configs = [
+            'max_violations'    => (int) \App\Models\Setting::get('max_violations', 3),
+            'anti_cheat_active' => \App\Models\Setting::get('anti_cheat_active', '1'),
+        ];
+
+
+        return view('student.exams.take', compact('attempt', 'questions', 'remainingMinutes', 'configs'));
     }
 
     /**

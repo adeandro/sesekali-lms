@@ -12,12 +12,17 @@ class BattleParticipant extends Model
         'battle_room_id', 'user_id', 'class_id', 'group_label',
         'hp', 'correct_count', 'wrong_count', 'current_question_index',
         'status', 'rank', 'disqualified_at', 'finished_at', 'last_seen_at',
+        'current_streak', 'max_streak', 'exp_multiplier',
+        'comeback_active', 'comeback_questions_left',
+        'active_powerup', 'powerup_used_count',
     ];
 
     protected $casts = [
         'disqualified_at' => 'datetime',
         'finished_at'     => 'datetime',
         'last_seen_at'    => 'datetime',
+        'exp_multiplier'  => 'decimal:1',
+        'comeback_active' => 'boolean',
     ];
 
     // ── Relationships ─────────────────────────────

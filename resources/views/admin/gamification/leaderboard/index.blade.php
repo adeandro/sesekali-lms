@@ -57,9 +57,9 @@
                         <tr>
                             <th class="px-6 py-3 text-left text-[10px] font-black text-amber-700 uppercase tracking-widest">Rank</th>
                             <th class="px-6 py-3 text-left text-[10px] font-black text-amber-700 uppercase tracking-widest">Siswa</th>
-                            <th class="px-6 py-3 text-left text-[10px] font-black text-amber-700 uppercase tracking-widest">Battle Room</th>
-                            <th class="px-6 py-3 text-left text-[10px] font-black text-amber-700 uppercase tracking-widest">Tema</th>
-                            <th class="px-6 py-3 text-left text-[10px] font-black text-amber-700 uppercase tracking-widest">Career EXP</th>
+                            <th class="px-6 py-3 text-left text-[10px] font-black text-amber-700 uppercase tracking-widest">Season</th>
+                            <th class="px-6 py-3 text-left text-[10px] font-black text-amber-700 uppercase tracking-widest">Pencapaian</th>
+                            <th class="px-6 py-3 text-left text-[10px] font-black text-amber-700 uppercase tracking-widest">Final APP</th>
                             <th class="px-6 py-3 text-left text-[10px] font-black text-amber-700 uppercase tracking-widest">Tanggal</th>
                         </tr>
                     </thead>
@@ -69,18 +69,15 @@
                                 <td class="px-6 py-4">
                                     <span class="text-lg">{{ match((int)$winner->rank) { 1 => '🥇', 2 => '🥈', 3 => '🥉', default => '#'.$winner->rank } }}</span>
                                 </td>
-                                <td class="px-6 py-4 font-bold text-gray-900">{{ $winner->user->name }}</td>
-                                <td class="px-6 py-4 text-gray-600 text-xs">{{ $winner->battle_room_name }}</td>
+                                <td class="px-6 py-4 font-bold text-gray-900">{{ $winner->display_name ?? $winner->user->name }}</td>
+                                <td class="px-6 py-4 text-gray-600 text-xs">{{ $winner->season->name ?? 'Unknown Season' }}</td>
                                 <td class="px-6 py-4">
-                                    <span class="px-2 py-1 text-[9px] font-black rounded-lg uppercase tracking-widest
-                                        {{ $winner->theme_awarded === 'legendary-golden' ? 'bg-amber-100 text-amber-700' :
-                                           ($winner->theme_awarded === 'elite-silver' ? 'bg-slate-100 text-slate-700' :
-                                           ($winner->theme_awarded === 'master-bronze' ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-600')) }}">
-                                        {{ $winner->themeLabel() }}
+                                    <span class="px-2 py-1 text-[9px] font-black bg-indigo-100 text-indigo-700 rounded-lg uppercase tracking-widest">
+                                        Lv.{{ $winner->level_final }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 font-black text-indigo-600">{{ number_format($winner->career_exp_snapshot) }} XP</td>
-                                <td class="px-6 py-4 text-gray-400 text-xs">{{ $winner->archived_at->format('d M Y') }}</td>
+                                <td class="px-6 py-4 font-black text-indigo-600">{{ number_format($winner->app_points_final, 1) }} APP</td>
+                                <td class="px-6 py-4 text-gray-400 text-xs">{{ $winner->recorded_at->format('d M Y') }}</td>
                             </tr>
                         @empty
                             <tr><td colspan="6" class="px-6 py-12 text-center text-gray-400"><i class="fas fa-monument text-2xl mb-2 block"></i>Belum ada pemenang di arsip.</td></tr>
@@ -106,8 +103,7 @@
                             <th class="px-6 py-3 text-left text-[10px] font-black text-gray-500 uppercase tracking-widest">Fleet</th>
                             <th class="px-6 py-3 text-left text-[10px] font-black text-gray-500 uppercase tracking-widest">Kelas</th>
                             <th class="px-6 py-3 text-left text-[10px] font-black text-gray-500 uppercase tracking-widest">Anggota</th>
-                            <th class="px-6 py-3 text-left text-[10px] font-black text-gray-500 uppercase tracking-widest">Avg Seasonal EXP</th>
-                            <th class="px-6 py-3 text-left text-[10px] font-black text-gray-500 uppercase tracking-widest">Total</th>
+                            <th class="px-6 py-3 text-left text-[10px] font-black text-gray-500 uppercase tracking-widest">Avg Performance Points</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-50">
@@ -121,13 +117,12 @@
                                 <td class="px-6 py-4">
                                     <div class="flex items-center gap-2">
                                         <div class="flex-1 bg-gray-100 rounded-full h-2">
-                                            @php $maxAvg = max(array_column((array)$data,'avg_seasonal_exp') ?: [1]); @endphp
-                                            <div class="bg-gradient-to-r from-sky-500 to-indigo-500 h-2 rounded-full" style="width: {{ min(100, round($fleet['avg_seasonal_exp']/$maxAvg*100)) }}%"></div>
+                                            @php $maxPP = max(array_column((array)$data, 'performance_points') ?: [1]); @endphp
+                                            <div class="bg-gradient-to-r from-sky-500 to-indigo-500 h-2 rounded-full" style="width: {{ min(100, round($fleet['performance_points']/$maxPP*100)) }}%"></div>
                                         </div>
-                                        <span class="font-bold text-indigo-700 text-xs w-20 text-right">{{ number_format($fleet['avg_seasonal_exp'],0) }} XP</span>
+                                        <span class="font-bold text-indigo-700 text-xs w-20 text-right">{{ number_format($fleet['performance_points'], 1) }} APP</span>
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 text-gray-500 text-xs">{{ number_format($fleet['total_seasonal_exp']) }}</td>
                             </tr>
                         @empty
                             <tr><td colspan="5" class="px-6 py-12 text-center text-gray-400">Belum ada data fleet.</td></tr>
@@ -186,8 +181,8 @@
                                     default            => '⚔ Survivor'} }}
                             </span>
                         @endif
-                        <span class="font-black text-sm {{ $isCareer ? 'text-violet-700' : 'text-amber-600' }} w-28 text-right">
-                            {{ number_format($student[$expKey] ?? 0) }} XP
+                        <span class="font-black text-sm {{ $isCareer ? 'text-violet-700' : 'text-amber-600' }} w-32 text-right">
+                            {{ number_format($student['performance_points'] ?? 0, 1) }} APP
                         </span>
                     </div>
                 @empty

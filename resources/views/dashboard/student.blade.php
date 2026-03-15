@@ -167,7 +167,7 @@
 
                                 <div class="mt-8">
                                     @if($isInProgress)
-                                        <a href="{{ route('student.exams.take', $attempt) }}" class="w-full py-4 bg-amber-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-amber-100 hover:bg-amber-600 transition-all flex items-center justify-center gap-3 group/btn">
+                                        <a href="{{ route('student.exams.start', $attempt->exam) }}" class="w-full py-4 bg-amber-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-amber-100 hover:bg-amber-600 transition-all flex items-center justify-center gap-3 group/btn">
                                             Lanjutkan Ujian <i class="fas fa-arrow-right group-hover/btn:translate-x-1 transition-transform"></i>
                                         </a>
                                     @else

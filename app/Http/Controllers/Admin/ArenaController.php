@@ -18,6 +18,13 @@ use App\Notifications\GamificationNotification;
 
 class ArenaController extends Controller
 {
+    protected $battleService;
+
+    public function __construct(\App\Services\BattleService $battleService)
+    {
+        $this->battleService = $battleService;
+    }
+
     // ── Admin: Room Index ─────────────────────────────────────────────────
 
     public function index()
@@ -166,7 +173,8 @@ class ArenaController extends Controller
         ];
 
         // Auto-finish check
-        if ($room->status === 'ongoing') {
+        if ($room->status === 'ongoing' || $room->status === 'sudden_death') {
+            $this->battleService->checkSuddenDeath($room);
             $this->checkAutoFinish($room);
             $room->refresh();
             $data['status'] = $room->status;

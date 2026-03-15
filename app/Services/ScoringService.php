@@ -179,7 +179,7 @@ class ScoringService
      */
     public static function getEssayAnswers(ExamAttempt $attempt)
     {
-        return ExamAnswer::where('attempt_id', $attempt->id)
+        return ExamAnswer::where('attempt_id', '=', $attempt->id)
             ->with('question')
             ->get()
             ->filter(function ($answer) {

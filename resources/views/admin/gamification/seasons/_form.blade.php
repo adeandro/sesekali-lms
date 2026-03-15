@@ -21,24 +21,10 @@
     </div>
 </div>
 
-<div class="grid grid-cols-2 gap-4">
-    <div>
+    <div class="col-span-2">
         <label class="block text-xs font-black text-gray-700 uppercase tracking-widest mb-1.5">Tanggal Mulai</label>
-        <input type="date" name="start_date" value="{{ old('start_date', $season?->start_date?->format('Y-m-d')) }}" required
+        <input type="date" name="started_at" value="{{ old('started_at', $season?->started_at?->format('Y-m-d')) }}" required
                class="w-full px-4 py-2.5 rounded-2xl border border-gray-200 text-sm font-bold focus:ring-2 focus:ring-indigo-400 focus:outline-none">
     </div>
-    <div>
-        <label class="block text-xs font-black text-gray-700 uppercase tracking-widest mb-1.5">Tanggal Selesai</label>
-        <input type="date" name="end_date" value="{{ old('end_date', $season?->end_date?->format('Y-m-d')) }}" required
-               class="w-full px-4 py-2.5 rounded-2xl border border-gray-200 text-sm font-bold focus:ring-2 focus:ring-indigo-400 focus:outline-none">
-    </div>
-</div>
 
-<label class="flex items-center gap-3 cursor-pointer p-3 rounded-2xl border border-gray-100 hover:border-indigo-200 transition">
-    <input type="checkbox" name="is_active" value="1" {{ old('is_active', $season?->is_active) ? 'checked' : '' }}
-           class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-400">
-    <div>
-        <p class="text-sm font-black text-gray-900">Jadikan Season Aktif</p>
-        <p class="text-xs text-gray-400">Season lain akan otomatis dinonaktifkan.</p>
-    </div>
-</label>
+{{-- Status handled automatically or on close --}}

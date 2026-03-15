@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\HistoricalWinner;
+use App\Models\HallOfFame;
 use App\Models\Season;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
@@ -27,10 +27,10 @@ class LeaderboardController extends Controller
             return $this->buildLeaderboardData($gradeLevel, $tab);
         });
 
-        $seasons     = Season::orderByDesc('start_date')->take(5)->get();
-        $hallOfFame  = HistoricalWinner::with(['user', 'season'])
+        $seasons     = Season::orderByDesc('started_at')->take(5)->get();
+        $hallOfFame  = HallOfFame::with(['user', 'season'])
             ->whereIn('rank', [1, 2, 3])
-            ->orderByDesc('archived_at')
+            ->orderByDesc('recorded_at')
             ->take(20)
             ->get();
 
@@ -61,22 +61,23 @@ class LeaderboardController extends Controller
 
     public function hallOfFame()
     {
-        $winners = HistoricalWinner::with(['user', 'season', 'room'])
+        $winners = HallOfFame::with(['user', 'season'])
             ->orderBy('rank')
-            ->orderByDesc('archived_at')
+            ->orderByDesc('recorded_at')
             ->paginate(30);
 
         return view('admin.gamification.leaderboard.hall-of-fame', compact('winners'));
     }
 
-    // ── Internal Builder ──────────────────────────────────────────────────
-
     private function buildLeaderboardData(string|int $gradeLevel, string $tab): array
     {
-        $query = User::where('role', 'student')->where('status', 'Aktif');
+        $query = User::where('role', '=', 'student')->where('status', '=', 'Aktif');
 
         if ($gradeLevel !== 'all') {
-            $query->where('grade_level', (int) $gradeLevel);
+            $query->where(function($q) use ($gradeLevel) {
+                $q->where('grade_level', (int) $gradeLevel)
+                  ->orWhere('grade', (string) $gradeLevel);
+            });
         }
 
         return match($tab) {
@@ -88,11 +89,26 @@ class LeaderboardController extends Controller
 
     private function buildLigaRanking($query): array
     {
-        return $query->orderByDesc('seasonal_exp')
+        // For Liga, we use Seasonal Metrics (APP + Seasonal EXP)
+        return $query->select('*')
+            ->selectRaw('((SELECT COALESCE(AVG(final_score), 0) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) + 
+                (SELECT COUNT(*) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) * 2 +
+                ((SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id) * 1 +
+                 (SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id AND `rank` = 1) * 5)) as performance_points')
+            ->orderByDesc('performance_points')
             ->take(50)
-            ->get(['id', 'name', 'grade_level', 'class_group', 'seasonal_exp', 'career_exp',
-                   'active_theme_id', 'current_level', 'custom_avatar', 'avatar_upload', 'photo'])
-            ->values()
+            ->get()
+            ->map(fn($u) => [
+                'id' => $u->id,
+                'name' => $u->name,
+                'grade_level' => $u->grade_level ?: $u->grade,
+                'class_group' => $u->class_group,
+                'seasonal_exp' => $u->seasonal_exp,
+                'career_exp' => $u->career_exp,
+                'performance_points' => $u->performance_points,
+                'active_theme_id' => $u->active_theme_id,
+                'current_level' => $u->current_level,
+            ])
             ->toArray();
     }
 
@@ -100,33 +116,56 @@ class LeaderboardController extends Controller
     {
         return $query->orderByDesc('career_exp')
             ->take(50)
-            ->get(['id', 'name', 'grade_level', 'class_group', 'seasonal_exp', 'career_exp',
-                   'active_theme_id', 'current_level', 'custom_avatar', 'avatar_upload', 'photo'])
-            ->values()
+            ->get()
+            ->map(fn($u) => [
+                'id' => $u->id,
+                'name' => $u->name,
+                'grade_level' => $u->grade_level ?: $u->grade,
+                'class_group' => $u->class_group,
+                'seasonal_exp' => $u->seasonal_exp,
+                'career_exp' => $u->career_exp,
+                'performance_points' => $u->career_exp / 10, // Mock for now or just use career_exp
+                'active_theme_id' => $u->active_theme_id,
+                'current_level' => $u->current_level,
+            ])
             ->toArray();
     }
 
     private function buildFleetRanking(string|int $gradeLevel): array
     {
-        $query = DB::table('users')
-            ->where('role', 'student')
+        $query = User::where('role', 'student')
             ->where('status', 'Aktif')
-            ->select('class_group',
-                DB::raw('CONCAT(grade_level, "-", class_group) as fleet_id'),
-                DB::raw('grade_level'),
-                DB::raw('COUNT(*) as member_count'),
-                DB::raw('SUM(seasonal_exp) as total_seasonal_exp'),
-                DB::raw('AVG(seasonal_exp) as avg_seasonal_exp'),
-                DB::raw('SUM(career_exp) as total_career_exp'),
-                DB::raw('AVG(career_exp) as avg_career_exp'))
-            ->groupBy('grade_level', 'class_group');
+            ->select('*')
+            ->selectRaw('((SELECT COALESCE(AVG(final_score), 0) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) + 
+                (SELECT COUNT(*) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) * 2 +
+                ((SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id) * 1 +
+                 (SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id AND `rank` = 1) * 5)) as performance_points');
 
         if ($gradeLevel !== 'all') {
-            $query->where('grade_level', (int) $gradeLevel);
+            $query->where(function($q) use ($gradeLevel) {
+                $q->where('grade_level', (int) $gradeLevel)
+                  ->orWhere('grade', (string) $gradeLevel);
+            });
         }
 
-        return $query->orderByDesc('avg_seasonal_exp')
-            ->get()
+        return $query->get()
+            ->groupBy(fn($u) => ($u->grade_level ?: $u->grade) . '-' . ($u->class_group ?: 'X'))
+            ->map(function($members) {
+                $first = $members->first();
+                $gl    = $first->grade_level ?: $first->grade;
+                $cg    = $first->class_group ?: 'X';
+                
+                return [
+                    'grade_level'        => $gl,
+                    'class_group'        => $cg,
+                    'fleet_id'           => $gl . '-' . $cg,
+                    'member_count'       => $members->count(),
+                    'performance_points' => $members->avg('performance_points'),
+                    'total_seasonal_exp' => $members->sum('seasonal_exp'),
+                    'avg_seasonal_exp'   => $members->avg('seasonal_exp'),
+                ];
+            })
+            ->sortByDesc('performance_points')
             ->values()
             ->toArray();
     }

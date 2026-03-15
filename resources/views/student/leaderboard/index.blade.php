@@ -45,15 +45,15 @@
                 <div class="bg-white rounded-2xl border {{ $winner->rank === 1 ? 'border-amber-200 bg-amber-50/50' : 'border-gray-100' }} px-5 py-4 flex items-center gap-4">
                     <span class="text-2xl">{{ match((int)$winner->rank) { 1 => '🥇', 2 => '🥈', 3 => '🥉', default => '#'.$winner->rank } }}</span>
                     <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-xs font-black flex-shrink-0">
-                        {{ strtoupper(substr($winner->user->name, 0, 2)) }}
+                        {{ strtoupper(substr($winner->display_name ?? $winner->user->name, 0, 2)) }}
                     </div>
                     <div class="flex-1 min-w-0">
-                        <p class="font-black text-gray-900">{{ ucwords(strtolower($winner->user->name)) }}</p>
-                        <p class="text-[10px] text-gray-400 truncate">{{ $winner->battle_room_name }}</p>
+                        <p class="font-black text-gray-900">{{ ucwords(strtolower($winner->display_name ?? $winner->user->name)) }}</p>
+                        <p class="text-[10px] text-gray-400 truncate">{{ $winner->season->name ?? 'Unknown Season' }}</p>
                     </div>
                     <div class="text-right">
-                        <p class="font-black text-indigo-600 text-sm">{{ number_format($winner->career_exp_snapshot) }} XP</p>
-                        <p class="text-[10px] text-gray-400">{{ $winner->archived_at->format('d M Y') }}</p>
+                        <p class="font-black text-indigo-600 text-sm">{{ number_format($winner->app_points_final, 1) }} APP</p>
+                        <p class="text-[10px] text-gray-400">{{ $winner->recorded_at->format('d M Y') }}</p>
                     </div>
                 </div>
             @empty
@@ -75,8 +75,8 @@
                         <p class="text-[10px] text-gray-400">{{ $fleet['member_count'] }} anggota</p>
                     </div>
                     <div class="text-right">
-                        <p class="font-black text-sky-600 text-sm">{{ number_format($fleet['avg_seasonal_exp'],0) }} XP avg</p>
-                        <p class="text-[10px] text-gray-400">Total {{ number_format($fleet['total_seasonal_exp']) }}</p>
+                        <p class="font-black text-sky-600 text-sm">{{ number_format($fleet['performance_points'], 1) }} APP avg</p>
+                        <p class="text-[8px] text-gray-400 font-black uppercase tracking-tighter uppercase">Team Performance</p>
                     </div>
                 </div>
             @empty

@@ -64,6 +64,7 @@ class AchievementService
                 'avg_score'       => $this->checkAvgScore($user, $value),
                 'custom_avatar'   => $this->checkAvatarAchievement($user),
                 'arena_win_count' => $this->checkArenaWinCount($user, $value),
+                'prestige_count'  => $this->checkPrestigeCount($user, $value),
                 default           => false,
             };
 
@@ -185,6 +186,11 @@ class AchievementService
         return $count >= $targetCount;
     }
 
+    public function checkPrestigeCount(User $user, float $targetCount): bool
+    {
+        return $user->prestige_count >= $targetCount;
+    }
+
     public function checkAvatarAchievement(User $user)
     {
         $hasCustomAvatar = false;
@@ -211,6 +217,7 @@ class AchievementService
     {
         $oldLevel = $user->current_level;
         $user->increment('total_exp', $amount);
+        $user->increment('exp_total_alltime', $amount);
         
         $newLevel = floor($user->total_exp / 100) + 1;
         
