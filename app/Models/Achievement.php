@@ -16,16 +16,23 @@ class Achievement extends Model
         'description',
         'lore_text',
         'icon',
+        'icon_type',
         'icon_path',
         'color',
+        'theme_color',
+        'glow_color',
         'criteria_type',
         'criteria_value',
+        'criteria_data',
         'xp_reward',
         'is_active',
+        'is_secret',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'is_secret' => 'boolean',
+        'criteria_data' => 'array',
     ];
 
     public function users()
