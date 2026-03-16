@@ -43,19 +43,25 @@ class MessageController extends Controller
     /**
      * Show a single thread with all replies.
      */
-    public function thread(int $rootId)
+    public function thread(int $id)
     {
-        $user   = Auth::user();
+        $user = Auth::user();
+        
+        // Find the specific message first (could be a reply)
+        $message = Message::find($id);
+        abort_if(!$message, 404, 'Pesan tidak ditemukan.');
+        
+        // Always operate on the thread root for the view
+        $rootId = $message->parent_id ?? $message->id;
         $thread = $this->commService->getThread($rootId);
-
-        abort_if(!$thread, 404);
-
-        // Authorization: user must be part of this thread, or be superadmin
+        
+        abort_if(!$thread, 404, 'Percakapan tidak ditemukan.');
+        
+        // Authorization: Participant check or Administrative role
+        // We use != for type-safe loose comparison (handling string/int IDs)
         if ($user->role !== 'superadmin') {
-            abort_if(
-                $thread->sender_id !== $user->id && $thread->receiver_id !== $user->id,
-                403, 'Anda tidak memiliki akses ke percakapan ini.'
-            );
+            $isParticipant = ($thread->sender_id == $user->id || $thread->receiver_id == $user->id);
+            abort_if(!$isParticipant, 403, 'Anda tidak memiliki akses ke percakapan ini.');
         }
 
         // Mark as read
