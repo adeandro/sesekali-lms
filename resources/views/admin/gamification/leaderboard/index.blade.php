@@ -141,6 +141,9 @@
             $subtitle = $isCareer ? 'Akumulasi EXP sepanjang karir — tidak pernah di-reset' : 'EXP musim ini (di-reset tiap semester)';
             $gradient = $isCareer ? 'from-violet-600 to-purple-700' : 'from-amber-500 to-yellow-500';
         @endphp
+        @php
+            $isGrouped = $tab === 'career' && count($data) > 0 && !is_numeric(array_key_first($data));
+        @endphp
         <div class="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
             <div class="bg-gradient-to-r {{ $gradient }} px-8 py-5">
                 <h2 class="text-lg font-black text-white uppercase tracking-widest flex items-center gap-2">
@@ -149,48 +152,73 @@
                 <p class="text-white/70 text-xs mt-1">{{ $subtitle }}</p>
             </div>
 
-            <div class="divide-y divide-gray-50">
-                @forelse($data as $i => $student)
-                    @php
-                        $rank = $i + 1;
-                        $medal = match($rank) { 1 => '🥇', 2 => '🥈', 3 => '🥉', default => "#{$rank}" };
-                        $themes = ['legendary-golden'=>'ring-2 ring-amber-400','elite-silver'=>'ring-2 ring-slate-300','master-bronze'=>'ring-2 ring-orange-400','survivor-common'=>'ring-1 ring-gray-400'];
-                        $ringClass = $themes[$student['active_theme_id'] ?? ''] ?? '';
-                    @endphp
-                    <div class="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition
-                                {{ $rank <= 3 ? 'bg-gradient-to-r from-amber-50/60 to-transparent' : '' }}">
-                        <span class="text-lg font-black w-10 text-center {{ $rank <= 3 ? '' : 'text-gray-400 text-sm' }}">{{ $medal }}</span>
-                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-xs font-black flex-shrink-0 {{ $ringClass }}">
-                            {{ strtoupper(substr($student['name'], 0, 2)) }}
+            <div class="{{ $isGrouped ? 'grid grid-cols-1 lg:grid-cols-3' : 'divide-y divide-gray-50' }}">
+                @if($isGrouped)
+                    @foreach($data as $groupLabel => $students)
+                        <div class="flex flex-col bg-white">
+                            <div class="bg-gray-50/80 px-6 py-3 border-b border-gray-100 sticky top-0 z-10 backdrop-blur-sm">
+                                <h3 class="text-xs font-black text-purple-600 uppercase tracking-widest flex items-center gap-2">
+                                    <i class="fas fa-school shadow-sm"></i> {{ $groupLabel }}
+                                </h3>
+                            </div>
+                            <div class="divide-y divide-gray-50">
+                                @forelse($students as $student)
+                                    @php
+                                        $rank = $loop->iteration;
+                                        $medal = match($rank) { 1 => '🥇', 2 => '🥈', 3 => '🥉', default => "#{$rank}" };
+                                        $themes = ['legendary-golden'=>'ring-2 ring-amber-400','elite-silver'=>'ring-2 ring-slate-300','master-bronze'=>'ring-2 ring-orange-400','survivor-common'=>'ring-1 ring-gray-400'];
+                                        $ringClass = $themes[$student['active_theme_id'] ?? ''] ?? '';
+                                    @endphp
+                                    <div class="flex items-center gap-3 px-5 py-4 hover:bg-violet-50/30 transition group">
+                                        <span class="text-base font-black w-8 text-center bg-gray-50 rounded-lg group-hover:bg-white transition {{ $rank <= 3 ? 'text-amber-500' : 'text-gray-400 text-xs' }}">{{ $medal }}</span>
+                                        <div class="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-[10px] font-black flex-shrink-0 {{ $ringClass }}">
+                                            {{ strtoupper(substr($student['name'], 0, 2)) }}
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="font-bold text-gray-900 text-xs truncate group-hover:text-purple-700 transition">{{ ucwords(strtolower($student['name'])) }}</p>
+                                            <p class="text-[9px] text-gray-400 font-medium">{{ $student['grade_level'] ?? '-' }}{{ $student['class_group'] ? '-'.$student['class_group'] : '' }}</p>
+                                        </div>
+                                        <span class="font-black text-[11px] text-violet-700 text-right whitespace-nowrap">
+                                            {{ number_format($student['career_exp'] ?? 0, 0) }} XP
+                                        </span>
+                                    </div>
+                                @empty
+                                    <div class="px-6 py-12 text-center text-gray-400">
+                                        <p class="text-[10px] italic">Tidak ada data</p>
+                                    </div>
+                                @endforelse
+                            </div>
                         </div>
-                        <div class="flex-1 min-w-0">
-                            <p class="font-black text-gray-900 text-sm truncate">{{ ucwords(strtolower($student['name'])) }}</p>
-                            <p class="text-[10px] text-gray-400">Kelas {{ $student['grade_level'] ?? '-' }}{{ $student['class_group'] ? '-'.$student['class_group'] : '' }}</p>
-                        </div>
-                        @if($student['active_theme_id'] ?? null)
-                            <span class="text-[9px] font-black px-2 py-0.5 rounded-full uppercase
-                                {{ match($student['active_theme_id']) {
-                                    'legendary-golden' => 'bg-amber-100 text-amber-700',
-                                    'elite-silver'     => 'bg-slate-100 text-slate-700',
-                                    'master-bronze'    => 'bg-orange-100 text-orange-700',
-                                    default            => 'bg-gray-100 text-gray-600'} }}">
-                                {{ match($student['active_theme_id']) {
-                                    'legendary-golden' => '⚡ Legendary',
-                                    'elite-silver'     => '🌟 Elite',
-                                    'master-bronze'    => '🔥 Master',
-                                    default            => '⚔ Survivor'} }}
+                    @endforeach
+                @else
+                    @forelse($data as $student)
+                        @php
+                            $rank = $loop->iteration;
+                            $medal = match($rank) { 1 => '🥇', 2 => '🥈', 3 => '🥉', default => "#{$rank}" };
+                            $themes = ['legendary-golden'=>'ring-2 ring-amber-400','elite-silver'=>'ring-2 ring-slate-300','master-bronze'=>'ring-2 ring-orange-400','survivor-common'=>'ring-1 ring-gray-400'];
+                            $ringClass = $themes[$student['active_theme_id'] ?? ''] ?? '';
+                        @endphp
+                        <div class="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition
+                                    {{ $rank <= 3 ? 'bg-gradient-to-r from-amber-50/60 to-transparent' : '' }}">
+                            <span class="text-lg font-black w-10 text-center {{ $rank <= 3 ? '' : 'text-gray-400 text-sm' }}">{{ $medal }}</span>
+                            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-xs font-black flex-shrink-0 {{ $ringClass }}">
+                                {{ strtoupper(substr($student['name'], 0, 2)) }}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="font-black text-gray-900 text-sm truncate">{{ ucwords(strtolower($student['name'])) }}</p>
+                                <p class="text-[10px] text-gray-400">Kelas {{ $student['grade_level'] ?? '-' }}{{ $student['class_group'] ? '-'.$student['class_group'] : '' }}</p>
+                            </div>
+                            <span class="font-black text-sm text-amber-600 w-32 text-right">
+                                {{ number_format($student['performance_points'] ?? 0, 1) }} APP
                             </span>
-                        @endif
-                        <span class="font-black text-sm {{ $isCareer ? 'text-violet-700' : 'text-amber-600' }} w-32 text-right">
-                            {{ number_format($student['performance_points'] ?? 0, 1) }} APP
-                        </span>
-                    </div>
-                @empty
-                    <div class="px-6 py-12 text-center text-gray-400">
-                        <i class="fas fa-star text-3xl mb-3 block text-gray-200"></i>
-                        Belum ada data untuk ditampilkan.
-                    </div>
-                @endforelse
+                        </div>
+                    @empty
+                        <div class="px-6 py-12 text-center text-gray-400">
+                            <i class="fas fa-star text-3xl mb-3 block text-gray-200"></i>
+                            Belum ada data untuk ditampilkan.
+                        </div>
+                    @endforelse
+                @endif
             </div>
         </div>
     @endif

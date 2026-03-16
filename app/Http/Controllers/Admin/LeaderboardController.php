@@ -21,7 +21,7 @@ class LeaderboardController extends Controller
         $gradeLevel = request('grade', 'all'); // filter
         $tab        = request('tab', 'liga');   // liga | fleet | career
 
-        $cacheKey  = "leaderboard.{$tab}.{$gradeLevel}";
+        $cacheKey  = "leaderboard.v3.{$tab}.{$gradeLevel}";
 
         $data = Cache::remember($cacheKey, self::CACHE_TTL, function () use ($gradeLevel, $tab) {
             return $this->buildLeaderboardData($gradeLevel, $tab);
@@ -114,20 +114,39 @@ class LeaderboardController extends Controller
 
     private function buildCareerRanking($query): array
     {
-        return $query->orderByDesc('career_exp')
-            ->take(50)
+        $currentYear = 2026; // Based on migration year context
+        
+        $students = $query->orderByDesc('career_exp')
             ->get()
-            ->map(fn($u) => [
-                'id' => $u->id,
-                'name' => $u->name,
-                'grade_level' => $u->grade_level ?: $u->grade,
-                'class_group' => $u->class_group,
-                'seasonal_exp' => $u->seasonal_exp,
-                'career_exp' => $u->career_exp,
-                'performance_points' => $u->career_exp / 10, // Mock for now or just use career_exp
-                'active_theme_id' => $u->active_theme_id,
-                'current_level' => $u->current_level,
-            ])
+            ->map(function($u) use ($currentYear) {
+                // Calculate "Angkatan"
+                // If Grade 12 in 2026 -> 2026
+                // If Grade 11 in 2026 -> 2027
+                // If Grade 10 in 2026 -> 2028
+                $angkatan = $u->alumni_year;
+                if (!$angkatan && $u->grade_level) {
+                    $angkatan = $currentYear + (12 - $u->grade_level);
+                }
+                $angkatanLabel = $angkatan ? "Angkatan " . $angkatan : "Angkatan Tidak Diketahui";
+
+                return [
+                    'id' => $u->id,
+                    'name' => $u->name,
+                    'grade_level' => $u->grade_level ?: $u->grade,
+                    'class_group' => $u->class_group,
+                    'seasonal_exp' => $u->seasonal_exp,
+                    'career_exp' => $u->career_exp,
+                    'performance_points' => $u->career_exp / 10,
+                    'active_theme_id' => $u->active_theme_id,
+                    'current_level' => $u->current_level,
+                    'group_label' => "Kelas " . ($u->grade_level ?: $u->grade),
+                ];
+            });
+
+        // Group by grade and ensure sort order 12, 11, 10
+        return $students->groupBy('group_label')
+            ->map(fn($group) => $group->values())
+            ->sortByDesc(fn($group, $key) => (int) filter_var($key, FILTER_SANITIZE_NUMBER_INT))
             ->toArray();
     }
 

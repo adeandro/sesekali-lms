@@ -14,8 +14,8 @@ class LoginController extends Controller
     public function showLoginForm()
     {
         try {
-            $topStudents = \App\Models\User::where('role', 'student')
-                ->where('status', 'Aktif')
+            $topStudents = \App\Models\User::where('role', '=', 'student')
+                ->where('status', '=', 'Aktif')
                 ->orderBy('total_exp', 'desc')
                 ->take(3)
                 ->get()
@@ -56,12 +56,12 @@ class LoginController extends Controller
         // Query user by email or NIS
         $user = null;
         if ($isEmail) {
-            $user = User::where('email', $credentials['username'])->first();
+            $user = User::where('email', '=', $credentials['username'])->first();
         } elseif ($isNIS) {
-            $user = User::where('nis', $credentials['username'])->first();
+            $user = User::where('nis', '=', $credentials['username'])->first();
         } else {
             // Try email as fallback if neither email nor NIS format
-            $user = User::where('email', $credentials['username'])->first();
+            $user = User::where('email', '=', $credentials['username'])->first();
         }
 
         // Check if user exists and is active
