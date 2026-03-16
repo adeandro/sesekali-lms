@@ -358,9 +358,11 @@ Route::middleware('auth')->group(function () {
 
         // Direct Messaging (all roles inbox; students reply-only)
         Route::get('messages', [MessageController::class, 'inbox'])->name('messages.inbox');
-        Route::get('messages/{rootId}', [MessageController::class, 'thread'])->name('messages.thread')->where('rootId', '[0-9]+');
+        Route::get('messages/poll', [MessageController::class, 'pollInbox'])->name('messages.poll-inbox');
+        Route::get('messages/{id}', [MessageController::class, 'thread'])->name('messages.thread')->where('id', '[0-9]+');
+        Route::get('messages/{id}/poll', [MessageController::class, 'pollThread'])->name('messages.poll-thread')->where('id', '[0-9]+');
         Route::post('messages', [MessageController::class, 'send'])->name('messages.send');
-        Route::post('messages/{rootId}/read', [MessageController::class, 'markRead'])->name('messages.read')->where('rootId', '[0-9]+');
+        Route::post('messages/{id}/read', [MessageController::class, 'markRead'])->name('messages.read')->where('id', '[0-9]+');
         Route::delete('messages/{message}', [MessageController::class, 'deleteMessage'])->name('messages.delete');
         Route::delete('messages/{message}/thread', [MessageController::class, 'deleteThread'])->name('messages.delete-thread');
     });

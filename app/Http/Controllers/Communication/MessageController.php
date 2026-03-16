@@ -64,6 +64,13 @@ class MessageController extends Controller
             abort_if(!$isParticipant, 403, 'Anda tidak memiliki akses ke percakapan ini.');
         }
 
+        if (request()->ajax()) {
+            return response()->json([
+                'thread' => $thread,
+                'canReply' => Gate::check('reply', $thread)
+            ]);
+        }
+
         // Mark as read
         $this->commService->markThreadRead($user, $rootId);
 
@@ -107,8 +114,14 @@ class MessageController extends Controller
                 parentId: $validated['parent_id'],
             );
 
-            return redirect()->route('communication.messages.thread', $validated['parent_id'])
-                             ->with('success', 'Pesan terkirim.');
+            if ($request->ajax()) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => $message,
+                ]);
+            }
+
+            return redirect()->route('communication.messages.thread', $validated['parent_id']);
         }
 
         // New thread — multi-recipient
@@ -147,20 +160,82 @@ class MessageController extends Controller
 
         // For single recipient, go directly to thread; for multiple, stay at inbox
         if ($count === 1 && $lastMessage) {
-            return redirect()->route('communication.messages.thread', $lastMessage->id)
-                             ->with('success', $successMsg);
+            if ($request->ajax()) {
+                return response()->json([
+                    'status' => 'success',
+                    'redirect' => route('communication.messages.thread', $lastMessage->id),
+                    'message' => $lastMessage,
+                ]);
+            }
+            return redirect()->route('communication.messages.thread', $lastMessage->id);
         }
 
-        return redirect()->route('communication.messages.inbox')
-                         ->with('success', $successMsg);
+        if ($request->ajax()) {
+            return response()->json(['status' => 'success', 'redirect' => route('communication.messages.inbox')]);
+        }
+
+        return redirect()->route('communication.messages.inbox');
+    }
+
+    /**
+     * Poll for new messages in a thread.
+     */
+    public function pollThread(int $id)
+    {
+        $user = Auth::user();
+        $after = request('after'); // ISO date string
+
+        $query = Message::where(function($q) use ($id) {
+            $q->where('id', $id)->orWhere('parent_id', $id);
+        });
+
+        if ($after) {
+            $query->where('created_at', '>', $after);
+        }
+
+        $newMessages = $query->with(['sender', 'receiver'])->orderBy('created_at')->get();
+
+        if ($newMessages->count() > 0) {
+            // Mark new messages as read if we are the receiver
+            $this->commService->markThreadRead($user, $id);
+        }
+
+        return response()->json([
+            'messages' => $newMessages,
+            'timestamp' => now()->toDateTimeString()
+        ]);
+    }
+
+    /**
+     * Poll for inbox updates (latest thread states).
+     */
+    public function pollInbox()
+    {
+        $user = Auth::user();
+        
+        if ($user->role === 'superadmin') {
+            $threads = Message::threads()
+                              ->with(['sender', 'receiver', 'replies.sender'])
+                              ->orderByDesc('updated_at')
+                              ->paginate(30);
+        } else {
+            $threads = $this->commService->getInboxForUser($user);
+        }
+
+        // Return rendered partial or JSON data? 
+        // HTML is easier for Blade injection.
+        $messageableUsers = $this->commService->getMessageableUsers($user);
+        $isAudit = ($user->role === 'superadmin');
+
+        return view('communication.messaging.partials.thread_list', compact('threads', 'isAudit', 'messageableUsers'))->render();
     }
 
     /**
      * Mark all messages in a thread as read for the current user.
      */
-    public function markRead(int $rootId)
+    public function markRead(int $id)
     {
-        $this->commService->markThreadRead(Auth::user(), $rootId);
+        $this->commService->markThreadRead(Auth::user(), $id);
 
         return response()->json(['status' => 'ok']);
     }
