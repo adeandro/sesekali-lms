@@ -106,10 +106,10 @@
                               id="replyInput"
                               class="w-full px-4 py-3 pr-12 rounded-2xl border border-gray-200 text-sm font-medium resize-none focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent transition"
                               style="max-height: 120px; overflow-y: auto;"
-                              onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); this.closest('form').submit(); }"></textarea>
+                              onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); this.closest('form').dispatchEvent(new Event('submit')); }"></textarea>
                 </div>
 
-                <button type="submit"
+                <button type="submit" id="sendBtn"
                         class="theme-primary-btn w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 transition">
                     <i class="fas fa-paper-plane text-sm"></i>
                 </button>
@@ -181,5 +181,93 @@ function confirmDeleteThread() {
         }
     });
 }
+
+// AJAX Submission & Polling
+let lastPolledAt = "{{ now()->toDateTimeString() }}";
+const replyForm = document.getElementById('replyForm');
+const sendBtn   = document.getElementById('sendBtn');
+
+replyForm?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const body = replyInput.value.trim();
+    if (!body) return;
+
+    sendBtn.disabled = true;
+    sendBtn.innerHTML = '<i class="fas fa-circle-notch animate-spin"></i>';
+
+    const formData = new FormData(this);
+
+    fetch(this.action, {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'success') {
+            replyInput.value = '';
+            replyInput.style.height = 'auto';
+            appendMessage(data.message, true);
+        }
+    })
+    .catch(err => console.error('Send error:', err))
+    .finally(() => {
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = '<i class="fas fa-paper-plane text-sm"></i>';
+    });
+});
+
+function pollMessages() {
+    fetch("{{ route('communication.messages.poll-thread', $thread->id) }}?after=" + encodeURIComponent(lastPolledAt), {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.messages && data.messages.length > 0) {
+            data.messages.forEach(msg => {
+                // Only append if it's not our own (already appended via AJAX)
+                if (msg.sender_id != {{ auth()->id() }}) {
+                    appendMessage(msg, false);
+                }
+            });
+        }
+        lastPolledAt = data.timestamp;
+    })
+    .catch(e => console.error('Poll error:', e));
+}
+
+function appendMessage(msg, isSent) {
+    const chatArea = document.getElementById('chatArea');
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'flex flex-col w-full group/msg animate-in fade-in slide-in-from-bottom-2 duration-300';
+    
+    // Check if message already exists (simple deduplication)
+    if (document.getElementById(`del-msg-${msg.id}`)) return;
+
+    // Use placeholder if photo_url is missing (should be there if object is complete)
+    const photo = msg.sender.photo_url || `https://ui-avatars.com/api/?name=${msg.sender.name}`;
+
+    msgDiv.innerHTML = `
+        <div class="flex items-end gap-2 ${isSent ? 'flex-row-reverse' : ''}">
+            ${!isSent ? `<img src="${photo}" class="w-8 h-8 rounded-full object-cover shrink-0 mb-1 border-2 border-white shadow-sm">` : ''}
+            <div class="${isSent ? 'chat-bubble-sent' : 'chat-bubble-received'}">
+                <p class="text-sm leading-relaxed">${msg.body}</p>
+            </div>
+        </div>
+        <p class="text-[10px] text-gray-400 mt-1 ${isSent ? 'text-right' : 'text-left ml-10'} font-semibold">
+            Baru saja
+        </p>
+    `;
+    chatArea.appendChild(msgDiv);
+    chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+// Start polling every 3 seconds for threads
+let threadPollInterval = setInterval(pollMessages, 3000);
+
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) clearInterval(threadPollInterval);
+    else threadPollInterval = setInterval(pollMessages, 3000);
+});
 </script>
 @endsection
