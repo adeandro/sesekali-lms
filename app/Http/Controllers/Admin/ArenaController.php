@@ -318,7 +318,9 @@ class ArenaController extends Controller
     {
         // Security: participant must belong to auth user
         abort_if($participant->user_id !== Auth::id(), 403);
-        abort_if($room->status === 'waiting', 302, route('student.arena.lobby', $room));
+        if ($room->status === 'waiting') {
+            return redirect()->route('student.arena.lobby', $room);
+        }
 
         if (in_array($room->status, ['finished']) || $participant->status === 'disqualified') {
             return view('student.arena.finished', compact('room', 'participant'));
