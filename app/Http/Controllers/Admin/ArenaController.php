@@ -317,7 +317,7 @@ class ArenaController extends Controller
     public function battle(BattleRoom $room, BattleParticipant $participant)
     {
         // Security: participant must belong to auth user
-        abort_if($participant->user_id !== Auth::id(), 403);
+        abort_if($participant->user_id != Auth::id(), 403);
         if ($room->status === 'waiting') {
             return redirect()->route('student.arena.lobby', $room);
         }
@@ -356,7 +356,7 @@ class ArenaController extends Controller
 
     public function submitAnswer(Request $request, BattleRoom $room, BattleParticipant $participant)
     {
-        abort_if($participant->user_id !== Auth::id(), 403);
+        abort_if($participant->user_id != Auth::id(), 403);
 
         if ($room->status !== 'ongoing' || $participant->status !== 'active') {
             return response()->json(['error' => 'Battle tidak aktif atau Anda sudah gugur.'], 422);
@@ -431,7 +431,7 @@ class ArenaController extends Controller
 
     public function tabPenalty(BattleRoom $room, BattleParticipant $participant)
     {
-        abort_if($participant->user_id !== Auth::id(), 403);
+        abort_if($participant->user_id != Auth::id(), 403);
 
         if ($room->status !== 'ongoing' || $participant->status !== 'active') {
             return response()->json(['ok' => false]);
@@ -453,7 +453,7 @@ class ArenaController extends Controller
 
     public function heartbeat(BattleRoom $room, BattleParticipant $participant)
     {
-        abort_if($participant->user_id !== Auth::id(), 403);
+        abort_if($participant->user_id != Auth::id(), 403);
         $participant->update(['last_seen_at' => now()]);
 
         return response()->json([

@@ -18,6 +18,8 @@ class BattleParticipant extends Model
     ];
 
     protected $casts = [
+        'battle_room_id'  => 'integer',
+        'user_id'         => 'integer',
         'disqualified_at' => 'datetime',
         'finished_at'     => 'datetime',
         'last_seen_at'    => 'datetime',
