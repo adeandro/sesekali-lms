@@ -31,6 +31,14 @@ return new class extends Migration
                 $table->string('alumni_year')->nullable()->after('active_theme_id')
                       ->comment('Set when grade 12 graduates');
             }
+
+            if (!Schema::hasColumn('users', 'seasonal_exp')) {
+                $table->unsignedInteger('seasonal_exp')->default(0)->after('total_exp');
+            }
+
+            if (!Schema::hasColumn('users', 'career_exp')) {
+                $table->unsignedInteger('career_exp')->default(0)->after('seasonal_exp');
+            }
         });
 
         // Populate grade_level from existing `grade` column for students

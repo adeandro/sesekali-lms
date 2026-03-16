@@ -27,8 +27,8 @@ class LoginController extends Controller
                         ? strtoupper(substr($words[0],0,1).substr($words[1],0,1))
                         : strtoupper(substr($name, 0, 2));
                     $shortName = count($words) >= 2
-                        ? strtoupper(substr($words[0],0,1)).'. '.$words[1]
-                        : ($words[0] ?? 'Siswa');
+    ? $words[0].' '.substr($words[1], 0, 4)
+    : ($words[0] ?? 'Siswa');
                     return [
                         'rank'     => $index + 1,
                         'initials' => $initials,
