@@ -44,6 +44,8 @@ class User extends Authenticatable
         'current_season_id',
         'rank_global',
         'rank_delta',
+        'seasonal_exp',
+        'career_exp',
         'consecutive_exam_weeks',
         'last_exam_week',
     ];
