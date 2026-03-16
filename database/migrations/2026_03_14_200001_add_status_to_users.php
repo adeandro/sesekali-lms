@@ -10,18 +10,27 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            // Add status enum after is_active
-            $table->enum('status', ['Aktif', 'Alumni', 'Nonaktif'])
-                  ->default('Aktif')
-                  ->after('is_active')
-                  ->comment('Aktif=masih belajar, Alumni=lulus grade 12, Nonaktif=DO/pindah');
+            if (!Schema::hasColumn('users', 'status')) {
+                $table->enum('status', ['Aktif', 'Alumni', 'Nonaktif'])
+                      ->default('Aktif')
+                      ->after('is_active')
+                      ->comment('Aktif=masih belajar, Alumni=lulus grade 12, Nonaktif=DO/pindah');
+            }
 
-            $table->tinyInteger('grade_level')->nullable()->after('grade')
-                  ->comment('Numeric grade: 10, 11, or 12 for students');
-            $table->string('active_theme_id')->nullable()->after('ui_theme')
-                  ->comment('Battle Arena rank theme slug');
-            $table->string('alumni_year')->nullable()->after('active_theme_id')
-                  ->comment('Set when grade 12 graduates');
+            if (!Schema::hasColumn('users', 'grade_level')) {
+                $table->tinyInteger('grade_level')->nullable()->after('grade')
+                      ->comment('Numeric grade: 10, 11, or 12 for students');
+            }
+
+            if (!Schema::hasColumn('users', 'active_theme_id')) {
+                $table->string('active_theme_id')->nullable()->after('ui_theme')
+                      ->comment('Battle Arena rank theme slug');
+            }
+
+            if (!Schema::hasColumn('users', 'alumni_year')) {
+                $table->string('alumni_year')->nullable()->after('active_theme_id')
+                      ->comment('Set when grade 12 graduates');
+            }
         });
 
         // Populate grade_level from existing `grade` column for students
