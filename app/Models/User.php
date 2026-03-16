@@ -133,6 +133,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Get battle arena participations for this user.
+     */
+    public function battleParticipations(): HasMany
+    {
+        return $this->hasMany(BattleParticipant::class, 'user_id');
+    }
+
+    /**
      * The subjects assigned to the teacher.
      */
     public function subjects()
@@ -194,6 +202,18 @@ class User extends Authenticatable
     }
 
 
+
+    /**
+     * Get the latest battle arena rank for this user.
+     */
+    public function latestArenaRank(): ?int
+    {
+        return $this->battleParticipations()
+            ->whereNotNull('rank')
+            ->orderByDesc('created_at')
+            ->latest()
+            ->value('rank');
+    }
 
     /**
      * Get the avatar URL (Priority: custom > photo > default).
@@ -316,6 +336,9 @@ class User extends Authenticatable
         // 1. Check for Battle Arena Gamification Themes
         $theme = $this->ui_theme ?? '';
         
+        if ($theme === 'champion') {
+            return 'theme-champion-glow ring-4 ring-yellow-500/60 frame-shine';
+        }
         if ($theme === 'legendary-golden') {
             return 'theme-legendary-glow ring-4 ring-amber-500/50';
         }

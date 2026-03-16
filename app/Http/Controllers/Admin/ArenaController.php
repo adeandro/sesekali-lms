@@ -520,7 +520,7 @@ class ArenaController extends Controller
             foreach ($participants as $p) {
                 // Determine Reward based on Rank
                 if ($p->rank === 1) {
-                    $config = $rewards['rank_1'] ?? ['exp' => 500, 'theme' => 'legendary-golden'];
+                    $config = $rewards['rank_1'] ?? ['exp' => 500, 'theme' => 'champion'];
                 } elseif ($p->rank === 2) {
                     $config = $rewards['rank_2'] ?? ['exp' => 300, 'theme' => 'elite-silver'];
                 } elseif ($p->rank === 3) {

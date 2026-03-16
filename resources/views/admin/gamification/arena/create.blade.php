@@ -126,7 +126,7 @@
                         <select name="rewards[rank_1][theme]" class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-amber-400 bg-white">
                             <option value="">-- Tanpa Tema --</option>
                             @foreach($themes as $theme)
-                                <option value="{{ $theme->slug }}" {{ old('rewards.rank_1.theme', 'legendary-golden') === $theme->slug ? 'selected' : '' }}>{{ $theme->name }}</option>
+                                <option value="{{ $theme->slug }}" {{ old('rewards.rank_1.theme', 'champion') === $theme->slug ? 'selected' : '' }}>{{ $theme->name }}</option>
                             @endforeach
                         </select>
                     </div>

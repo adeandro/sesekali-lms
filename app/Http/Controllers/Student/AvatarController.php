@@ -37,7 +37,10 @@ class AvatarController extends Controller
                 $reason = '';
 
                 if (!$theme->is_unlocked_by_default) {
+                    $latestRank = $user->latestArenaRank();
+
                     $arenaThemes = [
+                        'champion' => ['rank' => 1, 'name' => 'Gladiator Arena 🏆'],
                         'legendary-golden' => ['rank' => 1, 'name' => 'Juara 1 Battle Arena'],
                         'elite-silver' => ['rank' => 2, 'name' => 'Juara 2 Battle Arena'],
                         'master-bronze' => ['rank' => 3, 'name' => 'Juara 3 Battle Arena'],
@@ -46,16 +49,15 @@ class AvatarController extends Controller
 
                     if (array_key_exists($theme->slug, $arenaThemes)) {
                         $req = $arenaThemes[$theme->slug];
-                        $query = \App\Models\BattleParticipant::where('user_id', $user->id);
-                        if ($req['rank']) {
-                            // Can be Rank 1 in individual or Rank 1 as part of a winning Fleet
-                            $query->where('rank', $req['rank']);
-                        }
-                        $hasEarned = $query->exists();
-
-                        if (!$hasEarned) {
+                        
+                        if (!$latestRank) {
                             $locked = true;
-                            $reason = $req['name'];
+                            $reason = "Hanya untuk Partisipan Battle Arena";
+                        } else {
+                            if ($req['rank'] && $latestRank !== $req['rank']) {
+                                $locked = true;
+                                $reason = $req['name'];
+                            }
                         }
                     } else {
                         // Normal Themes check Level (Using Global Level calculated from all-time EXP)
@@ -254,7 +256,10 @@ class AvatarController extends Controller
 
         // Unlock Validation
         if (!$theme->is_unlocked_by_default) {
+            $latestRank = $user->latestArenaRank();
+
             $arenaThemes = [
+                'champion' => ['rank' => 1, 'name' => 'Gladiator Arena 🏆'],
                 'legendary-golden' => ['rank' => 1, 'name' => 'Juara 1 Battle Arena'],
                 'elite-silver' => ['rank' => 2, 'name' => 'Juara 2 Battle Arena'],
                 'master-bronze' => ['rank' => 3, 'name' => 'Juara 3 Battle Arena'],
@@ -263,12 +268,12 @@ class AvatarController extends Controller
 
             if (array_key_exists($theme->slug, $arenaThemes)) {
                 $req = $arenaThemes[$theme->slug];
-                $query = \App\Models\BattleParticipant::where('user_id', $user->id);
-                if ($req['rank']) {
-                    $query->where('rank', $req['rank']);
-                }
                 
-                if (!$query->exists()) {
+                if (!$latestRank) {
+                    return $this->themeError("Tema \"{$theme->name}\" hanya untuk Partisipan Battle Arena!");
+                }
+
+                if ($req['rank'] && $latestRank !== $req['rank']) {
                     return $this->themeError("Tema \"{$theme->name}\" terkunci! Kamu harus menjadi {$req['name']}.");
                 }
             } else {
