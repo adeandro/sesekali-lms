@@ -53,7 +53,7 @@
             <table class="w-full text-left">
                 <thead>
                     <tr class="border-b border-gray-100 bg-gray-50/50">
-                        <th class="px-6 py-4 text-xs font-black text-gray-500 uppercase tracking-widest">NIS/ID</th>
+                        <th class="px-6 py-4 text-xs font-black text-gray-500 uppercase tracking-widest">Identitas</th>
                         <th class="px-6 py-4 text-xs font-black text-gray-500 uppercase tracking-widest">Nama & Email</th>
                         <th class="px-6 py-4 text-xs font-black text-gray-500 uppercase tracking-widest">Peran & Status</th>
                         <th class="px-6 py-4 text-xs font-black text-gray-500 uppercase tracking-widest hidden md:table-cell">Mata Pelajaran</th>
@@ -64,9 +64,21 @@
                     @foreach($teachers as $teacher)
                     <tr class="hover:bg-blue-50/20 transition-colors group">
                         <td class="px-6 py-4 align-top">
-                            <span class="inline-block px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg text-xs font-bold tracking-wide mt-1">
-                                {{ $teacher->nis }}
-                            </span>
+                            <div class="flex flex-col gap-1 mt-1">
+                                <span class="inline-block px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg text-[9px] font-black uppercase tracking-widest">
+                                    ID: {{ $teacher->nis }}
+                                </span>
+                                @if($teacher->nip)
+                                <span class="inline-block px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-[9px] font-black uppercase tracking-widest">
+                                    NIP: {{ $teacher->nip }}
+                                </span>
+                                @endif
+                                @if($teacher->niy)
+                                <span class="inline-block px-2.5 py-1 bg-amber-50 text-amber-900 rounded-lg text-[9px] font-black uppercase tracking-widest">
+                                    NIY: {{ $teacher->niy }}
+                                </span>
+                                @endif
+                            </div>
                         </td>
                         <td class="px-6 py-4 align-top">
                             <div class="flex items-start gap-4">
@@ -82,6 +94,10 @@
                                 @if($teacher->role === 'superadmin')
                                     <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-100 text-[10px] font-black uppercase tracking-widest">
                                         <i class="fas fa-crown text-[8px]"></i> Super Admin
+                                    </span>
+                                @elseif($teacher->role === 'principal')
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-50 text-purple-700 border border-purple-100 text-[10px] font-black uppercase tracking-widest">
+                                        <i class="fas fa-user-tie text-[8px]"></i> Kepala Sekolah
                                     </span>
                                 @else
                                     <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-50 text-sky-700 border border-sky-100 text-[10px] font-black uppercase tracking-widest">

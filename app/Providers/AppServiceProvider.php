@@ -30,6 +30,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Schema::defaultStringLength(191);
+        \Carbon\Carbon::setLocale('id'); // Sprint 3: tgl tanda tangan raport Bahasa Indonesia
         Gate::policy(User::class, StudentPolicy::class);
         Gate::policy(Announcement::class, AnnouncementPolicy::class);
         Gate::policy(Message::class, MessagePolicy::class);

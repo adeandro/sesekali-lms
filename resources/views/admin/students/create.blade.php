@@ -140,6 +140,76 @@
                                 class="w-full px-5 py-3 bg-white border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-sm @error('class_group') border-rose-300 ring-2 ring-rose-100 @enderror"
                             >
                         </div>
+
+                        {{-- NISN --}}
+                        <div class="space-y-2">
+                            <label for="nisn" 
+                                   class="block text-xs font-bold text-gray-500 
+                                          uppercase tracking-widest ml-1">
+                                NISN <span class="text-gray-300 font-normal">(Opsional)</span>
+                            </label>
+                            <input type="text" id="nisn" name="nisn" 
+                                   value="{{ old('nisn') }}"
+                                   placeholder="Masukkan NISN siswa..."
+                                   class="w-full px-5 py-3 bg-white border border-gray-200 
+                                          rounded-2xl focus:outline-none focus:ring-2 
+                                          focus:ring-indigo-500 transition-all text-sm 
+                                          @error('nisn') border-rose-300 ring-2 ring-rose-100 @enderror">
+                        </div>
+
+                        {{-- Jenis Kelamin --}}
+                        <div class="space-y-2">
+                            <label for="gender" 
+                                   class="block text-xs font-bold text-gray-500 
+                                          uppercase tracking-widest ml-1">
+                                Jenis Kelamin <span class="text-gray-300 font-normal">(Opsional)</span>
+                            </label>
+                            <select id="gender" name="gender"
+                                    class="w-full px-5 py-3 bg-white border border-gray-200 
+                                           rounded-2xl focus:outline-none focus:ring-2 
+                                           focus:ring-indigo-500 transition-all text-sm 
+                                           appearance-none
+                                           @error('gender') border-rose-300 ring-2 ring-rose-100 @enderror">
+                                <option value="">-- Pilih Jenis Kelamin --</option>
+                                <option value="Laki-laki" {{ old('gender') == 'Laki-laki' ? 'selected' : '' }}>
+                                    Laki-laki
+                                </option>
+                                <option value="Perempuan" {{ old('gender') == 'Perempuan' ? 'selected' : '' }}>
+                                    Perempuan
+                                </option>
+                            </select>
+                        </div>
+
+                        {{-- Tempat Lahir --}}
+                        <div class="space-y-2">
+                            <label for="place_of_birth" 
+                                   class="block text-xs font-bold text-gray-500 
+                                          uppercase tracking-widest ml-1">
+                                Tempat Lahir <span class="text-gray-300 font-normal">(Opsional)</span>
+                            </label>
+                            <input type="text" id="place_of_birth" name="place_of_birth" 
+                                   value="{{ old('place_of_birth') }}"
+                                   placeholder="Contoh: Jakarta..."
+                                   class="w-full px-5 py-3 bg-white border border-gray-200 
+                                          rounded-2xl focus:outline-none focus:ring-2 
+                                          focus:ring-indigo-500 transition-all text-sm 
+                                          @error('place_of_birth') border-rose-300 ring-2 ring-rose-100 @enderror">
+                        </div>
+
+                        {{-- Tanggal Lahir --}}
+                        <div class="space-y-2">
+                            <label for="date_of_birth" 
+                                   class="block text-xs font-bold text-gray-500 
+                                          uppercase tracking-widest ml-1">
+                                Tanggal Lahir <span class="text-gray-300 font-normal">(Opsional)</span>
+                            </label>
+                            <input type="date" id="date_of_birth" name="date_of_birth" 
+                                   value="{{ old('date_of_birth') }}"
+                                   class="w-full px-5 py-3 bg-white border border-gray-200 
+                                          rounded-2xl focus:outline-none focus:ring-2 
+                                          focus:ring-indigo-500 transition-all text-sm 
+                                          @error('date_of_birth') border-rose-300 ring-2 ring-rose-100 @enderror">
+                        </div>
                     </div>
 
                     <div class="bg-indigo-50 rounded-2xl p-5 flex items-start gap-4 border border-indigo-100">

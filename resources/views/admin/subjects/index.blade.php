@@ -41,7 +41,7 @@
                 </div>
                 <div>
                     <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Total Mata Pelajaran</p>
-                    <h4 class="text-3xl font-black text-gray-900 leading-none tracking-tight">{{ $subjects->total() }}</h4>
+                    <h4 class="text-3xl font-black text-gray-900 leading-none tracking-tight">{{ \App\Models\Subject::count() }}</h4>
                 </div>
             </div>
 
@@ -52,70 +52,122 @@
                 </div>
                 <div>
                     <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Total Bank Soal</p>
-                    <h4 class="text-3xl font-black text-gray-900 leading-none tracking-tight">{{ $subjects->sum('questions_count') }}</h4>
+                    <h4 class="text-3xl font-black text-gray-900 leading-none tracking-tight">{{ \App\Models\Question::count() }}</h4>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Subjects Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        @forelse($subjects as $subject)
-            <div class="group bg-white rounded-[2.5rem] shadow-sm border border-gray-100 p-8 hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-2 transition-all duration-500 relative overflow-hidden">
-                <!-- Decorative Layer -->
-                <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-50/50 rounded-bl-[5rem] group-hover:bg-indigo-600 group-hover:scale-110 transition-all duration-700 -mr-8 -mt-8 opacity-50 group-hover:opacity-100"></div>
-                
-                <div class="relative z-10 flex flex-col h-full">
-                    <div class="w-16 h-16 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 mb-6 group-hover:bg-white/20 group-hover:text-white transition-all duration-500 shadow-sm">
-                        <i class="fas fa-book-reader text-2xl"></i>
-                    </div>
-                    
-                    <h3 class="text-xl font-black text-gray-900 leading-tight truncate group-hover:text-white transition-colors duration-500 pr-12" title="{{ $subject->name }}">
-                        {{ $subject->name }}
-                    </h3>
-                    
-                    <div class="mt-auto pt-8 flex items-end justify-between border-t border-gray-50 group-hover:border-white/20 transition-colors duration-500">
-                        <div class="flex flex-col">
-                            <span class="text-3xl font-black text-gray-900 group-hover:text-white transition-colors duration-500 leading-none mb-1">{{ $subject->questions_count }}</span>
-                            <span class="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] group-hover:text-white/60 transition-colors duration-500">Butir Soal</span>
-                        </div>
-                        
-                        <div class="flex items-center gap-2">
-                            <a href="{{ route('admin.subjects.edit', $subject) }}" class="w-12 h-12 flex items-center justify-center bg-gray-50 text-gray-400 rounded-2xl hover:bg-amber-500 hover:text-white hover:rotate-12 transition-all duration-300 shadow-sm" title="Edit Mapel">
-                                <i class="fas fa-pen-nib text-sm"></i>
-                            </a>
-                            <form action="{{ route('admin.subjects.destroy', $subject) }}" method="POST" id="deleteSubjectForm{{ $subject->id }}">
-                                @csrf
-                                @method('DELETE')
-                                <button type="button" onclick="deleteSubject('{{ $subject->name }}', {{ $subject->id }})" class="w-12 h-12 flex items-center justify-center bg-gray-50 text-gray-400 rounded-2xl hover:bg-rose-500 hover:text-white hover:-rotate-12 transition-all duration-300 shadow-sm" title="Hapus Mapel">
-                                    <i class="fas fa-trash-alt text-sm"></i>
-                                </button>
-                            </form>
-                        </div>
-                    </div>
+    <!-- Subjects List (Grouped by Category) -->
+    <div class="space-y-12">
+        @foreach(\App\Models\Subject::categories() as $categoryKey => $categoryName)
+            @php
+                $categorySubjects = \App\Models\Subject::where('category', $categoryKey)->withCount('questions')->orderBy('sort_order')->get();
+            @endphp
+            
+            <div class="space-y-6">
+                <div class="flex items-center gap-4 px-4">
+                    <div class="h-px flex-1 bg-gray-100"></div>
+                    <h3 class="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em]">{{ $categoryName }}</h3>
+                    <div class="h-px flex-1 bg-gray-100"></div>
                 </div>
-            </div>
-        @empty
-            <div class="col-span-full py-24 bg-white rounded-[3rem] border-4 border-dashed border-gray-50 flex flex-col items-center justify-center text-center px-8 group hover:border-indigo-100 transition-colors duration-500">
-                <div class="w-24 h-24 rounded-full bg-gray-50 flex items-center justify-center text-gray-200 mb-8 group-hover:bg-indigo-50 group-hover:text-indigo-200 transition-all duration-500">
-                    <i class="fas fa-layer-group text-5xl"></i>
-                </div>
-                <h4 class="text-xl font-black text-gray-400 group-hover:text-indigo-600 transition-colors duration-500 uppercase tracking-widest mb-2">Data Mapel Kosong</h4>
-                <p class="text-[11px] font-bold text-gray-300 group-hover:text-indigo-400 transition-colors duration-500 uppercase tracking-[0.3em] max-w-sm leading-relaxed">Sistem belum memiliki kategori mata pelajaran. Silakan tambahkan data baru untuk mulai membuat bank soal.</p>
-                <a href="{{ route('admin.subjects.create') }}" class="mt-8 px-8 py-4 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-100 flex items-center gap-3 group">
-                    <i class="fas fa-plus-circle text-xs"></i> Tambah Sekarang
-                </a>
-            </div>
-        @endforelse
-    </div>
 
-    <!-- Pagination -->
-    <div class="flex justify-center mt-12">
-        {{ $subjects->links() }}
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 sortable-container" data-category="{{ $categoryKey }}">
+                    @forelse($categorySubjects as $subject)
+                        <div class="group bg-white rounded-[2.5rem] shadow-sm border border-gray-100 p-8 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-500 relative overflow-hidden flex flex-col" data-id="{{ $subject->id }}">
+                            <!-- Decorative Circle -->
+                            <div class="absolute -top-4 -right-4 w-24 h-24 rounded-full opacity-0 group-hover:opacity-10 shadow-xl transition-all duration-500 
+                                {{ $categoryKey === 'umum' ? 'bg-indigo-600' : ($categoryKey === 'kejuruan' ? 'bg-emerald-600' : 'bg-purple-600') }}"></div>
+
+                            <div class="relative z-10 flex flex-col h-full">
+                                <div class="flex items-start justify-between mb-6">
+                                    <div class="w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-500 shadow-inner drag-handle cursor-move">
+                                        <i class="fas fa-bars text-sm"></i>
+                                    </div>
+                                    <div class="flex flex-col items-end gap-2">
+                                        <span class="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm border
+                                            {{ $categoryKey === 'umum' ? 'bg-blue-50 text-blue-600 border-blue-100' : ($categoryKey === 'kejuruan' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-purple-50 text-purple-600 border-purple-100') }}">
+                                            {{ $categoryKey === 'umum' ? 'Umum' : ($categoryKey === 'kejuruan' ? 'Kejuruan' : 'Muatan Lokal') }}
+                                        </span>
+                                        <span class="px-2 py-1 bg-amber-50 text-amber-600 border border-amber-100 rounded-md text-[8px] font-black tracking-widest">KKM: {{ $subject->kkm }}</span>
+                                    </div>
+                                </div>
+                                
+                                <h3 class="text-lg font-black text-gray-900 leading-tight group-hover:text-indigo-600 transition-colors duration-500 line-clamp-2 mb-2" title="{{ $subject->name }}">
+                                    {{ $subject->name }}
+                                </h3>
+                                
+                                <div class="mt-auto pt-6 flex items-center justify-between border-t border-gray-50">
+                                    <div class="flex flex-col">
+                                        <div class="flex items-baseline gap-1">
+                                            <span class="text-2xl font-black text-gray-900 leading-none">{{ $subject->questions_count }}</span>
+                                            <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Soal</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex items-center gap-2">
+                                        <a href="{{ route('admin.subjects.edit', $subject) }}" class="w-10 h-10 flex items-center justify-center bg-gray-50 text-gray-400 rounded-xl hover:bg-amber-500 hover:text-white transition-all duration-300 shadow-sm" title="Edit Mapel">
+                                            <i class="fas fa-pen text-xs"></i>
+                                        </a>
+                                        <form action="{{ route('admin.subjects.destroy', $subject) }}" method="POST" id="deleteSubjectForm{{ $subject->id }}">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="button" onclick="deleteSubject('{{ $subject->name }}', {{ $subject->id }})" class="w-10 h-10 flex items-center justify-center bg-gray-50 text-gray-400 rounded-xl hover:bg-rose-500 hover:text-white transition-all duration-300 shadow-sm" title="Hapus Mapel">
+                                                <i class="fas fa-trash-alt text-xs"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="col-span-full py-12 bg-gray-50/50 rounded-[2rem] border-2 border-dashed border-gray-100 flex flex-col items-center justify-center text-center px-8">
+                            <p class="text-[10px] font-black text-gray-300 uppercase tracking-widest leading-relaxed">Belum ada mapel di kategori ini</p>
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+        @endforeach
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const containers = document.querySelectorAll('.sortable-container');
+        
+        containers.forEach(el => {
+            Sortable.create(el, {
+                handle: '.drag-handle',
+                animation: 150,
+                ghostClass: 'opacity-50',
+                onEnd: function() {
+                    const ids = [...el.querySelectorAll('[data-id]')]
+                        .map(item => item.dataset.id);
+                    
+                    fetch('{{ route("admin.subjects.reorder") }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        },
+                        body: JSON.stringify({ ids })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (!data.success) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal Reorder',
+                                text: 'Terjadi kesalahan saat menyimpan urutan baru.'
+                            });
+                        }
+                    });
+                }
+            });
+        });
+    });
+
     function deleteSubject(name, id) {
         Swal.fire({
             title: '<span class="text-xl font-black uppercase tracking-widest">Hapus Mata Pelajaran?</span>',
@@ -220,5 +272,3 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 @endsection
-
-    

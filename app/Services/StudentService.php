@@ -69,12 +69,16 @@ class StudentService
             'email' => $email,
             'password' => Hash::make($password),
             'password_display' => $password,
-            'nis' => $nis,
-            'grade' => $grade,
-            'class_group' => $classGroup,
-            'photo' => $data['photo'] ?? null,
-            'role' => 'student',
-            'status' => 'Aktif',
+            'nis'            => $nis,
+            'nisn'           => $data['nisn'] ?? null,
+            'gender'         => $data['gender'] ?? null,
+            'place_of_birth' => $data['place_of_birth'] ?? null,
+            'date_of_birth'  => $data['date_of_birth'] ?? null,
+            'grade'          => $grade,
+            'class_group'    => $classGroup,
+            'photo'          => $data['photo'] ?? null,
+            'role'           => 'student',
+            'status'         => 'Aktif',
         ]);
 
         return [
@@ -109,13 +113,17 @@ class StudentService
             [                          // Update/create attributes
                 'name' => $data['name'],
                 'email' => $email,
-                'password' => Hash::make($password),
+                'password'       => Hash::make($password),
                 'password_display' => $password,
-                'grade' => $grade,
-                'class_group' => $classGroup,
-                'photo' => $data['photo'] ?? null,
-                'role' => 'student',
-                'status' => 'Aktif',
+                'nisn'           => $data['nisn'] ?? null,
+                'gender'         => $data['gender'] ?? null,
+                'place_of_birth' => $data['place_of_birth'] ?? null,
+                'date_of_birth'  => $data['date_of_birth'] ?? null,
+                'grade'          => $grade,
+                'class_group'    => $classGroup,
+                'photo'          => $data['photo'] ?? null,
+                'role'           => 'student',
+                'status'         => 'Aktif',
             ]
         );
 

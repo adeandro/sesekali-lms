@@ -34,17 +34,23 @@ class StudentExport implements FromCollection, WithHeadings, WithStyles, ShouldA
 
         return $query->get()->map(function (User $student) {
             return [
-                'student_id'    => $student->id,
-                'nis'           => $student->nis,
-                'name'          => $student->name,
-                'current_grade' => $student->grade,
-                'class_group'   => $student->class_group ?? '',
-                'class_name'    => $student->classroom?->name ?? (
-                    $student->grade && $student->class_group
-                        ? $student->grade . '-' . $student->class_group
-                        : '— Belum Dipetakan —'
-                ),
-                'status'        => $student->status,
+                'student_id'     => $student->id,
+                'nis'            => $student->nis,
+                'nisn'           => $student->nisn ?? '',
+                'name'           => $student->name,
+                'gender'         => $student->gender ?? '',
+                'place_of_birth' => $student->place_of_birth ?? '',
+                'date_of_birth'  => $student->date_of_birth
+                                    ? $student->date_of_birth->format('d/m/Y') 
+                                    : '',
+                'current_grade'  => $student->grade,
+                'class_group'    => $student->class_group ?? '',
+                'class_name'     => $student->classroom?->name ?? (
+                                    $student->grade && $student->class_group
+                                        ? $student->grade . '-' . $student->class_group
+                                        : '— Belum Dipetakan —'
+                                    ),
+                'status'         => $student->status,
             ];
         });
     }
@@ -54,7 +60,11 @@ class StudentExport implements FromCollection, WithHeadings, WithStyles, ShouldA
         return [
             'student_id',
             'NIS',
+            'NISN',
             'Nama',
+            'Jenis Kelamin',
+            'Tempat Lahir',
+            'Tanggal Lahir',
             'Grade Saat Ini',
             'Class Group',
             'Nama Kelas',

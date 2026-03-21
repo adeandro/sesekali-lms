@@ -26,6 +26,10 @@ class StoreStudentRequest extends FormRequest
             'name' => 'required|string|max:255',
             'grade' => 'required|string|in:10,11,12',
             'class_group' => 'required|string|max:10',
+            'nisn'           => 'nullable|string|max:20',
+            'gender'         => 'nullable|in:Laki-laki,Perempuan',
+            'place_of_birth' => 'nullable|string|max:100',
+            'date_of_birth'  => 'nullable|date',
             'photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ];
     }

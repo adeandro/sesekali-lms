@@ -5,6 +5,8 @@
 @section('page-title', 'Perbarui Soal')
 
 @section('content')
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
+
 <div class="max-w-5xl mx-auto space-y-8 animate-fadeIn pb-20">
     <!-- Breadcrumbs & Header -->
     <div class="flex flex-col gap-4">
@@ -127,35 +129,13 @@
                 </div>
             </div>
 
-            <div class="space-y-8 relative">
-                <div class="space-y-3">
-                    <label for="question_text" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Butir Pertanyaan <span class="text-rose-500">*</span></label>
-                    <textarea id="question_text" name="question_text" rows="8" class="block w-full px-8 py-6 bg-gray-50 border-none rounded-[2rem] focus:ring-4 focus:ring-indigo-500/10 text-base font-bold transition-all placeholder:text-gray-300 leading-relaxed @error('question_text') ring-2 ring-rose-500 @enderror" placeholder="Tuliskan pertanyaan secara lengkap..." required>{{ old('question_text', $question->question_text) }}</textarea>
-                    @error('question_text')<p class="text-rose-500 text-[10px] font-black mt-2 ml-1 uppercase italic tracking-tighter">{{ $message }}</p>@enderror
-                </div>
-
-                <div class="p-10 bg-gray-50/50 rounded-[2.5rem] border-4 border-dashed border-gray-100 hover:border-indigo-200 hover:bg-white transition-all duration-300 group/upload cursor-pointer relative overflow-hidden">
-                    <input type="file" id="question_image" name="question_image" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer z-10">
-                    <div class="flex flex-col items-center justify-center text-center space-y-4">
-                        <div class="w-16 h-16 rounded-[1.5rem] bg-white flex items-center justify-center text-gray-300 group-hover/upload:text-indigo-600 shadow-sm transition-all duration-500 group-hover/upload:rotate-6">
-                            <i class="fas fa-image text-2xl"></i>
-                        </div>
-                        <div>
-                            <p class="text-[11px] font-black text-gray-500 uppercase tracking-[0.2em] group-hover/upload:text-indigo-600">Klik / Seret Gambar Baru</p>
-                            <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-1 opacity-60">Opsional • Format: JPG, PNG, GIF (Maks 2MB)</p>
-                        </div>
-                    </div>
-                    <div id="question_image_preview" class="mt-8 flex justify-center @if(!$question->question_image) hidden @endif">
-                        @if($question->question_image)
-                            <div class="relative group/prev">
-                                <img src="{{ asset($question->question_image) }}" class="max-h-48 rounded-[1.5rem] shadow-2xl border-4 border-white animate-pop">
-                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover/prev:opacity-100 transition-opacity rounded-[1.5rem] flex items-center justify-center">
-                                    <i class="fas fa-check text-white text-2xl"></i>
-                                </div>
-                            </div>
-                        @endif
-                    </div>
-                </div>
+            <div class="space-y-3">
+                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Butir Pertanyaan <span class="text-rose-500">*</span></label>
+                {{-- Hidden textarea --}}
+                <textarea id="question_text" name="question_text" class="hidden">{{ old('question_text', $question->question_text) }}</textarea>
+                {{-- Quill editor --}}
+                <div id="quill-question" class="bg-gray-50 rounded-[2rem] @error('question_text') ring-2 ring-rose-500 @enderror" style="min-height: 200px;"></div>
+                @error('question_text')<p class="text-rose-500 text-[10px] font-black mt-2 ml-1 uppercase italic tracking-tighter">{{ $message }}</p>@enderror
             </div>
         </div>
 
@@ -174,7 +154,7 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 relative mb-12">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 relative mb-20 overflow-visible">
                     @foreach(['A' => 'option_a', 'B' => 'option_b', 'C' => 'option_c', 'D' => 'option_d', 'E' => 'option_e'] as $label => $name)
                         <div class="p-8 bg-gray-50 rounded-[2.5rem] border border-gray-100 space-y-6 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-500 group/opt">
                             <div class="flex items-center justify-between">
@@ -186,27 +166,15 @@
                                 </div>
                             </div>
                             
-                            <input type="text" name="{{ $name }}" id="{{ $name }}" value="{{ old($name, $question->$name) }}" 
-                                class="block w-full px-6 py-4 bg-white border-none rounded-2xl focus:ring-4 focus:ring-indigo-500/10 text-sm font-bold transition-all placeholder:text-gray-300" 
-                                placeholder="Ketik teks pilihan {{ $label }}...">
-                            
-                            <div class="relative group/cam h-24 bg-white rounded-2xl border-2 border-dashed border-gray-100 flex items-center justify-center cursor-pointer hover:border-indigo-200 transition-all overflow-hidden">
-                                <input type="file" name="{{ $name }}_image" id="{{ $name }}_image" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer z-10">
-                                <div class="flex items-center gap-3 text-gray-300 group-hover/cam:text-indigo-500 transition-colors">
-                                    <i class="fas fa-camera text-sm"></i>
-                                    <span class="text-[9px] font-black uppercase tracking-widest">Gambar Opsi {{ $label }}</span>
-                                </div>
-                                <div id="{{ $name }}_image_preview" class="absolute inset-0 flex items-center justify-center bg-white pointer-events-none @if(!$question->{$name . '_image'}) hidden @endif">
-                                    @if($question->{$name . '_image'})
-                                        <img src="{{ asset($question->{$name . '_image'}) }}" class="max-h-20 rounded-lg shadow-sm border-2 border-white animate-pop">
-                                    @endif
-                                </div>
-                            </div>
+                            {{-- Hidden textarea --}}
+                            <textarea id="{{ $name }}" name="{{ $name }}" class="hidden">{{ old($name, $question->$name) }}</textarea>
+                            {{-- Quill editor --}}
+                            <div id="quill-{{ $name }}" class="bg-white rounded-2xl" style="min-height: 80px;"></div>
                         </div>
                     @endforeach
                 </div>
 
-                <div class="p-10 bg-indigo-600 rounded-[2.5rem] shadow-2xl shadow-indigo-200 relative overflow-hidden group/key">
+                <div class="p-10 bg-indigo-600 rounded-[2.5rem] shadow-2xl shadow-indigo-200 relative overflow-hidden group/key z-50">
                     <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-xl group-hover/key:scale-150 transition-transform duration-700"></div>
                     
                     <div class="flex flex-col lg:flex-row items-center justify-between gap-10 relative">
@@ -242,7 +210,10 @@
             </div>
 
             <div class="space-y-10 relative">
-                <textarea id="explanation" name="explanation" rows="5" class="block w-full px-8 py-6 bg-gray-50 border-none rounded-[2rem] focus:ring-4 focus:ring-indigo-500/10 text-sm font-bold transition-all placeholder:text-gray-300 leading-relaxed" placeholder="Tuliskan langkah-langkah penyelesaian atau penjelasan di sini...">{{ old('explanation', $question->explanation) }}</textarea>
+                {{-- Hidden textarea --}}
+                <textarea id="explanation" name="explanation" class="hidden">{{ old('explanation', $question->explanation) }}</textarea>
+                {{-- Quill editor --}}
+                <div id="quill-explanation" class="bg-gray-50 rounded-[2rem]" style="min-height: 150px;"></div>
                 
                 <div class="flex flex-col-reverse md:flex-row gap-5 pt-10 border-t-2 border-gray-50">
                     <a href="{{ route('admin.questions.index') }}" class="flex-1 h-16 bg-gray-50 text-gray-400 text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-gray-100 hover:text-gray-500 transition-all flex items-center justify-center">
@@ -257,70 +228,365 @@
     </form>
 </div>
 
+<link href="https://fonts.googleapis.com/css2?family=Amiri&display=swap" rel="stylesheet">
+{{-- Vite bundled Quill & ImageResize --}}
 <script>
-    const questionTypeSelect = document.getElementById('question_type');
-    const multipleChoiceSection = document.getElementById('multipleChoiceSection');
-    const optionInputs = document.querySelectorAll('[name^="option_"]:not([name*="_image"])');
-    const overlay = document.getElementById('loadingOverlay');
-    const questionForm = document.getElementById('questionForm');
+// ── Daftarkan custom font ──────────────────────────────────────
+const Font = Quill.import('formats/font');
+Font.whitelist = [
+    false, 'arial', 'times-new-roman', 'calibri',
+    'georgia', 'verdana', 'courier-new', 'amiri'
+];
+Quill.register(Font, true);
 
-    function toggleMultipleChoice() {
-        if (questionTypeSelect.value === 'multiple_choice') {
-            multipleChoiceSection.classList.remove('hidden');
-            multipleChoiceSection.classList.add('animate-fadeIn');
-            optionInputs.forEach((input, index) => {
-                if(index < 4) input.required = true;
-            });
-        } else {
-            multipleChoiceSection.classList.add('hidden');
-            optionInputs.forEach(input => input.required = false);
+// ── Toolbar config ─────────────────────────────────────────────
+const toolbarFull = [
+    [{ 'font': [false, 'arial', 'times-new-roman', 'calibri', 
+                'georgia', 'verdana', 'courier-new', 'amiri'] }],
+    [{ 'size': ['small', false, 'large', 'huge'] }],
+    ['bold', 'italic', 'underline', 'strike'],
+    [{ 'script': 'sub' }, { 'script': 'super' }],
+    [{ 'color': [] }, { 'background': [] }],
+    [{ 'align': [] }],
+    [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+    ['link', 'image', 'clean'],
+];
+
+const toolbarMinimal = [
+    ['bold', 'italic', 'underline'],
+    [{ 'script': 'sub' }, { 'script': 'super' }],
+    [{ 'color': [] }],
+    ['image', 'clean'],
+];
+
+// ── Image Handler ──────────────────────────────────────────────
+function createImageHandler(quillInstance) {
+    return function() {
+        const input = document.createElement('input');
+        input.setAttribute('type', 'file');
+        input.setAttribute('accept', 'image/*');
+        input.click();
+        input.onchange = function() {
+            const file = input.files[0];
+            if (!file) return;
+            if (file.size > 2 * 1024 * 1024) {
+                alert('Ukuran gambar maksimal 2MB.');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const range = quillInstance.getSelection(true);
+                quillInstance.insertEmbed(range.index, 'image', e.target.result);
+                quillInstance.setSelection(range.index + 1);
+                syncQuill();
+            };
+            reader.readAsDataURL(file);
+        };
+    };
+}
+
+// ── Inisialisasi Quill per field ──────────────────────────────
+function initQuill(editorId, textareaId, toolbar) {
+    const quill = new Quill('#' + editorId, {
+        theme: 'snow',
+        modules: {
+            toolbar: {
+                container: toolbar,
+            },
+                    restore: 'Reset',
+                },
+            },
         }
+    });
+
+    // Set image handler setelah inisialisasi
+    quill.getModule('toolbar').addHandler('image', createImageHandler(quill));
+
+    // Load existing content
+    const textarea = document.getElementById(textareaId);
+    if (textarea && textarea.value) {
+        quill.clipboard.dangerouslyPasteHTML(textarea.value);
     }
 
-    questionForm.addEventListener('submit', () => {
+    // Sync on change
+    quill.on('text-change', syncQuill);
+
+    return quill;
+}
+
+// ── Init semua editor ─────────────────────────────────────────
+const quillQuestion    = initQuill('quill-question', 'question_text', toolbarFull);
+const quillOptionA     = initQuill('quill-option_a', 'option_a', toolbarMinimal);
+const quillOptionB     = initQuill('quill-option_b', 'option_b', toolbarMinimal);
+const quillOptionC     = initQuill('quill-option_c', 'option_c', toolbarMinimal);
+const quillOptionD     = initQuill('quill-option_d', 'option_d', toolbarMinimal);
+const quillOptionE     = initQuill('quill-option_e', 'option_e', toolbarMinimal);
+const quillExplanation = initQuill('quill-explanation', 'explanation', toolbarFull);
+
+// ── Deteksi RTL otomatis ──────────────────────────────────────
+function isArabicText(text) {
+    const arabicRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/;
+    return arabicRegex.test(text);
+}
+
+function applyDirectionToLine(quillInstance, index) {
+    const [line] = quillInstance.getLine(index);
+    if (!line) return;
+
+    const lineText = line.domNode?.textContent ?? '';
+    const isArabic = isArabicText(lineText);
+
+    const lineIndex = quillInstance.getIndex(line);
+    const lineLength = line.length();
+
+    if (isArabic) {
+        quillInstance.formatLine(lineIndex, lineLength, {
+            'direction': 'rtl',
+            'align': 'right'
+        }, 'user');
+    }
+}
+
+function addRtlListener(quillInstance) {
+    quillInstance.on('text-change', function(delta, oldDelta, source) {
+        if (source !== 'user') return;
+        const selection = quillInstance.getSelection();
+        if (!selection) return;
+        applyDirectionToLine(quillInstance, selection.index);
+    });
+}
+
+// Pasang RTL listener ke semua editor
+addRtlListener(quillQuestion);
+addRtlListener(quillOptionA);
+addRtlListener(quillOptionB);
+addRtlListener(quillOptionC);
+addRtlListener(quillOptionD);
+addRtlListener(quillOptionE);
+addRtlListener(quillExplanation);
+
+const allEditors = {
+    'question_text': quillQuestion,
+    'option_a':      quillOptionA,
+    'option_b':      quillOptionB,
+    'option_c':      quillOptionC,
+    'option_d':      quillOptionD,
+    'option_e':      quillOptionE,
+    'explanation':   quillExplanation,
+};
+
+// ── Sync semua editor ke textarea ─────────────────────────────
+function syncQuill() {
+    Object.entries(allEditors).forEach(([id, editor]) => {
+        const content = editor.root.innerHTML;
+        document.getElementById(id).value = 
+            (content === '<p><br></p>' || content.trim() === '') 
+            ? '' : content;
+    });
+}
+
+// ── Sync + validasi sebelum submit ────────────────────────────
+document.getElementById('questionForm').addEventListener('submit', function(e) {
+    syncQuill();
+
+    // Validasi question_text tidak kosong
+    const questionContent = quillQuestion.root.innerHTML;
+    if (questionContent === '<p><br></p>' || questionContent.trim() === '') {
+        e.preventDefault();
+        alert('Butir pertanyaan tidak boleh kosong.');
+        return false;
+    }
+
+    // Tampilkan loading overlay
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) {
         overlay.classList.remove('hidden');
         overlay.classList.add('flex');
-    });
-
-    questionTypeSelect.addEventListener('change', toggleMultipleChoice);
-    window.addEventListener('load', toggleMultipleChoice);
-
-    function setupImagePreview(inputId, previewId) {
-        const input = document.getElementById(inputId);
-        const preview = document.getElementById(previewId);
-        
-        if (input && preview) {
-            input.addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(event) {
-                        preview.innerHTML = `
-                            <div class="relative group/prev">
-                                <img src="${event.target.result}" class="max-h-48 rounded-[1.5rem] shadow-2xl border-4 border-white animate-pop">
-                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover/prev:opacity-100 transition-opacity rounded-[1.5rem] flex items-center justify-center">
-                                    <i class="fas fa-check text-white text-2xl"></i>
-                                </div>
-                            </div>
-                        `;
-                        preview.classList.remove('hidden');
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-        }
     }
+});
 
-    setupImagePreview('question_image', 'question_image_preview');
-    ['option_a', 'option_b', 'option_c', 'option_d', 'option_e'].forEach(opt => {
-        setupImagePreview(`${opt}_image`, `${opt}_image_preview`);
-    });
+// ── Toggle multiple choice section ───────────────────────────
+const questionTypeSelect = document.getElementById('question_type');
+const multipleChoiceSection = document.getElementById('multipleChoiceSection');
+
+function toggleMultipleChoice() {
+    if (questionTypeSelect.value === 'multiple_choice') {
+        multipleChoiceSection.classList.remove('hidden');
+        multipleChoiceSection.classList.add('animate-fadeIn');
+    } else {
+        multipleChoiceSection.classList.add('hidden');
+    }
+}
+
+questionTypeSelect.addEventListener('change', toggleMultipleChoice);
+window.addEventListener('load', toggleMultipleChoice);
 </script>
 
 <style>
+    /* ── Quill styling untuk soal ── */
+    .ql-toolbar.ql-snow {
+        border: none;
+        border-bottom: 1px solid #f3f4f6;
+        border-radius: 2rem 2rem 0 0;
+        background: white;
+        padding: 8px 12px;
+    }
+    .ql-container.ql-snow {
+        border: none;
+        border-radius: 0 0 2rem 2rem;
+    }
+    #quill-question .ql-editor { min-height: 180px; font-size: 13pt; font-family: Arial, sans-serif; }
+    #quill-option_a .ql-editor,
+    #quill-option_b .ql-editor,
+    #quill-option_c .ql-editor,
+    #quill-option_d .ql-editor,
+    #quill-option_e .ql-editor { min-height: 60px; font-size: 11pt; font-family: Arial, sans-serif; }
+    #quill-explanation .ql-editor { min-height: 120px; font-size: 11pt; font-family: Arial, sans-serif; }
+    .ql-editor img { max-width: 100%; height: auto; border-radius: 8px; margin: 4px 0; }
+
+    /* ── Self-hosted font Amiri ── */
+    @font-face {
+        font-family: 'Amiri';
+        src: url('/fonts/Amiri-Regular.ttf') format('truetype');
+        font-weight: 400;
+        font-style: normal;
+    }
+    @font-face {
+        font-family: 'Amiri';
+        src: url('/fonts/Amiri-Bold.ttf') format('truetype');
+        font-weight: 700;
+        font-style: normal;
+    }
+    @font-face {
+        font-family: 'Amiri';
+        src: url('/fonts/Amiri-Italic.ttf') format('truetype');
+        font-weight: 400;
+        font-style: italic;
+    }
+    @font-face {
+        font-family: 'Amiri';
+        src: url('/fonts/Amiri-BoldItalic.ttf') format('truetype');
+        font-weight: 700;
+        font-style: italic;
+    }
+
+    /* ── Mapping class Quill ke font Amiri ── */
+    .ql-font-amiri,
+    .ql-font-amiri * {
+        font-family: 'Amiri', serif !important;
+        font-size: 18pt !important;
+        line-height: 2 !important;
+    }
+
+    /* ── Label font di toolbar dropdown (Fix) ── */
+    .ql-snow .ql-picker.ql-font .ql-picker-label::before,
+    .ql-snow .ql-picker.ql-font .ql-picker-item::before { content: 'Sans Serif'; }
+
+    .ql-snow .ql-picker.ql-font .ql-picker-label[data-value="arial"]::before,
+    .ql-snow .ql-picker.ql-font .ql-picker-item[data-value="arial"]::before { content: 'Arial'; font-family: Arial, sans-serif; }
+
+    .ql-snow .ql-picker.ql-font .ql-picker-label[data-value="times-new-roman"]::before,
+    .ql-snow .ql-picker.ql-font .ql-picker-item[data-value="times-new-roman"]::before { content: 'Times New Roman'; font-family: 'Times New Roman', serif; }
+
+    .ql-snow .ql-picker.ql-font .ql-picker-label[data-value="calibri"]::before,
+    .ql-snow .ql-picker.ql-font .ql-picker-item[data-value="calibri"]::before { content: 'Calibri'; font-family: Calibri, sans-serif; }
+
+    .ql-snow .ql-picker.ql-font .ql-picker-label[data-value="georgia"]::before,
+    .ql-snow .ql-picker.ql-font .ql-picker-item[data-value="georgia"]::before { content: 'Georgia'; font-family: Georgia, serif; }
+
+    .ql-snow .ql-picker.ql-font .ql-picker-label[data-value="verdana"]::before,
+    .ql-snow .ql-picker.ql-font .ql-picker-item[data-value="verdana"]::before { content: 'Verdana'; font-family: Verdana, sans-serif; }
+
+    .ql-snow .ql-picker.ql-font .ql-picker-label[data-value="courier-new"]::before,
+    .ql-snow .ql-picker.ql-font .ql-picker-item[data-value="courier-new"]::before { content: 'Courier New'; font-family: 'Courier New', monospace; }
+
+    .ql-snow .ql-picker.ql-font .ql-picker-label[data-value="amiri"]::before,
+    .ql-snow .ql-picker.ql-font .ql-picker-item[data-value="amiri"]::before { 
+        content: 'Amiri (Arab)' !important; 
+        font-family: 'Amiri', serif !important; 
+    }
+
+    /* ── RTL support di editor ── */
+    .ql-editor [dir="rtl"],
+    .ql-font-amiri {
+        text-align: right;
+        direction: rtl;
+        font-family: 'Amiri', serif !important;
+        font-size: 18pt;
+        line-height: 2;
+    }
+
+    /* ── Animasi ── */
     .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
-    .animate-pop { animation: pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes pop { from { opacity: 0; transform: scale(0.9) rotate(-2deg); } to { opacity: 1; transform: scale(1) rotate(0); } }
+    @keyframes fadeIn { 
+        from { opacity: 0; transform: translateY(20px); } 
+        to { opacity: 1; transform: translateY(0); } 
+    }
+
+    /* ── Custom font mapping ── */
+    .ql-editor .ql-font-arial { font-family: Arial, sans-serif !important; }
+    .ql-editor .ql-font-times-new-roman { font-family: 'Times New Roman', serif !important; }
+    .ql-editor .ql-font-calibri { font-family: Calibri, sans-serif !important; }
+    .ql-editor .ql-font-georgia { font-family: Georgia, serif !important; }
+    .ql-editor .ql-font-verdana { font-family: Verdana, sans-serif !important; }
+    .ql-editor .ql-editor .ql-font-courier-new { font-family: 'Courier New', monospace !important; }
+
+    /* ── Fix overlap layout opsi jawaban ── */
+    #multipleChoiceSection .grid {
+        overflow: visible !important;
+    }
+
+    /* Pastikan toolbar Quill berada di atas elemen sekitarnya jika absolute */
+    .ql-toolbar.ql-snow {
+        position: relative;
+        z-index: 10;
+    }
+    .ql-container.ql-snow {
+        position: relative;
+        z-index: 1;
+    }
+    #multipleChoiceSection .ql-toolbar.ql-snow {
+        position: relative;
+        z-index: 11;
+    }
+
+    /* Grid tidak clip konten Quill */
+    .grid.grid-cols-1.lg\\:grid-cols-2 {
+        overflow: visible !important;
+    }
+
+    /* Image resize overlay harus di atas semua card */
+    .quill-image-resizer,
+    .ql-resizer,
+    [class*="resizer"] {
+        z-index: 9999 !important;
+    }
+
+    /* ── Quill image resize legacy styles (optional to keep or remove if conflicts) ── */
+    .ql-editor img {
+        cursor: pointer;
+        max-width: 100%;
+    }
+
+    /* Tambah jarak bawah agar tidak overlap card kunci jawaban */
+    #multipleChoiceSection .grid.grid-cols-1 {
+        padding-bottom: 20px;
+    }
+
+    /* Pastikan container Quill tidak clip toolbar */
+    #quill-option_a,
+    #quill-option_b,
+    #quill-option_c,
+    #quill-option_d,
+    #quill-option_e {
+        position: relative;
+        z-index: auto;
+        overflow: visible;
+    }
+
+    /* Card opsi dengan Quill editor butuh overflow visible */
+    #multipleChoiceSection .bg-gray-50.rounded-\[2\.5rem\] {
+        overflow: visible !important;
+    }
 </style>
 @endsection

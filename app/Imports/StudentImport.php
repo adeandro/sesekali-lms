@@ -57,16 +57,23 @@ class StudentImport implements ToCollection, WithHeadingRow
         $fileEmails = [];
 
         foreach ($collection as $row) {
+            /** @var array $row */
+            $row = $row instanceof Collection ? $row->toArray() : (array) $row;
+            
             try {
                 $nisValue = $row['nis'] ?? '';
                 $nisString = trim((string) $nisValue);
 
                 $data = [
-                    'nis' => $nisString,
-                    'name' => trim($row['nama'] ?? $row['full_name'] ?? $row['name'] ?? ''),
-                    'grade' => $row['grade_saat_ini'] ?? $row['grade'] ?? null,
-                    'class_group' => $row['class_group'] ?? $row['class group'] ?? null,
-                    'photo' => $row['foto'] ?? $row['photo'] ?? null,
+                    'nis'            => $nisString,
+                    'name'           => trim($row['nama'] ?? $row['full_name'] ?? $row['name'] ?? ''),
+                    'grade'          => $row['grade_saat_ini'] ?? $row['grade'] ?? null,
+                    'class_group'    => $row['class_group'] ?? $row['class group'] ?? null,
+                    'photo'          => $row['foto'] ?? $row['photo'] ?? null,
+                    'nisn'           => isset($row['nisn']) ? trim((string)$row['nisn']) : null,
+                    'gender'         => $row['jenis_kelamin'] ?? $row['gender'] ?? null,
+                    'place_of_birth' => $row['tempat_lahir'] ?? $row['place_of_birth'] ?? null,
+                    'date_of_birth'  => $row['tanggal_lahir'] ?? $row['date_of_birth'] ?? null,
                 ];
 
                 // Skip empty rows
@@ -103,11 +110,16 @@ class StudentImport implements ToCollection, WithHeadingRow
                     // UPDATE path
                     $user = User::find($existingId);
                     $user->update([
-                        'name' => $data['name'],
-                        'grade' => $data['grade'],
-                        'class_group' => $data['class_group'],
-                        'class_id' => $classId,
-                        'photo' => $data['photo'] ?? $user->photo,
+                        'name'           => $data['name'],
+                        'grade'          => $data['grade'],
+                        'class_group'    => $data['class_group'],
+                        'class_id'       => $classId,
+                        'photo'          => $data['photo'] ?? $user->photo,
+                        'nisn'           => $data['nisn'] ?? $user->nisn,
+                        'gender'         => $data['gender'] ?? $user->gender,
+                        'place_of_birth' => $data['place_of_birth'] ?? $user->place_of_birth,
+                        'date_of_birth'  => !empty($data['date_of_birth']) 
+                                            ? $data['date_of_birth'] : $user->date_of_birth,
                     ]);
 
                     // Tambahkan ke daftar untuk ditampilkan di UI
@@ -138,19 +150,24 @@ class StudentImport implements ToCollection, WithHeadingRow
 
                 // Prepare for bulk insert
                 $insertData = [
-                    'name' => $data['name'],
-                    'email' => $email,
-                    'password' => $hashedPassword,
+                    'name'           => $data['name'],
+                    'email'          => $email,
+                    'password'       => $hashedPassword,
                     'password_display' => $defaultPassword,
-                    'nis' => $data['nis'],
-                    'grade' => $data['grade'],
-                    'class_group' => $data['class_group'],
-                    'class_id' => $classId,
-                    'photo' => $data['photo'],
-                    'role' => 'student',
-                    'status' => 'Aktif',
-                    'created_at' => now(),
-                    'updated_at' => now(),
+                    'nis'            => $data['nis'],
+                    'nisn'           => $data['nisn'] ?? null,
+                    'gender'         => $data['gender'] ?? null,
+                    'place_of_birth' => $data['place_of_birth'] ?? null,
+                    'date_of_birth'  => !empty($data['date_of_birth']) 
+                                        ? $data['date_of_birth'] : null,
+                    'grade'          => $data['grade'],
+                    'class_group'    => $data['class_group'],
+                    'class_id'       => $classId,
+                    'photo'          => $data['photo'],
+                    'role'           => 'student',
+                    'status'         => 'Aktif',
+                    'created_at'     => now(),
+                    'updated_at'     => now(),
                 ];
                 
                 $dataToInsert[] = $insertData;

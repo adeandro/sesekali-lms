@@ -25,6 +25,12 @@ class User extends Authenticatable
         'email',
         'password',
         'nis',
+        'nip',
+        'niy',
+        'nisn',
+        'gender',
+        'place_of_birth',
+        'date_of_birth',
         'jenjang',
         'grade',
         'grade_level',
@@ -48,6 +54,8 @@ class User extends Authenticatable
         'career_exp',
         'consecutive_exam_weeks',
         'last_exam_week',
+        'signature',
+        'is_signature_active',
     ];
 
     /**
@@ -71,6 +79,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_signature_active' => 'boolean',
+            'date_of_birth' => 'date',
         ];
     }
 
@@ -162,6 +171,41 @@ class User extends Authenticatable
     public function actionLogs()
     {
         return $this->hasMany(ActionLog::class, 'admin_id');
+    }
+
+    /**
+     * Report Data relationships (Sprint 1.5)
+     */
+    public function attendance(): HasMany
+    {
+        return $this->hasMany(StudentAttendance::class, 'student_id');
+    }
+
+    public function personality(): HasMany
+    {
+        return $this->hasMany(StudentPersonality::class, 'student_id');
+    }
+
+    public function extracurriculars(): HasMany
+    {
+        return $this->hasMany(StudentExtracurricular::class, 'student_id');
+    }
+
+    /**
+     * Get classes where this user is the homeroom teacher.
+     */
+    public function homeroomClasses(): HasMany
+    {
+        return $this->hasMany(ClassRoom::class, 'homeroom_teacher_id');
+    }
+
+    /**
+     * Check if the user is a homeroom teacher (or superadmin).
+     */
+    public function isHomeroom(): bool
+    {
+        if ($this->role === 'superadmin') return true;
+        return $this->role === 'teacher' && $this->homeroomClasses()->exists();
     }
 
     // ── Communication Hub Relationships ──────────────────────
@@ -447,6 +491,6 @@ class User extends Authenticatable
      */
     public function isAdmin(): bool
     {
-        return in_array($this->role, ['superadmin', 'teacher']);
+        return in_array($this->role, ['superadmin', 'teacher', 'principal']);
     }
 }

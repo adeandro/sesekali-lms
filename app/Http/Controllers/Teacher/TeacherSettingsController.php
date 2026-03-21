@@ -29,12 +29,12 @@ class TeacherSettingsController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'username' => 'required|string|max:255|unique:users,username,' . $user->id,
+            'nis' => 'required|string|max:255|unique:users,nis,' . $user->id,
             'photo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'signature' => 'nullable|image|mimes:png,jpg,jpeg|max:2048',
             'is_signature_active' => 'nullable|in:0,1',
         ], [
-            'username.unique' => 'NIP/Username ini sudah digunakan oleh pengguna lain.',
+            'nis.unique' => 'NIP/Kode Guru ini sudah digunakan oleh pengguna lain.',
             'photo.image' => 'File harus berupa gambar.',
             'photo.mimes' => 'Format gambar harus JPG, JPEG, atau PNG.',
             'photo.max' => 'Ukuran gambar maksimal 2MB.',
@@ -44,7 +44,7 @@ class TeacherSettingsController extends Controller
         ]);
 
         $user->name = $validated['name'];
-        $user->username = $validated['username'];
+        $user->nis = $validated['nis'];
 
         if ($request->hasFile('photo')) {
             // Delete old photo if exists and not default

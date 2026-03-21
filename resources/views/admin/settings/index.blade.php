@@ -65,10 +65,50 @@
                             <input type="text" name="school_phone" id="school_phone" value="{{ old('school_phone', $allSettings['school_phone'] ?? '') }}" 
                                 class="w-full h-14 bg-gray-50 border-transparent rounded-2xl px-6 text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all">
                         </div>
-                        <div class="space-y-4 col-span-full">
-                            <label for="school_address" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Alamat Instansi / Sekolah</label>
-                            <input type="text" name="school_address" id="school_address" value="{{ old('school_address', $allSettings['school_address'] ?? '') }}" 
-                                class="w-full h-14 bg-gray-50 border-transparent rounded-2xl px-6 text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all">
+                        {{-- Alamat Sekolah Section --}}
+                        <div class="col-span-full border-t border-gray-50 pt-8 mt-4">
+                            <h4 class="text-xs font-black text-indigo-600 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                                <i class="fas fa-map-marked-alt"></i> Detail Alamat Sekolah
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div class="space-y-4 col-span-full">
+                                    <label for="school_address" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Alamat Jalan</label>
+                                    <input type="text" name="school_address" id="school_address" value="{{ old('school_address', $allSettings['school_address'] ?? '') }}" 
+                                        class="w-full h-14 bg-gray-50 border-transparent rounded-2xl px-6 text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all" placeholder="Contoh: Jl. Raya Pendidikan No. 123">
+                                </div>
+                                <div class="space-y-4">
+                                    <label for="school_province" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Provinsi</label>
+                                    <input type="text" name="school_province" id="school_province" value="{{ old('school_province', $allSettings['school_province'] ?? '') }}" 
+                                        class="w-full h-14 bg-gray-50 border-transparent rounded-2xl px-6 text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all" placeholder="Contoh: Jawa Barat">
+                                </div>
+                                <div class="space-y-4">
+                                    <label for="school_city" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Kabupaten / Kota</label>
+                                    <input type="text" name="school_city" id="school_city" value="{{ old('school_city', $allSettings['school_city'] ?? '') }}" 
+                                        class="w-full h-14 bg-gray-50 border-transparent rounded-2xl px-6 text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all" placeholder="Contoh: Bandung">
+                                </div>
+                                <div class="space-y-4">
+                                    <label for="school_village" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Desa / Kelurahan</label>
+                                    <input type="text" name="school_village" id="school_village" value="{{ old('school_village', $allSettings['school_village'] ?? '') }}" 
+                                        class="w-full h-14 bg-gray-50 border-transparent rounded-2xl px-6 text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all" placeholder="Contoh: Sukajadi">
+                                </div>
+                                <div class="grid grid-cols-3 gap-4">
+                                    <div class="space-y-4">
+                                        <label for="school_rt" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">RT</label>
+                                        <input type="text" name="school_rt" id="school_rt" value="{{ old('school_rt', $allSettings['school_rt'] ?? '') }}" 
+                                            class="w-full h-14 bg-gray-50 border-transparent rounded-2xl px-4 text-sm font-bold text-center text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all" placeholder="01">
+                                    </div>
+                                    <div class="space-y-4">
+                                        <label for="school_rw" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">RW</label>
+                                        <input type="text" name="school_rw" id="school_rw" value="{{ old('school_rw', $allSettings['school_rw'] ?? '') }}" 
+                                            class="w-full h-14 bg-gray-50 border-transparent rounded-2xl px-4 text-sm font-bold text-center text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all" placeholder="02">
+                                    </div>
+                                    <div class="space-y-4">
+                                        <label for="school_postal_code" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Kode Pos</label>
+                                        <input type="text" name="school_postal_code" id="school_postal_code" value="{{ old('school_postal_code', $allSettings['school_postal_code'] ?? '') }}" 
+                                            class="w-full h-14 bg-gray-50 border-transparent rounded-2xl px-4 text-sm font-bold text-center text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all" placeholder="12345">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div class="space-y-4">
                             <label for="report_header_subtitle" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Subtitle Kop Laporan</label>
@@ -98,6 +138,35 @@
                                     :class="loginHeader ? 'bg-indigo-600' : 'bg-gray-200'">
                                     <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
                                         :class="loginHeader ? 'translate-x-5' : 'translate-x-0'"></span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="space-y-3" x-data="{ watermarkEnabled: {{ (old('watermark_enabled', $allSettings['watermark_enabled'] ?? 'off') == 'on') ? 'true' : 'false' }} }">
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Watermark Logo Rapor</label>
+                            <div class="flex items-center justify-between w-full h-14 bg-gray-50 rounded-2xl px-6 border border-transparent transition-all group-hover:border-indigo-100">
+                                <span class="text-xs font-bold text-gray-900 uppercase tracking-widest" x-text="watermarkEnabled ? 'Aktif' : 'Nonaktif'"></span>
+                                <input type="hidden" name="watermark_enabled" :value="watermarkEnabled ? 'on' : 'off'">
+                                <button type="button" @click="watermarkEnabled = !watermarkEnabled" 
+                                    class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2"
+                                    :class="watermarkEnabled ? 'bg-indigo-600' : 'bg-gray-200'">
+                                    <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                                        :class="watermarkEnabled ? 'translate-x-5' : 'translate-x-0'"></span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="space-y-3" x-data="{ reportDecimal: {{ (old('report_decimal', $allSettings['report_decimal'] ?? '0') == '1') ? 'true' : 'false' }} }">
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nilai Desimal di Rapor</label>
+                            <div class="flex items-center justify-between w-full h-14 bg-gray-50 rounded-2xl px-6 border border-transparent transition-all group-hover:border-indigo-100">
+                                <div class="flex flex-col">
+                                    <span class="text-xs font-bold text-gray-900 uppercase tracking-widest" x-text="reportDecimal ? 'Desimal Aktif' : 'Bulatkan (Integer)'"></span>
+                                    <span class="text-[8px] font-medium text-gray-400 uppercase tracking-tight">Cth: 82,86 vs 83</span>
+                                </div>
+                                <input type="hidden" name="report_decimal" :value="reportDecimal ? '1' : '0'">
+                                <button type="button" @click="reportDecimal = !reportDecimal" 
+                                    class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2"
+                                    :class="reportDecimal ? 'bg-indigo-600' : 'bg-gray-200'">
+                                    <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                                        :class="reportDecimal ? 'translate-x-5' : 'translate-x-0'"></span>
                                 </button>
                             </div>
                         </div>
@@ -174,16 +243,66 @@
                             <i class="fas fa-calendar-check text-sm"></i>
                         </div>
                         <div>
-                            <h3 class="text-base font-black text-gray-900 tracking-tight uppercase">Konfigurasi Akademik</h3>
-                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-relaxed">Pengaturan periode aktif untuk sinkronisasi data ujian</p>
+                            <h3 class="text-base font-black text-gray-900 tracking-tight uppercase">Informasi Akademik</h3>
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-relaxed">Pengaturan periode aktif dan identitas kurikulum sekolah</p>
                         </div>
                     </div>
-                    <div class="p-8">
-                        <div class="md:w-1/2 space-y-2">
+                    <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="space-y-4">
                             <label for="academic_year" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Tahun Ajaran Aktif</label>
                             <input type="text" name="academic_year" id="academic_year" value="{{ old('academic_year', $allSettings['academic_year'] ?? '') }}" 
                                 class="w-full h-14 bg-gray-50 border-transparent rounded-2xl px-6 text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all" required>
                         </div>
+                        <div class="space-y-4">
+                            <label for="bidang_studi" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Bidang Studi Keahlian</label>
+                            <input type="text" name="bidang_studi" id="bidang_studi" value="{{ old('bidang_studi', $allSettings['bidang_studi'] ?? '') }}" 
+                                class="w-full h-14 bg-gray-50 border-transparent rounded-2xl px-6 text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all" placeholder="Teknologi Informasi dan Komunikasi">
+                        </div>
+                        <div class="space-y-4">
+                            <label for="program_studi" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Program Studi Keahlian</label>
+                            <input type="text" name="program_studi" id="program_studi" value="{{ old('program_studi', $allSettings['program_studi'] ?? '') }}" 
+                                class="w-full h-14 bg-gray-50 border-transparent rounded-2xl px-6 text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all" placeholder="Teknik Komputer dan Informatika">
+                        </div>
+                        <div class="space-y-4">
+                            <label for="kompetensi_keahlian" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Kompetensi Keahlian</label>
+                            <input type="text" name="kompetensi_keahlian" id="kompetensi_keahlian" value="{{ old('kompetensi_keahlian', $allSettings['kompetensi_keahlian'] ?? '') }}" 
+                                class="w-full h-14 bg-gray-50 border-transparent rounded-2xl px-6 text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all" placeholder="Teknik Jaringan Komputer dan Telekomunikasi">
+                        </div>
+                        <div class="space-y-4">
+                            <label for="letter_code" 
+                                   class="block text-[10px] font-black text-gray-400 
+                                          uppercase tracking-widest ml-1">
+                                Kode Lembaga Surat
+                            </label>
+                            <input type="text" name="letter_code" id="letter_code" 
+                                   value="{{ old('letter_code', $allSettings['letter_code'] ?? 'SMK') }}" 
+                                   class="w-full h-14 bg-gray-50 border-transparent rounded-2xl 
+                                          px-6 text-sm font-bold text-gray-900 focus:bg-white 
+                                          focus:ring-4 focus:ring-indigo-500/10 transition-all"
+                                   placeholder="Contoh: SMK-TN">
+                            <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest ml-1">
+                                Digunakan di nomor surat: 001/SMK-TN/I/2026
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ekstrakurikuler -->
+                <div class="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden group hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-500">
+                    <div class="p-8 flex items-center gap-6">
+                        <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-500/20 shrink-0"
+                             style="background: linear-gradient(135deg, #10b981, #059669);">
+                            <i class="fas fa-running text-xl"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-sm font-black text-gray-900 tracking-tight uppercase">Manajemen Ekstrakurikuler</h3>
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-relaxed">Kelola daftar kegiatan, pembimbing, dan keanggotaan siswa secara terpusat.</p>
+                        </div>
+                        <a href="{{ route('admin.extracurriculars.index') }}"
+                           class="flex items-center gap-2 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white shadow-lg hover:scale-105 transition-all duration-300 will-change-transform shrink-0"
+                           style="background: linear-gradient(135deg, #10b981, #059669);">
+                            <i class="fas fa-external-link-alt text-[10px]"></i> Buka Modul Ekskul
+                        </a>
                     </div>
                 </div>
 

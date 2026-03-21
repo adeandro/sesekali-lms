@@ -26,6 +26,10 @@ class UpdateStudentRequest extends FormRequest
             'grade' => 'required|string|in:10,11,12',
             'class_group' => 'required|string|max:10',
             'status' => 'required|string|in:Aktif,Nonaktif',
+            'nisn'           => 'nullable|string|max:20',
+            'gender'         => 'nullable|in:Laki-laki,Perempuan',
+            'place_of_birth' => 'nullable|string|max:100',
+            'date_of_birth'  => 'nullable|date',
             'photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'password' => 'nullable|string|min:4|max:255',
         ];

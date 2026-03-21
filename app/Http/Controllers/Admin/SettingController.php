@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Extracurricular;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -15,7 +16,9 @@ class SettingController extends Controller
     public function index()
     {
         $allSettings = Setting::all()->pluck('value', 'key');
-        return view('admin.settings.index', compact('allSettings'));
+        $extracurriculars = Extracurricular::orderBy('sort_order', 'asc')->get();
+        
+        return view('admin.settings.index', compact('allSettings', 'extracurriculars'));
     }
 
     /**
@@ -47,18 +50,25 @@ class SettingController extends Controller
             Setting::set('default_student_avatar', $path);
         }
 
-        // Save other settings
-        Setting::set('school_name', $request->school_name);
-        Setting::set('school_address', $request->school_address);
-        Setting::set('school_phone', $request->school_phone);
-        Setting::set('report_header_subtitle', $request->report_header_subtitle);
-        Setting::set('show_report_header', $request->show_report_header);
-        Setting::set('show_login_header', $request->show_login_header);
-        Setting::set('max_violations', $request->max_violations);
-        Setting::set('anti_cheat_active', $request->anti_cheat_active);
-        Setting::set('academic_year', $request->academic_year);
-        Setting::set('enable_gamification', $request->enable_gamification);
-        Setting::set('enable_leaderboard', $request->enable_leaderboard);
+        // Save other settings if present in request
+        $settingsToUpdate = [
+            'school_name', 'school_address', 'school_phone',
+            'school_province', 'school_city', 'school_village',
+            'school_rt', 'school_rw', 'school_postal_code',
+            'report_header_subtitle', 'bidang_studi', 'program_studi',
+            'kompetensi_keahlian', 'show_report_header', 'show_login_header',
+            'watermark_enabled', 'max_violations', 'anti_cheat_active',
+            'academic_year', 'enable_gamification', 'enable_leaderboard', 
+            'report_decimal', 'letter_code',
+            'letterhead_foundation', 'letterhead_program', 'letterhead_email',
+            'letterhead_website', 'letterhead_border_style',
+        ];
+
+        foreach ($settingsToUpdate as $key) {
+            if ($request->has($key)) {
+                Setting::set($key, $request->input($key));
+            }
+        }
 
         return redirect()->back()->with('success', 'Pengaturan berhasil diperbarui.')->with('active_tab', 'identity');
     }

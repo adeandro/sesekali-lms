@@ -177,7 +177,16 @@
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="text-sm font-bold text-gray-900">{{ $student->formatted_name }}</div>
-                                    <div class="text-xs text-gray-500 font-mono tracking-tight mt-0.5">NIS: {{ $student->nis }}</div>
+                                    <div class="flex flex-col gap-0.5 mt-1">
+                                        <div class="text-[10px] text-gray-400 font-mono tracking-tight flex items-center gap-1">
+                                            <span class="font-black text-gray-500">NIS:</span> {{ $student->nis }}
+                                        </div>
+                                        @if($student->nisn)
+                                            <div class="text-[10px] text-gray-400 font-mono tracking-tight flex items-center gap-1">
+                                                <span class="font-black text-gray-500">NISN:</span> {{ $student->nisn }}
+                                            </div>
+                                        @endif
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                                     <div class="flex flex-col gap-1">

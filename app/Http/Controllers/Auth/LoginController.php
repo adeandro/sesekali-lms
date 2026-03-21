@@ -120,7 +120,7 @@ class LoginController extends Controller
     {
         return match ($user->role) {
             'superadmin' => redirect()->route('dashboard.superadmin'),
-            'teacher' => redirect()->route('dashboard.teacher'),
+            'teacher', 'principal' => redirect()->route('dashboard.teacher'),
             'student' => redirect()->route('dashboard.student'),
             default => redirect()->route('dashboard'),
         };

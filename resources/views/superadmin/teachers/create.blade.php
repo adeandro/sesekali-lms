@@ -18,6 +18,18 @@
                 @csrf
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Peran -->
+                    <div class="space-y-2 col-span-full">
+                        <label for="role" class="block text-sm font-semibold text-gray-700">Peran / Role</label>
+                        <select name="role" id="role" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('role') border-red-500 @enderror">
+                            <option value="teacher" {{ old('role') == 'teacher' ? 'selected' : '' }}>Guru</option>
+                            <option value="principal" {{ old('role') == 'principal' ? 'selected' : '' }}>Kepala Sekolah</option>
+                            <option value="tu" {{ old('role') == 'tu' ? 'selected' : '' }}>Tata Usaha</option>
+                        </select>
+                        @error('role') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    </div>
+
                     <!-- Gelar Depan -->
                     <div class="space-y-2">
                         <label for="title_ahead" class="block text-sm font-semibold text-gray-700">Gelar Depan</label>
@@ -50,9 +62,25 @@
                         @error('email') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                     </div>
 
+                    <!-- NIP -->
+                    <div class="space-y-2">
+                        <label for="nip" class="block text-sm font-semibold text-gray-700">NIP</label>
+                        <input type="text" name="nip" id="nip" value="{{ old('nip') }}" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('nip') border-red-500 @enderror">
+                        @error('nip') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <!-- NIY -->
+                    <div class="space-y-2">
+                        <label for="niy" class="block text-sm font-semibold text-gray-700">NIY</label>
+                        <input type="text" name="niy" id="niy" value="{{ old('niy') }}" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('niy') border-red-500 @enderror">
+                        @error('niy') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    </div>
+
                     <!-- NIP/NIS -->
                     <div class="space-y-2">
-                        <label for="nis" class="block text-sm font-semibold text-gray-700">NIP / Kode Guru</label>
+                        <label for="nis" class="block text-sm font-semibold text-gray-700">Kode Guru / Username</label>
                         <input type="text" name="nis" id="nis" value="{{ old('nis') }}" required
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('nis') border-red-500 @enderror">
                         @error('nis') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror

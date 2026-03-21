@@ -90,6 +90,56 @@
                 </div>
             </div>
 
+            <!-- Classification Group -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <div class="space-y-4">
+                    <label for="category" class="inline-flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 ml-1">
+                        <i class="fas fa-layer-group text-amber-400"></i> Kategori Mapel <span class="text-rose-500">*</span>
+                    </label>
+                    <div class="relative group mt-1">
+                        <div class="absolute inset-y-0 left-0 pl-7 flex items-center pointer-events-none text-gray-400 group-focus-within:text-amber-600 transition-colors">
+                            <i class="fas fa-list text-lg"></i>
+                        </div>
+                        <select id="category" name="category" required
+                            class="block w-full pl-16 pr-8 py-5 bg-gray-50 border-2 border-transparent rounded-[2rem] focus:bg-white focus:border-amber-500/20 focus:ring-4 focus:ring-amber-500/5 text-base font-bold transition-all text-gray-700 appearance-none @error('category') border-rose-500/20 ring-4 ring-rose-500/5 @enderror">
+                            @foreach(\App\Models\Subject::categories() as $key => $label)
+                                <option value="{{ $key }}" {{ old('category', $subject->category) == $key ? 'selected' : '' }}>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                        <div class="absolute inset-y-0 right-0 pr-7 flex items-center pointer-events-none text-gray-400">
+                            <i class="fas fa-chevron-down text-sm"></i>
+                        </div>
+                    </div>
+                    @error('category')
+                        <div class="flex items-center gap-2 mt-3 ml-2 text-rose-500 animate-shake">
+                            <i class="fas fa-exclamation-circle text-xs"></i>
+                            <p class="text-[10px] font-black uppercase tracking-widest italic">{{ $message }}</p>
+                        </div>
+                    @enderror
+                </div>
+
+                <div class="space-y-4">
+                    <label for="sort_order" class="inline-flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 ml-1">
+                        <i class="fas fa-sort-numeric-down text-amber-400"></i> Urutan Tampil
+                    </label>
+                    <div class="relative group mt-1">
+                        <div class="absolute inset-y-0 left-0 pl-7 flex items-center pointer-events-none text-gray-400 group-focus-within:text-amber-600 transition-colors">
+                            <i class="fas fa-hashtag text-lg"></i>
+                        </div>
+                        <input type="number" id="sort_order" name="sort_order" value="{{ old('sort_order', $subject->sort_order) }}" 
+                            class="block w-full pl-16 pr-8 py-5 bg-gray-50 border-2 border-transparent rounded-[2rem] focus:bg-white focus:border-amber-500/20 focus:ring-4 focus:ring-amber-500/5 text-base font-bold transition-all @error('sort_order') border-rose-500/20 ring-4 ring-rose-500/5 @enderror" 
+                            placeholder="1, 2, 3, dst." min="0">
+                    </div>
+                    <p class="text-[10px] font-black text-gray-400 mt-2 ml-2 italic">Urutan tampil dalam kelompok kategori di raport.</p>
+                    @error('sort_order')
+                        <div class="flex items-center gap-2 mt-3 ml-2 text-rose-500 animate-shake">
+                            <i class="fas fa-exclamation-circle text-xs"></i>
+                            <p class="text-[10px] font-black uppercase tracking-widest italic">{{ $message }}</p>
+                        </div>
+                    @enderror
+                </div>
+            </div>
+
             <!-- Info Box -->
             <div class="p-8 bg-amber-50/50 rounded-[2.5rem] border-2 border-amber-100/30 flex gap-6 items-start">
                 <div class="w-14 h-14 rounded-2xl bg-white flex items-center justify-center text-amber-600 shadow-sm shrink-0">

@@ -74,7 +74,26 @@ class ExamController extends Controller
     {
         $data = $request->validated();
         $data['user_id'] = auth()->id();
-        
+
+        // Sprint 1: Cek duplikat UTS/PTS atau UAS/PAS per mapel per periode
+        if (in_array($data['exam_type'] ?? '', ['uts', 'pts', 'uas', 'pas'])) {
+            $group = in_array($data['exam_type'], ['uts', 'pts']) ? ['uts', 'pts'] : ['uas', 'pas'];
+            $exists = Exam::where('subject_id', $data['subject_id'])
+                ->whereIn('exam_type', $group)
+                ->where('semester', $data['semester'])
+                ->where('academic_year', $data['academic_year'])
+                ->where('jenjang', $data['jenjang'])
+                ->exists();
+            if ($exists) {
+                return back()->withInput()->withErrors([
+                    'exam_type' => 'Sudah ada ujian ' . strtoupper($data['exam_type'])
+                        . ' untuk mapel ini di Kelas ' . $data['jenjang']
+                        . ' untuk mapel ini di Semester ' . $data['semester']
+                        . ' Tahun ' . $data['academic_year'] . '.',
+                ]);
+            }
+        }
+
         ExamService::createExam($data);
 
         return redirect()->route('admin.exams.index')
@@ -122,7 +141,28 @@ class ExamController extends Controller
                 ->with('error', 'Cannot edit a finished exam');
         }
 
-        ExamService::updateExam($exam, $request->validated());
+        $data = $request->validated();
+
+        // Sprint 1: Cek duplikat UTS/PTS atau UAS/PAS per mapel per periode (exclude self)
+        if (in_array($data['exam_type'] ?? '', ['uts', 'pts', 'uas', 'pas'])) {
+            $group = in_array($data['exam_type'], ['uts', 'pts']) ? ['uts', 'pts'] : ['uas', 'pas'];
+            $exists = Exam::where('subject_id', $data['subject_id'])
+                ->whereIn('exam_type', $group)
+                ->where('semester', $data['semester'])
+                ->where('academic_year', $data['academic_year'])
+                ->where('jenjang', $data['jenjang'])
+                ->where('id', '!=', $exam->id)
+                ->exists();
+            if ($exists) {
+                return back()->withInput()->withErrors([
+                    'exam_type' => 'Sudah ada ujian ' . strtoupper($data['exam_type'])
+                        . ' untuk mapel ini di Semester ' . $data['semester']
+                        . ' Tahun ' . $data['academic_year'] . '.',
+                ]);
+            }
+        }
+
+        ExamService::updateExam($exam, $data);
 
         return redirect()->route('admin.exams.index')
             ->with('success', 'Exam updated successfully');

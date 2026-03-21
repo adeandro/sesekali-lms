@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ClassRoom extends Model
@@ -16,6 +17,8 @@ class ClassRoom extends Model
         'academic_year',
         'is_active',
         'capacity',
+        // Sprint 1 — Raport
+        'homeroom_teacher_id',
     ];
 
     protected $casts = [
@@ -44,6 +47,11 @@ class ClassRoom extends Model
     public function students(): HasMany
     {
         return $this->hasMany(User::class, 'class_id');
+    }
+
+    public function homeroomTeacher(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'homeroom_teacher_id');
     }
 
     // ── Helpers ─────────────────────────────────────────────────
@@ -75,5 +83,15 @@ class ClassRoom extends Model
         $normalized = $map[strtoupper(trim($studentGrade))] ?? trim($studentGrade);
         $classNorm  = $map[strtoupper(trim($classGrade))]  ?? trim($classGrade);
         return $normalized === $classNorm;
+    }
+
+    /**
+     * Get integer grade level (10, 11, 12).
+     */
+    public function getGradeLevel(): int
+    {
+        $map = ['X' => 10, 'XI' => 11, 'XII' => 12];
+        $grade = strtoupper(trim($this->grade));
+        return $map[$grade] ?? (is_numeric($grade) ? (int)$grade : 10);
     }
 }

@@ -16,7 +16,7 @@ class SuperAdminTeacherController extends Controller
      */
     public function index(Request $request)
     {
-        $query = User::whereIn('role', ['teacher', 'superadmin'])->with('subjects');
+        $query = User::whereIn('role', ['teacher', 'principal', 'superadmin', 'tu'])->with('subjects');
 
         if ($request->filled('search')) {
             $search = $request->input('search');
@@ -55,9 +55,15 @@ class SuperAdminTeacherController extends Controller
             'subject_ids' => 'nullable|array',
             'subject_ids.*' => 'exists:subjects,id',
             'status' => 'required|string|in:Aktif,Nonaktif',
+            'role' => 'required|string|in:teacher,principal,tu',
+            'nip' => 'nullable|string|max:50',
+            'niy' => 'nullable|string|max:50',
         ]);
 
-        $validated['role'] = 'teacher';
+        if ($request->role === 'principal' && User::where('role', '=', 'principal', 'and')->exists()) {
+            return back()->withErrors(['role' => 'Gagal menambahkan. Hanya diperbolehkan ada satu Kepala Sekolah dalam sistem.'])->withInput();
+        }
+
         $validated['password'] = Hash::make($validated['password']);
 
         $user = User::create($validated);
@@ -75,7 +81,7 @@ class SuperAdminTeacherController extends Controller
      */
     public function edit(User $teacher)
     {
-        if (!in_array($teacher->role, ['teacher', 'superadmin'])) {
+        if (!in_array($teacher->role, ['teacher', 'principal', 'superadmin', 'tu'])) {
             abort(404);
         }
 
@@ -88,7 +94,7 @@ class SuperAdminTeacherController extends Controller
      */
     public function update(Request $request, User $teacher)
     {
-        if (!in_array($teacher->role, ['teacher', 'superadmin'])) {
+        if (!in_array($teacher->role, ['teacher', 'principal', 'superadmin', 'tu'])) {
             abort(404);
         }
 
@@ -102,7 +108,14 @@ class SuperAdminTeacherController extends Controller
             'subject_ids' => 'nullable|array',
             'subject_ids.*' => 'exists:subjects,id',
             'status' => 'required|string|in:Aktif,Nonaktif',
+            'role' => 'required|string|in:teacher,principal,superadmin,tu',
+            'nip' => 'nullable|string|max:50',
+            'niy' => 'nullable|string|max:50',
         ]);
+
+        if ($request->role === 'principal' && User::where('role', '=', 'principal', 'and')->where('id', '!=', $teacher->id, 'and')->exists()) {
+            return back()->withErrors(['role' => 'Gagal mengubah. Sudah ada Kepala Sekolah lain yang terdaftar.'])->withInput();
+        }
 
         if ($request->filled('password')) {
             $validated['password'] = Hash::make($validated['password']);
@@ -123,7 +136,7 @@ class SuperAdminTeacherController extends Controller
      */
     public function destroy(User $teacher)
     {
-        if (!in_array($teacher->role, ['teacher', 'superadmin'])) {
+        if (!in_array($teacher->role, ['teacher', 'principal', 'superadmin', 'tu'])) {
             abort(404);
         }
 

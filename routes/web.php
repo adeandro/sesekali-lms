@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Dashboard\SuperAdminDashboardController;
 use App\Http\Controllers\Dashboard\AdminDashboardController;
@@ -27,6 +28,17 @@ use App\Http\Controllers\Admin\AlumniController;
 use App\Http\Controllers\Student\LeaderboardController;
 use App\Http\Controllers\Admin\SeasonController;
 use App\Http\Controllers\Admin\LeaderboardController as AdminLeaderboardController;
+use App\Http\Controllers\Admin\GradeWeightController;
+use App\Http\Controllers\Admin\ClassController;
+use App\Http\Controllers\Admin\ManualGradeController;
+use App\Http\Controllers\Admin\ReportDataController;
+use App\Http\Controllers\Admin\ExtracurricularController;
+use App\Http\Controllers\Admin\ExtracurricularSessionController;
+use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\StudentDudiController;
+use App\Http\Controllers\Admin\LetterTemplateController;
+use App\Http\Controllers\Admin\LetterController;
+use App\Http\Controllers\Tu\TuDashboardController;
 
 // Public routes
 Route::get('/', function () {
@@ -53,8 +65,9 @@ Route::middleware('auth')->group(function () {
         $user = auth()->user();
         return match ($user->role) {
             'superadmin' => redirect()->route('dashboard.superadmin'),
-            'teacher' => redirect()->route('dashboard.teacher'),
+            'teacher', 'principal' => redirect()->route('dashboard.teacher'),
             'student' => redirect()->route('dashboard.student'),
+            'tu' => redirect()->route('dashboard.tu'),
             default => redirect()->route('login'),
         };
     })->name('dashboard');
@@ -64,17 +77,57 @@ Route::middleware('auth')->group(function () {
         Route::get('/dashboard/superadmin', [SuperAdminDashboardController::class, 'index'])->name('dashboard.superadmin');
         
         // Teacher Management (LMS)
-        Route::prefix('superadmin')->name('superadmin.')->group(function () {
+        Route::group(['prefix' => 'superadmin', 'as' => 'superadmin.'], function () {
             Route::resource('teachers', \App\Http\Controllers\Dashboard\SuperAdminTeacherController::class);
         });
     });
 
-    // Teacher routes
-    Route::middleware('role:teacher')->group(function () {
+    // Letter Management (Templates & Generator)
+    Route::group(['prefix' => 'admin/letters', 'as' => 'admin.letters.'], function () {
+        
+        // 1. Template Management (Superadmin Only)
+        Route::middleware('role:superadmin')->group(function() {
+            Route::get('templates', [LetterTemplateController::class, 'index'])->name('templates.index');
+            Route::get('templates/create', [LetterTemplateController::class, 'create'])->name('templates.create');
+            Route::post('templates', [LetterTemplateController::class, 'store'])->name('templates.store');
+            Route::get('templates/{template}/edit', [LetterTemplateController::class, 'edit'])->name('templates.edit');
+            Route::put('templates/{template}', [LetterTemplateController::class, 'update'])->name('templates.update');
+            Route::post('templates/{template}/toggle', [LetterTemplateController::class, 'toggleActive'])->name('templates.toggle');
+            Route::delete('templates/{template}', [LetterTemplateController::class, 'destroy'])->name('templates.destroy');
+        });
+
+        // 2. Generator (Superadmin & TU)
+        Route::middleware('role:superadmin,tu')->group(function() {
+            Route::get('/',                          [LetterController::class, 'index'])->name('index');
+            Route::get('history',                    [LetterController::class, 'history'])->name('history');
+            Route::delete('history/delete-all',      [LetterController::class, 'deleteAllHistory'])->name('history.deleteAll');
+            Route::get('{letter}/redownload',        [LetterController::class, 'redownload'])->name('redownload');
+            Route::delete('{letter}',                 [LetterController::class, 'deleteLetter'])->name('delete');
+            Route::get('{template}/form',            [LetterController::class, 'form'])->name('form');
+            Route::post('/{template}/preview',       [LetterController::class, 'preview'])->name('preview');
+            Route::post('/{template}/generate',      [LetterController::class, 'generate'])->name('generate');
+            Route::get('/{template}/bulk',           [LetterController::class, 'bulkForm'])->name('bulk.form');
+            Route::post('/{template}/bulk',          [LetterController::class, 'bulkGenerate'])->name('bulk.generate');
+
+            // Bulk progress page & AJAX
+            Route::get('/bulk-download',                  [LetterController::class, 'bulkDownload'])->name('bulk.download');
+            Route::post('/{template}/bulk-progress-page', [LetterController::class, 'bulkProgressPage'])->name('bulk.progress-page');
+            Route::post('/{template}/bulk-progress',      [LetterController::class, 'bulkProgress'])->name('bulk.progress');
+        });
+    });
+
+    // TU (Tata Usaha) routes
+    Route::middleware('role:tu')->group(function () {
+        Route::get('/dashboard/tu', [\App\Http\Controllers\Tu\TuDashboardController::class, 'index'])->name('dashboard.tu');
+    });
+
+
+    // Teacher & Principal routes
+    Route::middleware('role:teacher,principal')->group(function () {
         Route::get('/dashboard/teacher', [\App\Http\Controllers\Dashboard\TeacherDashboardController::class, 'index'])->name('dashboard.teacher');
         
         // Teacher Settings
-        Route::prefix('teacher/settings')->name('teacher.settings.')->group(function () {
+        Route::group(['prefix' => 'teacher/settings', 'as' => 'teacher.settings.'], function () {
             Route::get('/', [\App\Http\Controllers\Teacher\TeacherSettingsController::class, 'index'])->name('index');
             Route::post('profile', [\App\Http\Controllers\Teacher\TeacherSettingsController::class, 'updateProfile'])->name('profile');
             Route::post('password', [\App\Http\Controllers\Teacher\TeacherSettingsController::class, 'updatePassword'])->name('password');
@@ -101,7 +154,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/student/profile/password', [\App\Http\Controllers\Student\AvatarController::class, 'updatePassword'])->name('student.profile.password');
 
         // Student Exam routes
-        Route::prefix('student/exams')->name('student.exams.')->group(function () {
+        Route::group(['prefix' => 'student/exams', 'as' => 'student.exams.'], function () {
             Route::get('/', [StudentExamController::class, 'index'])->name('index');
             Route::get('{exam}/start', [StudentExamController::class, 'start'])->name('start');
             Route::post('{exam}/start', function ($exam) {
@@ -137,6 +190,9 @@ Route::middleware('auth')->group(function () {
         Route::get('student/results', [StudentResultController::class, 'index'])->name('student.results');
 
         // ── Student Battle Arena ──────────────────────────────────────────
+        Route::get('student/arena', function() {
+            return redirect()->route('student.dashboard')->with('open_arena_modal', true);
+        })->name('student.arena.index');
         Route::post('student/arena/join', [ArenaController::class, 'studentJoin'])->name('student.arena.join');
         Route::get('student/arena/{room}/lobby', [ArenaController::class, 'studentLobby'])->name('student.arena.lobby');
         Route::get('student/arena/{room}/lobby/status', [ArenaController::class, 'studentLobbyStatus'])->name('student.arena.lobby.status');
@@ -144,7 +200,7 @@ Route::middleware('auth')->group(function () {
         Route::post('student/arena/{room}/battle/{participant}/submit', [ArenaController::class, 'submitAnswer'])->name('student.arena.submit');
         Route::post('student/arena/{room}/battle/{participant}/heartbeat', [ArenaController::class, 'heartbeat'])->name('student.arena.heartbeat');
         Route::post('student/arena/{room}/battle/{participant}/tab-penalty', [ArenaController::class, 'tabPenalty'])->name('student.arena.tab-penalty');
-        Route::prefix('arena')->name('student.arena.')->group(function () {
+        Route::group(['prefix' => 'arena', 'as' => 'student.arena.'], function () {
             Route::post('answer', [\App\Http\Controllers\Student\BattleController::class, 'answer'])->name('answer');
             Route::post('powerup/activate', [\App\Http\Controllers\Student\BattleController::class, 'activatePowerup'])->name('powerup.activate');
         });
@@ -160,9 +216,10 @@ Route::middleware('auth')->group(function () {
     });
 
     // Subject & Question Management routes
-    Route::middleware('role:teacher,superadmin')->prefix('admin')->name('admin.')->group(function () {
+    Route::group(['middleware' => 'role:teacher,principal,superadmin', 'prefix' => 'admin', 'as' => 'admin.'], function () {
         // [MODUL SUPERADMIN ONLY] Subject routes
         Route::middleware('role:superadmin')->group(function () {
+            Route::post('subjects/reorder', [SubjectController::class, 'reorder'])->name('subjects.reorder');
             Route::delete('subjects/delete-all', [SubjectController::class, 'deleteAllSubjects'])->name('subjects.deleteAll');
             Route::resource('subjects', SubjectController::class);
         });
@@ -197,8 +254,59 @@ Route::middleware('auth')->group(function () {
 
         Route::resource('exams', ExamController::class);
 
+        // Report Data Management (Sprint 1.5)
+        Route::group(['prefix' => 'report-data', 'as' => 'report-data.'], function () {
+            Route::get('/', [ReportDataController::class, 'index'])->name('index');
+            Route::get('/students', [ReportDataController::class, 'studentDataForm'])->name('student-data');
+            Route::post('/students', [ReportDataController::class, 'saveStudentData'])->name('save-student-data');
+            Route::get('/import', [ReportDataController::class, 'importForm'])->name('import');
+            Route::post('/import', [ReportDataController::class, 'import'])->name('import.post');
+            Route::get('/template', [ReportDataController::class, 'downloadTemplate'])->name('download-template');
+            Route::get('/class-average', [ReportDataController::class, 'classAverageForm'])->name('class-average');
+            Route::post('/class-average', [ReportDataController::class, 'saveClassAverage'])->name('save-class-average');
+        });
+
+        // Extracurricular Management (Module Dedicated)
+        Route::group(['prefix' => 'extracurriculars', 'as' => 'extracurriculars.'], function () {
+            Route::get('/',                              [ExtracurricularController::class, 'index'])->name('index');
+            Route::post('/',                             [ExtracurricularController::class, 'store'])->name('store');
+            
+            // Extracurricular Sessions (Journal & Presence) — NEW
+            Route::group(['prefix' => '{extracurricular}/sessions', 'as' => 'sessions.'], function () {
+                Route::get('/',             [ExtracurricularSessionController::class, 'index'])->name('index');
+                Route::get('/create',       [ExtracurricularSessionController::class, 'create'])->name('create');
+                Route::post('/',            [ExtracurricularSessionController::class, 'store'])->name('store');
+                Route::get('/recap',        [ExtracurricularSessionController::class, 'recap'])->name('recap');
+                Route::get('/export/excel', [ExtracurricularSessionController::class, 'exportExcel'])->name('export.excel');
+                Route::get('/export/pdf',   [ExtracurricularSessionController::class, 'exportPdf'])->name('export.pdf');
+                Route::get('/{session}',    [ExtracurricularSessionController::class, 'show'])->name('show');
+                Route::delete('/{session}', [ExtracurricularSessionController::class, 'destroy'])->name('destroy');
+            });
+
+            // Ekstrakurikuler (Sprint 2 — Input Nilai)
+            Route::get('/my-assignments', [ExtracurricularController::class, 'myAssignments'])->name('my-assignments');
+            
+            Route::get('/{extracurricular}',             [ExtracurricularController::class, 'show'])->name('show');
+            Route::get('/{extracurricular}/edit',        [ExtracurricularController::class, 'edit'])->name('edit');
+            Route::put('/{extracurricular}/detail',      [ExtracurricularController::class, 'updateDetail'])->name('update-detail');
+            Route::get('/{extracurricular}/grades', [ExtracurricularController::class, 'gradesForm'])->name('grades');
+            Route::post('/{extracurricular}/grades', [ExtracurricularController::class, 'gradesSave'])->name('grades.save');
+
+            Route::patch('/{extracurricular}',           [ExtracurricularController::class, 'update'])->name('update');
+            Route::delete('/{extracurricular}',          [ExtracurricularController::class, 'destroy'])->name('destroy');
+            Route::post('/reorder',                      [ExtracurricularController::class, 'reorder'])->name('reorder');
+
+            // Coach management
+            Route::post('/{extracurricular}/coaches',             [ExtracurricularController::class, 'addCoach'])->name('coaches.add');
+            Route::delete('/{extracurricular}/coaches/{coach}',   [ExtracurricularController::class, 'removeCoach'])->name('coaches.remove');
+
+            // Member management
+            Route::post('/{extracurricular}/members',             [ExtracurricularController::class, 'addMembers'])->name('members.add');
+            Route::delete('/{extracurricular}/members/{member}',  [ExtracurricularController::class, 'removeMember'])->name('members.remove');
+        });
+
         // Exam Results and Reporting routes Module 6
-        Route::prefix('results')->name('results.')->group(function () {
+        Route::group(['prefix' => 'results', 'as' => 'results.'], function () {
             Route::get('/', [ResultController::class, 'index'])->name('index');
             Route::get('{examId}', [ResultController::class, 'show'])->name('show')->where('examId', '[0-9]+');
             Route::get('{examId}/review/{attemptId}', [ResultController::class, 'review'])->name('review')->where(['examId' => '[0-9]+', 'attemptId' => '[0-9]+']);
@@ -209,7 +317,7 @@ Route::middleware('auth')->group(function () {
         });
 
         // Token Management Routes (New Module - Monitoring & Security)
-        Route::prefix('tokens')->name('tokens.')->group(function () {
+        Route::group(['prefix' => 'tokens', 'as' => 'tokens.'], function () {
             Route::get('/', [TokenController::class, 'index'])->name('index');
             Route::post('exams/{exam}/generate', [TokenController::class, 'generateTokens'])->name('generate');
             Route::get('exams/{exam}/list', [TokenController::class, 'listTokens'])->name('list');
@@ -220,14 +328,47 @@ Route::middleware('auth')->group(function () {
         Route::get('monitor-exams', [MonitoringController::class, 'listExams'])->name('monitor-exams.index');
 
         // Monitoring & Real-Time Dashboard Routes (New Module)
-        Route::prefix('monitor')->name('monitor.')->group(function () {
+        Route::group(['prefix' => 'monitor', 'as' => 'monitor.'], function () {
             Route::get('exams/{exam}', [MonitoringController::class, 'index'])->name('exams.index');
             Route::post('attempts/{attempt}/reopen', [MonitoringController::class, 'reopenSession'])->name('attempts.reopen');
             Route::post('attempts/{attempt}/reset', [MonitoringController::class, 'resetAnswers'])->name('attempts.reset');
         });
 
+        // ── Sprint 1: Bobot Nilai (teacher & superadmin) ──────────────────────
+        Route::resource('grade-weights', GradeWeightController::class)->except(['show', 'destroy']);
+
+        // ── Sprint 2: Input Nilai Manual (teacher & superadmin) ───────────────
+        Route::group(['prefix' => 'manual-grades', 'as' => 'manual-grades.'], function () {
+            Route::get('/',               [ManualGradeController::class, 'index'])->name('index');
+            Route::get('/input',          [ManualGradeController::class, 'inputForm'])->name('input');
+            Route::post('/input',         [ManualGradeController::class, 'store'])->name('store');
+            Route::get('/import',         [ManualGradeController::class, 'importForm'])->name('import-form');
+            Route::post('/import',        [ManualGradeController::class, 'import'])->name('import');
+            Route::get('/template',       [ManualGradeController::class, 'downloadTemplate'])->name('download-template');
+        });
+
+
+        Route::group(['prefix' => 'reports', 'as' => 'reports.'], function () {
+            Route::get('/',                          [ReportController::class, 'index'])->name('index');
+            Route::get('/preview/{student}',         [ReportController::class, 'preview'])->name('preview');
+            Route::get('/print/{student}',           [ReportController::class, 'printSingle'])->name('printSingle');
+            Route::get('/print-class/{class}',       [ReportController::class, 'printClass'])->name('printClass');
+            Route::post('/notes',                    [ReportController::class, 'saveNote'])->name('notes');
+        });
+
+        // ── Kegiatan DU/DI (Dunia Usaha / Dunia Industri) ─────────────────────
+        Route::group(['prefix' => 'dudi', 'as' => 'dudi.'], function () {
+            Route::get('/',                        [StudentDudiController::class, 'index'])->name('index');
+            Route::get('/student/{student}/edit',  [StudentDudiController::class, 'edit'])->name('edit');
+            Route::put('/student/{student}',       [StudentDudiController::class, 'update'])->name('update');
+            Route::post('/import',                 [StudentDudiController::class, 'import'])->name('import');
+            Route::get('/template',                [StudentDudiController::class, 'downloadTemplate'])->name('template');
+        });
+
         // [MODUL SUPERADMIN ONLY] Student Management routes
         Route::middleware('role:superadmin')->group(function () {
+            // ── Sprint 1: Class Management (superadmin only) ──────────────────
+            Route::resource('classes', ClassController::class);
             // Explicit routes must come before resource()
             Route::get('students/import/form', [StudentController::class, 'importForm'])->name('students.importForm');
             Route::post('students/import', [StudentController::class, 'import'])->name('students.import');
@@ -257,7 +398,7 @@ Route::middleware('auth')->group(function () {
             Route::delete('settings/signature', [SettingController::class, 'deleteSignature'])->name('settings.delete-signature');
 
             // Gamification Center
-            Route::prefix('gamification')->name('gamification.')->group(function () {
+            Route::group(['prefix' => 'gamification', 'as' => 'gamification.'], function () {
                 Route::get('settings', [GamificationController::class, 'globalSettings'])->name('settings');
                 Route::post('settings', [GamificationController::class, 'updateGlobalSettings'])->name('settings.update');
                 Route::get('achievements', [GamificationController::class, 'achievements'])->name('achievements');
@@ -276,14 +417,14 @@ Route::middleware('auth')->group(function () {
                 Route::delete('themes/{theme}', [GamificationController::class, 'destroyTheme'])->name('themes.destroy');
                 
                 // ── Leaderboard & Hall of Fame ──────────────────────────────
-                Route::prefix('leaderboard')->name('leaderboard.')->group(function () {
+                Route::group(['prefix' => 'leaderboard', 'as' => 'leaderboard.'], function () {
                     Route::get('/', [AdminLeaderboardController::class, 'index'])->name('index');
                     Route::get('hall-of-fame', [AdminLeaderboardController::class, 'hallOfFame'])->name('hall-of-fame');
                     Route::post('refresh', [AdminLeaderboardController::class, 'refreshCache'])->name('refresh');
                 });
                 
                 // ── Battle Arena ──────────────────────────────────────────────
-                Route::prefix('arena')->name('arena.')->group(function () {
+                Route::group(['prefix' => 'arena', 'as' => 'arena.'], function () {
                     Route::get('/', [ArenaController::class, 'index'])->name('index');
                     Route::get('create', [ArenaController::class, 'create'])->name('create');
                     Route::post('/', [ArenaController::class, 'store'])->name('store');
@@ -298,7 +439,7 @@ Route::middleware('auth')->group(function () {
                 });
 
                 // ── Season Management ─────────────────────────────────────────
-                Route::prefix('seasons')->name('seasons.')->group(function () {
+                Route::group(['prefix' => 'seasons', 'as' => 'seasons.'], function () {
                     Route::get('/', [SeasonController::class, 'index'])->name('index');
                     Route::get('create', [SeasonController::class, 'create'])->name('create');
                     Route::post('/', [SeasonController::class, 'store'])->name('store');
@@ -313,7 +454,7 @@ Route::middleware('auth')->group(function () {
                 });
 
                 // ── Physical Reward Coupons ──────────────────────────────────
-                Route::prefix('coupons')->name('coupons.')->group(function () {
+                Route::group(['prefix' => 'coupons', 'as' => 'coupons.'], function () {
                     Route::get('/', [\App\Http\Controllers\Admin\CouponController::class, 'index'])->name('index');
                     Route::post('{coupon}/claim', [\App\Http\Controllers\Admin\CouponController::class, 'claim'])->name('claim');
                 });
@@ -323,7 +464,7 @@ Route::middleware('auth')->group(function () {
 
     // ── Communication Hub ────────────────────────────────────────────
     // Accessible by ALL authenticated roles: student, teacher, superadmin
-    Route::prefix('communication')->name('communication.')->group(function () {
+    Route::group(['prefix' => 'communication', 'as' => 'communication.'], function () {
 
         // Announcements (all roles read; staff create/delete)
         Route::post('notifications/read-all', function () {
@@ -346,7 +487,7 @@ Route::middleware('auth')->group(function () {
         })->name('notifications.latest');
 
         Route::get('announcements', [AnnouncementController::class, 'index'])->name('announcements.index');
-        Route::middleware('role:superadmin,teacher')->group(function () {
+        Route::middleware('role:superadmin,teacher,principal')->group(function () {
             Route::get('announcements/create', [AnnouncementController::class, 'create'])->name('announcements.create');
             Route::post('announcements', [AnnouncementController::class, 'store'])->name('announcements.store');
             Route::delete('announcements/{announcement}', [AnnouncementController::class, 'destroy'])->name('announcements.destroy');

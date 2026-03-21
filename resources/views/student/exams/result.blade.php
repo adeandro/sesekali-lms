@@ -3,6 +3,47 @@
 @section('title', 'Hasil Ujian - ' . ($configs['school_name'] ?? 'SesekaliCBT'))
 
 @section('content')
+<style>
+    /* Quill Content Renderer */
+    .quill-content {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        line-height: 1.6;
+        color: #1f2937;
+        font-family: Arial, sans-serif;
+    }
+    .quill-content img { max-width: 100%; height: auto; border-radius: 1rem; margin: 0.5rem 0; display: block; }
+    .quill-content ul, .quill-content ol { padding-left: 1.5rem; margin-bottom: 0.5rem; }
+    .quill-content ul { list-style-type: disc; }
+    .quill-content ol { list-style-type: decimal; }
+    @font-face {
+        font-family: 'Amiri';
+        src: url('/fonts/Amiri-Regular.ttf') format('truetype');
+        font-weight: 400;
+        font-style: normal;
+    }
+    @font-face {
+        font-family: 'Amiri';
+        src: url('/fonts/Amiri-Bold.ttf') format('truetype');
+        font-weight: 700;
+        font-style: normal;
+    }
+
+    .ql-font-amiri,
+    .ql-font-amiri * {
+        font-family: 'Amiri', serif !important;
+        font-size: 18pt !important;
+        line-height: 2 !important;
+    }
+
+    .quill-content [dir="rtl"] {
+        text-align: right;
+        direction: rtl;
+        font-family: 'Amiri', serif !important;
+        font-size: 18pt;
+        line-height: 2;
+    }
+</style>
 <div class="space-y-10 pb-20">
     <!-- Top Nav / Back -->
     <div class="flex items-center justify-between px-2">
@@ -142,9 +183,8 @@
                                         @endif
                                     </div>
 
-                                    <!-- Question Text -->
-                                    <div class="bg-gray-50/50 p-6 rounded-[2rem] border border-gray-100">
-                                        <p class="text-sm font-bold text-gray-800 leading-relaxed">{{ $question->question_text }}</p>
+                                    <div class="bg-gray-50/50 p-6 rounded-[2rem] border border-gray-100 quill-content">
+                                        <div class="text-sm font-bold text-gray-800 leading-relaxed">{!! $question->question_text !!}</div>
                                     </div>
 
                                     <!-- Option Comparison -->

@@ -5,6 +5,7 @@
 @section('page-title', $attempt->exam->title)
 
 @section('styles')
+    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <style>
         /* Hide sidebar on exam taking page only */
@@ -440,6 +441,68 @@
             to { opacity: 1; }
         }
 
+        /* Quill Content Renderer */
+        .quill-content {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            line-height: 1.6;
+            color: #1f2937;
+            font-family: Arial, sans-serif;
+        }
+        .quill-content p { margin-bottom: 0.5rem; }
+        .quill-content img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 1rem;
+            margin: 1rem 0;
+            display: block;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .quill-content ul, .quill-content ol {
+            padding-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .quill-content ul { list-style-type: disc; }
+        .quill-content ol { list-style-type: decimal; }
+        
+        /* Custom Font Support */
+        .ql-font-arial { font-family: Arial, sans-serif; }
+        .ql-font-times-new-roman { font-family: 'Times New Roman', serif; }
+        .ql-font-calibri { font-family: Calibri, sans-serif; }
+        .ql-font-georgia { font-family: Georgia, serif; }
+        .ql-font-verdana { font-family: Verdana, sans-serif; }
+        .ql-font-courier-new { font-family: 'Courier New', monospace; }
+        .ql-font-amiri { font-family: 'Amiri', serif; }
+
+        @font-face {
+            font-family: 'Amiri';
+            src: url('/fonts/Amiri-Regular.ttf') format('truetype');
+            font-weight: 400;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'Amiri';
+            src: url('/fonts/Amiri-Bold.ttf') format('truetype');
+            font-weight: 700;
+            font-style: normal;
+        }
+
+        .ql-font-amiri,
+        .ql-font-amiri * {
+            font-family: 'Amiri', serif !important;
+            font-size: 18pt !important;
+            line-height: 2 !important;
+        }
+
+        /* Arabic / RTL Support */
+        .quill-content [dir="rtl"] {
+            text-align: right;
+            direction: rtl;
+            font-family: 'Amiri', serif;
+            font-size: 18pt;
+            line-height: 2;
+        }
+
         /* Responsive Exam Images */
         .exam-content-img {
             max-width: 100%;
@@ -515,7 +578,9 @@
                                     
                                     <!-- Question Text -->
                                     <div class="mb-8">
-                                        <h2 class="question-text-enhanced">{{ $question->question_text }}</h2>
+                                        <div class="question-text-enhanced quill-content text-base md:text-xl font-bold text-gray-800 leading-relaxed tracking-tight">
+                                            {!! $question->question_text !!}
+                                        </div>
                                         
                                         @if($question->question_image)
                                             <div class="my-4">
@@ -527,7 +592,7 @@
                                     </div>
 
                                     <!-- Answer Options -->
-                                    <div class="space-y-3">
+                                    <div class="space-y-6">
                                         @if($question->question_type === 'multiple_choice')
                                             <!-- Multiple Choice Options -->
                                             <input type="hidden" class="question-type" value="mc">
@@ -547,6 +612,7 @@
                                                 @php
                                                     $imageFieldName = 'option_' . $key . '_image';
                                                     $optionImage = $question->$imageFieldName ?? null;
+                                                    $optionKey = 'option_' . $key; // To access $question->option_a, etc.
                                                 @endphp
                                 <label class="flex items-start p-3 md:p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-[var(--brand-primary)]/50 transition text-sm md:text-base">
                                     <input type="radio" 
@@ -556,7 +622,9 @@
                                         data-question-id="{{ $question->id }}"
                                         {{ $current_answer === $key ? 'checked' : '' }}>
                                                     <div class="flex-1">
-                                                        <span class="text-gray-800 block mb-2">{{ $option }}</span>
+                                                        <span class="text-gray-800 text-sm md:text-base leading-tight quill-content">
+                                                            {!! $question->$optionKey !!}
+                                                        </span>
                                                         @if($optionImage)
                                                             <img src="{{ asset($optionImage) }}" 
                                                                  alt="Option {{ strtoupper($key) }}" 

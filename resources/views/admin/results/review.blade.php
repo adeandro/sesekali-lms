@@ -5,6 +5,47 @@
 @section('page-title', 'Koreksi & Review')
 
 @section('content')
+    <style>
+        /* Quill Content Renderer */
+    .quill-content {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        line-height: 1.6;
+        color: #1f2937;
+        font-family: Arial, sans-serif;
+    }
+    .quill-content img { max-width: 100%; height: auto; border-radius: 1rem; margin: 0.5rem 0; display: block; }
+        .quill-content ul, .quill-content ol { padding-left: 1.5rem; margin-bottom: 0.5rem; }
+        .quill-content ul { list-style-type: disc; }
+        .quill-content ol { list-style-type: decimal; }
+        @font-face {
+            font-family: 'Amiri';
+            src: url('/fonts/Amiri-Regular.ttf') format('truetype');
+            font-weight: 400;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'Amiri';
+            src: url('/fonts/Amiri-Bold.ttf') format('truetype');
+            font-weight: 700;
+            font-style: normal;
+        }
+
+        .ql-font-amiri,
+        .ql-font-amiri * {
+            font-family: 'Amiri', serif !important;
+            font-size: 18pt !important;
+            line-height: 2 !important;
+        }
+
+        .quill-content [dir="rtl"] {
+            text-align: right;
+            direction: rtl;
+            font-family: 'Amiri', serif !important;
+            font-size: 18pt;
+            line-height: 2;
+        }
+    </style>
     <div class="max-w-5xl mx-auto space-y-8 animate-fadeIn pb-12">
         <!-- Breadcrumbs & Header -->
         <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -111,8 +152,8 @@
                                     <span class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-[10px] font-black text-gray-400 mx-auto">{{ $loop->iteration }}</span>
                                 </td>
                                 <td class="px-8 py-6">
-                                    <div class="text-sm font-bold text-gray-900 leading-relaxed mb-4">
-                                        {!! nl2br(e($answer->question->question_text)) !!}
+                                    <div class="text-sm font-bold text-gray-900 leading-relaxed mb-4 quill-content">
+                                        {!! $answer->question->question_text !!}
                                     </div>
                                     <div class="flex flex-col gap-2">
                                         <div class="p-4 rounded-2xl text-[11px] font-bold border flex items-start gap-3 {{ $isCorrect ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-rose-50 border-rose-100 text-rose-700' }}">
@@ -182,8 +223,8 @@
                     <div class="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden animate-fadeIn">
                         <div class="p-8 border-b border-gray-50 bg-gray-50/30">
                             <h4 class="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] mb-4">Pertanyaan Esai #{{ $loop->iteration }}</h4>
-                            <div class="text-sm font-bold text-gray-900 leading-relaxed">
-                                {!! nl2br(e($answer->question->question_text)) !!}
+                            <div class="text-sm text-gray-900 leading-relaxed quill-content">
+                                {!! $answer->question->question_text !!}
                             </div>
                         </div>
 

@@ -25,5 +25,8 @@ export default defineConfig({
                 }
             }
         }
+    },
+    optimizeDeps: {
+        include: ['quill', 'quill-image-resize-module']
     }
 });

@@ -33,6 +33,8 @@ class SubjectController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:subjects,name',
             'kkm' => 'required|integer|min:0|max:100',
+            'category' => 'required|in:umum,kejuruan,muatan_sekolah',
+            'sort_order' => 'nullable|integer|min:0',
         ]);
 
         Subject::create($validated);
@@ -57,6 +59,8 @@ class SubjectController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:subjects,name,' . $subject->id,
             'kkm' => 'required|integer|min:0|max:100',
+            'category' => 'required|in:umum,kejuruan,muatan_sekolah',
+            'sort_order' => 'nullable|integer|min:0',
         ]);
 
         $subject->update($validated);
@@ -76,7 +80,7 @@ class SubjectController extends Controller
                 ->with('error', 'Cannot delete subject. Questions exist for this subject.');
         }
 
-        $subject->delete();
+        Subject::destroy($subject->id);
 
         return redirect()->route('admin.subjects.index')
             ->with('success', 'Subject deleted successfully');
@@ -92,7 +96,7 @@ class SubjectController extends Controller
             $count = $subjects->count();
 
             foreach ($subjects as $subject) {
-                $subject->delete();
+                Subject::destroy($subject->id);
             }
 
             return redirect()->route('admin.subjects.index')
@@ -101,5 +105,24 @@ class SubjectController extends Controller
             return redirect()->route('admin.subjects.index')
                 ->with('error', 'Error deleting subjects: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Reorder subjects based on array of IDs.
+     */
+    public function reorder(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:subjects,id',
+        ]);
+
+        foreach ($request->ids as $index => $id) {
+            Subject::where('id', '=', (int)$id, 'and')->update([
+                'sort_order' => $index + 1
+            ]);
+        }
+
+        return response()->json(['success' => true]);
     }
 }

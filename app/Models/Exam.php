@@ -12,6 +12,14 @@ class Exam extends Model
 {
     use SoftDeletes;
 
+    // ── Exam Type Constants ─────────────────────────────────────────
+    const TYPE_LATIHAN = 'latihan';
+    const TYPE_HARIAN  = 'harian';
+    const TYPE_UTS     = 'uts';
+    const TYPE_PTS     = 'pts';
+    const TYPE_UAS     = 'uas';
+    const TYPE_PAS     = 'pas';
+
     protected $fillable = [
         'title',
         'subject_id',
@@ -30,6 +38,11 @@ class Exam extends Model
         'weight_pg',
         'weight_essay',
         'user_id',
+        // Sprint 1 — Raport fields
+        'exam_type',
+        'semester',
+        'academic_year',
+        'include_in_report',
     ];
 
     protected $casts = [
@@ -45,6 +58,9 @@ class Exam extends Model
         'deleted_at' => 'datetime',
         'weight_pg' => 'integer',
         'weight_essay' => 'integer',
+        // Sprint 1 — Raport casts
+        'include_in_report' => 'boolean',
+        'semester' => 'integer',
     ];
 
     /**
@@ -165,5 +181,47 @@ class Exam extends Model
         }
 
         return $this->token_last_updated->addMinutes(20);
+    }
+
+    // ── Sprint 1: Raport Helpers ─────────────────────────────────────
+
+    /**
+     * Get all exam types with human-readable labels.
+     */
+    public static function examTypes(): array
+    {
+        return [
+            'latihan' => 'Latihan Soal',
+            'harian'  => 'Ulangan Harian',
+            'uts'     => 'UTS (Ujian Tengah Semester)',
+            'pts'     => 'PTS (Penilaian Tengah Semester)',
+            'uas'     => 'UAS (Ujian Akhir Semester)',
+            'pas'     => 'PAS (Penilaian Akhir Semester)',
+        ];
+    }
+
+    /**
+     * Apakah ujian ini termasuk UTS atau PTS?
+     */
+    public function isUts(): bool
+    {
+        return in_array($this->exam_type, ['uts', 'pts']);
+    }
+
+    /**
+     * Apakah ujian ini termasuk UAS atau PAS?
+     */
+    public function isUas(): bool
+    {
+        return in_array($this->exam_type, ['uas', 'pas']);
+    }
+
+    /**
+     * Apakah ujian ini dihitung dalam raport?
+     */
+    public function countsForReport(): bool
+    {
+        return (bool) $this->include_in_report
+            && $this->exam_type !== 'latihan';
     }
 }

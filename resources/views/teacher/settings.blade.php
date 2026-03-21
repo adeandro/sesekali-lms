@@ -30,8 +30,29 @@
                     <h2 class="text-sm font-black text-gray-900 uppercase tracking-[0.2em] flex items-center gap-3">
                         <i class="fas fa-user-circle text-indigo-600 font-bold"></i> Informasi Dasar
                     </h2>
-                    <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest italic">Update Terakhir: {{ $user->updated_at->format('d M Y') }}</span>
+                    <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest italic">Update Terakhir: {{ $user->updated_at?->format('d M Y') }}</span>
                 </div>
+
+                @if (session('success'))
+                    <div class="mx-10 mt-6 p-4 bg-green-50 border border-green-100 rounded-2xl flex items-center gap-3 text-green-600 animate-fadeIn">
+                        <i class="fas fa-check-circle"></i>
+                        <p class="text-[10px] font-black uppercase tracking-widest">{{ session('success') }}</p>
+                    </div>
+                @endif
+
+                @if ($errors->any())
+                    <div class="mx-10 mt-6 p-4 bg-red-50 border border-red-100 rounded-2xl space-y-2 animate-shake">
+                        <div class="flex items-center gap-3 text-red-600">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <p class="text-[10px] font-black uppercase tracking-widest">Terjadi Kesalahan:</p>
+                        </div>
+                        <ul class="list-disc list-inside text-[9px] font-bold text-red-500 uppercase tracking-tighter pl-6">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
 
                 <div class="p-10 space-y-10">
                     <!-- Photo Upload with Preview -->
@@ -67,7 +88,7 @@
                         </div>
                         <div class="space-y-2">
                             <label class="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] pl-4">NIP / Username</label>
-                            <input type="text" name="username" value="{{ old('username', $user->username) }}" class="w-full bg-gray-50/50 px-6 py-4 border-2 border-gray-100 rounded-2xl focus:border-indigo-600 focus:bg-white focus:outline-none transition-all font-bold text-gray-900">
+                            <input type="text" name="nis" value="{{ old('nis', $user->nis) }}" class="w-full bg-gray-50/50 px-6 py-4 border-2 border-gray-100 rounded-2xl focus:border-indigo-600 focus:bg-white focus:outline-none transition-all font-bold text-gray-900 @error('nis') border-red-300 @enderror">
                         </div>
                     </div>
 

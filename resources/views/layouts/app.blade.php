@@ -89,7 +89,7 @@
                     $isGamified = ($configs['enable_gamification'] ?? '1') == '1' && Auth::user()->role === 'student';
                 @endphp
 
-                <a href="{{ Auth::user()->role === 'student' ? route('student.profile') : (Auth::user()->role === 'teacher' ? route('teacher.settings.index') : (Auth::user()->role === 'superadmin' ? route('admin.settings.index') : '#')) }}" 
+                <a href="{{ Auth::user()->role === 'student' ? route('student.profile') : (in_array(Auth::user()->role, ['teacher', 'principal']) ? route('teacher.settings.index') : (Auth::user()->role === 'superadmin' ? route('admin.settings.index') : '#')) }}" 
                    x-data="{ showGreeting: false }"
                    @mouseenter="showGreeting = true"
                    @mouseleave="showGreeting = false"
@@ -133,7 +133,9 @@
                                         @elseif(Auth::user()->role === 'superadmin') bg-rose-100 text-rose-700
                                         @elseif(Auth::user()->role === 'teacher') bg-indigo-100 text-indigo-700
                                         @else bg-emerald-100 text-emerald-700 @endif">
-                                        {{ Auth::user()->role === 'teacher' ? 'GURU' : Auth::user()->role }}
+                                        @if(Auth::user()->role === 'teacher') GURU
+                                        @elseif(Auth::user()->role === 'principal') KEPALA SEKOLAH
+                                        @else {{ Auth::user()->role }} @endif
                                     </span>
                                 @endif
                             </div>
@@ -170,22 +172,25 @@
 
             <!-- Navigation Menu -->
             <nav class="flex-1 px-4 py-4 space-y-1 overflow-y-auto custom-scrollbar">
-                
+
                 {{-- ── 1. DASHBOARD ── --}}
                 <div class="nav-group-label">Dashboard</div>
-                <a href="{{ route('dashboard') }}" class="nav-item {{ request()->routeIs('dashboard*') ? 'menu-item-active' : '' }}">
+                <a href="{{ route('dashboard') }}" 
+                   class="nav-item {{ request()->routeIs('dashboard*') ? 'menu-item-active' : '' }}">
                     <i class="fas fa-th-large w-5 text-lg mr-3"></i>
                     <span>Beranda</span>
                 </a>
 
-                {{-- ── 2. COMMUNICATION ── --}}
-                <div class="nav-group-label">Communication</div>
-                <a href="{{ route('communication.announcements.index') }}" class="nav-item {{ request()->routeIs('communication.announcements*') ? 'menu-item-active' : '' }}">
+                {{-- ── 2. KOMUNIKASI ── --}}
+                <div class="nav-group-label">Komunikasi</div>
+                <a href="{{ route('communication.announcements.index') }}" 
+                   class="nav-item {{ request()->routeIs('communication.announcements*') ? 'menu-item-active' : '' }}">
                     <i class="fas fa-bullhorn w-5 text-lg mr-3"></i>
                     <span>Pengumuman</span>
                 </a>
                 @php $__unread = auth()->user()->unreadMessagesCount(); @endphp
-                <a href="{{ route('communication.messages.inbox') }}" class="nav-item {{ request()->routeIs('communication.messages*') ? 'menu-item-active' : '' }}">
+                <a href="{{ route('communication.messages.inbox') }}" 
+                   class="nav-item {{ request()->routeIs('communication.messages*') ? 'menu-item-active' : '' }}">
                     <i class="fas fa-envelope w-5 text-lg mr-3"></i>
                     <span class="flex-1">Pesan</span>
                     @if($__unread > 0)
@@ -193,156 +198,256 @@
                     @endif
                 </a>
 
-                {{-- ── 3. ACADEMIC (LMS) - Collapsible ── --}}
+                {{-- ── 3. CBT & UJIAN (teacher, superadmin) ── --}}
+                @if(in_array(Auth::user()->role, ['teacher', 'superadmin']))
+                <div class="nav-group-label">CBT & Ujian</div>
+                <a href="{{ route('admin.questions.index') }}" 
+                   class="nav-item {{ request()->routeIs('admin.questions.*') ? 'menu-item-active' : '' }}">
+                    <i class="fas fa-question-circle w-5 text-lg mr-3"></i>
+                    <span>Soal</span>
+                </a>
+                <a href="{{ route('admin.exams.index') }}" 
+                   class="nav-item {{ request()->routeIs('admin.exams.*') ? 'menu-item-active' : '' }}">
+                    <i class="fas fa-file-alt w-5 text-lg mr-3"></i>
+                    <span>Ujian</span>
+                </a>
+                <a href="{{ route('admin.results.index') }}" 
+                   class="nav-item {{ request()->routeIs('admin.results.*') ? 'menu-item-active' : '' }}">
+                    <i class="fas fa-chart-line w-5 text-lg mr-3"></i>
+                    <span>Hasil Ujian</span>
+                </a>
+                <a href="{{ route('admin.tokens.index') }}" 
+                   class="nav-item {{ request()->routeIs('admin.tokens.*') ? 'menu-item-active' : '' }}">
+                    <i class="fas fa-key w-5 text-lg mr-3"></i>
+                    <span>Kelola Token</span>
+                </a>
+                <a href="{{ route('admin.monitor-exams.index') }}" 
+                   class="nav-item {{ request()->routeIs('admin.monitor-exams.*') ? 'menu-item-active' : '' }}">
+                    <i class="fas fa-video w-5 text-lg mr-3"></i>
+                    <span>Pantau Ujian</span>
+                </a>
+                @endif
+
+                {{-- ── 4. AKADEMIK (teacher, superadmin) ── --}}
+                @if(in_array(Auth::user()->role, ['teacher', 'superadmin']))
+                <div class="nav-group-label">Akademik</div>
+                @if(Auth::user()->role === 'superadmin')
+                    <a href="{{ route('superadmin.teachers.index') }}" 
+                       class="nav-item {{ request()->routeIs('superadmin.teachers.*') ? 'menu-item-active' : '' }}">
+                        <i class="fas fa-chalkboard-teacher w-5 text-lg mr-3"></i>
+                        <span>Guru</span>
+                    </a>
+                    <a href="{{ route('admin.students.index') }}" 
+                       class="nav-item {{ request()->routeIs('admin.students.*') ? 'menu-item-active' : '' }}">
+                        <i class="fas fa-users w-5 text-lg mr-3"></i>
+                        <span>Siswa</span>
+                    </a>
+                    <a href="{{ route('admin.subjects.index') }}" 
+                       class="nav-item {{ request()->routeIs('admin.subjects.*') ? 'menu-item-active' : '' }}">
+                        <i class="fas fa-book w-5 text-lg mr-3"></i>
+                        <span>Mapel</span>
+                    </a>
+                    <a href="{{ route('admin.classes.index') }}" 
+                       class="nav-item {{ request()->routeIs('admin.classes.*') ? 'menu-item-active' : '' }}">
+                        <i class="fas fa-school w-5 text-lg mr-3"></i>
+                        <span>Kelas</span>
+                    </a>
+                @endif
+                <a href="{{ route('admin.grade-weights.index') }}" 
+                   class="nav-item {{ request()->routeIs('admin.grade-weights.*') ? 'menu-item-active' : '' }}">
+                    <i class="fas fa-balance-scale w-5 text-lg mr-3"></i>
+                    <span>Bobot Nilai</span>
+                </a>
+                <a href="{{ route('admin.manual-grades.input') }}" 
+                   class="nav-item {{ request()->routeIs('admin.manual-grades.*') ? 'menu-item-active' : '' }}">
+                    <i class="fas fa-pen-to-square w-5 text-lg mr-3"></i>
+                    <span>Input Nilai</span>
+                </a>
+                @endif
+
+                {{-- ── 5. EKSTRAKURIKULER (teacher, superadmin) ── --}}
+                @if(in_array(Auth::user()->role, ['teacher', 'superadmin']))
+                <div class="nav-group-label">Ekstrakurikuler</div>
+                @if(Auth::user()->role === 'superadmin')
+                    <a href="{{ route('admin.extracurriculars.index') }}" 
+                       class="nav-item {{ request()->routeIs('admin.extracurriculars.index') ? 'menu-item-active' : '' }}">
+                        <i class="fas fa-running w-5 text-lg mr-3"></i>
+                        <span>Kelola Ekskul</span>
+                    </a>
+                @endif
+                {{-- Guru pembina: akses ekskul yang dibina --}}
+                @if(Auth::user()->role === 'teacher')
+                    <a href="{{ route('admin.extracurriculars.my-assignments') }}" 
+                       class="nav-item {{ request()->routeIs('admin.extracurriculars.my-assignments') || request()->routeIs('admin.extracurriculars.sessions.*') ? 'menu-item-active' : '' }}">
+                        <i class="fas fa-skating w-5 text-lg mr-3"></i>
+                        <span>Ekskul Saya</span>
+                    </a>
+                @endif
+                @endif
+
+                {{-- ── 6. RAPORT (wali kelas saja) ── --}}
+                @if(in_array(Auth::user()->role, ['teacher', 'superadmin']) && Auth::user()->isHomeroom())
+                <div class="nav-group-label">Raport</div>
+                <a href="{{ route('admin.report-data.index') }}" 
+                   class="nav-item {{ request()->routeIs('admin.report-data.*') ? 'menu-item-active' : '' }}">
+                    <i class="fas fa-user-check w-5 text-lg mr-3"></i>
+                    <span>Kehadiran & Kepribadian</span>
+                </a>
+                <a href="{{ route('admin.dudi.index') }}" 
+                   class="nav-item {{ request()->routeIs('admin.dudi.*') ? 'menu-item-active' : '' }}">
+                    <i class="fas fa-briefcase w-5 text-lg mr-3"></i>
+                    <span>Kegiatan DU/DI</span>
+                </a>
+                <a href="{{ route('admin.reports.index') }}" 
+                   class="nav-item {{ request()->routeIs('admin.reports.*') ? 'menu-item-active' : '' }}">
+                    <i class="fas fa-file-invoice w-5 text-lg mr-3"></i>
+                    <span>Cetak Raport</span>
+                </a>
+                @endif
+
+                {{-- ── 7. ADMINISTRASI SURAT (superadmin, tu) ── --}}
+                @if(in_array(Auth::user()->role, ['superadmin', 'tu']))
+                <div class="nav-group-label">Administrasi Surat</div>
+                <a href="{{ route('admin.letters.index') }}" 
+                   class="nav-item {{ request()->routeIs('admin.letters.*') 
+                       && !request()->routeIs('admin.letters.templates.*') 
+                       && !request()->routeIs('admin.letters.history') 
+                       ? 'menu-item-active' : '' }}">
+                    <i class="fas fa-magic w-5 text-lg mr-3"></i>
+                    <span>Buat Surat</span>
+                </a>
+                <a href="{{ route('admin.letters.history') }}" 
+                   class="nav-item {{ request()->routeIs('admin.letters.history') ? 'menu-item-active' : '' }}">
+                    <i class="fas fa-history w-5 text-lg mr-3"></i>
+                    <span>Arsip Surat</span>
+                </a>
+                @if(Auth::user()->role === 'superadmin')
+                    <a href="{{ route('admin.letters.templates.index') }}" 
+                       class="nav-item {{ request()->routeIs('admin.letters.templates.*') ? 'menu-item-active' : '' }}">
+                        <i class="fas fa-file-code w-5 text-lg mr-3"></i>
+                        <span>Template Surat</span>
+                    </a>
+                @endif
+                @endif
+
+                {{-- ── 8. SISWA (student role) ── --}}
+                @if(Auth::user()->role === 'student')
+                <div class="nav-group-label">Akademik</div>
+                <a href="{{ route('student.exams.index') }}" 
+                   class="nav-item {{ request()->routeIs('student.exams.*') ? 'menu-item-active' : '' }}">
+                    <i class="fas fa-file-alt w-5 text-lg mr-3"></i>
+                    <span>Ujian Saya</span>
+                </a>
+                <a href="{{ route('student.results') }}" 
+                   class="nav-item {{ request()->routeIs('student.results*') ? 'menu-item-active' : '' }}">
+                    <i class="fas fa-chart-line w-5 text-lg mr-3"></i>
+                    <span>Hasil Saya</span>
+                </a>
+                <a href="{{ route('student.coupons.index') }}" 
+                   class="nav-item {{ request()->routeIs('student.coupons.*') ? 'menu-item-active' : '' }}">
+                    <i class="fas fa-ticket-alt w-5 text-lg mr-3"></i>
+                    <span>Kupon Fisik</span>
+                </a>
+                <div class="nav-group-label">Gamifikasi</div>
+                <a href="{{ route('student.leaderboard') }}" 
+                   class="nav-item {{ request()->routeIs('student.leaderboard') ? 'menu-item-active' : '' }}">
+                    <i class="fas fa-trophy w-5 text-lg mr-3"></i>
+                    <span>Hall of Fame</span>
+                </a>
+                <a href="#" 
+                   onclick="document.getElementById('arenaJoinModal').classList.remove('hidden'); return false;"
+                   class="nav-item {{ request()->routeIs('student.arena.*') ? 'menu-item-active' : '' }}">
+                    <i class="fas fa-fist-raised w-5 text-lg mr-3"></i>
+                    <span class="flex-1">Battle Arena</span>
+                    <span class="ml-auto text-[9px] font-black bg-red-500 text-white px-1.5 py-0.5 rounded-full uppercase tracking-widest">LIVE</span>
+                </a>
+                @endif
+
+                {{-- ── 9. TU MENU ── --}}
+                @if(Auth::user()->role === 'tu')
+                <div class="nav-group-label">Tata Usaha</div>
+                <a href="{{ route('tu.dashboard') }}" 
+                   class="nav-item {{ request()->routeIs('tu.dashboard') ? 'menu-item-active' : '' }}">
+                    <i class="fas fa-tachometer-alt w-5 text-lg mr-3"></i>
+                    <span>Dashboard TU</span>
+                </a>
+                @endif
+
+                {{-- ── 10. GAMIFIKASI (superadmin only) ── --}}
+                @if(Auth::user()->role === 'superadmin')
                 <div class="pt-2" x-data="{ 
-                    open: sessionStorage.getItem('sidebar_academic_open') === 'true' || {{ (request()->routeIs('superadmin.teachers.*') || request()->routeIs('admin.students.*') || request()->routeIs('admin.subjects.*') || request()->routeIs('admin.questions.*') || request()->routeIs('admin.exams.*') || request()->routeIs('admin.results.*') || request()->routeIs('student.exams.*') || request()->routeIs('student.results*')) ? 'true' : 'false' }}
-                }" x-init="$watch('open', value => sessionStorage.setItem('sidebar_academic_open', value))">
+                    open: sessionStorage.getItem('sidebar_gamification_open') === 'true' 
+                        || {{ request()->routeIs('admin.gamification.*') ? 'true' : 'false' }}
+                }" x-init="$watch('open', value => sessionStorage.setItem('sidebar_gamification_open', value))">
+                    <div class="nav-group-label">Gamifikasi</div>
                     <button @click="open = !open" 
-                            class="w-full nav-item justify-between {{ (request()->routeIs('superadmin.teachers.*') || request()->routeIs('admin.students.*') || request()->routeIs('admin.subjects.*') || request()->routeIs('admin.questions.*') || request()->routeIs('admin.exams.*') || request()->routeIs('admin.results.*') || request()->routeIs('student.exams.*') || request()->routeIs('student.results*')) ? 'bg-gray-50' : '' }}">
+                            class="w-full nav-item justify-between 
+                                   {{ request()->routeIs('admin.gamification.*') ? 'bg-gray-50' : '' }}">
                         <div class="flex items-center">
-                            <i class="fas fa-graduation-cap w-5 text-lg mr-3"></i>
-                            <span class="font-bold text-[11px] uppercase tracking-widest">Academic (LMS)</span>
+                            <i class="fas fa-trophy w-5 text-lg mr-3"></i>
+                            <span class="font-bold text-[11px] uppercase tracking-widest">
+                                Gamification
+                            </span>
                         </div>
-                        <i class="fas fa-chevron-down text-xs transition-transform duration-300" :class="open ? 'rotate-180' : ''"></i>
+                        <i class="fas fa-chevron-down text-xs transition-transform duration-300" 
+                           :class="open ? 'rotate-180' : ''"></i>
                     </button>
-
-                    <div x-show="open" x-cloak x-collapse class="mt-1 ml-4 space-y-1 border-l-2 border-gray-100 pl-2">
-                        @if(Auth::user()->role === 'superadmin')
-                            <a href="{{ route('superadmin.teachers.index') }}" class="nav-item py-2 text-sm {{ request()->routeIs('superadmin.teachers.*') ? 'menu-item-active' : '' }}">
-                                <i class="fas fa-chalkboard-teacher w-4 mr-2"></i>
-                                <span>Guru</span>
-                            </a>
-                            <a href="{{ route('admin.students.index') }}" class="nav-item py-2 text-sm {{ request()->routeIs('admin.students.*') ? 'menu-item-active' : '' }}">
-                                <i class="fas fa-users w-4 mr-2"></i>
-                                <span>Siswa</span>
-                            </a>
-                            <a href="{{ route('admin.subjects.index') }}" class="nav-item py-2 text-sm {{ request()->routeIs('admin.subjects.*') ? 'menu-item-active' : '' }}">
-                                <i class="fas fa-book w-4 mr-2"></i>
-                                <span>Mapel</span>
-                            </a>
-                        @endif
-
-                        @if(in_array(Auth::user()->role, ['teacher', 'superadmin']))
-                            <a href="{{ route('admin.questions.index') }}" class="nav-item py-2 text-sm {{ request()->routeIs('admin.questions.*') ? 'menu-item-active' : '' }}">
-                                <i class="fas fa-question-circle w-4 mr-2"></i>
-                                <span>Soal</span>
-                            </a>
-                            <a href="{{ route('admin.exams.index') }}" class="nav-item py-2 text-sm {{ request()->routeIs('admin.exams.*') ? 'menu-item-active' : '' }}">
-                                <i class="fas fa-file-alt w-4 mr-2"></i>
-                                <span>Ujian</span>
-                            </a>
-                            <a href="{{ route('admin.results.index') }}" class="nav-item py-2 text-sm {{ request()->routeIs('admin.results.*') ? 'menu-item-active' : '' }}">
-                                <i class="fas fa-chart-line w-4 mr-2"></i>
-                                <span>Hasil</span>
-                            </a>
-                        @endif
-
-                        @if(Auth::user()->role === 'student')
-                            <a href="{{ route('student.exams.index') }}" class="nav-item py-2 text-sm {{ request()->routeIs('student.exams.*') ? 'menu-item-active' : '' }}">
-                                <i class="fas fa-file-alt w-4 mr-2"></i>
-                                <span>Ujian Saya</span>
-                            </a>
-                            <a href="{{ route('student.results') }}" class="nav-item py-2 text-sm {{ request()->routeIs('student.results*') ? 'menu-item-active' : '' }}">
-                                <i class="fas fa-chart-line w-4 mr-2"></i>
-                                <span>Hasil Saya</span>
-                            </a>
-                            <a href="{{ route('student.coupons.index') }}" class="nav-item flex items-center py-2 text-sm {{ request()->routeIs('student.coupons.*') ? 'menu-item-active' : '' }}">
-                                <i class="fas fa-ticket-alt w-4 mr-2"></i>
-                                <span>Kupon Fisik</span>
-                            </a>
-                            <a href="{{ route('student.leaderboard') }}" class="nav-item py-2 text-sm {{ request()->routeIs('student.leaderboard') ? 'menu-item-active' : '' }}">
-                                <i class="fas fa-trophy w-4 mr-2"></i>
-                                <span>Leader Board</span>
-                            </a>
-                            <a href="#" onclick="document.getElementById('arenaJoinModal').classList.remove('hidden'); return false;"
-                               class="nav-item py-2 text-sm {{ request()->routeIs('student.arena.*') ? 'menu-item-active' : '' }}">
-                                <i class="fas fa-fist-raised w-4 mr-2"></i>
-                                <span>Battle Arena</span>
-                                <span class="ml-auto text-[9px] font-black bg-red-500 text-white px-1.5 py-0.5 rounded-full uppercase tracking-widest">LIVE</span>
-                            </a>
-                        @endif
+                    <div x-show="open" x-cloak x-collapse 
+                         class="mt-1 ml-4 space-y-1 border-l-2 border-gray-100 pl-2">
+                        <a href="{{ route('admin.gamification.settings') }}" 
+                           class="nav-item py-2 text-sm {{ request()->routeIs('admin.gamification.settings') ? 'menu-item-active' : '' }}">
+                            <i class="fas fa-sliders-h w-4 mr-2"></i><span>Settings</span>
+                        </a>
+                        <a href="{{ route('admin.gamification.achievements') }}" 
+                           class="nav-item py-2 text-sm {{ request()->routeIs('admin.gamification.achievements*') ? 'menu-item-active' : '' }}">
+                            <i class="fas fa-medal w-4 mr-2"></i><span>Achievements</span>
+                        </a>
+                        <a href="{{ route('admin.gamification.themes') }}" 
+                           class="nav-item py-2 text-sm {{ request()->routeIs('admin.gamification.themes*') ? 'menu-item-active' : '' }}">
+                            <i class="fas fa-palette w-4 mr-2"></i><span>Themes</span>
+                        </a>
+                        <a href="{{ route('admin.gamification.arena.index') }}" 
+                           class="nav-item py-2 text-sm {{ request()->routeIs('admin.gamification.arena*') ? 'menu-item-active' : '' }}">
+                            <i class="fas fa-fist-raised w-4 mr-2"></i><span>Battle Arena</span>
+                        </a>
+                        <a href="{{ route('admin.gamification.coupons.index') }}" 
+                           class="nav-item py-2 text-sm {{ request()->routeIs('admin.gamification.coupons*') ? 'menu-item-active' : '' }}">
+                            <i class="fas fa-ticket-alt w-4 mr-2"></i><span>Kupon Hadiah</span>
+                        </a>
+                        <a href="{{ route('admin.gamification.seasons.index') }}" 
+                           class="nav-item py-2 text-sm {{ request()->routeIs('admin.gamification.seasons*') ? 'menu-item-active' : '' }}">
+                            <i class="fas fa-calendar-alt w-4 mr-2"></i><span>Seasons</span>
+                        </a>
+                        <a href="{{ route('admin.gamification.leaderboard.index') }}" 
+                           class="nav-item py-2 text-sm {{ request()->routeIs('admin.gamification.leaderboard*') ? 'menu-item-active' : '' }}">
+                            <i class="fas fa-trophy w-4 mr-2"></i><span>Leaderboard</span>
+                        </a>
                     </div>
                 </div>
-
-                {{-- ── 4. SYSTEM ── --}}
-                @if(in_array(Auth::user()->role, ['teacher', 'superadmin']))
-                    <div class="nav-group-label">System</div>
-                    <a href="{{ route('admin.tokens.index') }}" class="nav-item {{ request()->routeIs('admin.tokens.*') ? 'menu-item-active' : '' }}">
-                        <i class="fas fa-key w-5 text-lg mr-3"></i>
-                        <span>Kelola Token</span>
-                    </a>
-                    <a href="{{ route('admin.monitor-exams.index') }}" class="nav-item {{ request()->routeIs('admin.monitor-exams.*') ? 'menu-item-active' : '' }}">
-                        <i class="fas fa-video w-5 text-lg mr-3"></i>
-                        <span>Pantau Ujian</span>
-                    </a>
                 @endif
 
-                {{-- ── 5. GAMIFICATION - Collapsible ── --}}
+                {{-- ── 11. AKUN ── --}}
+                <div class="nav-group-label">Akun</div>
                 @if(Auth::user()->role === 'superadmin')
-                    <div class="pt-2" x-data="{ 
-                        open: sessionStorage.getItem('sidebar_gamification_open') === 'true' || {{ request()->routeIs('admin.gamification.*') ? 'true' : 'false' }}
-                    }" x-init="$watch('open', value => sessionStorage.setItem('sidebar_gamification_open', value))">
-                        <button @click="open = !open" 
-                                class="w-full nav-item justify-between {{ request()->routeIs('admin.gamification.*') ? 'bg-gray-50' : '' }}">
-                            <div class="flex items-center">
-                                <i class="fas fa-trophy w-5 text-lg mr-3"></i>
-                                <span class="font-bold text-[11px] uppercase tracking-widest">Gamification</span>
-                            </div>
-                            <i class="fas fa-chevron-down text-xs transition-transform duration-300" :class="open ? 'rotate-180' : ''"></i>
-                        </button>
-
-                        <div x-show="open" x-cloak x-collapse class="mt-1 ml-4 space-y-1 border-l-2 border-gray-100 pl-2">
-                            <a href="{{ route('admin.gamification.settings') }}" class="nav-item py-2 text-sm {{ request()->routeIs('admin.gamification.settings') ? 'menu-item-active' : '' }}">
-                                <i class="fas fa-sliders-h w-4 mr-2"></i>
-                                <span>Settings</span>
-                            </a>
-                            <a href="{{ route('admin.gamification.achievements') }}" class="nav-item py-2 text-sm {{ request()->routeIs('admin.gamification.achievements*') ? 'menu-item-active' : '' }}">
-                                <i class="fas fa-medal w-4 mr-2"></i>
-                                <span>Achievements</span>
-                            </a>
-                            <a href="{{ route('admin.gamification.themes') }}" class="nav-item py-2 text-sm {{ request()->routeIs('admin.gamification.themes*') ? 'menu-item-active' : '' }}">
-                                <i class="fas fa-palette w-4 mr-2"></i>
-                                <span>Themes</span>
-                            </a>
-                            <a href="{{ route('admin.gamification.arena.index') }}" class="nav-item py-2 text-sm {{ request()->routeIs('admin.gamification.arena*') ? 'menu-item-active' : '' }}">
-                                <i class="fas fa-fist-raised w-4 mr-2"></i>
-                                <span>Battle Arena</span>
-                            </a>
-                            <a href="{{ route('admin.gamification.coupons.index') }}" class="nav-item py-2 text-sm {{ request()->routeIs('admin.gamification.coupons*') ? 'menu-item-active' : '' }}">
-                                <i class="fas fa-ticket-alt w-4 mr-2"></i>
-                                <span>Kupon Hadiah</span>
-                            </a>
-                            <a href="{{ route('admin.gamification.seasons.index') }}" class="nav-item py-2 text-sm {{ request()->routeIs('admin.gamification.seasons*') ? 'menu-item-active' : '' }}">
-                                <i class="fas fa-calendar-alt w-4 mr-2"></i>
-                                <span>Seasons</span>
-                            </a>
-                            <a href="{{ route('admin.gamification.leaderboard.index') }}" class="nav-item py-2 text-sm {{ request()->routeIs('admin.gamification.leaderboard*') ? 'menu-item-active' : '' }}">
-                                <i class="fas fa-trophy w-4 mr-2"></i>
-                                <span>Leaderboard</span>
-                            </a>
-                        </div>
-                    </div>
-                @endif
-
-                {{-- ── ACCOUNT & OTHERS ── --}}
-                <div class="nav-group-label">Account</div>
-                @if(Auth::user()->role === 'superadmin')
-                    <a href="{{ route('admin.settings.index') }}" class="nav-item {{ request()->routeIs('admin.settings.*') ? 'menu-item-active' : '' }}">
+                    <a href="{{ route('admin.settings.index') }}" 
+                       class="nav-item {{ request()->routeIs('admin.settings.*') ? 'menu-item-active' : '' }}">
                         <i class="fas fa-cog w-5 text-lg mr-3"></i>
                         <span>Pengaturan</span>
                     </a>
-                @elseif(Auth::user()->role === 'teacher')
-                    <a href="{{ route('teacher.settings.index') }}" class="nav-item {{ request()->routeIs('teacher.settings.*') ? 'menu-item-active' : '' }}">
+                @elseif(in_array(Auth::user()->role, ['teacher', 'principal']))
+                    <a href="{{ route('teacher.settings.index') }}" 
+                       class="nav-item {{ request()->routeIs('teacher.settings.*') ? 'menu-item-active' : '' }}">
                         <i class="fas fa-user-cog w-5 text-lg mr-3"></i>
                         <span>Pengaturan</span>
                     </a>
                 @elseif(Auth::user()->role === 'student')
-                    <a href="{{ route('student.profile') }}" class="nav-item {{ request()->routeIs('student.profile') ? 'menu-item-active' : '' }}">
+                    <a href="{{ route('student.profile') }}" 
+                       class="nav-item {{ request()->routeIs('student.profile') ? 'menu-item-active' : '' }}">
                         <i class="fas fa-user-circle w-5 text-lg mr-3"></i>
                         <span>Profil</span>
                     </a>
                 @endif
-                
+
                 <form action="{{ route('logout') }}" method="POST" class="block">
                     @csrf
                     <button type="submit" class="w-full nav-item text-red-600 hover:bg-red-50">
@@ -350,6 +455,7 @@
                         <span>Keluar</span>
                     </button>
                 </form>
+
             </nav>
         </aside>
 

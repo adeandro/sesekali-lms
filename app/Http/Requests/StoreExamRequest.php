@@ -33,7 +33,7 @@ class StoreExamRequest extends FormRequest
         }
 
         // Handle unchecked checkboxes - HTML doesn't send them, so we need to explicitly set to false
-        $booleanFields = ['randomize_questions', 'randomize_options', 'show_score_after_submit', 'allow_review_results'];
+        $booleanFields = ['randomize_questions', 'randomize_options', 'show_score_after_submit', 'allow_review_results', 'include_in_report'];
         foreach ($booleanFields as $field) {
             if (!$this->has($field)) {
                 $this->merge([$field => false]);
@@ -75,6 +75,11 @@ class StoreExamRequest extends FormRequest
             'weight_pg' => 'required|integer|min:0|max:100',
             'weight_essay' => 'required|integer|min:0|max:100',
             'status' => 'required|in:draft,published',
+            // Sprint 1 — Raport classification
+            'exam_type'         => 'required|in:latihan,harian,uts,pts,uas,pas',
+            'semester'          => 'required_unless:exam_type,latihan|nullable|in:1,2',
+            'academic_year'     => ['required_unless:exam_type,latihan', 'nullable', 'regex:/^\d{4}\/\d{4}$/'],
+            'include_in_report' => 'boolean',
         ];
     }
 
