@@ -28,7 +28,7 @@ class ClassController extends Controller
      */
     public function create()
     {
-        $teachers = User::where('role', 'teacher')->orderBy('name')->get();
+        $teachers = User::where('role', '=', 'teacher')->orderBy('name')->get();
         return view('admin.classes.create', compact('teachers'));
     }
 
@@ -53,10 +53,16 @@ class ClassController extends Controller
             $data['is_active'] = false;
         }
 
-        ClassRoom::create($data);
+        $classroom = ClassRoom::create($data);
+        
+        // Auto-assign matching students (Grade & Section/ClassGroup)
+        User::where('role', '=', 'student')
+            ->where('grade', '=', $classroom->grade)
+            ->where('class_group', '=', $classroom->section)
+            ->update(['class_id' => $classroom->id]);
 
         return redirect()->route('admin.classes.index')
-            ->with('success', 'Kelas berhasil dibuat.');
+            ->with('success', 'Kelas berhasil dibuat dan siswa yang cocok telah ditautkan.');
     }
 
     /**
@@ -64,7 +70,7 @@ class ClassController extends Controller
      */
     public function edit(ClassRoom $class)
     {
-        $teachers = User::where('role', 'teacher')->orderBy('name')->get();
+        $teachers = User::where('role', '=', 'teacher')->orderBy('name')->get();
         return view('admin.classes.edit', compact('class', 'teachers'));
     }
 
@@ -91,8 +97,14 @@ class ClassController extends Controller
 
         $class->update($data);
 
+        // Auto-assign matching students (Grade & Section/ClassGroup)
+        User::where('role', '=', 'student')
+            ->where('grade', '=', $class->grade)
+            ->where('class_group', '=', $class->section)
+            ->update(['class_id' => $class->id]);
+
         return redirect()->route('admin.classes.index')
-            ->with('success', 'Kelas berhasil diperbarui.');
+            ->with('success', 'Kelas berhasil diperbarui dan siswa yang cocok telah ditautkan.');
     }
 
     /**
