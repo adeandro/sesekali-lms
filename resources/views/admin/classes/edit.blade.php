@@ -107,8 +107,9 @@
                         <span class="text-sm font-black text-gray-900 leading-tight">Kelas Aktif</span>
                         <span class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mt-1">Centang jika kelas ini aktif di tahun ajaran ini</span>
                     </div>
-                    <div class="relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out bg-gray-300 peer-checked:bg-indigo-600">
-                        <span class="pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform duration-200 peer-checked:translate-x-5 translate-x-0"></span>
+                    <div class="relative h-7 w-12 shrink-0">
+                        <div class="absolute inset-0 rounded-full bg-gray-300 transition-colors duration-200 peer-checked:bg-indigo-600"></div>
+                        <div class="absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 peer-checked:translate-x-5"></div>
                     </div>
                 </label>
             </div>
