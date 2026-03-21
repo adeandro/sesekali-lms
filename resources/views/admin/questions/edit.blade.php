@@ -154,9 +154,9 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 relative mb-20 overflow-visible">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 relative mb-20 overflow-visible">
                     @foreach(['A' => 'option_a', 'B' => 'option_b', 'C' => 'option_c', 'D' => 'option_d', 'E' => 'option_e'] as $label => $name)
-                        <div class="p-8 bg-gray-50 rounded-[2.5rem] border border-gray-100 space-y-6 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-500 group/opt">
+                        <div class="p-8 bg-gray-50 rounded-[2.5rem] border border-gray-100 space-y-6 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-500 group/opt relative hover:z-50 focus-within:z-50 min-h-[300px] flex flex-col">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-4">
                                     <span class="w-10 h-10 flex items-center justify-center bg-indigo-600 text-white rounded-[1.25rem] text-sm font-black shadow-lg shadow-indigo-100 group-hover/opt:scale-110 transition-transform">
@@ -169,7 +169,7 @@
                             {{-- Hidden textarea --}}
                             <textarea id="{{ $name }}" name="{{ $name }}" class="hidden">{{ old($name, $question->$name) }}</textarea>
                             {{-- Quill editor --}}
-                            <div id="quill-{{ $name }}" class="bg-white rounded-2xl" style="min-height: 80px;"></div>
+                            <div id="quill-{{ $name }}" class="bg-white rounded-[1.5rem] overflow-hidden flex-1" style="min-height: 150px;"></div>
                         </div>
                     @endforeach
                 </div>
@@ -427,20 +427,20 @@ window.addEventListener('load', toggleMultipleChoice);
     .ql-toolbar.ql-snow {
         border: none;
         border-bottom: 1px solid #f3f4f6;
-        border-radius: 2rem 2rem 0 0;
+        border-radius: 1.5rem 1.5rem 0 0;
         background: white;
         padding: 8px 12px;
     }
     .ql-container.ql-snow {
         border: none;
-        border-radius: 0 0 2rem 2rem;
+        border-radius: 0 0 1.5rem 1.5rem;
     }
     #quill-question .ql-editor { min-height: 180px; font-size: 13pt; font-family: Arial, sans-serif; }
     #quill-option_a .ql-editor,
     #quill-option_b .ql-editor,
     #quill-option_c .ql-editor,
     #quill-option_d .ql-editor,
-    #quill-option_e .ql-editor { min-height: 60px; font-size: 11pt; font-family: Arial, sans-serif; }
+    #quill-option_e .ql-editor { min-height: 150px; font-size: 11pt; font-family: Arial, sans-serif; }
     #quill-explanation .ql-editor { min-height: 120px; font-size: 11pt; font-family: Arial, sans-serif; }
     .ql-editor img { max-width: 100%; height: auto; border-radius: 8px; margin: 4px 0; }
 
@@ -504,6 +504,11 @@ window.addEventListener('load', toggleMultipleChoice);
     .ql-snow .ql-picker.ql-font .ql-picker-item[data-value="amiri"]::before { 
         content: 'Amiri (Arab)' !important; 
         font-family: 'Amiri', serif !important; 
+    }
+
+    /* Ensure font dropdown is above other cards */
+    .ql-snow .ql-picker-options {
+        z-index: 1000 !important;
     }
 
     /* ── RTL support di editor ── */
