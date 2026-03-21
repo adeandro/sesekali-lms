@@ -25,6 +25,8 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             AchievementSeeder::class,
             ThemeSeeder::class,
+            LetterTemplateSeeder::class,
+            UserPersonalDataSeeder::class,
         ]);
 
         // Create sample subjects
@@ -151,7 +153,7 @@ class DatabaseSeeder extends Seeder
 
         $this->command->info('Database seeded successfully with:');
         $this->command->info('- 1 Superadmin (superadmin@localhost)');
-        $this->command->info('- 1 Admin (admin@localhost)');
+        $this->command->info('- 1 Teacher (admin@localhost)');
         $this->command->info('- 80 Students (student01@school.local - student80@school.local)');
         $this->command->info('  • Grade 10: ~18 students');
         $this->command->info('  • Grade 11: ~17 students');

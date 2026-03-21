@@ -24,13 +24,13 @@ class UserSeeder extends Seeder
             ]
         );
 
-        // Create admin
+        // Create admin (now teacher)
         User::updateOrCreate(
             ['email' => 'admin@localhost'],
             [
                 'name' => 'Admin User',
                 'password' => Hash::make('password'),
-                'role' => 'admin',
+                'role' => 'teacher',
                 'status' => 'Aktif',
             ]
         );
