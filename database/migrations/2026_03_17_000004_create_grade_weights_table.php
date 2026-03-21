@@ -14,7 +14,7 @@ return new class extends Migration
                 ->constrained('subjects')->cascadeOnDelete();
             $table->foreignId('teacher_id')
                 ->constrained('users')->cascadeOnDelete();
-                $table->tinyInteger('jenjang')->unsigned()->nullable()->after('subject_id');
+                $table->tinyInteger('jenjang')->unsigned()->nullable();
             $table->tinyInteger('semester')->unsigned();
             $table->string('academic_year', 9);
             $table->decimal('weight_harian', 5, 2)->default(40);
