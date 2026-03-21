@@ -28,7 +28,7 @@ class ClassController extends Controller
      */
     public function create()
     {
-        $teachers = User::where('role', '=', 'teacher')->orderBy('name')->get();
+        $teachers = User::whereIn('role', ['teacher', 'superadmin'])->orderBy('name')->get();
         return view('admin.classes.create', compact('teachers'));
     }
 
@@ -70,7 +70,7 @@ class ClassController extends Controller
      */
     public function edit(ClassRoom $class)
     {
-        $teachers = User::where('role', '=', 'teacher')->orderBy('name')->get();
+        $teachers = User::whereIn('role', ['teacher', 'superadmin'])->orderBy('name')->get();
         return view('admin.classes.edit', compact('class', 'teachers'));
     }
 
