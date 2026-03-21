@@ -218,9 +218,12 @@
                     <div class="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-gray-400 group-hover:text-indigo-600 transition-colors peer-checked:bg-indigo-600 peer-checked:text-white mr-5 shadow-sm">
                         <i class="fas fa-random"></i>
                     </div>
-                    <div class="flex flex-col">
+                    <div class="flex flex-col flex-1">
                         <span class="text-sm font-black text-gray-900 leading-tight">Acak Urutan Soal</span>
                         <span class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mt-1 leading-relaxed">Urutan soal berbeda untuk setiap siswa</span>
+                    </div>
+                    <div class="relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out bg-gray-300 peer-checked:bg-indigo-600 peer-checked:[&>span]:translate-x-5">
+                        <span class="pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform duration-200 translate-x-0"></span>
                     </div>
                 </label>
 
@@ -229,9 +232,12 @@
                     <div class="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-gray-400 group-hover:text-indigo-600 transition-colors peer-checked:bg-indigo-600 peer-checked:text-white mr-5 shadow-sm">
                         <i class="fas fa-sync-alt"></i>
                     </div>
-                    <div class="flex flex-col">
+                    <div class="flex flex-col flex-1">
                         <span class="text-sm font-black text-gray-900 leading-tight">Acak Pilihan Jawaban</span>
                         <span class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mt-1 leading-relaxed">Urutan opsi (A-E) akan diacak secara sistem</span>
+                    </div>
+                    <div class="relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out bg-gray-300 peer-checked:bg-indigo-600 peer-checked:[&>span]:translate-x-5">
+                        <span class="pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform duration-200 translate-x-0"></span>
                     </div>
                 </label>
 
@@ -240,9 +246,12 @@
                     <div class="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-gray-400 group-hover:text-indigo-600 transition-colors peer-checked:bg-indigo-600 peer-checked:text-white mr-5 shadow-sm">
                         <i class="fas fa-chart-line"></i>
                     </div>
-                    <div class="flex flex-col">
+                    <div class="flex flex-col flex-1">
                         <span class="text-sm font-black text-gray-900 leading-tight">Tampilkan Nilai Segera</span>
                         <span class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mt-1 leading-relaxed">Siswa dapat melihat hasil setelah selesai</span>
+                    </div>
+                    <div class="relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out bg-gray-300 peer-checked:bg-indigo-600 peer-checked:[&>span]:translate-x-5">
+                        <span class="pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform duration-200 translate-x-0"></span>
                     </div>
                 </label>
 
@@ -251,9 +260,12 @@
                     <div class="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-gray-400 group-hover:text-indigo-600 transition-colors peer-checked:bg-indigo-600 peer-checked:text-white mr-5 shadow-sm">
                         <i class="fas fa-eye"></i>
                     </div>
-                    <div class="flex flex-col">
+                    <div class="flex flex-col flex-1">
                         <span class="text-sm font-black text-gray-900 leading-tight">Izinkan Tinjauan</span>
                         <span class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mt-1 leading-relaxed">Siswa dapat meninjau soal dan kunci jawaban</span>
+                    </div>
+                    <div class="relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out bg-gray-300 peer-checked:bg-indigo-600 peer-checked:[&>span]:translate-x-5">
+                        <span class="pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform duration-200 translate-x-0"></span>
                     </div>
                 </label>
             </div>
@@ -335,8 +347,8 @@
                             <span class="text-sm font-black text-gray-900 leading-tight">Masukkan ke Raport</span>
                             <span class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mt-1 leading-relaxed">Centang jika nilai ujian ini dihitung dalam raport</span>
                         </div>
-                        <div class="relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out bg-gray-300 peer-checked:bg-emerald-500">
-                            <span class="pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform duration-200 peer-checked:translate-x-5 translate-x-0"></span>
+                        <div class="relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out bg-gray-300 peer-checked:bg-emerald-500 peer-checked:[&>span]:translate-x-5">
+                            <span class="pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform duration-200 translate-x-0"></span>
                         </div>
                     </label>
                 </div>
