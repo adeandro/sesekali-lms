@@ -72,7 +72,7 @@
                             class="w-full h-14 bg-gray-50 border-transparent rounded-2xl px-6 text-xs font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all appearance-none cursor-pointer @error('jenjang') ring-2 ring-rose-500 @enderror"
                             required>
                             <option value="">Pilih Kelas</option>
-                            @foreach(range(7, 12) as $k)
+                            @foreach($jenjangs as $k)
                                 <option value="{{ $k }}" {{ old('jenjang') == $k ? 'selected' : '' }}>Kelas {{ $k }}</option>
                             @endforeach
                         </select>

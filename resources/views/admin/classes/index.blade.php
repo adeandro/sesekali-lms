@@ -108,6 +108,17 @@
                                         <i class="fas fa-edit text-[9px]"></i> Edit
                                     </a>
 
+                                    @if($class->students_count == 0)
+                                        <form action="{{ route('admin.classes.destroy', $class) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus kelas ini?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit"
+                                                    class="inline-flex items-center gap-1.5 px-4 py-2 bg-rose-50 text-rose-700 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-rose-100 transition-colors">
+                                                <i class="fas fa-trash text-[9px]"></i> Hapus
+                                            </button>
+                                        </form>
+                                    @endif
+
                                 </div>
                             </td>
                         </tr>

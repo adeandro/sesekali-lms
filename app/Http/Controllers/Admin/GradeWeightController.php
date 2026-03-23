@@ -37,7 +37,8 @@ class GradeWeightController extends Controller
     public function create()
     {
         $subjects = $this->getSubjectsForUser();
-        return view('admin.grade-weights.create', compact('subjects'));
+        $jenjangs = \App\Models\ClassRoom::active()->distinct()->pluck('grade')->sort();
+        return view('admin.grade-weights.create', compact('subjects', 'jenjangs'));
     }
 
     /**
@@ -85,8 +86,9 @@ class GradeWeightController extends Controller
     {
         $this->authorizeWeight($gradeWeight);
         $subjects = $this->getSubjectsForUser();
+        $jenjangs = \App\Models\ClassRoom::active()->distinct()->pluck('grade')->sort();
 
-        return view('admin.grade-weights.edit', compact('gradeWeight', 'subjects'));
+        return view('admin.grade-weights.edit', compact('gradeWeight', 'subjects', 'jenjangs'));
     }
 
     /**
@@ -142,7 +144,7 @@ class GradeWeightController extends Controller
         if ($user->role === 'teacher') {
             return $user->subjects()->orderBy('name')->get();
         }
-        return Subject::orderBy('name')->get();
+        return Subject::orderBy('name', 'asc')->get();
     }
 
     /**

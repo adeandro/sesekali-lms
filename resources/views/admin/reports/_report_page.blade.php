@@ -549,6 +549,8 @@ if (!function_exists('numberToWords')) {
     <tr>
       <td style="border:none; width:48%;
                  text-align:center; vertical-align:top;">
+        {{-- Spacer to align with date line on the right --}}
+        <p style="margin:0; visibility:hidden;">&nbsp;</p>
         <p style="margin:0; font-weight:bold;">
           Wali Murid,
         </p>
