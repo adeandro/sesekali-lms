@@ -90,6 +90,15 @@
                                             {{ $categoryKey === 'umum' ? 'Umum' : ($categoryKey === 'kejuruan' ? 'Kejuruan' : ($categoryKey === 'muatan_sekolah' ? 'Muatan Lokal' : 'Pilihan')) }}
                                         </span>
                                         <span class="px-2 py-1 bg-amber-50 text-amber-600 border border-amber-100 rounded-md text-[8px] font-black tracking-widest">KKM: {{ $subject->kkm }}</span>
+                                        <div class="flex flex-wrap gap-1 justify-end">
+                                            @if($subject->active_grades === null)
+                                                <span class="px-2 py-0.5 bg-gray-50 text-gray-400 border border-gray-100 rounded text-[7px] font-black tracking-widest uppercase">Semua Jenjang</span>
+                                            @else
+                                                @foreach($subject->active_grades as $g)
+                                                    <span class="px-2 py-0.5 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded text-[7px] font-black tracking-widest uppercase">Kelas {{ $g }}</span>
+                                                @endforeach
+                                            @endif
+                                        </div>
                                     </div>
                                 </div>
                                 

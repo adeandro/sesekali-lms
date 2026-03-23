@@ -118,6 +118,37 @@
                     @enderror
                 </div>
 
+                <div class="space-y-4 md:col-span-2 bg-gray-50/50 p-6 rounded-[2rem] border-2 border-transparent focus-within:border-amber-500/10 transition-all">
+                    <label class="inline-flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 ml-1">
+                        <i class="fas fa-graduation-cap text-amber-400"></i> Aktif di Jenjang
+                    </label>
+                    <p class="text-[10px] font-black text-gray-400 mb-4 ml-1 uppercase tracking-wider italic">
+                        Kosongkan (centang semua atau tidak ada pilihan) = aktif di semua jenjang
+                    </p>
+                    <div class="flex flex-wrap gap-6 ml-1">
+                        @foreach(['X', 'XI', 'XII'] as $grade)
+                            <label class="flex items-center gap-3 cursor-pointer group/label">
+                                <div class="relative flex items-center">
+                                    <input type="checkbox" name="active_grades[]" value="{{ $grade }}" 
+                                        @checked(
+                                            old('active_grades') !== null 
+                                            ? (is_array(old('active_grades')) && in_array($grade, old('active_grades')))
+                                            : ($subject->active_grades === null || in_array($grade, $subject->active_grades))
+                                        )
+                                        class="w-6 h-6 rounded-lg border-2 border-gray-200 text-amber-600 focus:ring-amber-500/20 transition-all cursor-pointer">
+                                </div>
+                                <span class="text-sm font-black text-gray-600 group-hover/label:text-amber-600 transition-colors uppercase tracking-widest">Kelas {{ $grade }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                    @error('active_grades')
+                        <div class="flex items-center gap-2 mt-3 ml-2 text-rose-500 animate-shake">
+                            <i class="fas fa-exclamation-circle text-xs"></i>
+                            <p class="text-[10px] font-black uppercase tracking-widest italic">{{ $message }}</p>
+                        </div>
+                    @enderror
+                </div>
+
                 <div class="space-y-4">
                     <label for="sort_order" class="inline-flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 ml-1">
                         <i class="fas fa-sort-numeric-down text-amber-400"></i> Urutan Tampil

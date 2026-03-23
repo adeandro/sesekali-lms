@@ -35,7 +35,16 @@ class SubjectController extends Controller
             'kkm' => 'required|integer|min:0|max:100',
             'category' => 'required|in:umum,kejuruan,muatan_sekolah,pilihan',
             'sort_order' => 'nullable|integer|min:0',
+            'active_grades'   => 'nullable|array',
+            'active_grades.*' => 'in:X,XI,XII',
         ]);
+
+        $activeGrades = $request->input('active_grades', []);
+        if (count($activeGrades) === 0 || count($activeGrades) === 3) {
+            $validated['active_grades'] = null;
+        } else {
+            $validated['active_grades'] = $activeGrades;
+        }
 
         Subject::create($validated);
 
@@ -61,7 +70,16 @@ class SubjectController extends Controller
             'kkm' => 'required|integer|min:0|max:100',
             'category' => 'required|in:umum,kejuruan,muatan_sekolah,pilihan',
             'sort_order' => 'nullable|integer|min:0',
+            'active_grades'   => 'nullable|array',
+            'active_grades.*' => 'in:X,XI,XII',
         ]);
+
+        $activeGrades = $request->input('active_grades', []);
+        if (count($activeGrades) === 0 || count($activeGrades) === 3) {
+            $validated['active_grades'] = null;
+        } else {
+            $validated['active_grades'] = $activeGrades;
+        }
 
         $subject->update($validated);
 

@@ -320,10 +320,23 @@ class GradeService
         // Fallback or explicit jenjang
         $jenjang = $jenjang ?? 10;
 
+        // Deteksi jenjang dari nama kelas
+        $gradeLabel = match($jenjang) {
+            10 => 'X',
+            11 => 'XI',
+            12 => 'XII',
+            default => null,
+        };
+
         // Ambil semua mapel yang terdaftar (mempunyai kategori) untuk urutan raport
-        $subjects = Subject::whereNotNull('category', 'and')
-            ->forReport()
-            ->get();
+        $subjectQuery = Subject::whereNotNull('category', 'and')
+            ->forReport();
+
+        if ($gradeLabel !== null) {
+            $subjectQuery->forGrade($gradeLabel);
+        }
+
+        $subjects = $subjectQuery->get();
 
         $result = [];
         foreach ($subjects as $subject) {

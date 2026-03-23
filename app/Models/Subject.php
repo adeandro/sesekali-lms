@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Subject extends Model
 {
-    protected $fillable = ['name', 'kkm', 'category', 'sort_order'];
+    protected $fillable = ['name', 'kkm', 'category', 'sort_order', 'active_grades'];
 
     protected $casts = [
         'sort_order' => 'integer',
+        'active_grades' => 'array',
     ];
 
     const CATEGORY_UMUM          = 'umum';
@@ -26,6 +27,28 @@ class Subject extends Model
             self::CATEGORY_MUATAN_SEKOLAH => 'C. Muatan Sekolah',
             self::CATEGORY_PILIHAN        => 'D. Mata Pelajaran Pilihan',
         ];
+    }
+
+    /**
+     * Cek apakah mapel aktif di jenjang tertentu.
+     * Null = aktif di semua jenjang.
+     * @param string $grade 'X', 'XI', atau 'XII'
+     */
+    public function isActiveForGrade(string $grade): bool
+    {
+        if ($this->active_grades === null) return true;
+        return in_array($grade, $this->active_grades);
+    }
+
+    /**
+     * Scope: filter mapel aktif untuk jenjang tertentu
+     */
+    public function scopeForGrade($query, string $grade)
+    {
+        return $query->where(function ($q) use ($grade) {
+            $q->whereNull('active_grades')
+              ->orWhereJsonContains('active_grades', $grade);
+        });
     }
 
     public function scopeForReport($query, $semester = null, $academicYear = null, $jenjang = null, $studentId = null)
