@@ -180,9 +180,10 @@ class ExtracurricularController extends Controller
             ->with('student.classRoom')
             ->get();
 
-        // Daftar guru yang belum jadi coach di ekskul ini
-        $availableTeachers = User::where('role', 'teacher')
+        // Daftar guru (atau superadmin) yang belum jadi coach di ekskul ini
+        $availableTeachers = User::whereIn('role', ['teacher', 'superadmin'])
             ->whereNotIn('id', $coaches->pluck('teacher_id'))
+            ->orderBy('role', 'desc')
             ->orderBy('name')
             ->get();
 

@@ -276,8 +276,8 @@
                         <span>Kelola Ekskul</span>
                     </a>
                 @endif
-                {{-- Guru pembina: akses ekskul yang dibina --}}
-                @if(Auth::user()->role === 'teacher')
+                {{-- Guru pembina: akses ekskul yang dibina (Superadmin lihat semua) --}}
+                @if(Auth::user()->role === 'superadmin' || Auth::user()->isExtracurricularCoach())
                     <a href="{{ route('admin.extracurriculars.my-assignments') }}" 
                        class="nav-item {{ request()->routeIs('admin.extracurriculars.my-assignments') || request()->routeIs('admin.extracurriculars.sessions.*') ? 'menu-item-active' : '' }}">
                         <i class="fas fa-skating w-5 text-lg mr-3"></i>

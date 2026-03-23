@@ -208,6 +208,17 @@ class User extends Authenticatable
         return $this->role === 'teacher' && $this->homeroomClasses()->exists();
     }
 
+    /**
+     * Check if the user is an active extracurricular coach.
+     */
+    public function isExtracurricularCoach(): bool
+    {
+        $academicYear = \App\Models\Setting::get('academic_year', '2024/2025');
+        return \App\Models\ExtracurricularCoach::where('teacher_id', $this->id)
+            ->where('academic_year', $academicYear)
+            ->exists();
+    }
+
     // ── Communication Hub Relationships ──────────────────────
 
     /**
