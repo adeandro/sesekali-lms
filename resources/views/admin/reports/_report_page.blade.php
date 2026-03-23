@@ -957,7 +957,6 @@ if (!function_exists('numberToWords')) {
 <div class="w-full grid {{ ($isGenap && !$isMid) ? 'grid-cols-2' : 'grid-cols-1' }} gap-4 mb-6">
   {{-- Kiri: selalu tampil --}}
   <div class="pl-8 text-[10pt]">
-    {{-- Kota & Tanggal dipindah ke dalam kolom Wali Kelas --}}
   </div>
 
   {{-- Kanan: hanya semester genap & bukan mid --}}
@@ -979,34 +978,34 @@ if (!function_exists('numberToWords')) {
 
 
   <table style="width:100%; border-collapse:collapse;
-                margin-top:8px; font-size:9pt;">
+                margin-top:8px; font-size:10pt;">
+
+    {{-- BARIS 1: Orang Tua (kiri) + Wali Kelas (kanan) --}}
     <tr style="vertical-align:top; text-align:center;">
 
       {{-- Kolom 1: Orang Tua / Wali Siswa --}}
-      <td style="width:{{ $isMid ? '50%' : '33%' }};
-                 padding:0 6px; text-align:center;
-                 vertical-align:top;">
-        {{--
-          Spacer kosong setinggi baris lokasi+tanggal di kolom lain
-          agar baris label "Orang Tua" sejajar dengan "Wali Kelas"
-        --}}
-        <div style="height:2.4em;"></div>
-        <p style="margin:0; font-weight:bold;
+      <td style="width:50%; padding:0 8px;
+                 text-align:center; vertical-align:top;">
+        <p style="margin:0;">
+          {{-- spacer setinggi baris kota+tanggal --}}
+          &nbsp;
+        </p>
+        <p style="margin:2px 0; font-weight:bold;
                   text-transform:uppercase;">
           Orang Tua / Wali Siswa,
         </p>
-        <div style="height:70px;"></div>
+        <div style="height:75px;"></div>
         <p style="margin:0;">
           ....................................
         </p>
       </td>
 
       {{-- Kolom 2: Wali Kelas --}}
-      <td style="width:{{ $isMid ? '50%' : '33%' }};
-                 padding:0 6px; text-align:center;
-                 vertical-align:top;">
+      <td style="width:50%; padding:0 8px;
+                 text-align:center; vertical-align:top;">
         <p style="margin:0;">
-          {{ $configs['school_city'] ?? $configs['school_village'] ?? '' }},
+          {{ $configs['school_city']
+              ?? $configs['school_village'] ?? '' }},
           {{ \Carbon\Carbon::now()->locale('id')
               ->translatedFormat('d F Y') }}
         </p>
@@ -1014,7 +1013,7 @@ if (!function_exists('numberToWords')) {
                   text-transform:uppercase;">
           Wali Kelas,
         </p>
-        <div style="height:70px; display:flex;
+        <div style="height:75px; display:flex;
                     align-items:center;
                     justify-content:center;">
           @if($homeroom && $homeroom->signature
@@ -1033,7 +1032,7 @@ if (!function_exists('numberToWords')) {
               }
             @endphp
             <img src="{{ $sigSrc }}"
-                 style="max-height:70px; max-width:130px;
+                 style="max-height:75px; max-width:140px;
                         object-fit:contain;">
           @endif
         </div>
@@ -1052,58 +1051,64 @@ if (!function_exists('numberToWords')) {
         @endif
       </td>
 
-      {{-- Kolom 3: Kepala Sekolah (bukan mid) --}}
-      @if(!$isMid)
-      <td style="width:34%; padding:0 6px;
-                 text-align:center; vertical-align:top;">
-        <p style="margin:0;">
-          {{-- spacer agar sejajar dengan baris kota/tanggal --}}
-          &nbsp;
-        </p>
-        <p style="margin:2px 0; font-weight:bold;
-                  text-transform:uppercase;">
-          Kepala Sekolah,
-        </p>
-        <div style="height:70px; display:flex;
-                    align-items:center;
-                    justify-content:center;">
-          @if($principal && $principal->signature
-              && $principal->is_signature_active)
-            @php
-              $pSigPath = storage_path('app/public/signatures/'
-                  . $principal->signature);
-              $pSigSrc = asset('storage/signatures/'
-                  . $principal->signature);
-              if (file_exists($pSigPath)) {
-                  $pSigBase64 = base64_encode(
-                      file_get_contents($pSigPath));
-                  $pSigSrc = 'data:image/'
-                      . pathinfo($pSigPath, PATHINFO_EXTENSION)
-                      . ';base64,' . $pSigBase64;
-              }
-            @endphp
-            <img src="{{ $pSigSrc }}"
-                 style="max-height:70px; max-width:130px;
-                        object-fit:contain;">
-          @endif
-        </div>
-        <p style="margin:0; font-weight:bold;
-                  text-decoration:underline;">
-          {{ $principalName ?? '' }}
-        </p>
-        @if($principal)
-          <p style="margin:0;">
-            {{ $principal->nip
-                ? 'NIP. ' . $principal->nip
-                : ($principal->niy
-                    ? 'NIY. ' . $principal->niy
-                    : '') }}
-          </p>
-        @endif
-      </td>
-      @endif
-
     </tr>
+
+    {{-- BARIS 2: Kepala Sekolah (tengah) — hanya bukan mid --}}
+    @if(!$isMid)
+    <tr>
+      <td colspan="2" style="text-align:center;
+                              padding-top:16px;">
+        <table style="margin:0 auto; border-collapse:collapse;">
+          <tr>
+            <td style="text-align:center; padding:0 8px;
+                       min-width:180px; vertical-align:top;">
+              <p style="margin:0; font-weight:bold;
+                        text-transform:uppercase;">
+                Kepala Sekolah,
+              </p>
+              <div style="height:75px; display:flex;
+                          align-items:center;
+                          justify-content:center;">
+                @if($principal && $principal->signature
+                    && $principal->is_signature_active)
+                  @php
+                    $pSigPath = storage_path('app/public/signatures/'
+                        . $principal->signature);
+                    $pSigSrc = asset('storage/signatures/'
+                        . $principal->signature);
+                    if (file_exists($pSigPath)) {
+                        $pSigBase64 = base64_encode(
+                            file_get_contents($pSigPath));
+                        $pSigSrc = 'data:image/'
+                            . pathinfo($pSigPath, PATHINFO_EXTENSION)
+                            . ';base64,' . $pSigBase64;
+                    }
+                  @endphp
+                  <img src="{{ $pSigSrc }}"
+                       style="max-height:75px; max-width:140px;
+                              object-fit:contain;">
+                @endif
+              </div>
+              <p style="margin:0; font-weight:bold;
+                        text-decoration:underline;">
+                {{ $principalName ?? '' }}
+              </p>
+              @if($principal)
+                <p style="margin:0;">
+                  {{ $principal->nip
+                      ? 'NIP. ' . $principal->nip
+                      : ($principal->niy
+                          ? 'NIY. ' . $principal->niy
+                          : '') }}
+                </p>
+              @endif
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+    @endif
+
   </table>
   </div>
 
