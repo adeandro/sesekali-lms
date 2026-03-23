@@ -355,35 +355,42 @@ if (!function_exists('numberToWords')) {
     </div>
 
     {{-- ══ JUDUL ══ --}}
-    <div style="text-align:center; margin-bottom:8px;">
-      <p style="margin:0; font-size:11pt;">
+    <div style="text-align:center; margin-bottom:12px;">
+      <h2 style="margin:0; font-size:12pt; font-weight:bold; text-transform:uppercase; line-height:1.2;">
         HASIL PENILAIAN SUMATIF TENGAH SEMESTER
-        {{ strtoupper($semesterLabel) }}
+      </h2>
+      <p style="margin:2px 0; font-size:11pt; font-weight:bold;">
+        {{ strtoupper($semesterLabel) }} - {{ strtoupper($configs['school_name'] ?? '') }}
       </p>
-      <p style="margin:0; font-size:11pt;">
-        {{ strtoupper($configs['school_name'] ?? '') }}
-      </p>
-      <p style="margin:0; font-size:11pt;">
+      <p style="margin:0; font-size:10pt; font-style:italic;">
         Tahun Pelajaran {{ $configs['academic_year'] ?? $academicYear }}
       </p>
     </div>
 
     {{-- ══ IDENTITAS SISWA ══ --}}
-    <div style="margin-bottom:8px; font-size:10pt;">
-      <p style="margin:1px 0; font-weight:bold;">
-        Nama&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: {{ $student->name }}
-      </p>
-      <p style="margin:1px 0; font-weight:bold;">
-        NIS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: {{ $student->nis ?? '-' }}
-      </p>
-      <p style="margin:1px 0; font-weight:bold;">
-        Kelas&nbsp;&nbsp;&nbsp;&nbsp;: {{ $class->name }}
-      </p>
-      <p style="margin:2px 0; font-size:10pt;">
+    <div style="margin-bottom:10px;">
+      <table style="width:100%; border-collapse:collapse; font-size:10pt; font-weight:bold;">
+        <tr>
+          <td style="width:60px; padding:1px 0;">NAMA</td>
+          <td style="width:10px; text-align:center;">:</td>
+          <td>{{ strtoupper($student->name) }}</td>
+        </tr>
+        <tr>
+          <td style="padding:1px 0;">NIS</td>
+          <td style="text-align:center;">:</td>
+          <td>{{ $student->nis ?? '-' }}</td>
+        </tr>
+        <tr>
+          <td style="padding:1px 0;">KELAS</td>
+          <td style="text-align:center;">:</td>
+          <td>{{ $class->name }}</td>
+        </tr>
+      </table>
+    </div>
+  <p style="margin:2px 0; font-size:10pt;">
         telah mengikuti Penilaian Sumatif Tengah Semester
         (PSTS) {{ $semesterLabel }} dengan hasil sebagai berikut
       </p>
-    </div>
 
     {{-- ══ TABEL NILAI ══ --}}
     <table style="width:100%; border-collapse:collapse;
