@@ -568,12 +568,19 @@ if (!function_exists('numberToWords')) {
         <p style="margin:2px 0;">
           Wali Kelas {{ $class->name }},
         </p>
-        @if($homeroom && $homeroom->signature
-            && $homeroom->is_signature_active)
+        @if($homeroom && $homeroom->signature && $homeroom->is_signature_active)
+          @php
+            $sigPath = storage_path('app/public/signatures/' . $homeroom->signature);
+            $sigSrc = asset('storage/signatures/' . $homeroom->signature);
+            if (file_exists($sigPath)) {
+                $sigBase64 = base64_encode(file_get_contents($sigPath));
+                $sigSrc = 'data:image/' . pathinfo($sigPath, PATHINFO_EXTENSION) . ';base64,' . $sigBase64;
+            }
+          @endphp
           <div style="height:50px; display:flex;
                       align-items:center;
                       justify-content:center;">
-            <img src="{{ asset('storage/'.$homeroom->signature) }}"
+            <img src="{{ $sigSrc }}"
                  style="max-height:50px; max-width:120px;
                         object-fit:contain;">
           </div>
@@ -966,8 +973,16 @@ if (!function_exists('numberToWords')) {
       <td style="width: {{ $isMid ? '50%' : '33%' }}; vertical-align: top; padding: 0 10px; text-align: center;">
         <p class="font-bold uppercase tracking-widest leading-relaxed">Wali Kelas,</p>
         <div class="h-20 w-full flex items-center justify-center my-2">
-          @if($homeroom && $homeroom->signature_url && $homeroom->is_signature_active)
-            <img src="{{ $homeroom->signature_url }}"
+          @if($homeroom && $homeroom->signature && $homeroom->is_signature_active)
+            @php
+              $sigPath = storage_path('app/public/signatures/' . $homeroom->signature);
+              $sigSrc = asset('storage/signatures/' . $homeroom->signature);
+              if (file_exists($sigPath)) {
+                  $sigBase64 = base64_encode(file_get_contents($sigPath));
+                  $sigSrc = 'data:image/' . pathinfo($sigPath, PATHINFO_EXTENSION) . ';base64,' . $sigBase64;
+              }
+            @endphp
+            <img src="{{ $sigSrc }}"
                  class="h-20 w-auto object-contain mix-blend-multiply opacity-95 mx-auto">
           @endif
         </div>
@@ -984,8 +999,16 @@ if (!function_exists('numberToWords')) {
       <td style="width: 34%; vertical-align: top; padding: 0 10px; text-align: center;">
         <p class="font-bold uppercase tracking-widest leading-relaxed">Kepala Sekolah,</p>
         <div class="h-20 w-full flex items-center justify-center my-2">
-          @if($principal && $principal->signature_url && $principal->is_signature_active)
-            <img src="{{ $principal->signature_url }}"
+          @if($principal && $principal->signature && $principal->is_signature_active)
+            @php
+              $pSigPath = storage_path('app/public/signatures/' . $principal->signature);
+              $pSigSrc = asset('storage/signatures/' . $principal->signature);
+              if (file_exists($pSigPath)) {
+                  $pSigBase64 = base64_encode(file_get_contents($pSigPath));
+                  $pSigSrc = 'data:image/' . pathinfo($pSigPath, PATHINFO_EXTENSION) . ';base64,' . $pSigBase64;
+              }
+            @endphp
+            <img src="{{ $pSigSrc }}"
                  class="h-20 w-auto object-contain mix-blend-multiply opacity-95 mx-auto">
           @endif
         </div>
