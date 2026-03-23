@@ -787,7 +787,7 @@ if (!function_exists('numberToWords')) {
   </div>
 
   {{-- ══ FOOTNOTE ══ --}}
-  <div style="text-align:center; font-size:7pt; color:#9ca3af; font-style:italic; padding-top:8px;">
+  <div class="report-footer">
     {{ $footnote }}
   </div>
 </div>
