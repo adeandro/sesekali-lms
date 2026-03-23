@@ -283,12 +283,18 @@ if (!function_exists('numberToWords')) {
                 {{ $borderCss }}">
 
       {{-- Logo --}}
-      <div style="display:table-cell; width:75px;
-                  vertical-align:middle;">
+      <div style="display:table-cell; width:75px; vertical-align:middle;">
         @if(isset($configs['logo']) && $configs['logo'])
-          <img src="{{ storage_path('app/public/' . $configs['logo']) }}"
-               style="width:65px; height:65px;
-                      object-fit:contain;">
+          @php
+            $logoPath = storage_path('app/public/' . $configs['logo']);
+            $logoSrc = asset('storage/' . $configs['logo']);
+            if (file_exists($logoPath)) {
+                $logoBase64 = base64_encode(file_get_contents($logoPath));
+                $logoSrc = 'data:image/' . pathinfo($logoPath, PATHINFO_EXTENSION) . ';base64,' . $logoBase64;
+            }
+          @endphp
+          <img src="{{ $logoSrc }}"
+               style="width:65px; height:65px; object-fit:contain;">
         @endif
       </div>
 
