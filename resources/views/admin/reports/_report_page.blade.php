@@ -98,7 +98,33 @@ if (!function_exists('numberToWords')) {
 
   $isGenap = ($semester % 2 === 0);
   $isMid   = (($reportType ?? 'semester') === 'mid');
+@endphp
 
+<style>
+  @media print {
+      .report-footer {
+          position: absolute !important;
+          bottom: 1cm !important;
+          left: 0 !important;
+          right: 0 !important;
+          text-align: center !important;
+          font-size: 7pt !important;
+          color: #9ca3af !important;
+          font-style: italic !important;
+      }
+  }
+
+  @media screen {
+      .report-footer {
+          text-align: center;
+          font-size: 7pt;
+          color: #9ca3af;
+          font-style: italic;
+          padding-top: 8px;
+      }
+  }
+</style>
+@php
   // Kelompokkan mapel per kategori
   $grouped = ['umum' => [], 'kejuruan' => [], 'muatan_sekolah' => [], 'pilihan' => []];
   foreach ($data as $row) {
@@ -953,73 +979,129 @@ if (!function_exists('numberToWords')) {
 </div>
 
 
-  {{-- ══ SIGNATURES ══ --}}
-  <table class="w-full text-[10pt] mt-6 border-none" style="border-collapse: collapse; width: 100%;">
-    <tr style="text-align: center;">
+  <table style="width:100%; border-collapse:collapse;
+                margin-top:12px;">
+    <tr style="vertical-align:top; text-align:center;">
+
       {{-- Kolom 1: Orang Tua / Wali Siswa --}}
-      <td style="width: {{ $isMid ? '50%' : '33%' }}; vertical-align: top; padding: 0 10px; text-align: center;">
-        <p class="font-bold uppercase tracking-widest leading-relaxed">Orang Tua / Wali Siswa,</p>
-        <div class="h-20 my-2"></div>
-        <p class="font-bold">....................................</p>
+      <td style="width:{{ $isMid ? '50%' : '33%' }};
+                 padding:0 8px; text-align:center;
+                 vertical-align:top;">
+        <p style="margin:0; font-weight:bold;
+                  text-transform:uppercase;
+                  letter-spacing:0.05em;">
+          Orang Tua / Wali Siswa,
+        </p>
+        {{-- Spasi tanda tangan sama tinggi dengan kolom lain --}}
+        <div style="height:80px;"></div>
+        <p style="margin:0; font-weight:bold;">
+          ....................................
+        </p>
       </td>
 
       {{-- Kolom 2: Wali Kelas --}}
-      <td style="width: {{ $isMid ? '50%' : '33%' }}; vertical-align: top; padding: 0 10px; text-align: center;">
-        <p class="font-bold uppercase tracking-widest leading-relaxed">Wali Kelas,</p>
-        <div class="h-20 w-full flex items-center justify-center my-2">
-          @if($homeroom && $homeroom->signature && $homeroom->is_signature_active)
+      <td style="width:{{ $isMid ? '50%' : '33%' }};
+                 padding:0 8px; text-align:center;
+                 vertical-align:top;">
+        <p style="margin:0; font-weight:bold;
+                  text-transform:uppercase;
+                  letter-spacing:0.05em;">
+          Wali Kelas,
+        </p>
+        <div style="height:80px; display:flex;
+                    align-items:center;
+                    justify-content:center;">
+          @if($homeroom && $homeroom->signature
+              && $homeroom->is_signature_active)
             @php
-              $sigPath = storage_path('app/public/signatures/' . $homeroom->signature);
-              $sigSrc = asset('storage/signatures/' . $homeroom->signature);
+              $sigPath = storage_path('app/public/signatures/'
+                  . $homeroom->signature);
+              $sigSrc = asset('storage/signatures/'
+                  . $homeroom->signature);
               if (file_exists($sigPath)) {
-                  $sigBase64 = base64_encode(file_get_contents($sigPath));
-                  $sigSrc = 'data:image/' . pathinfo($sigPath, PATHINFO_EXTENSION) . ';base64,' . $sigBase64;
+                  $sigBase64 = base64_encode(
+                      file_get_contents($sigPath));
+                  $sigSrc = 'data:image/'
+                      . pathinfo($sigPath, PATHINFO_EXTENSION)
+                      . ';base64,' . $sigBase64;
               }
             @endphp
             <img src="{{ $sigSrc }}"
-                 class="h-20 w-auto object-contain mix-blend-multiply opacity-95 mx-auto">
+                 style="max-height:80px; max-width:140px;
+                        object-fit:contain;">
           @endif
         </div>
-        <p class="font-bold uppercase underline">{{ $homeroomName ?? '' }}</p>
+        <p style="margin:0; font-weight:bold;
+                  text-decoration:underline;
+                  text-transform:uppercase;">
+          {{ $homeroomName ?? '' }}
+        </p>
         @if($homeroom)
-          <p class="text-[9pt] font-sans text-center">
-            {{ $homeroom->nip ? 'NIP. ' . $homeroom->nip : ($homeroom->niy ? 'NIY. ' . $homeroom->niy : '') }}
+          <p style="margin:0; font-size:9pt;">
+            {{ $homeroom->nip
+                ? 'NIP. ' . $homeroom->nip
+                : ($homeroom->niy
+                    ? 'NIY. ' . $homeroom->niy
+                    : '') }}
           </p>
         @endif
       </td>
 
-      {{-- Kolom 3: Kepala Sekolah (hanya jika bukan mid) --}}
+      {{-- Kolom 3: Kepala Sekolah (bukan mid) --}}
       @if(!$isMid)
-      <td style="width: 34%; vertical-align: top; padding: 0 10px; text-align: center;">
-        <p class="font-bold uppercase tracking-widest leading-relaxed">Kepala Sekolah,</p>
-        <div class="h-20 w-full flex items-center justify-center my-2">
-          @if($principal && $principal->signature && $principal->is_signature_active)
+      <td style="width:34%; padding:0 8px;
+                 text-align:center; vertical-align:top;">
+        <p style="margin:0; font-weight:bold;
+                  text-transform:uppercase;
+                  letter-spacing:0.05em;">
+          Kepala Sekolah,
+        </p>
+        <div style="height:80px; display:flex;
+                    align-items:center;
+                    justify-content:center;">
+          @if($principal && $principal->signature
+              && $principal->is_signature_active)
             @php
-              $pSigPath = storage_path('app/public/signatures/' . $principal->signature);
-              $pSigSrc = asset('storage/signatures/' . $principal->signature);
+              $pSigPath = storage_path('app/public/signatures/'
+                  . $principal->signature);
+              $pSigSrc = asset('storage/signatures/'
+                  . $principal->signature);
               if (file_exists($pSigPath)) {
-                  $pSigBase64 = base64_encode(file_get_contents($pSigPath));
-                  $pSigSrc = 'data:image/' . pathinfo($pSigPath, PATHINFO_EXTENSION) . ';base64,' . $pSigBase64;
+                  $pSigBase64 = base64_encode(
+                      file_get_contents($pSigPath));
+                  $pSigSrc = 'data:image/'
+                      . pathinfo($pSigPath, PATHINFO_EXTENSION)
+                      . ';base64,' . $pSigBase64;
               }
             @endphp
             <img src="{{ $pSigSrc }}"
-                 class="h-20 w-auto object-contain mix-blend-multiply opacity-95 mx-auto">
+                 style="max-height:80px; max-width:140px;
+                        object-fit:contain;">
           @endif
         </div>
-        <p class="font-bold uppercase underline">{{ $principalName ?? '' }}</p>
+        <p style="margin:0; font-weight:bold;
+                  text-decoration:underline;
+                  text-transform:uppercase;">
+          {{ $principalName ?? '' }}
+        </p>
         @if($principal)
-          <p class="text-[9pt] font-sans text-center">
-            {{ $principal->nip ? 'NIP. ' . $principal->nip : ($principal->niy ? 'NIY. ' . $principal->niy : '') }}
+          <p style="margin:0; font-size:9pt;">
+            {{ $principal->nip
+                ? 'NIP. ' . $principal->nip
+                : ($principal->niy
+                    ? 'NIY. ' . $principal->niy
+                    : '') }}
           </p>
         @endif
       </td>
       @endif
+
     </tr>
   </table>
   </div>
 
   {{-- ══ FOOTNOTE ══ --}}
-  <div style="text-align:center; font-size:7pt; color:#9ca3af; font-style:italic; padding-top:8px;">
+  <div class="report-footer">
     {{ $footnote }}
   </div>
 </div>
