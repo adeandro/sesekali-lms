@@ -356,6 +356,10 @@ Route::middleware('auth')->group(function () {
             Route::post('/notes',                    [ReportController::class, 'saveNote'])->name('notes');
         });
 
+        // Grade Locks
+        Route::post('grade-locks/toggle', [GradeLockController::class, 'toggle'])->name('grade-locks.toggle');
+        Route::get('grade-locks/status', [GradeLockController::class, 'status'])->name('grade-locks.status');
+
         // ── Kegiatan DU/DI (Dunia Usaha / Dunia Industri) ─────────────────────
         Route::group(['prefix' => 'dudi', 'as' => 'dudi.'], function () {
             Route::get('/',                        [StudentDudiController::class, 'index'])->name('index');
