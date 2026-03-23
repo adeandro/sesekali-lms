@@ -83,7 +83,7 @@ class ReportController extends Controller
 
             foreach ($students as $student) {
                 $data = GradeService::getStudentReportData(
-                    $student, $semester, $academicYear, $jenjang
+                    $student, $semester, $academicYear, $jenjang, $reportType
                 );
                 $finals = array_filter(array_column($data, 'final'), fn($v) => $v !== null);
                 $reportSummary[] = [
@@ -115,12 +115,12 @@ class ReportController extends Controller
 
         $class   = ClassRoom::find($student->class_id, ['*']);
         $jenjang = $class ? $class->getGradeLevel() : 10;
-        $data    = GradeService::getStudentReportData($student, $semester, $academicYear, $jenjang);
+        $data    = GradeService::getStudentReportData($student, $semester, $academicYear, $jenjang, $reportType);
         $note    = ReportNote::where('student_id', $student->id)
             ->where('semester', '=', $semester, 'and')
             ->where('academic_year', '=', $academicYear, 'and')
             ->first();
-        $ranking = self::calculateRanking($student, $class, $semester, $academicYear, $jenjang);
+        $ranking = self::calculateRanking($student, $class, $semester, $academicYear, $jenjang, $reportType);
         $configs = \App\Models\Setting::pluck('value', 'key')->toArray();
 
         return view('admin.reports.preview', compact(
@@ -144,12 +144,12 @@ class ReportController extends Controller
 
         $class   = ClassRoom::find($student->class_id, ['*']);
         $jenjang = $class ? $class->getGradeLevel() : 10;
-        $data    = GradeService::getStudentReportData($student, $semester, $academicYear, $jenjang);
+        $data    = GradeService::getStudentReportData($student, $semester, $academicYear, $jenjang, $reportType);
         $note    = ReportNote::where('student_id', $student->id)
             ->where('semester', '=', $semester, 'and')
             ->where('academic_year', '=', $academicYear, 'and')
             ->first();
-        $ranking = self::calculateRanking($student, $class, $semester, $academicYear, $jenjang);
+        $ranking = self::calculateRanking($student, $class, $semester, $academicYear, $jenjang, $reportType);
         $configs = \App\Models\Setting::pluck('value', 'key')->toArray();
 
         // Jika request via AJAX (bulk printing), kembalikan partial saja
@@ -268,15 +268,16 @@ class ReportController extends Controller
         ?ClassRoom $class,
         int       $semester,
         string    $academicYear,
-        int       $jenjang
+        int       $jenjang,
+        string    $reportType = 'semester'
     ): array {
         if (! $class) {
             return ['rank' => '-', 'total' => 0, 'avg' => 0];
         }
 
-        $cacheKey = "report_rankings_{$class->id}_{$semester}_" . str_replace('/', '_', $academicYear);
+        $cacheKey = "report_rankings_{$class->id}_{$semester}_" . str_replace('/', '_', $academicYear) . "_{$reportType}";
 
-        $rankings = Cache::remember($cacheKey, 600, function () use ($class, $semester, $academicYear, $jenjang) {
+        $rankings = Cache::remember($cacheKey, 600, function () use ($class, $semester, $academicYear, $jenjang, $reportType) {
             try {
                 // Pre-check for OOM/Timeout risk
                 @ini_set('memory_limit', '512M');
@@ -286,7 +287,7 @@ class ReportController extends Controller
                 
                 $scores = [];
                 foreach ($bulk['students'] as $s) {
-                    $scores[$s->id] = GradeService::calculateAverageFromBulk($s, $bulk);
+                    $scores[$s->id] = GradeService::calculateAverageFromBulk($s, $bulk, $reportType);
                 }
 
                 arsort($scores); // descending

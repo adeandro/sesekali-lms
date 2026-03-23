@@ -32,9 +32,10 @@ class GradeService
         int    $classId,
         int    $subjectId,
         int    $semester,
-        string $academicYear
+        string $academicYear,
+        string $reportType = 'semester'
     ): ?float {
-        $cacheKey = "{$classId}-{$subjectId}-{$semester}-{$academicYear}";
+        $cacheKey = "{$classId}-{$subjectId}-{$semester}-{$academicYear}-{$reportType}";
 
         if (array_key_exists($cacheKey, self::$classAverages)) {
             return self::$classAverages[$cacheKey];
@@ -60,7 +61,7 @@ class GradeService
 
         $totalGrades = [];
         foreach ($students as $student) {
-            $grade = self::calculateFinalGrade($student, $subject, $semester, $academicYear, $jenjang);
+            $grade = self::calculateFinalGrade($student, $subject, $semester, $academicYear, $jenjang, $reportType);
             if ($grade !== null) {
                 $totalGrades[] = $grade;
             }
@@ -238,7 +239,8 @@ class GradeService
         Subject $subject,
         int     $semester,
         string  $academicYear,
-        int     $jenjang
+        int     $jenjang,
+        string  $reportType = 'semester'
     ): ?float {
         $grades = self::getMergedGrades($student, $subject, $semester, $academicYear);
 
@@ -254,7 +256,26 @@ class GradeService
         $wUts    = $weight ? $weight->weight_uts    : 30;
         $wUas    = $weight ? $weight->weight_uas    : 30;
 
-        // Jika salah satu komponen null, tidak bisa hitung nilai akhir
+        if ($reportType === 'mid') {
+            // Mode tengah semester: hanya harian + UTS
+            if ($grades['harian'] === null || $grades['uts'] === null) {
+                return null;
+            }
+
+            $totalWeight = $wHarian + $wUts;
+            if ($totalWeight == 0) return null;
+
+            // Normalisasi bobot ke 100%
+            $wHarianNorm = $wHarian / $totalWeight * 100;
+            $wUtsNorm    = $wUts    / $totalWeight * 100;
+
+            $final = ($grades['harian'] * $wHarianNorm / 100)
+                   + ($grades['uts']    * $wUtsNorm    / 100);
+
+            return round($final, 2);
+        }
+
+        // Mode semester (default): butuh semua komponen
         if ($grades['harian'] === null
             || $grades['uts'] === null
             || $grades['uas'] === null) {
@@ -288,7 +309,8 @@ class GradeService
         User   $student,
         int    $semester,
         string $academicYear,
-        ?int   $jenjang = null
+        ?int   $jenjang = null,
+        string $reportType = 'semester'
     ): array {
         // If jenjang is not provided, try to get it from student's class
         if ($jenjang === null && $student->classRoom) {
@@ -306,7 +328,7 @@ class GradeService
         $result = [];
         foreach ($subjects as $subject) {
             $grades = self::getMergedGrades($student, $subject, $semester, $academicYear);
-            $final  = self::calculateFinalGrade($student, $subject, $semester, $academicYear, $jenjang);
+            $final  = self::calculateFinalGrade($student, $subject, $semester, $academicYear, $jenjang, $reportType);
             $weight = GradeWeight::where('subject_id', $subject->id)
                 ->where('semester', $semester)
                 ->where('academic_year', $academicYear)
@@ -322,12 +344,12 @@ class GradeService
                 'weight'        => $weight,
                 'kkm'           => $kkm,
                 'class_average' => $student->class_id 
-                                    ? self::getClassAverage((int)$student->class_id, $subject->id, $semester, $academicYear) 
+                                    ? self::getClassAverage((int)$student->class_id, $subject->id, $semester, $academicYear, $reportType) 
                                     : null,
                 'is_pass'       => $final !== null && $final >= $kkm,
-                'is_complete'   => $grades['harian'] !== null
-                                   && $grades['uts'] !== null
-                                   && $grades['uas'] !== null,
+                'is_complete'   => $reportType === 'mid'
+                                   ? ($grades['harian'] !== null && $grades['uts'] !== null)
+                                   : ($grades['harian'] !== null && $grades['uts'] !== null && $grades['uas'] !== null),
             ];
         }
 
@@ -369,7 +391,7 @@ class GradeService
     /**
      * Hitung rata-rata siswa menggunakan data bulk (tanpa query DB tambahan).
      */
-    public static function calculateAverageFromBulk(User $student, array $bulk): float
+    public static function calculateAverageFromBulk(User $student, array $bulk, string $reportType = 'semester'): float
     {
         $grades = [];
         $manuals = $bulk['manualGrades'][$student->id] ?? collect();
@@ -379,14 +401,14 @@ class GradeService
             if (!$m) continue;
 
             $weight = $bulk['weights'][$subject->id] ?? null;
-            $final = self::calculateFinalGradeFromData($m, $weight);
+            $final = self::calculateFinalGradeFromData($m, $weight, $reportType);
             if ($final !== null) $grades[] = $final;
         }
 
         return count($grades) > 0 ? round(array_sum($grades) / count($grades), 2) : 0;
     }
 
-    private static function calculateFinalGradeFromData($manual, $weight): ?float
+    private static function calculateFinalGradeFromData($manual, $weight, string $reportType = 'semester'): ?float
     {
         $harian = $manual->harian ?? null;
         $uts    = $manual->uts ?? null;
@@ -397,6 +419,19 @@ class GradeService
         $wHarian = $weight->weight_harian ?? 40;
         $wUts    = $weight->weight_uts ?? 30;
         $wUas    = $weight->weight_uas ?? 30;
+
+        if ($reportType === 'mid') {
+            if ($harian === null || $uts === null) return null;
+            $totalWeight = $wHarian + $wUts;
+            if ($totalWeight == 0) return 0;
+
+            $wHarianNorm = $wHarian / $totalWeight * 100;
+            $wUtsNorm    = $wUts    / $totalWeight * 100;
+
+            return ($harian * $wHarianNorm / 100) + ($uts * $wUtsNorm / 100);
+        }
+
+        if ($harian === null || $uts === null || $uas === null) return null;
 
         $totalWeight = $wHarian + $wUts + $wUas;
         if ($totalWeight === 0) return 0;
