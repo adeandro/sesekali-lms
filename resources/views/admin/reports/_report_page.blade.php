@@ -552,41 +552,41 @@ if (!function_exists('numberToWords')) {
         <p style="margin:0; font-weight:bold;">
           Wali Murid,
         </p>
-        <div style="height:50px;"></div>
+        <div style="height:60px;"></div>
         <p style="margin:0;">
-          (......................................)
+          ( ...................................... )
         </p>
       </td>
       <td style="border:none; width:4%;"></td>
       <td style="border:none; width:48%;
                  text-align:center; vertical-align:top;">
         <p style="margin:0;">
-          {{ $configs['school_city'] ?? '' }},
+          @if($configs['school_city'] ?? null)
+            {{ $configs['school_city'] }},
+          @endif
           {{ \Carbon\Carbon::now()->locale('id')
               ->translatedFormat('d F Y') }}
         </p>
         <p style="margin:2px 0;">
           Wali Kelas {{ $class->name }},
         </p>
-        @if($homeroom && $homeroom->signature && $homeroom->is_signature_active)
-          @php
-            $sigPath = storage_path('app/public/signatures/' . $homeroom->signature);
-            $sigSrc = asset('storage/signatures/' . $homeroom->signature);
-            if (file_exists($sigPath)) {
-                $sigBase64 = base64_encode(file_get_contents($sigPath));
-                $sigSrc = 'data:image/' . pathinfo($sigPath, PATHINFO_EXTENSION) . ';base64,' . $sigBase64;
-            }
-          @endphp
-          <div style="height:50px; display:flex;
-                      align-items:center;
-                      justify-content:center;">
+        <div style="height:60px; display:flex;
+                    align-items:center;
+                    justify-content:center;">
+          @if($homeroom && $homeroom->signature && $homeroom->is_signature_active)
+            @php
+              $sigPath = storage_path('app/public/signatures/' . $homeroom->signature);
+              $sigSrc = asset('storage/signatures/' . $homeroom->signature);
+              if (file_exists($sigPath)) {
+                  $sigBase64 = base64_encode(file_get_contents($sigPath));
+                  $sigSrc = 'data:image/' . pathinfo($sigPath, PATHINFO_EXTENSION) . ';base64,' . $sigBase64;
+              }
+            @endphp
             <img src="{{ $sigSrc }}"
-                 style="max-height:50px; max-width:120px;
+                 style="max-height:60px; max-width:140px;
                         object-fit:contain;">
-          </div>
-        @else
-          <div style="height:50px;"></div>
-        @endif
+          @endif
+        </div>
         <p style="margin:0; font-weight:bold;">
           ( {{ $homeroomName ?? '________________' }} )
         </p>
