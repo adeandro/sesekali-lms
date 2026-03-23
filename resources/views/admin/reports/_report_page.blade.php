@@ -593,6 +593,7 @@ if (!function_exists('numberToWords')) {
             min-height: 25cm;
             display: flex;
             flex-direction: column;
+            padding-top: 1.0cm;
             padding-bottom: 1.5cm;">
 
   {{-- ══ WATERMARK ══ --}}
@@ -757,6 +758,7 @@ if (!function_exists('numberToWords')) {
             min-height: 25cm;
             display: flex;
             flex-direction: column;
+            padding-top: 1.0cm;
             padding-bottom: 1.5cm;">
 
   {{-- ══ WATERMARK ══ --}}
