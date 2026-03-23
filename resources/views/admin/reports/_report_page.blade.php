@@ -213,10 +213,169 @@ if (!function_exists('numberToWords')) {
 </style>
 @endif
 
-{{-- ══════════════════════════════════════════ --}}
-{{-- HALAMAN 1: PENILAIAN HASIL BELAJAR        --}}
-{{-- ══════════════════════════════════════════ --}}
-<div class="report-page bg-white relative font-serif text-black leading-tight" 
+@if(($reportType ?? 'semester') === 'mid')
+  {{-- ══════════════════════════════════════════ --}}
+  {{-- HALAMAN MID: HASIL PENILAIAN TENGAH SEMESTER --}}
+  {{-- ══════════════════════════════════════════ --}}
+  <div class="report-page bg-white relative font-serif text-black leading-tight" 
+       style="position: relative;
+              min-height: 25cm;
+              display: flex;
+              flex-direction: column;
+              padding: 0.6cm 1.5cm 0.5cm 2.0cm;">
+
+    {{-- ══ WATERMARK ══ --}}
+    @if(($configs['watermark_enabled'] ?? 'off') === 'on' && isset($configs['logo']))
+      <div class="report-watermark">
+          <img src="{{ asset('storage/' . $configs['logo']) }}" class="report-watermark-img">
+      </div>
+    @endif
+
+    {{-- ══ CONTENT WRAPPER ══ --}}
+    <div style="flex: 1;">
+      {{-- ══ HEADER ══ --}}
+      <div class="text-center mb-4">
+        <h2 class="text-[12pt] uppercase mb-0">HASIL PENILAIAN SUMATIF TENGAH SEMESTER {{ strtoupper($sMap['label']) }}</h2>
+        <h1 class="text-[13pt] font-bold uppercase mb-0">{{ $configs['school_name'] ?? '' }}</h1>
+        <h3 class="text-[11pt] mb-4">Tahun Pelajaran {{ $academicYear }}</h3>
+      </div>
+
+      {{-- ══ INFO SISWA ══ --}}
+      <table class="w-full text-[11pt] mb-4 font-bold border-none">
+        <tr>
+          <td style="width: 15%;">Nama</td>
+          <td style="width: 2%;">:</td>
+          <td>{{ $student->name }}</td>
+        </tr>
+        <tr>
+          <td>NIS</td>
+          <td>:</td>
+          <td>{{ $student->nis ?? '-' }}</td>
+        </tr>
+        <tr>
+          <td>Kelas</td>
+          <td>:</td>
+          <td>{{ $class->name ?? '' }}</td>
+        </tr>
+      </table>
+
+      <p class="text-[11pt] mb-4">telah mengikuti Penilaian Sumatif Tengah Semester (PSTS) {{ $sMap['label'] }} dengan hasil sebagai berikut :</p>
+
+      {{-- ══ TABEL NILAI MID ══ --}}
+      <table class="w-full text-[10pt] border-collapse border border-black mb-4">
+        <thead>
+          <tr class="font-bold text-center bg-gray-100 uppercase">
+            <th class="border border-black py-1" style="width: 0.89cm;">NO</th>
+            <th class="border border-black py-1" style="width: 15.30cm;">MATA PELAJARAN</th>
+            <th class="border border-black py-1" style="width: 1.27cm;">NILAI</th>
+          </tr>
+        </thead>
+        <tbody>
+          @php 
+            $noMid = ['umum'=>1,'kejuruan'=>1,'muatan_sekolah'=>1,'pilihan'=>1]; 
+            $allUts = [];
+          @endphp
+          @foreach(['umum'=>'A','kejuruan'=>'B','muatan_sekolah'=>'C','pilihan'=>'D'] as $cat => $labelCat)
+            @if(!empty($grouped[$cat]))
+              <tr class="font-bold">
+                <td class="border border-black text-center py-1">{{ $labelCat }}</td>
+                <td colspan="2" class="border border-black px-2 py-1 uppercase">
+                  @php
+                    $catLabelsMid = [
+                      'umum'           => 'MATA PELAJARAN UMUM',
+                      'kejuruan'       => 'MATA PELAJARAN KEJURUAN',
+                      'muatan_sekolah' => 'MATA PELAJARAN MUATAN SEKOLAH',
+                      'pilihan'        => 'MATA PELAJARAN PILIHAN',
+                    ];
+                  @endphp
+                  {{ $catLabelsMid[$cat] }}
+                </td>
+              </tr>
+              @foreach($grouped[$cat] as $row)
+                @php
+                  $nilaiUts = $row['grades']['uts']; // Dari GradeService::getStudentReportData logic
+                  if ($nilaiUts !== null) $allUts[] = $nilaiUts;
+                @endphp
+                <tr>
+                  <td class="border border-black text-center py-1">{{ $noMid[$cat]++ }}</td>
+                  <td class="border border-black px-2 py-1">{{ $row['subject']->name ?? '' }}</td>
+                  <td class="border border-black text-center py-1 font-bold">
+                    {{ $nilaiUts !== null ? round($nilaiUts) : '' }}
+                  </td>
+                </tr>
+              @endforeach
+            @endif
+          @endforeach
+
+          {{-- REKAPITULASI MID --}}
+          @php
+            $jumlahMid = count($allUts) > 0 ? array_sum($allUts) : null;
+            $rataMid   = count($allUts) > 0 ? round($jumlahMid / count($allUts), 2) : null;
+          @endphp
+          <tr class="font-bold">
+            <td class="border border-black text-center py-1">E</td>
+            <td colspan="2" class="border border-black px-2 py-1 italic uppercase bg-gray-50">REKAPITULASI PENILAIAN</td>
+          </tr>
+          <tr>
+            <td class="border border-black text-center py-1">1</td>
+            <td class="border border-black px-2 py-1 font-bold">Jumlah Nilai</td>
+            <td class="border border-black text-center py-1 font-bold bg-gray-50">{{ formatNilai($jumlahMid) }}</td>
+          </tr>
+          <tr>
+            <td class="border border-black text-center py-1">2</td>
+            <td class="border border-black px-2 py-1 font-bold">Rata-Rata</td>
+            <td class="border border-black text-center py-1 font-bold bg-gray-50">{{ $rataMid !== null ? number_format($rataMid, 2, ',', '.') : '-' }}</td>
+          </tr>
+
+          {{-- KEHADIRAN MID --}}
+          <tr class="font-bold">
+            <td class="border border-black text-center py-1">F</td>
+            <td colspan="2" class="border border-black px-2 py-1 italic uppercase bg-gray-50">KEHADIRAN</td>
+          </tr>
+          <tr>
+            <td class="border border-black text-center py-1">1</td>
+            <td class="border border-black px-2 py-1">Sakit</td>
+            <td class="border border-black text-center py-1 font-bold">{{ $attendance?->sick_days ?? '-' }}</td>
+          </tr>
+          <tr>
+            <td class="border border-black text-center py-1">2</td>
+            <td class="border border-black px-2 py-1">Izin</td>
+            <td class="border border-black text-center py-1 font-bold">{{ $attendance?->permit_days ?? '-' }}</td>
+          </tr>
+          <tr>
+            <td class="border border-black text-center py-1">3</td>
+            <td class="border border-black px-2 py-1">Tanpa Keterangan</td>
+            <td class="border border-black text-center py-1 font-bold">{{ $attendance?->alpha_days ?? '-' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    {{-- ══ SIGNATURES MID ══ --}}
+    <table class="w-full text-[11pt] mt-4 border-none">
+      <tr>
+        <td style="width: 7.74cm; vertical-align: top; text-align: center;">
+          <p class="mb-14">Wali Murid</p>
+          <p>(...................................)</p>
+        </td>
+        <td style="width: 8.37cm; vertical-align: top; text-align: center;">
+          <p class="mb-0">{{ $configs['school_city'] ?? '' }}, {{ \Carbon\Carbon::now()->locale('id')->translatedFormat('d F Y') }}</p>
+          <p class="mb-14">Wali Kelas {{ $class->name ?? '' }}</p>
+          <p class="font-bold">( {{ $homeroomName ?? '...................................' }} )</p>
+        </td>
+      </tr>
+    </table>
+
+    {{-- ══ FOOTNOTE MID ══ --}}
+    <div style="text-align:center; font-size:7pt; color:#9ca3af; font-style:italic; padding-top:8px;">
+      {{ $footnote }}
+    </div>
+  </div>
+@else
+  {{-- ══════════════════════════════════════════ --}}
+  {{-- HALAMAN 1: PENILAIAN HASIL BELAJAR        --}}
+  {{-- ══════════════════════════════════════════ --}}
+  <div class="report-page bg-white relative font-serif text-black leading-tight" 
      style="page-break-after: always !important;
             break-after: page !important;
             position: relative;
@@ -627,3 +786,4 @@ if (!function_exists('numberToWords')) {
     {{ $footnote }}
   </div>
 </div>
+@endif
