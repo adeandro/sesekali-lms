@@ -216,7 +216,14 @@ if (!function_exists('numberToWords')) {
 {{-- ══════════════════════════════════════════ --}}
 {{-- HALAMAN 1: PENILAIAN HASIL BELAJAR        --}}
 {{-- ══════════════════════════════════════════ --}}
-<div class="report-page bg-white relative font-serif text-black leading-tight" style="page-break-after: always; padding-bottom: 2cm;">
+<div class="report-page bg-white relative font-serif text-black leading-tight" 
+     style="page-break-after: always !important;
+            break-after: page !important;
+            position: relative;
+            min-height: 25cm;
+            display: flex;
+            flex-direction: column;
+            padding-bottom: 1.5cm;">
 
   {{-- ══ WATERMARK ══ --}}
   @if(($configs['watermark_enabled'] ?? 'off') === 'on' && isset($configs['logo']))
@@ -225,7 +232,9 @@ if (!function_exists('numberToWords')) {
     </div>
   @endif
 
-  {{-- ══ HEADER ══ --}}
+  {{-- ══ CONTENT WRAPPER ══ --}}
+  <div style="flex: 1;">
+    {{-- ══ HEADER ══ --}}
   <div class="mb-6">
   <h1 class="text-[14pt] font-extrabold uppercase mb-4 text-center">LAPORAN PENILAIAN HASIL BELAJAR</h1>
     
@@ -364,12 +373,21 @@ if (!function_exists('numberToWords')) {
       </tr>
     </tbody>
   </table>
+  </div>
 
   {{-- ══ FOOTNOTE ══ --}}
-  <div class="absolute bottom-4 left-0 right-0 text-center text-[7pt] text-gray-400 italic">
+  <div style="text-align:center; font-size:7pt; color:#9ca3af; font-style:italic; padding-top:8px;">
     {{ $footnote }}
   </div>
-</div><div class="report-page bg-white relative font-serif text-black leading-tight" style="padding-bottom: 2cm;">
+</div>
+<div class="report-page bg-white relative font-serif text-black leading-tight" 
+     style="page-break-before: always !important;
+            break-before: page !important;
+            position: relative;
+            min-height: 25cm;
+            display: flex;
+            flex-direction: column;
+            padding-bottom: 1.5cm;">
 
   {{-- ══ WATERMARK ══ --}}
   @if(($configs['watermark_enabled'] ?? 'off') === 'on' && isset($configs['logo']))
@@ -412,7 +430,9 @@ if (!function_exists('numberToWords')) {
     ];
     $nextGrade = $nextGradeMap[$gradeLevel] ?? '';
   @endphp
-  <div class="text-center mb-6 mt-2">
+  {{-- ══ CONTENT WRAPPER ══ --}}
+  <div style="flex: 1;">
+    <div class="text-center mb-6 mt-2">
     <h3 class="text-[14pt] font-extrabold uppercase underline tracking-widest text-slate-800">CATATAN AKHIR SEMESTER</h3>
   </div>
   
@@ -553,11 +573,6 @@ if (!function_exists('numberToWords')) {
 </div>
 
 
-  {{-- ══ FOOTNOTE ══ --}}
-  <div class="absolute bottom-4 left-0 right-0 text-center text-[7pt] text-gray-400 italic">
-    {{ $footnote }}
-  </div>
-
   {{-- ══ SIGNATURES ══ --}}
   <table class="w-full text-[10pt] mt-6 border-none" style="border-collapse: collapse; width: 100%;">
     <tr style="text-align: center;">
@@ -605,4 +620,10 @@ if (!function_exists('numberToWords')) {
       @endif
     </tr>
   </table>
+  </div>
+
+  {{-- ══ FOOTNOTE ══ --}}
+  <div style="text-align:center; font-size:7pt; color:#9ca3af; font-style:italic; padding-top:8px;">
+    {{ $footnote }}
+  </div>
 </div>

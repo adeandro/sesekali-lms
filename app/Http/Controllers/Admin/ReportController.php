@@ -7,6 +7,8 @@ use App\Models\ClassRoom;
 use App\Models\ReportNote;
 use App\Models\User;
 use App\Services\GradeService;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -150,6 +152,14 @@ class ReportController extends Controller
         $ranking = self::calculateRanking($student, $class, $semester, $academicYear, $jenjang);
         $configs = \App\Models\Setting::pluck('value', 'key')->toArray();
 
+        // Jika request via AJAX (bulk printing), kembalikan partial saja
+        if ($request->ajax()) {
+            return view('admin.reports._report_page', compact(
+                'student', 'class', 'data', 'note',
+                'ranking', 'semester', 'academicYear', 'reportType', 'configs'
+            ));
+        }
+
         return view('admin.reports.print', compact(
             'student', 'class', 'data', 'note',
             'ranking', 'semester', 'academicYear', 'reportType', 'configs'
@@ -264,30 +274,39 @@ class ReportController extends Controller
             return ['rank' => '-', 'total' => 0, 'avg' => 0];
         }
 
-        $classStudents = User::where('class_id', '=', $class->id, 'and')
-            ->where('role', '=', 'student', 'and')
-            ->get();
+        $cacheKey = "report_rankings_{$class->id}_{$semester}_" . str_replace('/', '_', $academicYear);
 
-        $scores = [];
-        foreach ($classStudents as $s) {
-            $reportData = GradeService::getStudentReportData($s, $semester, $academicYear, $jenjang);
-            $finals     = array_filter(
-                array_column($reportData, 'final'),
-                fn($v) => $v !== null
-            );
-            $scores[$s->id] = count($finals) > 0
-                ? round(array_sum($finals) / count($finals), 2)
-                : 0;
-        }
+        $rankings = Cache::remember($cacheKey, 600, function () use ($class, $semester, $academicYear, $jenjang) {
+            try {
+                // Pre-check for OOM/Timeout risk
+                @ini_set('memory_limit', '512M');
+                @set_time_limit(180);
 
-        arsort($scores); // descending
-        $rank = array_search($student->id, array_keys($scores));
-        $rank = $rank !== false ? $rank + 1 : '-';
+                $bulk = GradeService::getBulkClassData($class->id, $semester, $academicYear, $jenjang);
+                
+                $scores = [];
+                foreach ($bulk['students'] as $s) {
+                    $scores[$s->id] = GradeService::calculateAverageFromBulk($s, $bulk);
+                }
 
-        return [
-            'rank'  => $rank,
-            'total' => count($classStudents),
-            'avg'   => $scores[$student->id] ?? 0,
-        ];
+                arsort($scores); // descending
+                $total = count($bulk['students']);
+                $results = [];
+                $rank = 1;
+                foreach ($scores as $sId => $avg) {
+                    $results[$sId] = [
+                        'rank'  => $rank++,
+                        'total' => $total,
+                        'avg'   => $avg,
+                    ];
+                }
+                return $results;
+            } catch (\Exception $e) {
+                Log::error("ReportController::calculateRanking Error: " . $e->getMessage());
+                throw $e;
+            }
+        });
+
+        return $rankings[$student->id] ?? ['rank' => '-', 'total' => 0, 'avg' => 0];
     }
 }

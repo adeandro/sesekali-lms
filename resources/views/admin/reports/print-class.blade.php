@@ -206,77 +206,9 @@
         }
     };
 
-    // ── Print batch via iframe (hanya batch aktif) ────────────────────
+    // ── Print batch (langsung window.print) ───────────────────────────
     window.printCurrentBatch = function() {
-        const start = currentBatch * BATCH_SIZE;
-        const end   = Math.min(start + BATCH_SIZE, total);
-
-        // Kumpulkan HTML batch aktif saja
-        let batchHtml = '';
-        for (let i = start; i < end; i++) {
-            if (reportWrappers[i]) {
-                batchHtml += reportWrappers[i].innerHTML;
-            }
-        }
-
-        // Ambil semua CSS dari halaman ini
-        let cssText = '';
-        const styleSheets = document.styleSheets;
-        for (let i = 0; i < styleSheets.length; i++) {
-            try {
-                const rules = styleSheets[i].cssRules || styleSheets[i].rules;
-                if (rules) {
-                    for (let j = 0; j < rules.length; j++) {
-                        cssText += rules[j].cssText + '\n';
-                    }
-                }
-            } catch(e) {
-                // Skip cross-origin stylesheets
-                if (styleSheets[i].href) {
-                    cssText += `@import url('${styleSheets[i].href}');\n`;
-                }
-            }
-        }
-
-        // Buat iframe tersembunyi
-        const iframe = document.createElement('iframe');
-        iframe.style.cssText = 'position:fixed; top:-9999px; left:-9999px; width:210mm; height:297mm; border:none; visibility:hidden;';
-        document.body.appendChild(iframe);
-
-        const doc = iframe.contentDocument || iframe.contentWindow.document;
-        doc.open();
-        doc.write(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <style>
-                    ${cssText}
-                    /* Reset untuk print */
-                    body { margin: 0; padding: 0; background: white; }
-                    @page { size: A4; margin: 1cm; }
-                </style>
-            </head>
-            <body>
-                ${batchHtml}
-            </body>
-            </html>
-        `);
-        doc.close();
-
-        // Tunggu render lalu print
-        iframe.onload = function() {
-            try {
-                iframe.contentWindow.focus();
-                iframe.contentWindow.print();
-            } catch(e) {
-                console.error('Print error:', e);
-            }
-            // Hapus iframe setelah print
-            setTimeout(() => {
-                document.body.removeChild(iframe);
-            }, 2000);
-        };
+        window.print();
     };
 
     // Start
@@ -291,10 +223,12 @@
     }
 
     @media print {
-        /* Sembunyikan UI chrome saja — konten dihandle iframe */
+        /* Sembunyikan UI chrome */
         #batch-bar, #loading-screen { display: none !important; }
-        /* Sembunyikan report-container dari halaman utama saat print */
-        #report-container { display: none !important; }
+
+        /* Pastikan container terlihat dan margin nol agar diatur @page */
+        #report-container { display: block !important; margin: 0 !important; padding: 0 !important; }
+        body { background: white !important; margin: 0 !important; padding: 0 !important; }
     }
 </style>
 @endsection

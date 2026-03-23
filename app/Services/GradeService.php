@@ -333,4 +333,74 @@ class GradeService
 
         return $result;
     }
+
+    /**
+     * Ambil data mentah (raw) sekelas untuk kalkulasi ranking secepat kilat.
+     */
+    public static function getBulkClassData(int $classId, int $semester, string $academicYear, int $jenjang): array
+    {
+        $students = User::where('class_id', '=', $classId, 'and')->where('role', '=', 'student', 'and')->get(['id', 'name', 'class_id']);
+        $studentIds = $students->pluck('id')->toArray();
+
+        // 1. Ambil semua nilai manual (harian, uts, uas) sekaligus
+        $manualGrades = ManualGrade::whereIn('student_id', $studentIds)
+            ->where('semester', $semester)
+            ->where('academic_year', $academicYear)
+            ->get();
+
+        // 2. Ambil bobot (grade weights) sejenjang sekaligus
+        $weights = GradeWeight::where('academic_year', $academicYear)
+            ->where('semester', $semester)
+            ->where('jenjang', $jenjang)
+            ->get();
+
+        // 3. Ambil semua mata pelajaran relevan
+        $subjects = Subject::whereNotNull('category', 'and')->forReport()->get();
+
+        // 4. Grouping untuk lookup O(1)
+        return [
+            'students'     => $students,
+            'manualGrades' => $manualGrades->groupBy('student_id'),
+            'weights'      => $weights->keyBy('subject_id'),
+            'subjects'     => $subjects,
+        ];
+    }
+
+    /**
+     * Hitung rata-rata siswa menggunakan data bulk (tanpa query DB tambahan).
+     */
+    public static function calculateAverageFromBulk(User $student, array $bulk): float
+    {
+        $grades = [];
+        $manuals = $bulk['manualGrades'][$student->id] ?? collect();
+
+        foreach ($bulk['subjects'] as $subject) {
+            $m = $manuals->firstWhere('subject_id', $subject->id);
+            if (!$m) continue;
+
+            $weight = $bulk['weights'][$subject->id] ?? null;
+            $final = self::calculateFinalGradeFromData($m, $weight);
+            if ($final !== null) $grades[] = $final;
+        }
+
+        return count($grades) > 0 ? round(array_sum($grades) / count($grades), 2) : 0;
+    }
+
+    private static function calculateFinalGradeFromData($manual, $weight): ?float
+    {
+        $harian = $manual->harian ?? null;
+        $uts    = $manual->uts ?? null;
+        $uas    = $manual->uas ?? null;
+
+        if ($harian === null && $uts === null && $uas === null) return null;
+
+        $wHarian = $weight->weight_harian ?? 40;
+        $wUts    = $weight->weight_uts ?? 30;
+        $wUas    = $weight->weight_uas ?? 30;
+
+        $totalWeight = $wHarian + $wUts + $wUas;
+        if ($totalWeight === 0) return 0;
+
+        return (($harian ?? 0) * $wHarian + ($uts ?? 0) * $wUts + ($uas ?? 0) * $wUas) / $totalWeight;
+    }
 }
