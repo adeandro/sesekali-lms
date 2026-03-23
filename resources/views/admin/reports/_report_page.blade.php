@@ -1033,11 +1033,11 @@ if (!function_exists('numberToWords')) {
         </div>
         <p style="margin:0; font-weight:bold;
                   text-decoration:underline;
-                  text-transform:uppercase;">
+                  font-size:8pt;">
           {{ $homeroomName ?? '' }}
         </p>
         @if($homeroom)
-          <p style="margin:0; font-size:9pt;">
+          <p style="margin:0; font-size:8pt;">
             {{ $homeroom->nip
                 ? 'NIP. ' . $homeroom->nip
                 : ($homeroom->niy
@@ -1081,11 +1081,11 @@ if (!function_exists('numberToWords')) {
         </div>
         <p style="margin:0; font-weight:bold;
                   text-decoration:underline;
-                  text-transform:uppercase;">
+                  font-size:8pt;">
           {{ $principalName ?? '' }}
         </p>
         @if($principal)
-          <p style="margin:0; font-size:9pt;">
+          <p style="margin:0; font-size:8pt;">
             {{ $principal->nip
                 ? 'NIP. ' . $principal->nip
                 : ($principal->niy
