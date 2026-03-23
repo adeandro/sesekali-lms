@@ -957,8 +957,7 @@ if (!function_exists('numberToWords')) {
 <div class="w-full grid {{ ($isGenap && !$isMid) ? 'grid-cols-2' : 'grid-cols-1' }} gap-4 mb-6">
   {{-- Kiri: selalu tampil --}}
   <div class="pl-8 text-[10pt]">
-    <div>Diberikan di &nbsp;: {{ $configs['school_village'] ?? $configs['school_city'] ?? '' }}</div>
-    <div>Pada Tanggal &nbsp;: {{ \Carbon\Carbon::now()->locale('id')->translatedFormat('d F Y') }}</div>
+    {{-- Kota & Tanggal dipindah ke dalam kolom Wali Kelas --}}
   </div>
 
   {{-- Kanan: hanya semester genap & bukan mid --}}
@@ -980,35 +979,42 @@ if (!function_exists('numberToWords')) {
 
 
   <table style="width:100%; border-collapse:collapse;
-                margin-top:12px;">
+                margin-top:8px; font-size:9pt;">
     <tr style="vertical-align:top; text-align:center;">
 
       {{-- Kolom 1: Orang Tua / Wali Siswa --}}
       <td style="width:{{ $isMid ? '50%' : '33%' }};
-                 padding:0 8px; text-align:center;
+                 padding:0 6px; text-align:center;
                  vertical-align:top;">
+        {{--
+          Spacer kosong setinggi baris lokasi+tanggal di kolom lain
+          agar baris label "Orang Tua" sejajar dengan "Wali Kelas"
+        --}}
+        <div style="height:2.4em;"></div>
         <p style="margin:0; font-weight:bold;
-                  text-transform:uppercase;
-                  letter-spacing:0.05em;">
+                  text-transform:uppercase;">
           Orang Tua / Wali Siswa,
         </p>
-        {{-- Spasi tanda tangan sama tinggi dengan kolom lain --}}
-        <div style="height:80px;"></div>
-        <p style="margin:0; font-weight:bold;">
+        <div style="height:70px;"></div>
+        <p style="margin:0;">
           ....................................
         </p>
       </td>
 
       {{-- Kolom 2: Wali Kelas --}}
       <td style="width:{{ $isMid ? '50%' : '33%' }};
-                 padding:0 8px; text-align:center;
+                 padding:0 6px; text-align:center;
                  vertical-align:top;">
-        <p style="margin:0; font-weight:bold;
-                  text-transform:uppercase;
-                  letter-spacing:0.05em;">
+        <p style="margin:0;">
+          {{ $configs['school_city'] ?? $configs['school_village'] ?? '' }},
+          {{ \Carbon\Carbon::now()->locale('id')
+              ->translatedFormat('d F Y') }}
+        </p>
+        <p style="margin:2px 0; font-weight:bold;
+                  text-transform:uppercase;">
           Wali Kelas,
         </p>
-        <div style="height:80px; display:flex;
+        <div style="height:70px; display:flex;
                     align-items:center;
                     justify-content:center;">
           @if($homeroom && $homeroom->signature
@@ -1027,17 +1033,16 @@ if (!function_exists('numberToWords')) {
               }
             @endphp
             <img src="{{ $sigSrc }}"
-                 style="max-height:80px; max-width:140px;
+                 style="max-height:70px; max-width:130px;
                         object-fit:contain;">
           @endif
         </div>
         <p style="margin:0; font-weight:bold;
-                  text-decoration:underline;
-                  font-size:8pt;">
+                  text-decoration:underline;">
           {{ $homeroomName ?? '' }}
         </p>
         @if($homeroom)
-          <p style="margin:0; font-size:8pt;">
+          <p style="margin:0;">
             {{ $homeroom->nip
                 ? 'NIP. ' . $homeroom->nip
                 : ($homeroom->niy
@@ -1049,14 +1054,17 @@ if (!function_exists('numberToWords')) {
 
       {{-- Kolom 3: Kepala Sekolah (bukan mid) --}}
       @if(!$isMid)
-      <td style="width:34%; padding:0 8px;
+      <td style="width:34%; padding:0 6px;
                  text-align:center; vertical-align:top;">
-        <p style="margin:0; font-weight:bold;
-                  text-transform:uppercase;
-                  letter-spacing:0.05em;">
+        <p style="margin:0;">
+          {{-- spacer agar sejajar dengan baris kota/tanggal --}}
+          &nbsp;
+        </p>
+        <p style="margin:2px 0; font-weight:bold;
+                  text-transform:uppercase;">
           Kepala Sekolah,
         </p>
-        <div style="height:80px; display:flex;
+        <div style="height:70px; display:flex;
                     align-items:center;
                     justify-content:center;">
           @if($principal && $principal->signature
@@ -1075,17 +1083,16 @@ if (!function_exists('numberToWords')) {
               }
             @endphp
             <img src="{{ $pSigSrc }}"
-                 style="max-height:80px; max-width:140px;
+                 style="max-height:70px; max-width:130px;
                         object-fit:contain;">
           @endif
         </div>
         <p style="margin:0; font-weight:bold;
-                  text-decoration:underline;
-                  font-size:8pt;">
+                  text-decoration:underline;">
           {{ $principalName ?? '' }}
         </p>
         @if($principal)
-          <p style="margin:0; font-size:8pt;">
+          <p style="margin:0;">
             {{ $principal->nip
                 ? 'NIP. ' . $principal->nip
                 : ($principal->niy
