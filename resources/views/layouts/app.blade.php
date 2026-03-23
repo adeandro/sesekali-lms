@@ -49,6 +49,7 @@
         }
         @endif
     </style>
+    @stack('styles')
 
 @php
     $__themeRole = auth()->check() ? auth()->user()->role : 'guest';
@@ -885,5 +886,6 @@
     @endif
     {{-- Exam overlays: rendered at body root to escape overflow-hidden/auto --}}
     @stack('body-overlays')
+    @stack('scripts')
 </body>
 </html>

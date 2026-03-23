@@ -329,7 +329,7 @@ class GradeService
         };
 
         // Ambil semua mapel yang terdaftar (mempunyai kategori) untuk urutan raport
-        $subjectQuery = Subject::whereNotNull('category', 'and')
+        $subjectQuery = Subject::whereNotNull('category')
             ->forReport();
 
         if ($gradeLabel !== null) {
@@ -390,7 +390,7 @@ class GradeService
             ->get();
 
         // 3. Ambil semua mata pelajaran relevan
-        $subjects = Subject::whereNotNull('category', 'and')->forReport()->get();
+        $subjects = Subject::whereNotNull('category')->forReport()->get();
 
         // 4. Grouping untuk lookup O(1)
         return [

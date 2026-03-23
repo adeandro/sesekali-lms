@@ -39,6 +39,7 @@ use App\Http\Controllers\Admin\StudentDudiController;
 use App\Http\Controllers\Admin\LetterTemplateController;
 use App\Http\Controllers\Admin\LetterController;
 use App\Http\Controllers\Tu\TuDashboardController;
+use App\Http\Controllers\Admin\GradeLockController;
 
 // Public routes
 Route::get('/', function () {

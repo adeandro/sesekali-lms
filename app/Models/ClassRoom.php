@@ -46,7 +46,8 @@ class ClassRoom extends Model
 
     public function students(): HasMany
     {
-        return $this->hasMany(User::class, 'class_id');
+        return $this->hasMany(User::class, 'class_id')
+                    ->where('role', 'student');
     }
 
     public function homeroomTeacher(): BelongsTo
@@ -86,12 +87,21 @@ class ClassRoom extends Model
     }
 
     /**
-     * Get integer grade level (10, 11, 12).
+     * Deteksi jenjang dari nama kelas.
+     * Contoh: "XII IPA 1" → 12, "XI B" → 11, "X A" → 10
      */
     public function getGradeLevel(): int
     {
+        $name = strtoupper($this->name);
+
+        if (str_starts_with($name, 'XII')) return 12;
+        if (str_starts_with($name, 'XI'))  return 11;
+        if (str_starts_with($name, 'X'))   return 10;
+
+        // Fallback: coba ambil angka pertama dari 'grade' field
         $map = ['X' => 10, 'XI' => 11, 'XII' => 12];
         $grade = strtoupper(trim($this->grade));
+        
         return $map[$grade] ?? (is_numeric($grade) ? (int)$grade : 10);
     }
 }

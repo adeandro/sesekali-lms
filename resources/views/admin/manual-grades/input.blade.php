@@ -345,8 +345,28 @@
     async function toggleLock() {
         const btn = document.getElementById('btn-lock-toggle');
         const label = document.getElementById('lock-label');
-        
-        if(!confirm('Apakah Anda yakin ingin ' + (label.innerText.includes('Buka') ? 'membuka' : 'mengunci') + ' nilai mapel ini?')) return;
+        const isCurrentlyLocked = label.innerText.includes('Buka');
+
+        const result = await Swal.fire({
+            title: isCurrentlyLocked ? 'Buka Kunci Nilai?' : 'Kunci Nilai?',
+            text: isCurrentlyLocked 
+                ? 'Guru akan dapat mengubah nilai kembali setelah kunci dibuka.' 
+                : 'Setelah dikunci, nilai tidak dapat diubah kecuali kunci dibuka kembali.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: isCurrentlyLocked ? '#f59e0b' : '#059669',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: isCurrentlyLocked ? 'Ya, Buka Kunci' : 'Ya, Kunci Sekarang',
+            cancelButtonText: 'Batal',
+            background: '#ffffff',
+            customClass: {
+                popup: 'rounded-[2rem]',
+                confirmButton: 'rounded-xl px-6 py-3 text-[10px] font-black uppercase tracking-widest',
+                cancelButton: 'rounded-xl px-6 py-3 text-[10px] font-black uppercase tracking-widest'
+            }
+        });
+
+        if (!result.isConfirmed) return;
 
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
@@ -356,6 +376,7 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Accept': 'application/json',
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
                 },
                 body: JSON.stringify({
@@ -367,15 +388,36 @@
 
             const data = await res.json();
             if (data.success) {
-                window.location.reload();
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil',
+                    text: data.message,
+                    showConfirmButton: false,
+                    timer: 1500,
+                    customClass: { popup: 'rounded-[2rem]' }
+                }).then(() => {
+                    window.location.reload();
+                });
             } else {
-                alert(data.message || 'Gagal mengubah status kunci.');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal',
+                    text: data.message || 'Gagal mengubah status kunci.',
+                    customClass: { popup: 'rounded-[2rem]' }
+                });
                 btn.disabled = false;
+                btn.innerHTML = `<i class="fas ${isCurrentlyLocked ? 'fa-unlock' : 'fa-lock'}"></i> ${label.innerText}`;
             }
         } catch (err) {
             console.error(err);
-            alert('Gagal menghubungi server.');
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Terjadi kesalahan sistem atau koneksi.',
+                customClass: { popup: 'rounded-[2rem]' }
+            });
             btn.disabled = false;
+            btn.innerHTML = `<i class="fas ${isCurrentlyLocked ? 'fa-unlock' : 'fa-lock'}"></i> ${label.innerText}`;
         }
     }
 </script>
