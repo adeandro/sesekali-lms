@@ -95,23 +95,72 @@
                     </div>
 
                     <!-- Mata Pelajaran -->
-                    <div class="mb-4">
-                        <label class="block text-gray-700 text-sm font-bold mb-2">Mata Pelajaran yang Diampu</label>
-                        <div class="grid grid-cols-2 md:grid-cols-3 gap-2 border rounded-lg p-3 max-h-48 overflow-y-auto">
+                    <div class="col-span-full space-y-4">
+                        <label class="block text-sm font-semibold text-gray-700">Mata Pelajaran yang Diampu</label>
+                        
+                        <div class="space-y-6 bg-gray-50/50 p-6 rounded-2xl border border-gray-100">
                             @php
+                                $categories = \App\Models\Subject::categories();
+                                $groupedSubjects = $subjects->groupBy('category');
                                 $assignedSubjects = old('subject_ids', $teacher->subjects->pluck('id')->toArray());
                             @endphp
-                            @foreach($subjects as $subject)
-                                <label class="flex items-center space-x-2 text-sm">
-                                    <input type="checkbox" name="subject_ids[]" value="{{ $subject->id }}" 
-                                        class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                        {{ in_array($subject->id, $assignedSubjects) ? 'checked' : '' }}>
-                                    <span>{{ $subject->name }}</span>
-                                </label>
+
+                            @foreach($categories as $key => $label)
+                                @if(isset($groupedSubjects[$key]))
+                                    <div x-data="{ 
+                                        selectedCount: {{ count(array_intersect($groupedSubjects[$key]->pluck('id')->toArray(), $assignedSubjects)) }},
+                                        totalInCategory: {{ $groupedSubjects[$key]->count() }},
+                                        get allSelected() { return this.selectedCount === this.totalInCategory },
+                                        toggleAll() {
+                                            const checkboxes = $el.closest('.category-group').querySelectorAll('.subject-checkbox');
+                                            const shouldCheck = !this.allSelected;
+                                            checkboxes.forEach(cb => {
+                                                if (cb.checked !== shouldCheck) {
+                                                    cb.checked = shouldCheck;
+                                                    cb.dispatchEvent(new Event('change'));
+                                                }
+                                            });
+                                        }
+                                    }" class="category-group space-y-3">
+                                        <div class="flex items-center justify-between border-b border-gray-100 pb-2">
+                                            <h4 class="text-[11px] font-black uppercase tracking-widest text-indigo-600">{{ $label }}</h4>
+                                            <button type="button" @click="toggleAll" 
+                                                class="text-[10px] font-bold text-gray-400 hover:text-indigo-600 transition-colors flex items-center gap-1.5 uppercase tracking-wider">
+                                                <i class="fas" :class="allSelected ? 'fa-check-double' : 'fa-plus-circle'"></i>
+                                                <span x-text="allSelected ? 'Batal Pilih Semua' : 'Pilih Semua'"></span>
+                                            </button>
+                                        </div>
+                                        
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                            @foreach($groupedSubjects[$key] as $subject)
+                                                <label class="relative group cursor-pointer">
+                                                    <input type="checkbox" name="subject_ids[]" value="{{ $subject->id }}" 
+                                                        class="subject-checkbox hidden"
+                                                        @change="selectedCount = $el.closest('.category-group').querySelectorAll('.subject-checkbox:checked').length"
+                                                        {{ in_array($subject->id, $assignedSubjects) ? 'checked' : '' }}>
+                                                    
+                                                    <div class="flex items-center gap-3 p-3 bg-white rounded-xl border-2 border-transparent group-hover:bg-indigo-50/30 transition-all duration-300 peer-checked:bg-white transition-all shadow-sm group-hover:shadow-md"
+                                                        :class="$el.previousElementSibling.checked ? 'border-indigo-500 bg-white ring-4 ring-indigo-50 shadow-indigo-100' : 'border-gray-100'">
+                                                        <div class="w-5 h-5 rounded-md border-2 border-gray-200 flex items-center justify-center transition-colors overflow-hidden shrink-0"
+                                                            :class="$el.previousElementSibling.checked ? 'bg-indigo-500 border-indigo-500' : 'bg-white'">
+                                                            <i class="fas fa-check text-white text-[10px] transition-transform duration-300"
+                                                                :class="$el.parentElement.previousElementSibling.checked ? 'scale-100' : 'scale-0'"></i>
+                                                        </div>
+                                                        <span class="text-xs font-bold transition-colors"
+                                                            :class="$el.previousElementSibling.previousElementSibling.checked ? 'text-indigo-900' : 'text-gray-600'">
+                                                            {{ $subject->name }}
+                                                        </span>
+                                                    </div>
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endif
                             @endforeach
                         </div>
+                        
                         @error('subject_ids')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            <p class="text-red-500 text-xs mt-1 font-medium italic">⚠️ {{ $message }}</p>
                         @enderror
                     </div>
 
