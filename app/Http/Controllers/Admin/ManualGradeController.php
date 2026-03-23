@@ -408,11 +408,28 @@ class ManualGradeController extends Controller
         $sheet->getColumnDimension('D')->setWidth(15);
         $sheet->getColumnDimension('E')->setWidth(15);
 
-        // Fill in eligible students
+        // Fetch existing manual grades in bulk to avoid N+1 issues
+        $grades = collect();
+        if ($class && $subject && $semester && $academicYear) {
+            $grades = ManualGrade::whereIn('student_id', $students->pluck('id'))
+                ->where('subject_id', $subject->id)
+                ->where('semester', $semester)
+                ->where('academic_year', $academicYear)
+                ->get()
+                ->groupBy('student_id');
+        }
+
+        // Fill in eligible students and existing grades
         $row = 7;
         foreach ($students as $student) {
             $sheet->setCellValue("A$row", $student->nis ?? '');
             $sheet->setCellValue("B$row", $student->name);
+
+            $studentGrades = $grades->get($student->id, collect())->keyBy('grade_type');
+            $sheet->setCellValue("C$row", $studentGrades['harian']?->score ?? '');
+            $sheet->setCellValue("D$row", ($studentGrades['uts'] ?? $studentGrades['pts'] ?? null)?->score ?? '');
+            $sheet->setCellValue("E$row", ($studentGrades['uas'] ?? $studentGrades['pas'] ?? null)?->score ?? '');
+
             $row++;
         }
 
