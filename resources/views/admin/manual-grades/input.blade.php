@@ -115,6 +115,9 @@
             $wHarian = $weight?->weight_harian ?? 40;
             $wUts    = $weight?->weight_uts    ?? 30;
             $wUas    = $weight?->weight_uas    ?? 30;
+            $isLocked = \App\Models\GradeLock::isLocked(
+                $selectedSubject->id, $semester, $academicYear
+            );
         @endphp
 
         {{-- Bobot Info --}}
@@ -146,6 +149,20 @@
                 <i class="fas fa-check-circle text-emerald-500"></i>
                 <p class="text-sm font-bold text-emerald-700">{{ session('success') }}</p>
             </div>
+        @endif
+
+        @if($isLocked)
+        <div class="bg-amber-50 border border-amber-300 rounded-[1.5rem] p-6 mb-4 flex items-center gap-4 animate-fadeIn">
+            <div class="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-600 text-xl">
+                <i class="fas fa-lock"></i>
+            </div>
+            <div>
+                <p class="font-black text-amber-900 uppercase tracking-tight">Nilai Terkunci</p>
+                <p class="text-xs font-bold text-amber-700 uppercase tracking-widest opacity-80 mt-1">
+                    Nilai mapel ini sudah dikunci dan tidak dapat diubah. Klik "Buka Kunci Nilai" untuk mengedit.
+                </p>
+            </div>
+        </div>
         @endif
 
         <div class="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden">
@@ -229,13 +246,13 @@
                                             @if($cbt['harian'] !== null)
                                                 <span class="text-[9px] font-black text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full uppercase tracking-widest">CBT: {{ number_format($cbt['harian'], 1) }}</span>
                                             @endif
-                                            <input type="number" name="grades[{{ $student->id }}][harian]"
+                                                <input type="number" name="grades[{{ $student->id }}][harian]"
                                                 x-model="h"
                                                 value="{{ $cbt['harian'] ?? $manual['harian'] }}"
                                                 min="0" max="100" step="0.5" placeholder="—"
-                                                @if($cbt['harian'] !== null) disabled title="Nilai diambil dari CBT" @endif
+                                                @if($cbt['harian'] !== null || $isLocked) disabled title="{{ $isLocked ? 'Nilai terkunci' : 'Nilai diambil dari CBT' }}" @endif
                                                 class="w-20 h-10 text-center text-sm font-bold rounded-xl border-transparent transition-all
-                                                       {{ $cbt['harian'] !== null ? 'bg-blue-50 text-blue-700 cursor-not-allowed' : 'bg-gray-50 text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10' }}">
+                                                       {{ ($cbt['harian'] !== null || $isLocked) ? 'bg-blue-50 text-blue-700 cursor-not-allowed' : 'bg-gray-50 text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10' }}">
                                         </div>
                                     </td>
 
@@ -245,13 +262,13 @@
                                             @if($cbt['uts'] !== null)
                                                 <span class="text-[9px] font-black text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full uppercase tracking-widest">CBT: {{ number_format($cbt['uts'], 1) }}</span>
                                             @endif
-                                            <input type="number" name="grades[{{ $student->id }}][uts]"
+                                                <input type="number" name="grades[{{ $student->id }}][uts]"
                                                 x-model="u"
                                                 value="{{ $cbt['uts'] ?? $manual['uts'] }}"
                                                 min="0" max="100" step="0.5" placeholder="—"
-                                                @if($cbt['uts'] !== null) disabled title="Nilai diambil dari CBT" @endif
+                                                @if($cbt['uts'] !== null || $isLocked) disabled title="{{ $isLocked ? 'Nilai terkunci' : 'Nilai diambil dari CBT' }}" @endif
                                                 class="w-20 h-10 text-center text-sm font-bold rounded-xl border-transparent transition-all
-                                                       {{ $cbt['uts'] !== null ? 'bg-blue-50 text-blue-700 cursor-not-allowed' : 'bg-gray-50 text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10' }}">
+                                                       {{ ($cbt['uts'] !== null || $isLocked) ? 'bg-blue-50 text-blue-700 cursor-not-allowed' : 'bg-gray-50 text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10' }}">
                                         </div>
                                     </td>
 
@@ -261,13 +278,13 @@
                                             @if($cbt['uas'] !== null)
                                                 <span class="text-[9px] font-black text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full uppercase tracking-widest">CBT: {{ number_format($cbt['uas'], 1) }}</span>
                                             @endif
-                                            <input type="number" name="grades[{{ $student->id }}][uas]"
+                                                <input type="number" name="grades[{{ $student->id }}][uas]"
                                                 x-model="a"
                                                 value="{{ $cbt['uas'] ?? $manual['uas'] }}"
                                                 min="0" max="100" step="0.5" placeholder="—"
-                                                @if($cbt['uas'] !== null) disabled title="Nilai diambil dari CBT" @endif
+                                                @if($cbt['uas'] !== null || $isLocked) disabled title="{{ $isLocked ? 'Nilai terkunci' : 'Nilai diambil dari CBT' }}" @endif
                                                 class="w-20 h-10 text-center text-sm font-bold rounded-xl border-transparent transition-all
-                                                       {{ $cbt['uas'] !== null ? 'bg-blue-50 text-blue-700 cursor-not-allowed' : 'bg-gray-50 text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10' }}">
+                                                       {{ ($cbt['uas'] !== null || $isLocked) ? 'bg-blue-50 text-blue-700 cursor-not-allowed' : 'bg-gray-50 text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10' }}">
                                         </div>
                                     </td>
 
@@ -287,10 +304,22 @@
                         <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                             * Nilai Akhir = estimasi realtime. Nilai CBT tidak bisa dioverride oleh nilai manual.
                         </p>
-                        <button type="submit"
-                            class="h-12 px-8 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-100 flex items-center gap-2">
-                            <i class="fas fa-save"></i> Simpan Nilai
-                        </button>
+                        <div class="flex items-center gap-3">
+                            <button type="button"
+                                id="btn-lock-toggle"
+                                onclick="toggleLock()"
+                                class="h-12 px-6 {{ $isLocked ? 'bg-amber-500 hover:bg-amber-600' : 'bg-emerald-600 hover:bg-emerald-700' }} text-white text-[10px] font-black uppercase tracking-widest rounded-2xl transition shadow-lg shadow-amber-100 flex items-center gap-2">
+                                <i class="fas {{ $isLocked ? 'fa-unlock' : 'fa-lock' }}"></i>
+                                <span id="lock-label">{{ $isLocked ? 'Buka Kunci Nilai' : 'Kunci Nilai' }}</span>
+                            </button>
+
+                            @if(!$isLocked)
+                            <button type="submit"
+                                class="h-12 px-8 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-100 flex items-center gap-2">
+                                <i class="fas fa-save"></i> Simpan Nilai
+                            </button>
+                            @endif
+                        </div>
                     </div>
                 </form>
             @endif
@@ -309,5 +338,42 @@
 <style>
     .animate-fadeIn { animation: fadeIn 0.4s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    async function toggleLock() {
+        const btn = document.getElementById('btn-lock-toggle');
+        const label = document.getElementById('lock-label');
+        
+        if(!confirm('Apakah Anda yakin ingin ' + (label.innerText.includes('Buka') ? 'membuka' : 'mengunci') + ' nilai mapel ini?')) return;
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+
+        try {
+            const res = await fetch('{{ route("admin.grade-locks.toggle") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                },
+                body: JSON.stringify({
+                    subject_id:    {{ $selectedSubject->id }},
+                    semester:      {{ $semester }},
+                    academic_year: '{{ $academicYear }}',
+                }),
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert(data.message || 'Gagal mengubah status kunci.');
+                btn.disabled = false;
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Gagal menghubungi server.');
+            btn.disabled = false;
+        }
+    }
 </style>
 @endsection
