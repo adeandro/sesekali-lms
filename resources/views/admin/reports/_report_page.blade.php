@@ -835,9 +835,9 @@ if (!function_exists('numberToWords')) {
     $nextGradeMap = [
         10 => 'XI (Sebelas)',
         11 => 'XII (Dua Belas)',
-        12 => 'XII (Dua Belas)',
     ];
-    $nextGrade = $nextGradeMap[$gradeLevel] ?? '';
+    $isGradeXII = ($gradeLevel === 12);
+    $nextGrade  = $nextGradeMap[$gradeLevel] ?? '';
   @endphp
   {{-- ══ CONTENT WRAPPER ══ --}}
   <div style="flex: 1;">
@@ -971,10 +971,22 @@ if (!function_exists('numberToWords')) {
     <div class="mt-2">
       Maka ditetapkan&nbsp;
       <span class="font-black uppercase underline tracking-widest">
-        {{ $promotion?->decision ?? 'NAIK' }}
+        @if($isGradeXII)
+          {{-- Kelas XII: lulus/tidak lulus --}}
+          {{ $promotion?->decision === 'TIDAK NAIK'
+              ? 'TIDAK LULUS'
+              : 'LULUS' }}
+        @else
+          {{-- Kelas X dan XI: naik/tidak naik --}}
+          {{ $promotion?->decision ?? 'NAIK' }}
+        @endif
       </span>
     </div>
-    <div>pada tingkat : <span class="font-bold">{{ $nextGrade }}</span></div>
+    @if(!$isGradeXII)
+    <div>pada tingkat :
+      <span class="font-bold">{{ $nextGrade }}</span>
+    </div>
+    @endif
   </div>
   @endif
 </div>
