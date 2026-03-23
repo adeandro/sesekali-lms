@@ -271,7 +271,7 @@ if (!function_exists('numberToWords')) {
 
 <div class="report-page"
      style="display:flex; flex-direction:column;
-            padding: 0.6cm 1.5cm 1.2cm 2.0cm;
+            padding: 0.2cm 1.5cm 0.5cm 2.0cm;
             position: relative;
             page-break-after: avoid !important;
             break-after: avoid !important;
@@ -580,18 +580,7 @@ if (!function_exists('numberToWords')) {
     </tr>
   </table>
 
-  {{-- ══ FOOTNOTE ══ --}}
-  <div style="position:absolute;
-              bottom: 6px;
-              left: 0;
-              right: 0;
-              text-align:center;
-              font-size:7pt;
-              color:#9ca3af;
-              font-style:italic;">
-    {{ $footnote ?? ($student->name . ' (' . ($student->nis ?? '-') . ')') }}
   </div>
-
 </div>
 @else
   {{-- ══════════════════════════════════════════ --}}
