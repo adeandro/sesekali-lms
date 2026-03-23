@@ -110,6 +110,7 @@ class ReportDataController extends Controller
 
             $students = User::where('role', '=', 'student')
                 ->where('class_id', '=', $classId)
+                ->aktif()
                 ->orderBy('name', 'asc')
                 ->with([
                     'attendance' => function($q) use ($semesterInt, $academicYear) {

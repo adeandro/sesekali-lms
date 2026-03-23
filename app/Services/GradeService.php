@@ -44,6 +44,7 @@ class GradeService
         // Get all students in the class
         $students = User::where('role', '=', 'student', 'and')
             ->where('class_id', '=', $classId, 'and')
+            ->aktif()
             ->get();
 
         if ($students->isEmpty()) {
@@ -374,7 +375,10 @@ class GradeService
      */
     public static function getBulkClassData(int $classId, int $semester, string $academicYear, int $jenjang): array
     {
-        $students = User::where('class_id', '=', $classId, 'and')->where('role', '=', 'student', 'and')->get(['id', 'name', 'class_id']);
+        $students = User::where('class_id', '=', $classId, 'and')
+            ->where('role', '=', 'student', 'and')
+            ->aktif()
+            ->get(['id', 'name', 'class_id']);
         $studentIds = $students->pluck('id')->toArray();
 
         // 1. Ambil semua nilai manual (harian, uts, uas) sekaligus

@@ -245,6 +245,14 @@ class User extends Authenticatable
                       ->count();
     }
 
+    /**
+     * Scope to filter active users.
+     */
+    public function scopeAktif($query)
+    {
+        return $query->where('status', 'Aktif');
+    }
+
 
 
     /**

@@ -78,6 +78,7 @@ class ReportController extends Controller
         if ($class) {
             $students = User::where('class_id', '=', $class->id, 'and')
                 ->where('role', '=', 'student', 'and')
+                ->aktif()
                 ->orderBy('name')
                 ->get();
 
@@ -182,6 +183,7 @@ class ReportController extends Controller
         // Hanya kirim metadata — HTML di-fetch per siswa via AJAX
         $students = User::where('class_id', '=', $class->id, 'and')
             ->where('role', '=', 'student', 'and')
+            ->aktif()
             ->orderBy('name')
             ->get(['id', 'name', 'nis']);
 

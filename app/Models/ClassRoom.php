@@ -47,7 +47,8 @@ class ClassRoom extends Model
     public function students(): HasMany
     {
         return $this->hasMany(User::class, 'class_id')
-                    ->where('role', 'student');
+                    ->where('role', 'student')
+                    ->aktif();
     }
 
     public function homeroomTeacher(): BelongsTo
