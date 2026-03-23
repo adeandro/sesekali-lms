@@ -100,7 +100,7 @@ if (!function_exists('numberToWords')) {
   $isMid   = (($reportType ?? 'semester') === 'mid');
 
   // Kelompokkan mapel per kategori
-  $grouped = ['umum'=>[], 'kejuruan'=>[], 'muatan_sekolah'=>[]];
+  $grouped = ['umum' => [], 'kejuruan' => [], 'muatan_sekolah' => [], 'pilihan' => []];
   foreach ($data as $row) {
       $cat = $row['subject']->category ?? 'umum';
       if (!isset($grouped[$cat])) $grouped[$cat] = [];
@@ -276,6 +276,13 @@ if (!function_exists('numberToWords')) {
             page-break-after: avoid !important;
             break-after: avoid !important;
             min-height: 25cm;">
+
+  {{-- ══ WATERMARK ══ --}}
+  @if(($configs['watermark_enabled'] ?? 'off') === 'on' && isset($configs['logo']))
+    <div class="report-watermark">
+        <img src="{{ asset('storage/' . $configs['logo']) }}" class="report-watermark-img">
+    </div>
+  @endif
 
   {{-- flex:1 wrapper mendorong footnote ke bawah --}}
   <div style="flex:1;">
@@ -679,8 +686,8 @@ if (!function_exists('numberToWords')) {
       </tr>
     </thead>
     <tbody>
-      @php $no = ['umum'=>1,'kejuruan'=>1,'muatan_sekolah'=>1]; @endphp
-      @foreach(['umum'=>'A','kejuruan'=>'B','muatan_sekolah'=>'C'] as $cat => $label)
+      @php $no = ['umum'=>1, 'kejuruan'=>1, 'muatan_sekolah'=>1, 'pilihan'=>1]; @endphp
+      @foreach(['umum'=>'A', 'kejuruan'=>'B', 'muatan_sekolah'=>'C', 'pilihan'=>'D'] as $cat => $label)
         @if(!empty($grouped[$cat]))
           <tr class="bg-gray-100 font-bold">
             <td class="border border-black text-center p-1">{{ $label }}</td>
@@ -690,6 +697,7 @@ if (!function_exists('numberToWords')) {
                   'umum'           => 'MATA PELAJARAN UMUM',
                   'kejuruan'       => 'MATA PELAJARAN KEJURUAN',
                   'muatan_sekolah' => 'MATA PELAJARAN MUATAN SEKOLAH',
+                  'pilihan'        => 'MATA PELAJARAN PILIHAN',
                 ];
               @endphp
               {{ $catLabels[$cat] }}
