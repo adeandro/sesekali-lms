@@ -271,7 +271,7 @@ if (!function_exists('numberToWords')) {
 
 <div class="report-page"
      style="display:flex; flex-direction:column;
-            padding: 0.2cm 1.5cm 0.5cm 2.0cm;
+            padding: 2.5cm 1.5cm 0.5cm 2.0cm;
             position: relative;
             page-break-after: avoid !important;
             break-after: avoid !important;
