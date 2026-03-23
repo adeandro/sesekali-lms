@@ -740,7 +740,10 @@ if (!function_exists('numberToWords')) {
             @endphp
             <tr>
               <td class="border border-black text-center p-1 font-sans">{{ $no[$cat]++ }}</td>
-              <td class="border border-black px-2 py-1 font-bold">{{ $row['subject']->name ?? 'Mapel Terhapus' }}</td>
+              <td class="border border-black px-2 py-1"
+                  style="font-size:9pt;">
+                {{ $row['subject']->name ?? 'Mapel Terhapus' }}
+              </td>
               <td class="border border-black text-center p-1">{{ $kkm }}</td>
               <td class="border border-black text-center p-1 italic text-gray-500">
                 {{ $classAvg !== null ? number_format($classAvg,0) : '' }}
