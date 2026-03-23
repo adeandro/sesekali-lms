@@ -100,18 +100,15 @@
                             @foreach($categories as $key => $label)
                                 @if(isset($groupedSubjects[$key]))
                                     <div x-data="{ 
-                                        selectedCount: {{ count(array_intersect($groupedSubjects[$key]->pluck('id')->toArray(), $assignedSubjects)) }},
+                                        selectedIds: [{{ implode(',', array_intersect($groupedSubjects[$key]->pluck('id')->toArray(), $assignedSubjects)) }}],
                                         totalInCategory: {{ $groupedSubjects[$key]->count() }},
-                                        get allSelected() { return this.selectedCount === this.totalInCategory },
+                                        get allSelected() { return this.selectedIds.length === this.totalInCategory },
                                         toggleAll() {
-                                            const checkboxes = $el.closest('.category-group').querySelectorAll('.subject-checkbox');
-                                            const shouldCheck = !this.allSelected;
-                                            checkboxes.forEach(cb => {
-                                                if (cb.checked !== shouldCheck) {
-                                                    cb.checked = shouldCheck;
-                                                    cb.dispatchEvent(new Event('change'));
-                                                }
-                                            });
+                                            if (this.allSelected) {
+                                                this.selectedIds = [];
+                                            } else {
+                                                this.selectedIds = [{{ $groupedSubjects[$key]->pluck('id')->implode(',') }}];
+                                            }
                                         }
                                     }" class="category-group space-y-3">
                                         <div class="flex items-center justify-between border-b border-gray-100 pb-2">
@@ -128,18 +125,17 @@
                                                 <label class="relative group cursor-pointer">
                                                     <input type="checkbox" name="subject_ids[]" value="{{ $subject->id }}" 
                                                         class="subject-checkbox hidden"
-                                                        @change="selectedCount = $el.closest('.category-group').querySelectorAll('.subject-checkbox:checked').length"
-                                                        {{ in_array($subject->id, $assignedSubjects) ? 'checked' : '' }}>
+                                                        x-model="selectedIds">
                                                     
-                                                    <div class="flex items-center gap-3 p-3 bg-white rounded-xl border-2 border-transparent group-hover:bg-indigo-50/30 transition-all duration-300 peer-checked:bg-white transition-all shadow-sm group-hover:shadow-md"
-                                                        :class="$el.previousElementSibling.checked ? 'border-indigo-500 bg-white ring-4 ring-indigo-50 shadow-indigo-100' : 'border-gray-100'">
+                                                    <div class="flex items-center gap-3 p-3 bg-white rounded-xl border-2 border-transparent group-hover:bg-indigo-50/30 transition-all duration-300 transition-all shadow-sm group-hover:shadow-md"
+                                                        :class="selectedIds.includes('{{ $subject->id }}') ? 'border-indigo-500 bg-white ring-4 ring-indigo-50 shadow-indigo-100' : 'border-gray-100'">
                                                         <div class="w-5 h-5 rounded-md border-2 border-gray-200 flex items-center justify-center transition-colors overflow-hidden shrink-0"
-                                                            :class="$el.previousElementSibling.checked ? 'bg-indigo-500 border-indigo-500' : 'bg-white'">
+                                                            :class="selectedIds.includes('{{ $subject->id }}') ? 'bg-indigo-500 border-indigo-500' : 'bg-white'">
                                                             <i class="fas fa-check text-white text-[10px] transition-transform duration-300"
-                                                                :class="$el.parentElement.previousElementSibling.checked ? 'scale-100' : 'scale-0'"></i>
+                                                                :class="selectedIds.includes('{{ $subject->id }}') ? 'scale-100' : 'scale-0'"></i>
                                                         </div>
                                                         <span class="text-xs font-bold transition-colors"
-                                                            :class="$el.previousElementSibling.previousElementSibling.checked ? 'text-indigo-900' : 'text-gray-600'">
+                                                            :class="selectedIds.includes('{{ $subject->id }}') ? 'text-indigo-900' : 'text-gray-600'">
                                                             {{ $subject->name }}
                                                         </span>
                                                     </div>
