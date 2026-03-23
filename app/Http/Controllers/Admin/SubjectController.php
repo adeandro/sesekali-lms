@@ -33,7 +33,7 @@ class SubjectController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:subjects,name',
             'kkm' => 'required|integer|min:0|max:100',
-            'category' => 'required|in:umum,kejuruan,muatan_sekolah',
+            'category' => 'required|in:umum,kejuruan,muatan_sekolah,pilihan',
             'sort_order' => 'nullable|integer|min:0',
         ]);
 
@@ -59,7 +59,7 @@ class SubjectController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:subjects,name,' . $subject->id,
             'kkm' => 'required|integer|min:0|max:100',
-            'category' => 'required|in:umum,kejuruan,muatan_sekolah',
+            'category' => 'required|in:umum,kejuruan,muatan_sekolah,pilihan',
             'sort_order' => 'nullable|integer|min:0',
         ]);
 

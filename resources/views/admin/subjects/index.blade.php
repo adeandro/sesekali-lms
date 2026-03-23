@@ -86,8 +86,8 @@
                                     </div>
                                     <div class="flex flex-col items-end gap-2">
                                         <span class="px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm border
-                                            {{ $categoryKey === 'umum' ? 'bg-blue-50 text-blue-600 border-blue-100' : ($categoryKey === 'kejuruan' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-purple-50 text-purple-600 border-purple-100') }}">
-                                            {{ $categoryKey === 'umum' ? 'Umum' : ($categoryKey === 'kejuruan' ? 'Kejuruan' : 'Muatan Lokal') }}
+                                            {{ $categoryKey === 'umum' ? 'bg-blue-50 text-blue-600 border-blue-100' : ($categoryKey === 'kejuruan' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : ($categoryKey === 'muatan_sekolah' ? 'bg-purple-50 text-purple-600 border-purple-100' : 'bg-amber-50 text-amber-600 border-amber-100')) }}">
+                                            {{ $categoryKey === 'umum' ? 'Umum' : ($categoryKey === 'kejuruan' ? 'Kejuruan' : ($categoryKey === 'muatan_sekolah' ? 'Muatan Lokal' : 'Pilihan')) }}
                                         </span>
                                         <span class="px-2 py-1 bg-amber-50 text-amber-600 border border-amber-100 rounded-md text-[8px] font-black tracking-widest">KKM: {{ $subject->kkm }}</span>
                                     </div>

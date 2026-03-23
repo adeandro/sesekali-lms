@@ -16,6 +16,7 @@ class Subject extends Model
     const CATEGORY_UMUM          = 'umum';
     const CATEGORY_KEJURUAN      = 'kejuruan';
     const CATEGORY_MUATAN_SEKOLAH = 'muatan_sekolah';
+    const CATEGORY_PILIHAN = 'pilihan';
 
     public static function categories(): array
     {
@@ -23,6 +24,7 @@ class Subject extends Model
             self::CATEGORY_UMUM          => 'A. Mata Pelajaran Umum',
             self::CATEGORY_KEJURUAN      => 'B. Mata Pelajaran Kejuruan',
             self::CATEGORY_MUATAN_SEKOLAH => 'C. Muatan Sekolah',
+            self::CATEGORY_PILIHAN        => 'D. Mata Pelajaran Pilihan',
         ];
     }
 
@@ -49,7 +51,7 @@ class Subject extends Model
             });
         }
 
-        return $query->orderByRaw("FIELD(category, 'umum', 'kejuruan', 'muatan_sekolah')")
+        return $query->orderByRaw("FIELD(category, 'umum', 'kejuruan', 'muatan_sekolah', 'pilihan')")
                      ->orderBy('sort_order', 'asc')
                      ->orderBy('name', 'asc');
     }
