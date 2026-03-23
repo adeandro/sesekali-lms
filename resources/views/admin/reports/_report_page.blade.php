@@ -271,11 +271,7 @@ if (!function_exists('numberToWords')) {
 
 <div class="report-page"
      style="display:flex; flex-direction:column;
-            padding: 1.0cm 1.5cm 0.5cm 2.0cm;
-            position: relative;
-            page-break-after: avoid !important;
-            break-after: avoid !important;
-            min-height: 25cm;">
+            position: relative;">
 
   {{-- ══ WATERMARK ══ --}}
   @if(($configs['watermark_enabled'] ?? 'off') === 'on' && isset($configs['logo']))
@@ -610,14 +606,8 @@ if (!function_exists('numberToWords')) {
   {{-- HALAMAN 1: PENILAIAN HASIL BELAJAR        --}}
   {{-- ══════════════════════════════════════════ --}}
   <div class="report-page bg-white relative font-serif text-black leading-tight" 
-     style="page-break-after: always !important;
-            break-after: page !important;
-            position: relative;
-            min-height: 25cm;
-            display: flex;
-            flex-direction: column;
-            padding-top: 1.0cm;
-            padding-bottom: 1.5cm;">
+     style="display: flex;
+            flex-direction: column;">
 
   {{-- ══ WATERMARK ══ --}}
   @if(($configs['watermark_enabled'] ?? 'off') === 'on' && isset($configs['logo']))
@@ -776,14 +766,8 @@ if (!function_exists('numberToWords')) {
   </div>
 </div>
 <div class="report-page bg-white relative font-serif text-black leading-tight" 
-     style="page-break-before: always !important;
-            break-before: page !important;
-            position: relative;
-            min-height: 25cm;
-            display: flex;
-            flex-direction: column;
-            padding-top: 1.0cm;
-            padding-bottom: 1.5cm;">
+     style="display: flex;
+            flex-direction: column;">
 
   {{-- ══ WATERMARK ══ --}}
   @if(($configs['watermark_enabled'] ?? 'off') === 'on' && isset($configs['logo']))
