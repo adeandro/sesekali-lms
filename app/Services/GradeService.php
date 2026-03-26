@@ -455,4 +455,183 @@ class GradeService
 
         return (($harian ?? 0) * $wHarian + ($uts ?? 0) * $wUts + ($uas ?? 0) * $wUas) / $totalWeight;
     }
+
+    /**
+     * Pre-load semua data nilai untuk seluruh kelas dalam satu batch query.
+     * Digunakan oleh ReportController::index untuk optimasi N+1.
+     */
+    public static function preloadClassData(
+        int    $classId,
+        int    $semester,
+        string $academicYear,
+        int    $jenjang,
+        string $reportType = 'semester'
+    ): array {
+        $gradeLabel = match($jenjang) {
+            10 => 'X', 11 => 'XI', 12 => 'XII',
+            default => null,
+        };
+
+        // 1. Semua mapel relevan — 1 query
+        $subjectQuery = Subject::whereNotNull('category')
+            ->forReport();
+        if ($gradeLabel !== null) {
+            $subjectQuery->forGrade($gradeLabel);
+        }
+        $subjects   = $subjectQuery->orderBy('sort_order', 'asc')->get();
+        $subjectIds = $subjects->pluck('id')->toArray();
+
+        // 2. Semua siswa di kelas — 1 query
+        $students   = User::where('class_id', '=', $classId)
+            ->where('role', '=', 'student')
+            ->aktif()
+            ->get(['id', 'name', 'nis', 'class_id', 'photo']);
+        $studentIds = $students->pluck('id')->toArray();
+
+        // 3. Semua nilai manual sekaligus — 1 query
+        $allManual = ManualGrade::whereIn('student_id', $studentIds)
+            ->whereIn('subject_id', $subjectIds)
+            ->where('semester', '=', $semester)
+            ->where('academic_year', '=', $academicYear)
+            ->get();
+
+        // Indexing manual: [student_id][subject_id][grade_type][]
+        $manualIndex = [];
+        foreach ($allManual as $mg) {
+            $manualIndex[$mg->student_id][$mg->subject_id][$mg->grade_type][] = $mg->score;
+        }
+
+        // 4. Semua nilai CBT sekaligus — 1 query
+        $allAttempts = ExamAttempt::whereIn('student_id', $studentIds)
+            ->where('status', '=', 'submitted')
+            ->whereHas('exam', function ($q) use ($subjectIds, $semester, $academicYear) {
+                $q->whereIn('subject_id', $subjectIds)
+                  ->where('semester', '=', $semester)
+                  ->where('academic_year', '=', $academicYear)
+                  ->where('include_in_report', '=', true)
+                  ->whereNotIn('exam_type', ['latihan']);
+            })
+            ->with('exam:id,subject_id,exam_type,semester,academic_year')
+            ->get(['id', 'student_id', 'exam_id', 'final_score', 'adjusted_score', 'is_adjusted', 'status']);
+
+        // Indexing CBT: [student_id][subject_id][exam_type][]
+        $cbtIndex = [];
+        foreach ($allAttempts as $attempt) {
+            $score = $attempt->is_adjusted && $attempt->adjusted_score !== null
+                ? (float) $attempt->adjusted_score
+                : ($attempt->final_score !== null ? (float) $attempt->final_score : null);
+
+            if ($score === null) continue;
+
+            $subjectId = $attempt->exam->subject_id;
+            $type      = $attempt->exam->exam_type;
+            $cbtIndex[$attempt->student_id][$subjectId][$type][] = $score;
+        }
+
+        // 5. Semua bobot sekaligus — 1 query
+        $allWeights = GradeWeight::whereIn('subject_id', $subjectIds)
+            ->where('semester', '=', $semester)
+            ->where('academic_year', '=', $academicYear)
+            ->where('jenjang', '=', $jenjang)
+            ->get()
+            ->keyBy('subject_id');
+
+        // 6. Hitung merged grades + final per siswa
+        $result = [];
+        foreach ($students as $student) {
+            $studentData = [];
+            $allFinals   = [];
+
+            foreach ($subjects as $subject) {
+                $cbt    = $cbtIndex[$student->id][$subject->id] ?? [];
+                $manual = $manualIndex[$student->id][$subject->id] ?? [];
+
+                // Rata-rata harian
+                $hCbt = isset($cbt['harian']) ? round(array_sum($cbt['harian']) / count($cbt['harian']), 2) : null;
+                $hMan = isset($manual['harian']) ? round(array_sum($manual['harian']) / count($manual['harian']), 2) : null;
+                $harian = $hCbt ?? $hMan;
+
+                // UTS
+                $uCbt = $cbt['uts'][0] ?? ($cbt['pts'][0] ?? null);
+                $uMan = isset($manual['uts'][0]) ? (float)$manual['uts'][0] : (isset($manual['pts'][0]) ? (float)$manual['pts'][0] : null);
+                $uts = $uCbt ?? $uMan;
+
+                // UAS
+                $aCbt = $cbt['uas'][0] ?? ($cbt['pas'][0] ?? null);
+                $aMan = isset($manual['uas'][0]) ? (float)$manual['uas'][0] : (isset($manual['pas'][0]) ? (float)$manual['pas'][0] : null);
+                $uas = $aCbt ?? $aMan;
+
+                $grades = [
+                    'harian'        => $harian,
+                    'uts'           => $uts,
+                    'uas'           => $uas,
+                    'harian_source' => $hCbt !== null ? 'cbt' : ($hMan !== null ? 'manual' : null),
+                    'uts_source'    => $uCbt !== null ? 'cbt' : ($uMan !== null ? 'manual' : null),
+                    'uas_source'    => $aCbt !== null ? 'cbt' : ($aMan !== null ? 'manual' : null),
+                ];
+
+                $weight  = $allWeights[$subject->id] ?? null;
+                $wHarian = $weight->weight_harian ?? 40;
+                $wUts    = $weight->weight_uts    ?? 30;
+                $wUas    = $weight->weight_uas    ?? 30;
+
+                if ($reportType === 'mid') {
+                    $totalW = $wHarian + $wUts;
+                    $final = ($harian !== null && $uts !== null && $totalW > 0)
+                        ? round(($harian * $wHarian / $totalW) + ($uts * $wUts / $totalW), 2)
+                        : null;
+                    $isComplete = $harian !== null && $uts !== null;
+                } else {
+                    $final = ($harian !== null && $uts !== null && $uas !== null)
+                        ? round(($harian * $wHarian / 100) + ($uts * $wUts / 100) + ($uas * $wUas / 100), 2)
+                        : null;
+                    $isComplete = $harian !== null && $uts !== null && $uas !== null;
+                }
+
+                if ($final !== null) $allFinals[] = $final;
+
+                $studentData[] = [
+                    'subject'       => $subject,
+                    'grades'        => $grades,
+                    'final'         => $final,
+                    'weight'        => $weight,
+                    'kkm'           => $subject->kkm ?? 75,
+                    'is_pass'       => $final !== null && $final >= ($subject->kkm ?? 75),
+                    'is_complete'   => $isComplete,
+                    'class_average' => null, // diisi nanti
+                ];
+            }
+
+            $result[$student->id] = [
+                'student'     => $student,
+                'data'        => $studentData,
+                'avg'         => count($allFinals) > 0 ? round(array_sum($allFinals) / count($allFinals), 2) : 0,
+                'has_any'     => count($allFinals) > 0,
+                'is_complete' => collect($studentData)->every(fn($d) => $d['is_complete']),
+            ];
+        }
+
+        // 7. Hitung class_average per mapel
+        foreach ($subjects as $subject) {
+            $subjFinals = [];
+            foreach ($result as $sId => $sData) {
+                $row = collect($sData['data'])->firstWhere('subject.id', $subject->id);
+                if ($row && $row['final'] !== null) $subjFinals[] = $row['final'];
+            }
+
+            $avg = count($subjFinals) > 0 ? round(array_sum($subjFinals) / count($subjFinals), 2) : null;
+
+            foreach ($result as $sId => &$sData) {
+                foreach ($sData['data'] as &$row) {
+                    if ($row['subject']->id === $subject->id) $row['class_average'] = $avg;
+                }
+            }
+        }
+
+        return [
+            'students'  => $students,
+            'subjects'  => $subjects,
+            'byStudent' => $result,
+        ];
+    }
 }

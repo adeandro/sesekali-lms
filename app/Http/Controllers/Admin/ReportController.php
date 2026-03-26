@@ -76,21 +76,17 @@ class ReportController extends Controller
         $students      = collect();
 
         if ($class) {
-            $students = User::where('class_id', '=', $class->id, 'and')
-                ->where('role', '=', 'student', 'and')
-                ->aktif()
-                ->orderBy('name')
-                ->get();
+            $bulk = GradeService::preloadClassData(
+                $class->id, $semester, $academicYear, $jenjang, $reportType
+            );
+            
+            $students = $bulk['students'];
 
-            foreach ($students as $student) {
-                $data = GradeService::getStudentReportData(
-                    $student, $semester, $academicYear, $jenjang, $reportType
-                );
-                $finals = array_filter(array_column($data, 'final'), fn($v) => $v !== null);
+            foreach ($bulk['byStudent'] as $studentId => $item) {
                 $reportSummary[] = [
-                    'student'     => $student,
-                    'has_any'     => count($finals) > 0,
-                    'is_complete' => count($data) > 0 && collect($data)->every(fn($r) => $r['is_complete']),
+                    'student'     => $item['student'],
+                    'has_any'     => $item['has_any'],
+                    'is_complete' => $item['is_complete'],
                 ];
             }
         }
