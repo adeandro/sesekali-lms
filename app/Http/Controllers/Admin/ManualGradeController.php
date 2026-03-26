@@ -399,15 +399,13 @@ class ManualGradeController extends Controller
         $sheet->getColumnDimension('D')->setWidth(15);
         $sheet->getColumnDimension('E')->setWidth(15);
 
-        // Fetch existing manual grades in bulk to avoid N+1 issues
-        $grades = collect();
+        // Fetch existing grades (CBT + Manual merged) using optimized service
+        $bulk = null;
         if ($class && $subject && $semester && $academicYear) {
-            $grades = ManualGrade::whereIn('student_id', $students->pluck('id'))
-                ->where('subject_id', $subject->id)
-                ->where('semester', $semester)
-                ->where('academic_year', $academicYear)
-                ->get()
-                ->groupBy('student_id');
+            $jenjang = (int) $class->grade;
+            $bulk    = GradeService::preloadClassData(
+                $class->id, $semester, $academicYear, $jenjang, 'semester'
+            );
         }
 
         // Fill in eligible students and existing grades
@@ -416,10 +414,18 @@ class ManualGradeController extends Controller
             $sheet->setCellValue("A$row", $student->nis ?? '');
             $sheet->setCellValue("B$row", $student->name);
 
-            $studentGrades = $grades->get($student->id, collect())->keyBy('grade_type');
-            $sheet->setCellValue("C$row", $studentGrades['harian']?->score ?? '');
-            $sheet->setCellValue("D$row", ($studentGrades['uts'] ?? $studentGrades['pts'] ?? null)?->score ?? '');
-            $sheet->setCellValue("E$row", ($studentGrades['uas'] ?? $studentGrades['pas'] ?? null)?->score ?? '');
+            if ($bulk && isset($bulk['byStudent'][$student->id])) {
+                $studentData = $bulk['byStudent'][$student->id]['data'] ?? [];
+                // Find data for this specific subject
+                $subjectRow = collect($studentData)->firstWhere('subject.id', $subject->id);
+                
+                if ($subjectRow) {
+                    $grades = $subjectRow['grades'];
+                    $sheet->setCellValue("C$row", $grades['harian'] ?? '');
+                    $sheet->setCellValue("D$row", $grades['uts'] ?? '');
+                    $sheet->setCellValue("E$row", $grades['uas'] ?? '');
+                }
+            }
 
             $row++;
         }
