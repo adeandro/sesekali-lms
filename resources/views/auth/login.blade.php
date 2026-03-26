@@ -394,6 +394,7 @@
                 <circle cx="12" cy="12" r="3"
                         stroke="currentColor" stroke-width="2"/>`;
         }
+        input.focus();
     }
 </script>
 
