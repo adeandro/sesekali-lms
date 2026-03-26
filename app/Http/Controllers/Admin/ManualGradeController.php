@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreManualGradeRequest;
+use App\Http\Requests\UpdateManualGradeRequest;
 use App\Imports\ManualGradeImport;
 use App\Models\ClassRoom;
 use App\Models\GradeWeight;
@@ -197,15 +199,8 @@ class ManualGradeController extends Controller
     /**
      * Simpan/update nilai manual per siswa (updateOrCreate).
      */
-    public function store(Request $request)
+    public function store(StoreManualGradeRequest $request)
     {
-        $request->validate([
-            'subject_id'    => 'required|exists:subjects,id',
-            'class_id'      => 'required|exists:classes,id',
-            'semester'      => 'required|in:1,2',
-            'academic_year' => ['required', 'regex:/^\d{4}\/\d{4}$/'],
-            'grades'        => 'array',
-        ]);
 
         $user = auth()->user();
         $class = ClassRoom::findOrFail($request->class_id);
@@ -227,10 +222,6 @@ class ManualGradeController extends Controller
                 if (isset($gradeData[$type]) && $gradeData[$type] !== '') {
                     $score = (float) $gradeData[$type];
 
-                    // Skip out-of-range silently (shouldn't happen if form validated)
-                    if ($score < 0 || $score > 100) {
-                        continue;
-                    }
 
                     ManualGrade::updateOrCreate(
                         [

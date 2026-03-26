@@ -248,11 +248,15 @@
                                             @endif
                                                 <input type="number" name="grades[{{ $student->id }}][harian]"
                                                 x-model="h"
-                                                value="{{ $cbt['harian'] ?? $manual['harian'] }}"
-                                                min="0" max="100" step="0.5" placeholder="—"
+                                                value="{{ old('grades.'.$student->id.'.harian', $cbt['harian'] ?? $manual['harian']) }}"
+                                                min="0" max="100" step="0.01" placeholder="—"
+                                                oninput="this.value = Math.min(100, Math.max(0, parseFloat(this.value) || 0))"
                                                 @if($cbt['harian'] !== null || $isLocked) disabled title="{{ $isLocked ? 'Nilai terkunci' : 'Nilai diambil dari CBT' }}" @endif
                                                 class="w-20 h-10 text-center text-sm font-bold rounded-xl border-transparent transition-all
-                                                       {{ ($cbt['harian'] !== null || $isLocked) ? 'bg-blue-50 text-blue-700 cursor-not-allowed' : 'bg-gray-50 text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10' }}">
+                                                       {{ ($cbt['harian'] !== null || $isLocked) ? 'bg-blue-50 text-blue-700 cursor-not-allowed' : ($errors->has('grades.'.$student->id.'.harian') ? 'border-rose-400 bg-rose-50' : 'bg-gray-50 text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10') }}">
+                                                @error('grades.'.$student->id.'.harian')
+                                                    <p class="text-[8px] font-black text-rose-500 uppercase tracking-tighter mt-0.5 leading-none">{{ $message }}</p>
+                                                @enderror
                                         </div>
                                     </td>
 
@@ -264,11 +268,15 @@
                                             @endif
                                                 <input type="number" name="grades[{{ $student->id }}][uts]"
                                                 x-model="u"
-                                                value="{{ $cbt['uts'] ?? $manual['uts'] }}"
-                                                min="0" max="100" step="0.5" placeholder="—"
+                                                value="{{ old('grades.'.$student->id.'.uts', $cbt['uts'] ?? $manual['uts']) }}"
+                                                min="0" max="100" step="0.01" placeholder="—"
+                                                oninput="this.value = Math.min(100, Math.max(0, parseFloat(this.value) || 0))"
                                                 @if($cbt['uts'] !== null || $isLocked) disabled title="{{ $isLocked ? 'Nilai terkunci' : 'Nilai diambil dari CBT' }}" @endif
                                                 class="w-20 h-10 text-center text-sm font-bold rounded-xl border-transparent transition-all
-                                                       {{ ($cbt['uts'] !== null || $isLocked) ? 'bg-blue-50 text-blue-700 cursor-not-allowed' : 'bg-gray-50 text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10' }}">
+                                                       {{ ($cbt['uts'] !== null || $isLocked) ? 'bg-blue-50 text-blue-700 cursor-not-allowed' : ($errors->has('grades.'.$student->id.'.uts') ? 'border-rose-400 bg-rose-50' : 'bg-gray-50 text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10') }}">
+                                                @error('grades.'.$student->id.'.uts')
+                                                    <p class="text-[8px] font-black text-rose-500 uppercase tracking-tighter mt-0.5 leading-none">{{ $message }}</p>
+                                                @enderror
                                         </div>
                                     </td>
 
@@ -280,11 +288,15 @@
                                             @endif
                                                 <input type="number" name="grades[{{ $student->id }}][uas]"
                                                 x-model="a"
-                                                value="{{ $cbt['uas'] ?? $manual['uas'] }}"
-                                                min="0" max="100" step="0.5" placeholder="—"
+                                                value="{{ old('grades.'.$student->id.'.uas', $cbt['uas'] ?? $manual['uas']) }}"
+                                                min="0" max="100" step="0.01" placeholder="—"
+                                                oninput="this.value = Math.min(100, Math.max(0, parseFloat(this.value) || 0))"
                                                 @if($cbt['uas'] !== null || $isLocked) disabled title="{{ $isLocked ? 'Nilai terkunci' : 'Nilai diambil dari CBT' }}" @endif
                                                 class="w-20 h-10 text-center text-sm font-bold rounded-xl border-transparent transition-all
-                                                       {{ ($cbt['uas'] !== null || $isLocked) ? 'bg-blue-50 text-blue-700 cursor-not-allowed' : 'bg-gray-50 text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10' }}">
+                                                       {{ ($cbt['uas'] !== null || $isLocked) ? 'bg-blue-50 text-blue-700 cursor-not-allowed' : ($errors->has('grades.'.$student->id.'.uas') ? 'border-rose-400 bg-rose-50' : 'bg-gray-50 text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10') }}">
+                                                @error('grades.'.$student->id.'.uas')
+                                                    <p class="text-[8px] font-black text-rose-500 uppercase tracking-tighter mt-0.5 leading-none">{{ $message }}</p>
+                                                @enderror
                                         </div>
                                     </td>
 
