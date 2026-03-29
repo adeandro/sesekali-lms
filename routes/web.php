@@ -66,10 +66,11 @@ Route::middleware('auth')->group(function () {
         $user = auth()->user();
         return match ($user->role) {
             'superadmin' => redirect()->route('dashboard.superadmin'),
-            'teacher', 'principal' => redirect()->route('dashboard.teacher'),
-            'student' => redirect()->route('dashboard.student'),
-            'tu' => redirect()->route('dashboard.tu'),
-            default => redirect()->route('login'),
+            'teacher'    => redirect()->route('dashboard.teacher'),
+            'principal'  => redirect()->route('dashboard.principal'),
+            'student'    => redirect()->route('dashboard.student'),
+            'tu'         => redirect()->route('dashboard.tu'),
+            default      => redirect()->route('login'),
         };
     })->name('dashboard');
 
@@ -125,7 +126,15 @@ Route::middleware('auth')->group(function () {
 
     // Teacher & Principal routes
     Route::middleware('role:teacher,principal')->group(function () {
-        Route::get('/dashboard/teacher', [\App\Http\Controllers\Dashboard\TeacherDashboardController::class, 'index'])->name('dashboard.teacher');
+        // Teacher dashboard
+        Route::get('/dashboard/teacher', [\App\Http\Controllers\Dashboard\TeacherDashboardController::class, 'index'])
+            ->name('dashboard.teacher')
+            ->middleware('role:teacher');
+
+        // Principal dashboard (terpisah)
+        Route::get('/dashboard/principal', [\App\Http\Controllers\Dashboard\PrincipalDashboardController::class, 'index'])
+            ->name('dashboard.principal')
+            ->middleware('role:principal');
         
         // Teacher Settings
         Route::group(['prefix' => 'teacher/settings', 'as' => 'teacher.settings.'], function () {

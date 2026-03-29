@@ -286,6 +286,35 @@
                 @endif
                 @endif
 
+                {{-- ── PRINCIPAL MENU (kepala sekolah) ── --}}
+                @if(Auth::user()->role === 'principal')
+                <div class="nav-group-label">Monitoring</div>
+
+                <a href="{{ route('dashboard.principal') }}"
+                   class="nav-item {{ request()->routeIs('dashboard.principal') ? 'menu-item-active' : '' }}">
+                    <i class="fas fa-chart-pie w-5 text-lg mr-3"></i>
+                    <span>Ringkasan Sekolah</span>
+                </a>
+
+                <a href="{{ route('admin.reports.index') }}"
+                   class="nav-item {{ request()->routeIs('admin.reports.*') ? 'menu-item-active' : '' }}">
+                    <i class="fas fa-file-invoice w-5 text-lg mr-3"></i>
+                    <span>Raport Siswa</span>
+                </a>
+
+                <a href="{{ route('admin.results.index') }}"
+                   class="nav-item {{ request()->routeIs('admin.results.*') ? 'menu-item-active' : '' }}">
+                    <i class="fas fa-chart-bar w-5 text-lg mr-3"></i>
+                    <span>Hasil Ujian</span>
+                </a>
+
+                <a href="{{ route('admin.monitor-exams.index') }}"
+                   class="nav-item {{ request()->routeIs('admin.monitor-exams.*') ? 'menu-item-active' : '' }}">
+                    <i class="fas fa-desktop w-5 text-lg mr-3"></i>
+                    <span>Monitor Ujian</span>
+                </a>
+                @endif
+
                 {{-- ── 6. RAPORT (wali kelas saja) ── --}}
                 @if(in_array(Auth::user()->role, ['teacher', 'superadmin']) && Auth::user()->isHomeroom())
                 <div class="nav-group-label">Raport</div>
