@@ -27,6 +27,7 @@ class CommunicationService
             'target_class_id' => $data['target_class_id'] ?? null,
             'expires_at'      => $data['expires_at'] ?? null,
             'is_active'       => true,
+            'show_on_login'   => $data['show_on_login'] ?? false,
         ]);
 
         // Dispatch notification
