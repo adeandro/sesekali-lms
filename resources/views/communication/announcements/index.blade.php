@@ -70,6 +70,7 @@
                         <th class="px-6 py-4 text-xs font-black text-gray-500 uppercase tracking-widest hidden md:table-cell">Target</th>
                         <th class="px-6 py-4 text-xs font-black text-gray-500 uppercase tracking-widest hidden lg:table-cell">Pembuat</th>
                         <th class="px-6 py-4 text-xs font-black text-gray-500 uppercase tracking-widest">Status</th>
+                        <th class="px-6 py-4 text-xs font-black text-gray-500 uppercase tracking-widest hidden sm:table-cell">Login</th>
                         <th class="px-6 py-4 text-xs font-black text-gray-500 uppercase tracking-widest">Aksi</th>
                     </tr>
                 </thead>
@@ -121,8 +122,28 @@
                                 </span>
                             @endif
                         </td>
+                        <td class="px-6 py-4 hidden sm:table-cell">
+                            @if($ann->show_on_login)
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase tracking-wide">
+                                    <i class="fas fa-check text-[8px]"></i> Ya
+                                </span>
+                            @else
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gray-100 text-gray-400 text-[10px] font-black uppercase tracking-wide">
+                                    <i class="fas fa-minus text-[8px]"></i> Tidak
+                                </span>
+                            @endif
+                        </td>
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-1">
+                                {{-- EDIT BUTTON --}}
+                                @can('update', $ann)
+                                <a href="{{ route('communication.announcements.edit', $ann) }}"
+                                   class="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
+                                   title="Edit Pengumuman">
+                                    <i class="fas fa-edit text-sm"></i>
+                                </a>
+                                @endcan
+
                                 @can('toggleActive', \App\Models\Announcement::class)
                                 <form action="{{ route('communication.announcements.toggle', $ann) }}" method="POST" class="no-loading">
                                     @csrf
@@ -145,10 +166,10 @@
                                 @can('permanentDelete', $ann)
                                 <form id="force-delete-{{ $ann->id }}"
                                       action="{{ route('communication.announcements.force-delete', $ann) }}"
-                                      method="POST" class="no-loading">
+                                      method="POST" class="no-loading"
+                                      onsubmit="return confirm('Hapus PERMANEN? Data tidak bisa dikembalikan.')">
                                     @csrf @method('DELETE')
-                                    <button type="button"
-                                            onclick="confirmPermanentDelete({{ $ann->id }}, '{{ addslashes($ann->title) }}')"
+                                    <button type="submit"
                                             class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
                                             title="Hapus Permanen">
                                         <i class="fas fa-trash text-sm"></i>

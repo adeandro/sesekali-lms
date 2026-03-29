@@ -18,13 +18,15 @@ class Announcement extends Model
         'target_class_id',
         'expires_at',
         'is_active',
+        'show_on_login',
     ];
 
     protected function casts(): array
     {
         return [
-            'expires_at' => 'datetime',
-            'is_active'  => 'boolean',
+            'expires_at'    => 'datetime',
+            'is_active'     => 'boolean',
+            'show_on_login' => 'boolean',
         ];
     }
 
@@ -69,6 +71,22 @@ class Announcement extends Model
                   }
               });
         });
+    }
+
+    /**
+     * Announcements that should appear on the login page.
+     * Returns ALL active, non-expired announcements with show_on_login = true,
+     * ordered urgent first, then by newest.
+     */
+    public function scopeForLogin(Builder $query): Builder
+    {
+        return $query->where('show_on_login', true)
+                     ->where('is_active', true)
+                     ->where(function ($q) {
+                         $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+                     })
+                     ->orderByRaw("FIELD(type, 'urgent', 'warning', 'info') ASC")
+                     ->orderBy('created_at', 'desc');
     }
 
     // ── Helpers ──────────────────────────────────────────────

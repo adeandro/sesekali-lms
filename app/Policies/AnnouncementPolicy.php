@@ -27,6 +27,18 @@ class AnnouncementPolicy
     }
 
     /**
+     * Superadmin can update anything; teacher can only update their own.
+     */
+    public function update(User $user, Announcement $announcement): bool
+    {
+        if ($user->role === 'superadmin') {
+            return true;
+        }
+
+        return $user->role === 'teacher' && $announcement->user_id === $user->id;
+    }
+
+    /**
      * Superadmin can deactivate anything; teacher can only deactivate their own.
      */
     public function delete(User $user, Announcement $announcement): bool

@@ -40,6 +40,7 @@ use App\Http\Controllers\Admin\LetterTemplateController;
 use App\Http\Controllers\Admin\LetterController;
 use App\Http\Controllers\Tu\TuDashboardController;
 use App\Http\Controllers\Admin\GradeLockController;
+use App\Http\Controllers\InformationController;
 
 // Public routes
 Route::get('/', function () {
@@ -48,6 +49,9 @@ Route::get('/', function () {
     }
     return redirect()->route('login');
 });
+
+// Public Info Page (announcements — no auth)
+Route::get('/informasi', [InformationController::class, 'index'])->name('information.index');
 
 // Authentication routes
 Route::middleware('guest')->group(function () {
@@ -504,6 +508,8 @@ Route::middleware('auth')->group(function () {
         Route::middleware('role:superadmin,teacher,principal')->group(function () {
             Route::get('announcements/create', [AnnouncementController::class, 'create'])->name('announcements.create');
             Route::post('announcements', [AnnouncementController::class, 'store'])->name('announcements.store');
+            Route::get('announcements/{announcement}/edit', [AnnouncementController::class, 'edit'])->name('announcements.edit');
+            Route::put('announcements/{announcement}', [AnnouncementController::class, 'update'])->name('announcements.update');
             Route::delete('announcements/{announcement}', [AnnouncementController::class, 'destroy'])->name('announcements.destroy');
             Route::post('announcements/{announcement}/toggle', [AnnouncementController::class, 'toggleActive'])->name('announcements.toggle');
         });

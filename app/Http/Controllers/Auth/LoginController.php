@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Announcement;
 use App\Models\User;
-use Illuminate\Auth\Events\Login;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -31,8 +31,8 @@ class LoginController extends Controller
                             ? strtoupper(substr($words[0],0,1).substr($words[1],0,1))
                             : strtoupper(substr($name, 0, 2));
                         $shortName = count($words) >= 2
-    ? $words[0].' '.substr($words[1], 0, 4)
-    : ($words[0] ?? 'Siswa');
+                            ? $words[0].' '.substr($words[1], 0, 4)
+                            : ($words[0] ?? 'Siswa');
                         return [
                             'rank'     => $index + 1,
                             'initials' => $initials,
@@ -44,7 +44,23 @@ class LoginController extends Controller
                 // Fallback to empty collection
             }
         }
-        return view('auth.login', compact('topStudents'));
+
+        // ── Login-page announcements ──────────────────────────────────
+        $urgentAnnouncements  = collect([]);
+        $rollingAnnouncements = collect([]);
+        try {
+            $loginAnnouncements   = Announcement::forLogin()->get();
+            $urgentAnnouncements  = $loginAnnouncements->where('type', 'urgent')->values();
+            $rollingAnnouncements = $loginAnnouncements->where('type', '!=', 'urgent')->values();
+        } catch (\Throwable $e) {
+            // Fail silently — announcements are non-critical
+        }
+
+        return view('auth.login', compact(
+            'topStudents',
+            'urgentAnnouncements',
+            'rollingAnnouncements'
+        ));
     }
 
     public function login(Request $request)

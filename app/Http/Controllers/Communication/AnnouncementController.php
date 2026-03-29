@@ -92,10 +92,68 @@ class AnnouncementController extends Controller
             'expires_at'      => 'nullable|date|after:now',
         ]);
 
+        $validated['show_on_login'] = $request->boolean('show_on_login');
+
         $this->commService->createAnnouncement(Auth::user(), $validated);
 
         return redirect()->route('communication.announcements.index')
                          ->with('success', 'Pengumuman berhasil dibuat.');
+    }
+
+    /**
+     * Show edit form.
+     */
+    public function edit(Announcement $announcement)
+    {
+        Gate::authorize('update', $announcement);
+
+        $user = Auth::user();
+
+        // Teachers can only target their own assigned classes
+        $classes = [];
+        if ($user->role === 'teacher') {
+            $classes = User::where('role', 'student')
+                           ->where('status', 'Aktif')
+                           ->select('class_group')
+                           ->distinct()
+                           ->orderBy('class_group')
+                           ->pluck('class_group')
+                           ->toArray();
+        } else {
+            // Superadmin sees all classes
+            $classes = User::where('role', 'student')
+                           ->select('class_group')
+                           ->distinct()
+                           ->orderBy('class_group')
+                           ->pluck('class_group')
+                           ->toArray();
+        }
+
+        return view('communication.announcements.edit', compact('announcement', 'classes'));
+    }
+
+    /**
+     * Update an announcement.
+     */
+    public function update(Request $request, Announcement $announcement)
+    {
+        Gate::authorize('update', $announcement);
+
+        $validated = $request->validate([
+            'title'           => 'required|string|max:255',
+            'content'         => 'required|string|max:5000',
+            'type'            => 'required|in:info,warning,urgent',
+            'target_role'     => 'required|in:all,teacher,student',
+            'target_class_id' => 'nullable|string|max:100',
+            'expires_at'      => 'nullable|date|after:now',
+        ]);
+
+        $validated['show_on_login'] = $request->boolean('show_on_login');
+
+        $announcement->update($validated);
+
+        return redirect()->route('communication.announcements.index')
+                         ->with('success', 'Pengumuman berhasil diperbarui.');
     }
 
     /**

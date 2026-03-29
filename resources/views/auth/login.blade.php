@@ -410,5 +410,232 @@
     }
 </script>
 
+{{-- ═══════════════════════════════════════════════════════════════ --}}
+{{-- FLOATING ANNOUNCEMENT OVERLAY — z-index 9999, tidak menyentuh  --}}
+{{-- struktur grid Login Form atau Hall of Fame yang sudah ada.      --}}
+{{-- ═══════════════════════════════════════════════════════════════ --}}
+@php
+    $hasUrgent  = isset($urgentAnnouncements)  && $urgentAnnouncements->count() > 0;
+    $hasRolling = isset($rollingAnnouncements) && $rollingAnnouncements->count() > 0;
+@endphp
+
+@if($hasUrgent || $hasRolling)
+{{-- Container Utama --}}
+<div id="ann-overlay" class="ann-minimized"
+     style="
+        position: fixed;
+        bottom: 1.25rem;
+        right: 1.25rem;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 0.625rem;
+        max-width: 360px;
+        width: calc(100vw - 2rem);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+     ">
+
+    {{-- ─── MINI TRIGGER (Floating Bell) ────────────────────────────── --}}
+    <button id="ann-trigger" onclick="toggleAnn(false)"
+            style="
+                width: 52px; height: 52px; border-radius: 26px;
+                background: linear-gradient(135deg, #6366f1, #4338ca);
+                box-shadow: 0 8px 24px rgba(99,102,241,0.4);
+                display: none; align-items: center; justify-content: center;
+                border: none; cursor: pointer; position: absolute; bottom: 0; right: 0;
+                animation: {{ $hasUrgent ? 'ann-pulse 2s infinite' : 'none' }};
+                z-index: 10;
+            "
+            title="Lihat Pengumuman">
+        <svg width="22" height="22" fill="none" viewBox="0 0 24 24">
+            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M13.73 21a2 2 0 01-3.46 0" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        @php $totalCount = ($urgentAnnouncements->count() + $rollingAnnouncements->count()); @endphp
+        @if($totalCount > 0)
+        <span style="
+                position: absolute; top: -2px; right: -2px;
+                background: #ef4444; color: white; font-size: 10px; font-weight: 900;
+                min-width: 18px; h-18px; border-radius: 9px;
+                display: flex; align-items: center; justify-content: center;
+                border: 2px solid #fff;
+              ">
+            {{ $totalCount }}
+        </span>
+        @endif
+    </button>
+
+    {{-- Wrapper Konten (Hidden saat Minimized) --}}
+    <div id="ann-content-wrapper" style="display: flex; flex-direction: column; gap: 10px; transition: opacity 0.3s;">
+
+        {{-- Button Minimize (Desktop/Mobile) --}}
+        <div style="display: flex; justify-content: flex-end; margin-bottom: -5px;">
+            <button onclick="toggleAnn(true)"
+                    style="
+                        background: rgba(255,255,255,0.9); border: 1px solid rgba(0,0,0,0.05);
+                        width: 32px; height: 32px; border-radius: 10px; cursor: pointer;
+                        display: flex; align-items: center; justify-content: center;
+                        color: #6366f1; box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+                    "
+                    title="Sembunyikan">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24">
+                    <path d="M19 9l-7 7-7-7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+        </div>
+
+        {{-- ─── URGENT CARD ─────────────────────────────────────────────── --}}
+        @if($hasUrgent)
+        <div id="ann-urgent-card"
+             style="
+                background: linear-gradient(135deg, #be123c, #9f1239);
+                border-radius: 16px; padding: 14px 16px;
+                display: flex; align-items: flex-start; gap: 12px;
+                box-shadow: 0 8px 32px rgba(190,18,60,0.45);
+                animation: ann-pulse 2.5s ease-in-out infinite;
+                position: relative;
+             ">
+            <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
+                    <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <div style="flex: 1; min-width: 0;">
+                <p style="font-size: 9px; font-weight: 900; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 3px;">📢 URGENT</p>
+                <p style="font-size: 13px; font-weight: 800; color: white; margin: 0 0 2px; line-height: 1.3;">{{ $urgentAnnouncements->first()->title }}</p>
+                <p style="font-size: 11px; color: rgba(255,255,255,0.8); margin: 0; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">{{ $urgentAnnouncements->first()->content }}</p>
+            </div>
+        </div>
+        @endif
+
+        {{-- ─── ROLLING CARD ─────────────────────────────────────────────── --}}
+        @if($hasRolling)
+        <div id="ann-rolling-card"
+             style="
+                background: rgba(255,255,255,0.98);
+                border-radius: 16px; padding: 14px 16px;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.14);
+                border: 1px solid rgba(99,102,241,0.15);
+                overflow: hidden;
+             ">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <div style="width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, #6366f1, #4338ca); display: flex; align-items: center; justify-content: center;">
+                        <svg width="13" height="13" fill="none" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <p style="font-size: 9px; font-weight: 900; color: #6366f1; text-transform: uppercase; letter-spacing: 1.5px; margin: 0;">Info & Pengumuman</p>
+                </div>
+                <a href="{{ route('information.index') }}" style="font-size: 9px; font-weight: 700; color: #6366f1; text-decoration: none; padding: 3px 8px; border-radius: 6px; background: rgba(99,102,241,0.08);">Lihat Semua →</a>
+            </div>
+
+            <div style="overflow: hidden; position: relative; min-height: 58px;">
+                @foreach($rollingAnnouncements as $idx => $ann)
+                <div class="ann-slide" data-index="{{ $idx }}" style="display: {{ $idx === 0 ? 'block' : 'none' }};">
+                    <p style="font-size: 12px; font-weight: 800; color: #111827; margin: 0 0 2px; line-height: 1.3;">{{ $ann->title }}</p>
+                    <p style="font-size: 11px; color: #6b7280; margin: 0; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">{{ $ann->content }}</p>
+                </div>
+                @endforeach
+            </div>
+
+            @if($rollingAnnouncements->count() > 1)
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 10px;">
+                <div style="display: flex; gap: 5px;" id="ann-dots">
+                    @foreach($rollingAnnouncements as $idx => $ann)
+                    <span class="ann-dot" onclick="annGoTo({{ $idx }})" style="width:{{ $idx === 0 ? '16px' : '5px' }}; height:5px; border-radius:3px; background:{{ $idx === 0 ? '#6366f1' : 'rgba(99,102,241,0.2)' }}; cursor:pointer; transition:all 0.3s;"></span>
+                    @endforeach
+                </div>
+                <div style="display: flex; gap: 4px;">
+                    <button onclick="annPrev()" style="width:20px; height:20px; border-radius:5px; background:rgba(99,102,241,0.05); border:none; cursor:pointer; color:#6366f1;"><svg width="8" height="8" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button>
+                    <button onclick="annNext()" style="width:20px; height:20px; border-radius:5px; background:rgba(99,102,241,0.05); border:none; cursor:pointer; color:#6366f1;"><svg width="8" height="8" viewBox="0 0 24 24" fill="none"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button>
+                </div>
+            </div>
+            @endif
+        </div>
+        @endif
+    </div>
+</div>
+
+<style>
+@keyframes ann-pulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 8px 24px rgba(99,102,241,0.4); }
+    50%       { transform: scale(1.05); box-shadow: 0 12px 32px rgba(99,102,241,0.6); }
+}
+@keyframes ann-slidein {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* State: Minimized */
+#ann-overlay.ann-minimized {
+    width: 52px !important;
+    height: 52px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+#ann-overlay.ann-minimized #ann-content-wrapper {
+    display: none !important;
+}
+#ann-overlay.ann-minimized #ann-trigger {
+    display: flex !important;
+}
+
+@media (max-width: 767px) {
+    #ann-overlay {
+        right: 1rem !important;
+        bottom: 1.5rem !important;
+    }
+}
+</style>
+
+<script>
+(function () {
+    const slides    = document.querySelectorAll('.ann-slide');
+    const dots      = document.querySelectorAll('.ann-dot');
+    const overlay   = document.getElementById('ann-overlay');
+    const total     = slides.length;
+    let current     = 0;
+    let autoTimer   = null;
+
+    // Toggle logic
+    window.toggleAnn = function(minimize) {
+        if (minimize) {
+            overlay.classList.add('ann-minimized');
+        } else {
+            overlay.classList.remove('ann-minimized');
+        }
+    };
+
+    // Auto-minimize on mobile
+    if (window.innerWidth < 768) {
+        toggleAnn(true);
+    } else {
+        toggleAnn(false);
+    }
+
+    if (total <= 1) return;
+
+    function show(index) {
+        slides.forEach((s, i) => s.style.display = 'none');
+        dots.forEach((d, i) => {
+            d.style.width      = i === index ? '16px' : '5px';
+            d.style.background = i === index ? '#6366f1' : 'rgba(99,102,241,0.2)';
+        });
+        slides[index].style.display = 'block';
+        slides[index].style.animation = 'none';
+        void slides[index].offsetWidth;
+        slides[index].style.animation = 'ann-slidein 0.4s ease';
+        current = index;
+    }
+
+    window.annNext = () => { clearInterval(autoTimer); show((current + 1) % total); startAuto(); };
+    window.annPrev = () => { clearInterval(autoTimer); show((current - 1 + total) % total); startAuto(); };
+    window.annGoTo = (i) => { clearInterval(autoTimer); show(i); startAuto(); };
+
+    function startAuto() { autoTimer = setInterval(() => show((current + 1) % total), 5000); }
+    startAuto();
+})();
+</script>
+@endif
+
 </body>
 </html>

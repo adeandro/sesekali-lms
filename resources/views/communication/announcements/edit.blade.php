@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Buat Pengumuman - ' . ($configs['school_name'] ?? 'ExamFlow'))
+@section('title', 'Edit Pengumuman - ' . ($configs['school_name'] ?? 'ExamFlow'))
 
 @section('content')
 <div class="max-w-2xl mx-auto space-y-6">
@@ -12,22 +12,23 @@
             <i class="fas fa-arrow-left"></i>
         </a>
         <div>
-            <h1 class="text-xl font-black text-gray-900">Buat Pengumuman Baru</h1>
-            <p class="text-sm text-gray-500 mt-0.5">Pengumuman akan muncul di dashboard penerima.</p>
+            <h1 class="text-xl font-black text-gray-900">Edit Pengumuman</h1>
+            <p class="text-sm text-gray-500 mt-0.5">Perbarui informasi pengumuman yang sudah ada.</p>
         </div>
     </div>
 
     {{-- Form --}}
-    <form action="{{ route('communication.announcements.store') }}" method="POST"
+    <form action="{{ route('communication.announcements.update', $announcement) }}" method="POST"
           class="theme-surface-card rounded-2xl p-6 space-y-5 theme-soft-shadow">
         @csrf
+        @method('PUT')
 
         {{-- Title --}}
         <div>
             <label for="title" class="block text-xs font-black text-gray-700 uppercase tracking-widest mb-1.5">
                 Judul Pengumuman <span class="text-red-500">*</span>
             </label>
-            <input type="text" id="title" name="title" value="{{ old('title') }}" required
+            <input type="text" id="title" name="title" value="{{ old('title', $announcement->title) }}" required
                    class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent transition @error('title') border-red-400 @enderror"
                    placeholder="Contoh: Jadwal Ujian Semester Ganjil">
             @error('title')<p class="text-xs text-red-500 mt-1">{{ $message }}</p>@enderror
@@ -40,7 +41,7 @@
             </label>
             <textarea id="content" name="content" rows="5" required
                       class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent transition resize-none @error('content') border-red-400 @enderror"
-                      placeholder="Tulis isi pengumuman di sini...">{{ old('content') }}</textarea>
+                      placeholder="Tulis isi pengumuman di sini...">{{ old('content', $announcement->content) }}</textarea>
             @error('content')<p class="text-xs text-red-500 mt-1">{{ $message }}</p>@enderror
         </div>
 
@@ -52,9 +53,9 @@
                 </label>
                 <select id="type" name="type" required
                         class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent @error('type') border-red-400 @enderror">
-                    <option value="info"    {{ old('type') === 'info'    ? 'selected' : '' }}>ℹ️  Informasi</option>
-                    <option value="warning" {{ old('type') === 'warning' ? 'selected' : '' }}>⚠️  Peringatan</option>
-                    <option value="urgent"  {{ old('type') === 'urgent'  ? 'selected' : '' }}>🚨  URGENT</option>
+                    <option value="info"    {{ old('type', $announcement->type) === 'info'    ? 'selected' : '' }}>ℹ️  Informasi</option>
+                    <option value="warning" {{ old('type', $announcement->type) === 'warning' ? 'selected' : '' }}>⚠️  Peringatan</option>
+                    <option value="urgent"  {{ old('type', $announcement->type) === 'urgent'  ? 'selected' : '' }}>🚨  URGENT</option>
                 </select>
                 @error('type')<p class="text-xs text-red-500 mt-1">{{ $message }}</p>@enderror
             </div>
@@ -66,10 +67,10 @@
                 <select id="target_role" name="target_role" required
                         x-data x-on:change="$dispatch('role-changed', $event.target.value)"
                         class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent @error('target_role') border-red-400 @enderror">
-                    <option value="all"     {{ old('target_role') === 'all'     ? 'selected' : '' }}>Semua Pengguna</option>
-                    <option value="student" {{ old('target_role') === 'student' ? 'selected' : '' }}>Siswa</option>
+                    <option value="all"     {{ old('target_role', $announcement->target_role) === 'all'     ? 'selected' : '' }}>Semua Pengguna</option>
+                    <option value="student" {{ old('target_role', $announcement->target_role) === 'student' ? 'selected' : '' }}>Siswa</option>
                     @if(auth()->user()->role === 'superadmin')
-                    <option value="teacher" {{ old('target_role') === 'teacher' ? 'selected' : '' }}>Guru</option>
+                    <option value="teacher" {{ old('target_role', $announcement->target_role) === 'teacher' ? 'selected' : '' }}>Guru</option>
                     @endif
                 </select>
                 @error('target_role')<p class="text-xs text-red-500 mt-1">{{ $message }}</p>@enderror
@@ -78,7 +79,7 @@
 
         {{-- Target Class (conditional) --}}
         @if(!empty($classes))
-        <div x-data="{ role: '{{ old('target_role', 'all') }}' }" @role-changed.window="role = $event.detail">
+        <div x-data="{ role: '{{ old('target_role', $announcement->target_role) }}' }" @role-changed.window="role = $event.detail">
             <div x-show="role === 'student'" x-transition>
                 <label for="target_class_id" class="block text-xs font-black text-gray-700 uppercase tracking-widest mb-1.5">
                     Kelas (opsional — kosongkan untuk semua kelas)
@@ -87,7 +88,7 @@
                         class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent">
                     <option value="">Semua Kelas</option>
                     @foreach($classes as $class)
-                    <option value="{{ $class }}" {{ old('target_class_id') === $class ? 'selected' : '' }}>{{ $class }}</option>
+                    <option value="{{ $class }}" {{ old('target_class_id', $announcement->target_class_id) === $class ? 'selected' : '' }}>{{ $class }}</option>
                     @endforeach
                 </select>
             </div>
@@ -99,7 +100,7 @@
             <label for="expires_at" class="block text-xs font-black text-gray-700 uppercase tracking-widest mb-1.5">
                 Berlaku Hingga (opsional)
             </label>
-            <input type="datetime-local" id="expires_at" name="expires_at" value="{{ old('expires_at') }}"
+            <input type="datetime-local" id="expires_at" name="expires_at" value="{{ old('expires_at', $announcement->expires_at ? $announcement->expires_at->format('Y-m-d\TH:i') : '') }}"
                    min="{{ now()->format('Y-m-d\TH:i') }}"
                    class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent @error('expires_at') border-red-400 @enderror">
             <p class="text-xs text-gray-400 mt-1">Biarkan kosong jika tidak ada batas waktu.</p>
@@ -111,7 +112,7 @@
             <label for="show_on_login" class="flex items-center gap-3 cursor-pointer select-none group flex-1">
                 <div class="relative">
                     <input type="checkbox" id="show_on_login" name="show_on_login" value="1"
-                           class="peer sr-only" {{ old('show_on_login') ? 'checked' : '' }}>
+                           class="peer sr-only" {{ old('show_on_login', $announcement->show_on_login) ? 'checked' : '' }}>
                     <div class="w-10 h-6 rounded-full border-2 border-gray-300 bg-white transition-all
                                 peer-checked:border-indigo-600 peer-checked:bg-indigo-600 group-hover:border-indigo-400">
                     </div>
@@ -132,13 +133,13 @@
         {{-- Preview Panel --}}
         <div class="p-4 bg-gray-50 rounded-xl border border-gray-100">
             <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Preview Banner</p>
-            <div class="announcement-banner announcement-banner-info" id="previewBanner">
-                <div class="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center shrink-0">
-                    <i class="fas fa-info-circle text-blue-600 text-sm" id="previewIcon"></i>
+            <div class="announcement-banner announcement-banner-{{ $announcement->type }}" id="previewBanner">
+                <div class="w-9 h-9 rounded-xl {{ $announcement->type === 'urgent' ? 'bg-red-100' : ($announcement->type === 'warning' ? 'bg-amber-100' : 'bg-blue-100') }} flex items-center justify-center shrink-0">
+                    <i class="fas {{ $announcement->type === 'urgent' ? 'fa-bell text-red-600' : ($announcement->type === 'warning' ? 'fa-exclamation-triangle text-amber-600' : 'fa-info-circle text-blue-600') }} text-sm" id="previewIcon"></i>
                 </div>
                 <div>
-                    <p class="text-sm font-black" id="previewTitle">Judul Pengumuman</p>
-                    <p class="text-xs opacity-80 mt-0.5 line-clamp-2" id="previewContent">Isi pengumuman akan muncul di sini.</p>
+                    <p class="text-sm font-black" id="previewTitle">{{ $announcement->title }}</p>
+                    <p class="text-xs opacity-80 mt-0.5 line-clamp-2" id="previewContent">{{ $announcement->content }}</p>
                 </div>
             </div>
         </div>
@@ -150,7 +151,7 @@
                 Batal
             </a>
             <button type="submit" class="theme-primary-btn px-6 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2">
-                <i class="fas fa-paper-plane"></i> Kirim Pengumuman
+                <i class="fas fa-save"></i> Simpan Perubahan
             </button>
         </div>
     </form>
