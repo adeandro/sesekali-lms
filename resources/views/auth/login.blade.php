@@ -10,11 +10,17 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
+@php 
+    $isLeaderboardEnabled = ($configs['enable_leaderboard'] ?? '1') === '1';
+@endphp
+
 <body class="animated-bg min-h-screen flex items-center justify-center p-4 md:p-8">
-<div class="w-full max-w-4xl">
+<div class="w-full {{ $isLeaderboardEnabled ? 'max-w-4xl' : 'max-w-md' }}">
+
 
     {{-- STRIP MOBILE: hanya tampil di layar kecil --}}
-    @if($topStudents->count() >= 3)
+    @if($isLeaderboardEnabled && $topStudents->count() >= 3)
+
     <div class="md:hidden mb-4 rounded-2xl p-4"
          style="background: linear-gradient(135deg, #312e81, #1e1b4b);">
 
@@ -77,11 +83,13 @@
     @endif
 
     {{-- MAIN CARD --}}
-    <div class="flex flex-col md:flex-row rounded-[20px] overflow-hidden"
+    <div class="flex flex-col {{ $isLeaderboardEnabled ? 'md:flex-row' : '' }} rounded-[20px] overflow-hidden"
          style="box-shadow: 0 24px 60px rgba(0,0,0,0.4);">
 
+
         {{-- KOLOM KIRI: Form --}}
-        <div class="w-full md:w-[46%] bg-white px-10 py-12 flex flex-col justify-center">
+        <div class="w-full {{ $isLeaderboardEnabled ? 'md:w-[46%]' : '' }} bg-white px-10 py-12 flex flex-col justify-center">
+
 
             {{-- Logo + Nama Sekolah --}}
             <div class="flex items-center gap-2.5 mb-6">
@@ -226,8 +234,10 @@
         </div>
         {{-- END KOLOM KIRI --}}
 
+        @if($isLeaderboardEnabled)
         {{-- KOLOM KANAN: Leaderboard (desktop only) --}}
         <div class="hidden md:flex flex-1 flex-col justify-between px-9 py-11 relative overflow-hidden"
+
              style="background: linear-gradient(160deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%);">
 
             {{-- Dekorasi --}}
@@ -369,6 +379,8 @@
 
         </div>
         {{-- END KOLOM KANAN --}}
+        @endif
+
 
     </div>
     {{-- END MAIN CARD --}}

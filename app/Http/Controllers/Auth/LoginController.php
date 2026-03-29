@@ -13,31 +13,36 @@ class LoginController extends Controller
 {
     public function showLoginForm()
     {
-        try {
-            $topStudents = \App\Models\User::where('role', '=', 'student')
-                ->where('status', '=', 'Aktif')
-                ->orderBy('total_exp', 'desc')
-                ->take(3)
-                ->get()
-                ->values()
-                ->map(function ($user, $index) {
-                    $name  = trim($user->full_name ?? $user->name ?? '');
-                    $words = array_values(array_filter(explode(' ', $name)));
-                    $initials = count($words) >= 2
-                        ? strtoupper(substr($words[0],0,1).substr($words[1],0,1))
-                        : strtoupper(substr($name, 0, 2));
-                    $shortName = count($words) >= 2
+        $topStudents = collect([]);
+        $isLeaderboardEnabled = \App\Models\Setting::get('enable_leaderboard', '1') === '1';
+
+        if ($isLeaderboardEnabled) {
+            try {
+                $topStudents = \App\Models\User::where('role', '=', 'student')
+                    ->where('status', '=', 'Aktif')
+                    ->orderBy('total_exp', 'desc')
+                    ->take(3)
+                    ->get()
+                    ->values()
+                    ->map(function ($user, $index) {
+                        $name  = trim($user->full_name ?? $user->name ?? '');
+                        $words = array_values(array_filter(explode(' ', $name)));
+                        $initials = count($words) >= 2
+                            ? strtoupper(substr($words[0],0,1).substr($words[1],0,1))
+                            : strtoupper(substr($name, 0, 2));
+                        $shortName = count($words) >= 2
     ? $words[0].' '.substr($words[1], 0, 4)
     : ($words[0] ?? 'Siswa');
-                    return [
-                        'rank'     => $index + 1,
-                        'initials' => $initials,
-                        'name'     => $shortName,
-                        'points'   => number_format($user->total_exp ?? 0),
-                    ];
-                });
-        } catch (\Throwable $e) {
-            $topStudents = collect([]);
+                        return [
+                            'rank'     => $index + 1,
+                            'initials' => $initials,
+                            'name'     => $shortName,
+                            'points'   => number_format($user->total_exp ?? 0),
+                        ];
+                    });
+            } catch (\Throwable $e) {
+                // Fallback to empty collection
+            }
         }
         return view('auth.login', compact('topStudents'));
     }
