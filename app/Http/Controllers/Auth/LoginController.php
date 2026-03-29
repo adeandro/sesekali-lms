@@ -54,19 +54,25 @@ class LoginController extends Controller
             'password' => 'required',
         ]);
 
-        // Check if input is email (contains @) or NIS (numeric)
+        // Check if input is email (contains @)
         $isEmail = str_contains($credentials['username'], '@');
-        $isNIS = is_numeric($credentials['username']) && strlen($credentials['username']) > 3;
 
-        // Query user by email or NIS
+        // Query user by email or Identifiers (NIS/NIP/NIY)
         $user = null;
         if ($isEmail) {
             $user = User::where('email', '=', $credentials['username'])->first();
-        } elseif ($isNIS) {
-            $user = User::where('nis', '=', $credentials['username'])->first();
         } else {
-            // Try email as fallback if neither email nor NIS format
-            $user = User::where('email', '=', $credentials['username'])->first();
+            // Search across all identity columns
+            $user = User::where(function($query) use ($credentials) {
+                $query->where('nis', '=', $credentials['username'])
+                      ->orWhere('nip', '=', $credentials['username'])
+                      ->orWhere('niy', '=', $credentials['username']);
+            })->first();
+
+            // Fallback: try search by email anyway if no match found in ID columns
+            if (!$user) {
+                $user = User::where('email', '=', $credentials['username'])->first();
+            }
         }
 
         // Check if user exists and is active
