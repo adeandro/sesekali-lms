@@ -228,7 +228,7 @@
     </form>
 </div>
 
-<link href="https://fonts.googleapis.com/css2?family=Amiri&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
 {{-- Vite bundled Quill & ImageResize --}}
 <script>
 // ── Daftarkan custom font ──────────────────────────────────────
@@ -238,6 +238,8 @@ Font.whitelist = [
     'georgia', 'verdana', 'courier-new', 'amiri'
 ];
 Quill.register(Font, true);
+
+
 
 // ── Toolbar config ─────────────────────────────────────────────
 const toolbarFull = [
@@ -300,9 +302,9 @@ function initQuill(editorId, textareaId, toolbar) {
     quill.getModule('toolbar').addHandler('image', createImageHandler(quill));
 
     // Load existing content
-    const textarea = document.getElementById(textareaId);
-    if (textarea && textarea.value) {
-        quill.clipboard.dangerouslyPasteHTML(textarea.value);
+    const existing = document.getElementById(textareaId).value;
+    if (existing) {
+        quill.clipboard.dangerouslyPasteHTML(existing);
     }
 
     // Sync on change
@@ -474,12 +476,9 @@ window.addEventListener('load', toggleMultipleChoice);
     }
 
     /* ── Mapping class Quill ke font Amiri ── */
-    .ql-font-amiri,
-    .ql-font-amiri * {
-        font-family: 'Amiri', serif !important;
-        font-size: 18pt !important;
-        line-height: 2 !important;
-    }
+    .ql-font-amiri { font-family: 'Amiri', serif !important; }
+    .ql-editor .ql-font-amiri { font-family: 'Amiri', serif !important; }
+    span.ql-font-amiri { font-family: 'Amiri', serif !important; }
 
     /* ── Label font di toolbar dropdown (Fix) ── */
     .ql-snow .ql-picker.ql-font .ql-picker-label::before,
@@ -540,25 +539,24 @@ window.addEventListener('load', toggleMultipleChoice);
     .ql-editor .ql-editor .ql-font-courier-new { font-family: 'Courier New', monospace !important; }
 
     /* ── Fix overlap layout opsi jawaban ── */
-    #multipleChoiceSection .grid {
-        overflow: visible !important;
+    #quill-option_a,
+    #quill-option_b,
+    #quill-option_c,
+    #quill-option_d,
+    #quill-option_e {
+        position: relative;
+        z-index: 1;
+        overflow: visible;
     }
 
-    /* Pastikan toolbar Quill berada di atas elemen sekitarnya jika absolute */
-    .ql-toolbar.ql-snow {
-        position: relative;
-        z-index: 10;
-    }
-    .ql-container.ql-snow {
+    /* Pastikan card opsi tidak clip konten Quill */
+    .group\/opt {
+        overflow: visible !important;
         position: relative;
         z-index: 1;
     }
-    #multipleChoiceSection .ql-toolbar.ql-snow {
-        position: relative;
-        z-index: 11;
-    }
 
-    /* Grid tidak clip konten Quill */
+    /* Pastikan grid tidak clip overlay resize */
     .grid.grid-cols-1.lg\\:grid-cols-2 {
         overflow: visible !important;
     }
@@ -576,25 +574,19 @@ window.addEventListener('load', toggleMultipleChoice);
         max-width: 100%;
     }
 
-    /* Tambah jarak bawah agar tidak overlap card kunci jawaban */
-    #multipleChoiceSection .grid.grid-cols-1 {
-        padding-bottom: 20px;
-    }
-
-    /* Pastikan container Quill tidak clip toolbar */
-    #quill-option_a,
-    #quill-option_b,
-    #quill-option_c,
-    #quill-option_d,
-    #quill-option_e {
-        position: relative;
-        z-index: auto;
-        overflow: visible;
-    }
-
-    /* Card opsi dengan Quill editor butuh overflow visible */
-    #multipleChoiceSection .bg-gray-50.rounded-\[2\.5rem\] {
+    /* ── Fix toolbar Quill overlap di opsi jawaban ── */
+    #multipleChoiceSection .grid {
         overflow: visible !important;
+    }
+
+    /* Pastikan toolbar Quill berada di atas elemen sekitarnya jika absolute */
+    .ql-toolbar.ql-snow {
+        position: relative;
+        z-index: 10;
+    }
+    .ql-container.ql-snow {
+        position: relative;
+        z-index: 1;
     }
 </style>
 @endsection
