@@ -185,7 +185,7 @@ class QuestionController extends Controller
             'updated_count' => $importer->updatedCount,
             'skipped_count' => $importer->skippedCount,
             'failure_count' => $importer->failureCount,
-            'errors' => $errors,
+            'import_errors' => $errors,
             'skipped' => $importer->skipped,
             'updated' => $importer->updated,
         ]);

@@ -123,7 +123,7 @@
             </div>
         @endif
 
-        @if($failure_count > 0 && !empty($errors))
+        @if($failure_count > 0 && !empty($import_errors))
             <div class="bg-white rounded-lg shadow p-6 mb-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">⚠️ Failed Rows</h3>
                 <div class="overflow-x-auto">
@@ -135,7 +135,7 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200">
-                            @foreach($errors as $row => $rowErrors)
+                            @foreach($import_errors as $row => $rowErrors)
                                 <tr class="bg-red-50">
                                     <td class="px-6 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{{ $row }}</td>
                                     <td class="px-6 py-3 text-sm text-red-600">
