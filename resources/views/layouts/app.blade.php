@@ -208,7 +208,25 @@
             </div>
 
             <!-- Navigation Menu -->
-            <nav class="flex-1 px-4 py-4 space-y-1 overflow-y-auto custom-scrollbar">
+            @php
+                $activeAccordion = null;
+                if (request()->routeIs('communication.*')) $activeAccordion = 'komunikasi';
+                elseif (request()->is('admin/questions*') || request()->is('admin/exams*') || request()->is('admin/results*') || request()->is('admin/tokens*') || request()->is('admin/monitor-exams*')) $activeAccordion = 'cbt';
+                elseif (request()->is('superadmin/teachers*') || request()->is('admin/students*') || request()->is('admin/subjects*') || request()->is('admin/classes*') || request()->is('admin/grade-weights*') || request()->is('admin/manual-grades*')) $activeAccordion = 'akademik';
+                elseif (request()->routeIs('admin.extracurriculars.*')) $activeAccordion = 'ekskul';
+                elseif (request()->routeIs('dashboard.principal') || request()->is('admin/reports*')) $activeAccordion = 'monitoring';
+                elseif (request()->is('admin/report-data*') || request()->is('admin/dudi*')) $activeAccordion = 'raport';
+                elseif (request()->is('admin/letters*')) $activeAccordion = 'surat';
+                elseif (request()->is('student/exams*') || request()->is('student/results*') || request()->is('student/coupons*')) $activeAccordion = 'student_akademik';
+                elseif (request()->is('student/leaderboard*') || request()->is('student/arena*')) $activeAccordion = 'student_gamifikasi';
+                elseif (request()->is('admin/gamification*')) $activeAccordion = 'gamification';
+            @endphp
+
+            <nav class="flex-1 px-4 py-4 space-y-1 overflow-y-auto custom-scrollbar"
+                 x-data="{ 
+                    activeAccordion: sessionStorage.getItem('active_sidebar_accordion') || '{{ $activeAccordion }}' 
+                 }"
+                 x-init="$watch('activeAccordion', value => sessionStorage.setItem('active_sidebar_accordion', value))">
 
                 {{-- ── 1. DASHBOARD ── --}}
                 <a href="{{ route('dashboard') }}" 
@@ -218,11 +236,8 @@
                 </a>
 
                 {{-- ── 2. KOMUNIKASI ── --}}
-                <div class="pt-1" x-data="{ 
-                    open: sessionStorage.getItem('sidebar_komunikasi_open') === 'true' 
-                        || {{ request()->routeIs('communication.*') ? 'true' : 'false' }}
-                }" x-init="$watch('open', value => sessionStorage.setItem('sidebar_komunikasi_open', value))">
-                    <button @click="open = !open" 
+                <div class="pt-1">
+                    <button @click="activeAccordion = (activeAccordion === 'komunikasi' ? null : 'komunikasi')" 
                             class="w-full nav-item justify-between 
                                    {{ request()->routeIs('communication.*') ? 'bg-gray-50' : '' }}">
                         <div class="flex items-center">
@@ -230,9 +245,9 @@
                             <span class="font-bold text-[11px] uppercase tracking-widest">Komunikasi</span>
                         </div>
                         <i class="fas fa-chevron-down text-xs transition-transform duration-300" 
-                           :class="open ? 'rotate-180' : ''"></i>
+                           :class="activeAccordion === 'komunikasi' ? 'rotate-180' : ''"></i>
                     </button>
-                    <div x-show="open" x-cloak x-collapse 
+                    <div x-show="activeAccordion === 'komunikasi'" x-cloak x-collapse 
                          class="mt-1 ml-4 space-y-1 border-l-2 border-gray-100 pl-2">
                         <a href="{{ route('communication.announcements.index') }}" 
                            class="nav-item py-2 text-sm {{ request()->routeIs('communication.announcements*') ? 'menu-item-active' : '' }}">
@@ -252,11 +267,8 @@
 
                 {{-- ── 3. CBT & UJIAN (teacher, superadmin) ── --}}
                 @if(in_array(Auth::user()->role, ['teacher', 'superadmin']))
-                <div class="pt-1" x-data="{ 
-                    open: sessionStorage.getItem('sidebar_cbt_open') === 'true' 
-                        || {{ (request()->routeIs('admin.questions.*') || request()->routeIs('admin.exams.*') || request()->routeIs('admin.results.*') || request()->routeIs('admin.tokens.*') || request()->routeIs('admin.monitor-exams.*')) ? 'true' : 'false' }}
-                }" x-init="$watch('open', value => sessionStorage.setItem('sidebar_cbt_open', value))">
-                    <button @click="open = !open" 
+                <div class="pt-1">
+                    <button @click="activeAccordion = (activeAccordion === 'cbt' ? null : 'cbt')" 
                             class="w-full nav-item justify-between 
                                    {{ (request()->routeIs('admin.questions.*') || request()->routeIs('admin.exams.*') || request()->routeIs('admin.results.*') || request()->routeIs('admin.tokens.*') || request()->routeIs('admin.monitor-exams.*')) ? 'bg-gray-50' : '' }}">
                         <div class="flex items-center">
@@ -264,9 +276,9 @@
                             <span class="font-bold text-[11px] uppercase tracking-widest">CBT & Ujian</span>
                         </div>
                         <i class="fas fa-chevron-down text-xs transition-transform duration-300" 
-                           :class="open ? 'rotate-180' : ''"></i>
+                           :class="activeAccordion === 'cbt' ? 'rotate-180' : ''"></i>
                     </button>
-                    <div x-show="open" x-cloak x-collapse 
+                    <div x-show="activeAccordion === 'cbt'" x-cloak x-collapse 
                          class="mt-1 ml-4 space-y-1 border-l-2 border-gray-100 pl-2">
                         <a href="{{ route('admin.questions.index') }}" 
                            class="nav-item py-2 text-sm {{ request()->routeIs('admin.questions.*') ? 'menu-item-active' : '' }}">
@@ -294,11 +306,8 @@
 
                 {{-- ── 4. AKADEMIK (teacher, superadmin) ── --}}
                 @if(in_array(Auth::user()->role, ['teacher', 'superadmin']))
-                <div class="pt-1" x-data="{ 
-                    open: sessionStorage.getItem('sidebar_akademik_open') === 'true' 
-                        || {{ (request()->routeIs('superadmin.teachers.*') || request()->routeIs('admin.students.*') || request()->routeIs('admin.subjects.*') || request()->routeIs('admin.classes.*') || request()->routeIs('admin.grade-weights.*') || request()->routeIs('admin.manual-grades.*')) ? 'true' : 'false' }}
-                }" x-init="$watch('open', value => sessionStorage.setItem('sidebar_akademik_open', value))">
-                    <button @click="open = !open" 
+                <div class="pt-1">
+                    <button @click="activeAccordion = (activeAccordion === 'akademik' ? null : 'akademik')" 
                             class="w-full nav-item justify-between 
                                    {{ (request()->routeIs('superadmin.teachers.*') || request()->routeIs('admin.students.*') || request()->routeIs('admin.subjects.*') || request()->routeIs('admin.classes.*') || request()->routeIs('admin.grade-weights.*') || request()->routeIs('admin.manual-grades.*')) ? 'bg-gray-50' : '' }}">
                         <div class="flex items-center">
@@ -306,9 +315,9 @@
                             <span class="font-bold text-[11px] uppercase tracking-widest">Akademik</span>
                         </div>
                         <i class="fas fa-chevron-down text-xs transition-transform duration-300" 
-                           :class="open ? 'rotate-180' : ''"></i>
+                           :class="activeAccordion === 'akademik' ? 'rotate-180' : ''"></i>
                     </button>
-                    <div x-show="open" x-cloak x-collapse 
+                    <div x-show="activeAccordion === 'akademik'" x-cloak x-collapse 
                          class="mt-1 ml-4 space-y-1 border-l-2 border-gray-100 pl-2">
                         @if(Auth::user()->role === 'superadmin')
                             <a href="{{ route('superadmin.teachers.index') }}" 
@@ -342,11 +351,8 @@
 
                 {{-- ── 5. EKSTRAKURIKULER (teacher, superadmin) ── --}}
                 @if(in_array(Auth::user()->role, ['teacher', 'superadmin']))
-                <div class="pt-1" x-data="{ 
-                    open: sessionStorage.getItem('sidebar_ekskul_open') === 'true' 
-                        || {{ request()->routeIs('admin.extracurriculars.*') ? 'true' : 'false' }}
-                }" x-init="$watch('open', value => sessionStorage.setItem('sidebar_ekskul_open', value))">
-                    <button @click="open = !open" 
+                <div class="pt-1">
+                    <button @click="activeAccordion = (activeAccordion === 'ekskul' ? null : 'ekskul')" 
                             class="w-full nav-item justify-between 
                                    {{ request()->routeIs('admin.extracurriculars.*') ? 'bg-gray-50' : '' }}">
                         <div class="flex items-center">
@@ -354,9 +360,9 @@
                             <span class="font-bold text-[11px] uppercase tracking-widest">Ekstrakurikuler</span>
                         </div>
                         <i class="fas fa-chevron-down text-xs transition-transform duration-300" 
-                           :class="open ? 'rotate-180' : ''"></i>
+                           :class="activeAccordion === 'ekskul' ? 'rotate-180' : ''"></i>
                     </button>
-                    <div x-show="open" x-cloak x-collapse 
+                    <div x-show="activeAccordion === 'ekskul'" x-cloak x-collapse 
                          class="mt-1 ml-4 space-y-1 border-l-2 border-gray-100 pl-2">
                         @if(Auth::user()->role === 'superadmin')
                             <a href="{{ route('admin.extracurriculars.index') }}" 
@@ -376,11 +382,8 @@
 
                 {{-- ── PRINCIPAL MENU (kepala sekolah) ── --}}
                 @if(Auth::user()->role === 'principal')
-                <div class="pt-1" x-data="{ 
-                    open: sessionStorage.getItem('sidebar_monitoring_open') === 'true' 
-                        || {{ (request()->routeIs('dashboard.principal') || request()->routeIs('admin.reports.*') || request()->routeIs('admin.results.*') || request()->routeIs('admin.monitor-exams.*')) ? 'true' : 'false' }}
-                }" x-init="$watch('open', value => sessionStorage.setItem('sidebar_monitoring_open', value))">
-                    <button @click="open = !open" 
+                <div class="pt-1">
+                    <button @click="activeAccordion = (activeAccordion === 'monitoring' ? null : 'monitoring')" 
                             class="w-full nav-item justify-between 
                                    {{ (request()->routeIs('dashboard.principal') || request()->routeIs('admin.reports.*') || request()->routeIs('admin.results.*') || request()->routeIs('admin.monitor-exams.*')) ? 'bg-gray-50' : '' }}">
                         <div class="flex items-center">
@@ -388,9 +391,9 @@
                             <span class="font-bold text-[11px] uppercase tracking-widest">Monitoring</span>
                         </div>
                         <i class="fas fa-chevron-down text-xs transition-transform duration-300" 
-                           :class="open ? 'rotate-180' : ''"></i>
+                           :class="activeAccordion === 'monitoring' ? 'rotate-180' : ''"></i>
                     </button>
-                    <div x-show="open" x-cloak x-collapse 
+                    <div x-show="activeAccordion === 'monitoring'" x-cloak x-collapse 
                          class="mt-1 ml-4 space-y-1 border-l-2 border-gray-100 pl-2">
                         <a href="{{ route('dashboard.principal') }}"
                            class="nav-item py-2 text-sm {{ request()->routeIs('dashboard.principal') ? 'menu-item-active' : '' }}">
@@ -414,11 +417,8 @@
 
                 {{-- ── 6. RAPORT (wali kelas saja) ── --}}
                 @if(in_array(Auth::user()->role, ['teacher', 'superadmin']) && Auth::user()->isHomeroom())
-                <div class="pt-1" x-data="{ 
-                    open: sessionStorage.getItem('sidebar_raport_open') === 'true' 
-                        || {{ (request()->routeIs('admin.report-data.*') || request()->routeIs('admin.dudi.*') || request()->routeIs('admin.reports.*')) ? 'true' : 'false' }}
-                }" x-init="$watch('open', value => sessionStorage.setItem('sidebar_raport_open', value))">
-                    <button @click="open = !open" 
+                <div class="pt-1">
+                    <button @click="activeAccordion = (activeAccordion === 'raport' ? null : 'raport')" 
                             class="w-full nav-item justify-between 
                                    {{ (request()->routeIs('admin.report-data.*') || request()->routeIs('admin.dudi.*') || request()->routeIs('admin.reports.*')) ? 'bg-gray-50' : '' }}">
                         <div class="flex items-center">
@@ -426,9 +426,9 @@
                             <span class="font-bold text-[11px] uppercase tracking-widest">Raport</span>
                         </div>
                         <i class="fas fa-chevron-down text-xs transition-transform duration-300" 
-                           :class="open ? 'rotate-180' : ''"></i>
+                           :class="activeAccordion === 'raport' ? 'rotate-180' : ''"></i>
                     </button>
-                    <div x-show="open" x-cloak x-collapse 
+                    <div x-show="activeAccordion === 'raport'" x-cloak x-collapse 
                          class="mt-1 ml-4 space-y-1 border-l-2 border-gray-100 pl-2">
                         <a href="{{ route('admin.report-data.index') }}" 
                            class="nav-item py-2 text-sm {{ request()->routeIs('admin.report-data.*') ? 'menu-item-active' : '' }}">
@@ -448,11 +448,8 @@
 
                 {{-- ── 7. ADMINISTRASI SURAT (superadmin, tu) ── --}}
                 @if(in_array(Auth::user()->role, ['superadmin', 'tu']))
-                <div class="pt-1" x-data="{ 
-                    open: sessionStorage.getItem('sidebar_surat_open') === 'true' 
-                        || {{ request()->routeIs('admin.letters.*') ? 'true' : 'false' }}
-                }" x-init="$watch('open', value => sessionStorage.setItem('sidebar_surat_open', value))">
-                    <button @click="open = !open" 
+                <div class="pt-1">
+                    <button @click="activeAccordion = (activeAccordion === 'surat' ? null : 'surat')" 
                             class="w-full nav-item justify-between 
                                    {{ request()->routeIs('admin.letters.*') ? 'bg-gray-50' : '' }}">
                         <div class="flex items-center">
@@ -460,9 +457,9 @@
                             <span class="font-bold text-[11px] uppercase tracking-widest">Administrasi Surat</span>
                         </div>
                         <i class="fas fa-chevron-down text-xs transition-transform duration-300" 
-                           :class="open ? 'rotate-180' : ''"></i>
+                           :class="activeAccordion === 'surat' ? 'rotate-180' : ''"></i>
                     </button>
-                    <div x-show="open" x-cloak x-collapse 
+                    <div x-show="activeAccordion === 'surat'" x-cloak x-collapse 
                          class="mt-1 ml-4 space-y-1 border-l-2 border-gray-100 pl-2">
                         <a href="{{ route('admin.letters.index') }}" 
                            class="nav-item py-2 text-sm {{ (request()->routeIs('admin.letters.*') && !request()->routeIs('admin.letters.templates.*') && !request()->routeIs('admin.letters.history')) ? 'menu-item-active' : '' }}">
@@ -484,11 +481,8 @@
 
                 {{-- ── 8. SISWA (student role) ── --}}
                 @if(Auth::user()->role === 'student')
-                <div class="pt-1" x-data="{ 
-                    open: sessionStorage.getItem('sidebar_student_akademik_open') === 'true' 
-                        || {{ (request()->routeIs('student.exams.*') || request()->routeIs('student.results*') || request()->routeIs('student.coupons.*')) ? 'true' : 'false' }}
-                }" x-init="$watch('open', value => sessionStorage.setItem('sidebar_student_akademik_open', value))">
-                    <button @click="open = !open" 
+                <div class="pt-1">
+                    <button @click="activeAccordion = (activeAccordion === 'student_akademik' ? null : 'student_akademik')" 
                             class="w-full nav-item justify-between 
                                    {{ (request()->routeIs('student.exams.*') || request()->routeIs('student.results*') || request()->routeIs('student.coupons.*')) ? 'bg-gray-50' : '' }}">
                         <div class="flex items-center">
@@ -496,9 +490,9 @@
                             <span class="font-bold text-[11px] uppercase tracking-widest">Akademik</span>
                         </div>
                         <i class="fas fa-chevron-down text-xs transition-transform duration-300" 
-                           :class="open ? 'rotate-180' : ''"></i>
+                           :class="activeAccordion === 'student_akademik' ? 'rotate-180' : ''"></i>
                     </button>
-                    <div x-show="open" x-cloak x-collapse 
+                    <div x-show="activeAccordion === 'student_akademik'" x-cloak x-collapse 
                          class="mt-1 ml-4 space-y-1 border-l-2 border-gray-100 pl-2">
                         <a href="{{ route('student.exams.index') }}" 
                            class="nav-item py-2 text-sm {{ request()->routeIs('student.exams.*') ? 'menu-item-active' : '' }}">
@@ -515,11 +509,8 @@
                     </div>
                 </div>
 
-                <div class="pt-2" x-data="{ 
-                    open: sessionStorage.getItem('sidebar_student_gamifikasi_open') === 'true' 
-                        || {{ (request()->routeIs('student.leaderboard') || request()->routeIs('student.arena.*')) ? 'true' : 'false' }}
-                }" x-init="$watch('open', value => sessionStorage.setItem('sidebar_student_gamifikasi_open', value))">
-                    <button @click="open = !open" 
+                <div class="pt-2">
+                    <button @click="activeAccordion = (activeAccordion === 'student_gamifikasi' ? null : 'student_gamifikasi')" 
                             class="w-full nav-item justify-between 
                                    {{ (request()->routeIs('student.leaderboard') || request()->routeIs('student.arena.*')) ? 'bg-gray-50' : '' }}">
                         <div class="flex items-center">
@@ -527,9 +518,9 @@
                             <span class="font-bold text-[11px] uppercase tracking-widest">Gamifikasi</span>
                         </div>
                         <i class="fas fa-chevron-down text-xs transition-transform duration-300" 
-                           :class="open ? 'rotate-180' : ''"></i>
+                           :class="activeAccordion === 'student_gamifikasi' ? 'rotate-180' : ''"></i>
                     </button>
-                    <div x-show="open" x-cloak x-collapse 
+                    <div x-show="activeAccordion === 'student_gamifikasi'" x-cloak x-collapse 
                          class="mt-1 ml-4 space-y-1 border-l-2 border-gray-100 pl-2">
                         <a href="{{ route('student.leaderboard') }}" 
                            class="nav-item py-2 text-sm {{ request()->routeIs('student.leaderboard') ? 'menu-item-active' : '' }}">
@@ -557,11 +548,8 @@
 
                 {{-- ── 10. GAMIFIKASI (superadmin only) ── --}}
                 @if(Auth::user()->role === 'superadmin')
-                <div class="pt-2" x-data="{ 
-                    open: sessionStorage.getItem('sidebar_gamification_open') === 'true' 
-                        || {{ request()->routeIs('admin.gamification.*') ? 'true' : 'false' }}
-                }" x-init="$watch('open', value => sessionStorage.setItem('sidebar_gamification_open', value))">
-                    <button @click="open = !open" 
+                <div class="pt-2">
+                    <button @click="activeAccordion = (activeAccordion === 'gamification' ? null : 'gamification')" 
                             class="w-full nav-item justify-between 
                                    {{ request()->routeIs('admin.gamification.*') ? 'bg-gray-50' : '' }}">
                         <div class="flex items-center">
@@ -571,9 +559,9 @@
                             </span>
                         </div>
                         <i class="fas fa-chevron-down text-xs transition-transform duration-300" 
-                           :class="open ? 'rotate-180' : ''"></i>
+                           :class="activeAccordion === 'gamification' ? 'rotate-180' : ''"></i>
                     </button>
-                    <div x-show="open" x-cloak x-collapse 
+                    <div x-show="activeAccordion === 'gamification'" x-cloak x-collapse 
                          class="mt-1 ml-4 space-y-1 border-l-2 border-gray-100 pl-2">
                         <a href="{{ route('admin.gamification.settings') }}" 
                            class="nav-item py-2 text-sm {{ request()->routeIs('admin.gamification.settings') ? 'menu-item-active' : '' }}">
