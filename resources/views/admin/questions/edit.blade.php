@@ -182,16 +182,16 @@
                             <h4 class="text-base font-black uppercase tracking-[0.2em] mb-2">Pilih Kunci Jawaban</h4>
                             <p class="text-[10px] font-black opacity-70 uppercase tracking-widest leading-relaxed">Tandai satu opsi sebagai jawaban yang tepat</p>
                         </div>
-                        <div class="flex flex-wrap justify-center gap-3">
-                            @foreach(['A', 'B', 'C', 'D', 'E'] as $val)
-                                <label class="cursor-pointer group/radio">
-                                    <input type="radio" name="correct_answer" value="{{ $val }}" class="peer hidden" {{ old('correct_answer', $question->correct_answer) == $val ? 'checked' : '' }}>
-                                    <span class="w-16 h-16 flex items-center justify-center bg-indigo-500/50 text-white/50 rounded-[1.5rem] text-xl font-black peer-checked:bg-white peer-checked:text-indigo-600 peer-checked:shadow-2xl transition-all duration-300 border-2 border-transparent peer-checked:border-white hover:text-white uppercase">
-                                        {{ $val }}
-                                    </span>
-                                </label>
-                            @endforeach
-                        </div>
+                         <div class="flex flex-wrap justify-center gap-3">
+                             @foreach(['A', 'B', 'C', 'D', 'E'] as $val)
+                                 <label class="cursor-pointer group/radio">
+                                     <input type="radio" name="correct_answer" value="{{ $val }}" class="peer hidden" {{ old('correct_answer', $question->correct_answer) == $val ? 'checked' : '' }}>
+                                     <span class="w-16 h-16 flex items-center justify-center bg-indigo-50/50 text-white/50 rounded-[1.5rem] text-xl font-black peer-checked:bg-white peer-checked:text-indigo-600 peer-checked:shadow-2xl transition-all duration-300 border-2 border-transparent peer-checked:border-white hover:text-white uppercase">
+                                         {{ $val }}
+                                     </span>
+                                 </label>
+                             @endforeach
+                         </div>
                     </div>
                 </div>
             </div>
@@ -293,9 +293,6 @@ function initQuill(editorId, textareaId, toolbar) {
             toolbar: {
                 container: toolbar,
             },
-                    restore: 'Reset',
-                },
-            },
         }
     });
 
@@ -343,6 +340,12 @@ function applyDirectionToLine(quillInstance, index) {
         quillInstance.formatLine(lineIndex, lineLength, {
             'direction': 'rtl',
             'align': 'right'
+        }, 'user');
+    } else {
+        // Reset ke LTR jika tidak ada karakter Arab
+        quillInstance.formatLine(lineIndex, lineLength, {
+            'direction': false,
+            'align': false
         }, 'user');
     }
 }
