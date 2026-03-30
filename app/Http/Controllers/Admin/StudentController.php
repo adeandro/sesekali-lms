@@ -265,7 +265,7 @@ class StudentController extends Controller
             'success_count' => $importer->successCount,
             'skipped_count' => $importer->skippedCount,
             'failure_count' => $importer->failureCount,
-            'errors' => $importer->errors,
+            'import_errors' => $importer->errors,
             'students' => $importer->students,
             'skipped' => $importer->skipped,
             'duration' => $importer->duration,

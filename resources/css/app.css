@@ -411,6 +411,9 @@
 
 @utility sidebar-hidden {
     transform: translateX(-100%);
+    @media (min-width: 1024px) {
+        margin-left: -16rem; /* Match sidebar width (w-64 = 16rem) */
+    }
 }
 
 @utility sidebar-mobile-overlay {

@@ -187,7 +187,7 @@
                     Data Gagal Diimpor ({{ $failure_count }})
                 </h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    @foreach($errors as $error_item)
+                    @foreach($import_errors as $error_item)
                         <div class="bg-white border border-rose-100 p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
                             <div class="flex items-center justify-between mb-3">
                                 <span class="text-[10px] font-black text-rose-500 uppercase tracking-widest">Baris Excel #{{ $error_item['row'] }}</span>

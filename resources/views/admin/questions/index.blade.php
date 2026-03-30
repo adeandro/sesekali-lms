@@ -172,14 +172,16 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="px-8 py-32 text-center">
-                                    <div class="flex flex-col items-center justify-center">
-                                        <div class="w-24 h-24 rounded-[2.5rem] bg-gray-50 flex items-center justify-center text-gray-200 mb-8 animate-pulse">
-                                            <i class="fas fa-layer-group text-5xl"></i>
-                                        </div>
-                                        <h3 class="text-xl font-black text-gray-400 uppercase tracking-[0.2em] mb-2">Soal Tidak Ditemukan</h3>
-                                        <p class="text-[11px] font-bold text-gray-300 uppercase tracking-widest max-w-sm leading-relaxed">Belum ada butir soal yang sesuai dengan kriteria filter Anda. Silakan tambah data baru atau impor soal.</p>
-                                    </div>
+                                <td colspan="5">
+                                    <x-empty-state 
+                                        icon="fas fa-layer-group"
+                                        title="Soal Tidak Ditemukan"
+                                        description="Belum ada butir soal yang sesuai dengan kriteria filter Anda. Silakan tambah data baru atau impor soal."
+                                        actionText="Tambah Soal"
+                                        actionUrl="{{ route('admin.questions.create') }}"
+                                        secondaryActionText="Impor Soal"
+                                        secondaryActionUrl="{{ route('admin.questions.importForm') }}"
+                                    />
                                 </td>
                             </tr>
                         @endforelse
@@ -196,76 +198,89 @@
 </div>
 
 <script>
-    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
-    const questionCheckboxes = document.querySelectorAll('.question-checkbox');
-    const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
-    const overlay = document.getElementById('loadingOverlay');
+    document.addEventListener('DOMContentLoaded', function() {
+        const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+        const questionCheckboxes = document.querySelectorAll('.question-checkbox');
+        const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+        const overlay = document.getElementById('loadingOverlay');
 
-    if (selectAllCheckbox) {
-        selectAllCheckbox.addEventListener('change', function() {
-            questionCheckboxes.forEach(cb => {
-                cb.checked = this.checked;
-                const row = cb.closest('tr');
-                if (this.checked) {
-                    row.classList.add('bg-indigo-50/50');
-                } else {
-                    row.classList.remove('bg-indigo-50/50');
-                }
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', function() {
+                questionCheckboxes.forEach(cb => {
+                    cb.checked = this.checked;
+                    const row = cb.closest('tr');
+                    if (row) {
+                        if (this.checked) {
+                            row.classList.add('bg-indigo-50/50');
+                        } else {
+                            row.classList.remove('bg-indigo-50/50');
+                        }
+                    }
+                });
+                updateBulkActions();
             });
-            updateBulkActions();
-        });
-    }
-
-    questionCheckboxes.forEach(cb => {
-        cb.addEventListener('change', function() {
-            const row = this.closest('tr');
-            if (this.checked) {
-                row.classList.add('bg-indigo-50/50');
-            } else {
-                row.classList.remove('bg-indigo-50/50');
-            }
-            updateBulkActions();
-        });
-    });
-
-    function updateBulkActions() {
-        const checkedCount = Array.from(questionCheckboxes).filter(cb => cb.checked).length;
-        if (checkedCount > 0) {
-            bulkDeleteBtn.classList.remove('hidden');
-            bulkDeleteBtn.classList.add('flex');
-            bulkDeleteBtn.innerHTML = `<i class="fas fa-trash-alt text-sm"></i> Hapus ${checkedCount} Soal`;
-        } else {
-            bulkDeleteBtn.classList.add('hidden');
-            bulkDeleteBtn.classList.remove('flex');
         }
-    }
 
-    bulkDeleteBtn.addEventListener('click', () => {
-        const count = Array.from(questionCheckboxes).filter(cb => cb.checked).length;
-        Swal.fire({
-            title: '<span class="text-xl font-black uppercase tracking-widest">Hapus Soal Terpilih?</span>',
-            html: `<p class="text-sm font-bold text-gray-500 uppercase tracking-tight leading-relaxed">Anda akan menghapus <span class="text-rose-600 underline">${count} butir soal</span> secara permanen dari sistem.</p>`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#f43f5e',
-            cancelButtonColor: '#9ca3af',
-            confirmButtonText: 'YA, HAPUS SEKARANG',
-            cancelButtonText: 'BATALKAN',
-            customClass: {
-                popup: 'rounded-[2.5rem] border-none shadow-2xl p-10',
-                confirmButton: 'rounded-2xl font-black px-8 py-4 text-[10px] uppercase tracking-widest mr-4',
-                cancelButton: 'rounded-2xl font-black px-8 py-4 text-[10px] uppercase tracking-widest'
-            }
-        }).then((result) => {
-            if (result.isConfirmed) {
-                overlay.classList.remove('hidden');
-                overlay.classList.add('flex');
-                document.getElementById('bulkDeleteForm').submit();
-            }
+        questionCheckboxes.forEach(cb => {
+            cb.addEventListener('change', function() {
+                const row = this.closest('tr');
+                if (row) {
+                    if (this.checked) {
+                        row.classList.add('bg-indigo-50/50');
+                    } else {
+                        row.classList.remove('bg-indigo-50/50');
+                    }
+                }
+                updateBulkActions();
+            });
         });
+
+        function updateBulkActions() {
+            if (!bulkDeleteBtn) return;
+            const checkedCount = Array.from(questionCheckboxes).filter(cb => cb.checked).length;
+            if (checkedCount > 0) {
+                bulkDeleteBtn.classList.remove('hidden');
+                bulkDeleteBtn.classList.add('flex');
+                bulkDeleteBtn.innerHTML = `<i class="fas fa-trash-alt text-sm"></i> Hapus ${checkedCount} Soal`;
+            } else {
+                bulkDeleteBtn.classList.add('hidden');
+                bulkDeleteBtn.classList.remove('flex');
+            }
+        }
+
+        if (bulkDeleteBtn) {
+            bulkDeleteBtn.addEventListener('click', () => {
+                const count = Array.from(questionCheckboxes).filter(cb => cb.checked).length;
+                Swal.fire({
+                    title: '<span class="text-xl font-black uppercase tracking-widest">Hapus Soal Terpilih?</span>',
+                    html: `<p class="text-sm font-bold text-gray-500 uppercase tracking-tight leading-relaxed">Anda akan menghapus <span class="text-rose-600 underline">${count} butir soal</span> secara permanen dari sistem.</p>`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#f43f5e',
+                    cancelButtonColor: '#9ca3af',
+                    confirmButtonText: 'YA, HAPUS SEKARANG',
+                    cancelButtonText: 'BATALKAN',
+                    customClass: {
+                        popup: 'rounded-[2.5rem] border-none shadow-2xl p-10',
+                        confirmButton: 'rounded-2xl font-black px-8 py-4 text-[10px] uppercase tracking-widest mr-4',
+                        cancelButton: 'rounded-2xl font-black px-8 py-4 text-[10px] uppercase tracking-widest'
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        if (overlay) {
+                            overlay.classList.remove('hidden');
+                            overlay.classList.add('flex');
+                        }
+                        const form = document.getElementById('bulkDeleteForm');
+                        if (form) form.submit();
+                    }
+                });
+            });
+        }
     });
 
     function deleteQuestion(id) {
+        const overlay = document.getElementById('loadingOverlay');
         Swal.fire({
             title: '<span class="text-xl font-black uppercase tracking-widest">Hapus Soal?</span>',
             html: `<p class="text-sm font-bold text-gray-500 uppercase tracking-tight leading-relaxed">Butir soal ini akan dihapus secara permanen dari bank soal.</p>`,
@@ -282,14 +297,18 @@
             }
         }).then((result) => {
             if (result.isConfirmed) {
-                overlay.classList.remove('hidden');
-                overlay.classList.add('flex');
-                document.getElementById('deleteForm' + id).submit();
+                if (overlay) {
+                    overlay.classList.remove('hidden');
+                    overlay.classList.add('flex');
+                }
+                const form = document.getElementById('deleteForm' + id);
+                if (form) form.submit();
             }
         });
     }
 
     function confirmDeleteAllQuestions() {
+        const overlay = document.getElementById('loadingOverlay');
         Swal.fire({
             title: '<span class="text-xl font-black text-rose-600 uppercase tracking-widest">⚠ TINDAKAN KRITIKAL!</span>',
             html: `
@@ -320,7 +339,8 @@
                 cancelButton: 'rounded-2xl font-black px-8 py-4 text-[10px] uppercase tracking-widest'
             },
             preConfirm: () => {
-                if (document.getElementById('confirmInput').value !== 'HAPUS SEMUA') {
+                const input = document.getElementById('confirmInput');
+                if (!input || input.value !== 'HAPUS SEMUA') {
                     Swal.showValidationMessage('Teks konfirmasi tidak sesuai!');
                     return false;
                 }
@@ -328,12 +348,16 @@
             }
         }).then((result) => {
             if (result.isConfirmed) {
-                overlay.classList.remove('hidden');
-                overlay.classList.add('flex');
-                document.getElementById('deleteAllQuestionsForm').submit();
+                if (overlay) {
+                    overlay.classList.remove('hidden');
+                    overlay.classList.add('flex');
+                }
+                const form = document.getElementById('deleteAllQuestionsForm');
+                if (form) form.submit();
             }
         });
     }
+</script>
 </script>
 
 <style>

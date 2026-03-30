@@ -112,8 +112,8 @@
                 </div>
             </div>
 
-            <button type="submit" class="h-14 bg-gray-900 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-gray-800 transition active:scale-95 flex items-center justify-center gap-3">
-                <i class="fas fa-filter text-[10px]"></i> Saring Data
+            <button type="submit" class="h-14 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-indigo-700 transition active:scale-95 flex items-center justify-center gap-3 shadow-lg shadow-indigo-100">
+                <i class="fas fa-filter text-[10px]"></i> Terapkan Filter
             </button>
         </form>
     </div>
@@ -237,21 +237,19 @@
                                 </div>
                             </td>
                         </tr>
-                    @empty
-                        <tr>
-                            <td colspan="5" class="px-8 py-20 text-center">
-                                <div class="flex flex-col items-center justify-center text-gray-400 space-y-4">
-                                    <div class="w-20 h-20 rounded-[2rem] bg-gray-50 flex items-center justify-center text-gray-200">
-                                        <i class="fas fa-scroll text-4xl"></i>
-                                    </div>
-                                    <div class="space-y-1">
-                                        <p class="text-sm font-black text-gray-900 uppercase tracking-widest">Tidak Ada Data Ujian</p>
-                                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest italic leading-relaxed">Silakan buat ujian baru atau sesuaikan filter pencarian Anda</p>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforelse
+                        @empty
+                            <tr>
+                                <td colspan="5">
+                                    <x-empty-state 
+                                        icon="fas fa-scroll"
+                                        title="Ujian Tidak Ditemukan"
+                                        description="Belum ada sesi ujian yang sesuai dengan kriteria pencarian Anda. Silakan buat ujian baru atau ubah filter."
+                                        actionText="Buat Ujian Baru"
+                                        actionUrl="{{ route('admin.exams.create') }}"
+                                    />
+                                </td>
+                            </tr>
+                        @endforelse
                 </tbody>
             </table>
         </div>

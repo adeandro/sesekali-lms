@@ -371,51 +371,60 @@
 </div>
 
 <script>
-    const examForm = document.getElementById('examForm');
-    const overlay = document.getElementById('loadingOverlay');
-    const startTimeInput = document.getElementById('start_time');
-    const endTimeInput = document.getElementById('end_time');
+    document.addEventListener('DOMContentLoaded', function() {
+        const examForm = document.getElementById('examForm');
+        const overlay = document.getElementById('loadingOverlay');
+        const startTimeInput = document.getElementById('start_time');
+        const endTimeInput = document.getElementById('end_time');
 
-    examForm.addEventListener('submit', function() {
-        overlay.classList.remove('hidden');
-    });
-
-    function formatDatetimeLocal(date) {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        return `${year}-${month}-${day}T${hours}:${minutes}`;
-    }
-
-    if (!startTimeInput.value) {
-        const now = new Date();
-        startTimeInput.value = formatDatetimeLocal(now);
-    }
-
-    startTimeInput.addEventListener('change', () => {
-        if (!endTimeInput.value || new Date(endTimeInput.value) <= new Date(startTimeInput.value)) {
-            const startDate = new Date(startTimeInput.value);
-            const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // +1 hour
-            endTimeInput.value = formatDatetimeLocal(endDate);
+        if (examForm && overlay) {
+            examForm.addEventListener('submit', function() {
+                overlay.classList.remove('hidden');
+            });
         }
-    });
-    const weightPg = document.getElementById('weight_pg');
-    const weightEssay = document.getElementById('weight_essay');
 
-    weightPg.addEventListener('input', () => {
-        let val = parseInt(weightPg.value) || 0;
-        if (val > 100) val = 100;
-        weightPg.value = val;
-        weightEssay.value = 100 - val;
-    });
+        function formatDatetimeLocal(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
 
-    weightEssay.addEventListener('input', () => {
-        let val = parseInt(weightEssay.value) || 0;
-        if (val > 100) val = 100;
-        weightEssay.value = val;
-        weightPg.value = 100 - val;
+        if (startTimeInput && !startTimeInput.value) {
+            const now = new Date();
+            startTimeInput.value = formatDatetimeLocal(now);
+        }
+
+        if (startTimeInput && endTimeInput) {
+            startTimeInput.addEventListener('change', () => {
+                if (!endTimeInput.value || new Date(endTimeInput.value) <= new Date(startTimeInput.value)) {
+                    const startDate = new Date(startTimeInput.value);
+                    const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // +1 hour
+                    endTimeInput.value = formatDatetimeLocal(endDate);
+                }
+            });
+        }
+
+        const weightPg = document.getElementById('weight_pg');
+        const weightEssay = document.getElementById('weight_essay');
+
+        if (weightPg && weightEssay) {
+            weightPg.addEventListener('input', () => {
+                let val = parseInt(weightPg.value) || 0;
+                if (val > 100) val = 100;
+                weightPg.value = val;
+                weightEssay.value = 100 - val;
+            });
+
+            weightEssay.addEventListener('input', () => {
+                let val = parseInt(weightEssay.value) || 0;
+                if (val > 100) val = 100;
+                weightEssay.value = val;
+                weightPg.value = 100 - val;
+            });
+        }
     });
 </script>
 

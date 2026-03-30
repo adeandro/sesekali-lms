@@ -44,7 +44,7 @@
             <form action="{{ route('admin.settings.update') }}" method="POST" enctype="multipart/form-data" id="settingsForm" class="space-y-8">
                 @csrf
                 <!-- Identitas Sekolah -->
-                <div class="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden group hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-500">
+                <div class="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden group hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-500 animate-fadeIn">
                     <div class="p-8 border-b border-gray-50 flex items-center gap-4">
                         <div class="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 transition-colors">
                             <i class="fas fa-school text-sm"></i>
@@ -204,7 +204,7 @@
                 </div>
 
                 <!-- Keamanan & Anti-Cheat -->
-                <div class="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden group hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-500">
+                <div class="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden group hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-500 animate-fadeIn delay-100">
                     <div class="p-8 border-b border-gray-50 flex items-center gap-4">
                         <div class="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-600 transition-colors">
                             <i class="fas fa-shield-alt text-sm"></i>
@@ -237,7 +237,7 @@
                 </div>
 
                 <!-- Akademik -->
-                <div class="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden group hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-500">
+                <div class="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden group hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-500 animate-fadeIn delay-200">
                     <div class="p-8 border-b border-gray-50 flex items-center gap-4">
                         <div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 transition-colors">
                             <i class="fas fa-calendar-check text-sm"></i>
@@ -326,9 +326,25 @@
                     </div>
                 </div>
 
-                <div class="flex items-center justify-end pt-4">
+                <div class="flex items-center justify-end pt-4 pb-20">
                     <button type="submit" class="group relative h-14 px-12 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-100 flex items-center justify-center gap-3">
                         <i class="fas fa-save text-[10px] group-hover:scale-110 transition-transform"></i> Simpan Konfigurasi
+                    </button>
+                </div>
+
+                {{-- Sticky Save Bar --}}
+                <div class="sticky-save-bar no-print" x-show="activeTab === 'identity'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-10" x-transition:enter-end="opacity-100 translate-y-0">
+                    <div class="flex items-center gap-3 pr-6 border-r border-gray-100">
+                        <div class="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600">
+                            <i class="fas fa-cog fa-spin"></i>
+                        </div>
+                        <div>
+                            <p class="text-[9px] font-black uppercase tracking-widest text-gray-400">Settings Mode</p>
+                            <p class="text-[10px] font-black uppercase tracking-tight text-gray-900">Perubahan Belum Disimpan</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="document.getElementById('settingsForm').submit()" class="group px-8 py-3.5 bg-indigo-600 text-white text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-100 flex items-center gap-2">
+                        <i class="fas fa-cloud-upload-alt text-xs"></i> Simpan Sekarang
                     </button>
                 </div>
             </form>

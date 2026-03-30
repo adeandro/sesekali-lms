@@ -49,7 +49,7 @@
     ═══════════════════════════════════════════════ --}}
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-5">
         {{-- Total Users --}}
-        <div class="group bg-white rounded-[2.5rem] p-7 border theme-soft-shadow relative overflow-hidden theme-card-hover" style="border-color: var(--brand-glow);">
+        <div class="group bg-white rounded-[2.5rem] p-7 border theme-soft-shadow relative overflow-hidden theme-card-hover animate-fadeIn" style="border-color: var(--brand-glow);">
             <div class="absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700" style="background-color: var(--brand-glow);"></div>
             <div class="relative space-y-4">
                 <div class="w-12 h-12 rounded-[1.25rem] flex items-center justify-center text-xl" style="background-color: var(--brand-glow); color: var(--brand-primary);">
@@ -120,7 +120,42 @@
     {{-- ═══════════════════════════════════════════════
          MANAGEMENT MODULES
     ═══════════════════════════════════════════════ --}}
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    </div>
+
+    {{-- ═══════════════════════════════════════════════
+         CHARTS & ANALYTICS
+    ═══════════════════════════════════════════════ --}}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {{-- User Distribution Chart --}}
+        <div class="bg-white rounded-[3rem] p-10 border theme-soft-shadow space-y-8 animate-fadeIn delay-100" style="border-color: var(--brand-glow);">
+            <div class="space-y-1">
+                <h3 class="text-lg font-black uppercase tracking-wider" style="color: var(--brand-text);">Distribusi Pengguna</h3>
+                <p class="text-[10px] font-bold text-gray-400 italic">Komposisi peran dalam sistem.</p>
+            </div>
+            <div class="relative h-64">
+                <canvas id="userDistChart"></canvas>
+            </div>
+        </div>
+
+        {{-- System Overview Chart --}}
+        <div class="lg:col-span-2 bg-white rounded-[3rem] p-10 border theme-soft-shadow space-y-8 animate-fadeIn delay-200" style="border-color: var(--brand-glow);">
+            <div class="flex items-center justify-between">
+                <div class="space-y-1">
+                    <h3 class="text-lg font-black uppercase tracking-wider" style="color: var(--brand-text);">Ikhtisar Sistem</h3>
+                    <p class="text-[10px] font-bold text-gray-400 italic">Volume data utama sistem digital.</p>
+                </div>
+                <div class="flex gap-2">
+                    <div class="flex items-center gap-2 px-3 py-1 bg-indigo-50 border border-indigo-100 rounded-full">
+                        <span class="w-2 h-2 rounded-full bg-indigo-600"></span>
+                        <span class="text-[9px] font-black uppercase text-indigo-600">Statistik Utama</span>
+                    </div>
+                </div>
+            </div>
+            <div class="relative h-64">
+                <canvas id="systemOverviewChart"></canvas>
+            </div>
+        </div>
+    </div>
         {{-- User & Academic Management --}}
         <div class="bg-white rounded-[3rem] p-10 border theme-soft-shadow space-y-7" style="border-color: var(--brand-glow);">
             <div class="space-y-1">
@@ -334,5 +369,74 @@ function switchTheme(theme) {
         }
     });
 }
+
+// ── Charts Implementation ────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. User Distribution Chart
+    const ctxDist = document.getElementById('userDistChart').getContext('2d');
+    new Chart(ctxDist, {
+        type: 'doughnut',
+        data: {
+            labels: ['Guru', 'Siswa', 'Superadmin'],
+            datasets: [{
+                data: [{{ $teacherCount }}, {{ $studentCount }}, {{ $superadminCount }}],
+                backgroundColor: ['#4f46e5', '#818cf8', '#3730a3'],
+                borderWidth: 0,
+                hoverOffset: 10
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '75%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true,
+                        font: { size: 10, weight: '900', family: 'Inter' }
+                    }
+                }
+            }
+        }
+    });
+
+    // 2. System Overview Chart (Bar)
+    const ctxOver = document.getElementById('systemOverviewChart').getContext('2d');
+    new Chart(ctxOver, {
+        type: 'bar',
+        data: {
+            labels: ['Pengguna', 'Guru', 'Siswa', 'Mapel', 'Bank Soal', 'Ujian'],
+            datasets: [{
+                label: 'Jumlah Data',
+                data: [{{ $totalUsers }}, {{ $teacherCount }}, {{ $studentCount }}, 0, 0, 0], // placeholders for mapel/soal/exams if not passed
+                backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                borderColor: '#4f46e5',
+                borderWidth: 2,
+                borderRadius: 8,
+                barThickness: 40
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { display: false },
+                    ticks: { font: { size: 9, weight: '700' } }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { font: { size: 9, weight: '700' } }
+                }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+});
 </script>
 @endsection

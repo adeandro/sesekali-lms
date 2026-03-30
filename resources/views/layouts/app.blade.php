@@ -15,6 +15,8 @@
     <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/intersect@3.x.x/dist/cdn.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* ---- Runtime Theme Injection (Database-driven / PHP-rendered) ---- */
         @php
@@ -48,6 +50,40 @@
             --sidebar-header:    linear-gradient(135deg, #4f46e5, #3730a3) !important;
         }
         @endif
+    </style>
+    </style>
+    <style>
+        .sticky-save-bar {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 50;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--brand-glow);
+            padding: 1rem 2rem;
+            border-radius: 2.5rem;
+            box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            animation: slideUp 0.5s ease-out;
+        }
+        
+        .animate-fadeIn { animation: fadeIn 0.8s ease-out; }
+        .delay-100 { animation-delay: 0.1s; }
+        .delay-200 { animation-delay: 0.2s; }
+        .delay-300 { animation-delay: 0.3s; }
+        
+        @keyframes slideUp {
+            from { transform: translate(-50%, 100px); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
     @stack('styles')
 
@@ -607,10 +643,13 @@
         <div class="flex flex-col flex-1 overflow-hidden">
             <!-- Top Navigation Bar -->
             <nav class="z-20 flex-shrink-0" style="background-color: var(--brand-surface); box-shadow: 0 1px 0 rgba(0,0,0,0.05), 0 2px 8px -2px var(--brand-glow);">
-                <div class="px-4 lg:px-8 py-4 flex  items-center justify-end gap-4">
-                    <button id="toggleSidebarBtn" class="lg:hidden text-gray-600 hover:text-gray-900 p-2 -ml-2 transition">
+                <div class="px-4 lg:px-8 py-4 flex items-center justify-between gap-4">
+                    {{-- Desktop & Mobile Sidebar Toggle --}}
+                    <button id="toggleSidebarBtn" class="text-gray-600 hover:text-gray-900 p-2 -ml-2 transition-all hover:bg-gray-100 rounded-xl">
                         <i class="fas fa-bars text-xl"></i>
                     </button>
+
+                    <div class="flex items-center gap-4">
                     <!-- <div class="hidden lg:block flex-1">
                         <h1 class="text-2xl font-bold text-gray-900">@yield('page-title', 'Dashboard')</h1>
                     </div> -->
@@ -766,43 +805,59 @@
     </div>
 
     <script>
-        // Sidebar Toggle
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('sidebarOverlay');
-        const toggleBtn = document.getElementById('toggleSidebarBtn');
-        const closeBtn = document.getElementById('closeSidebarBtn');
+        document.addEventListener('DOMContentLoaded', function() {
+            // Sidebar Elements
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            const toggleBtn = document.getElementById('toggleSidebarBtn');
+            const closeBtn = document.getElementById('closeSidebarBtn');
 
-        function toggleSidebar() {
-            sidebar.classList.toggle('sidebar-hidden');
-            overlay.classList.toggle('active');
-        }
-
-        toggleBtn?.addEventListener('click', toggleSidebar);
-        closeBtn?.addEventListener('click', toggleSidebar);
-        overlay?.addEventListener('click', toggleSidebar);
-
-        // Sidebar responsive handling
-        const handleResize = () => {
-            if (window.innerWidth >= 1024) {
-                sidebar.classList.remove('sidebar-hidden');
-                overlay.classList.remove('active');
-            } else {
-                sidebar.classList.add('sidebar-hidden');
-                overlay.classList.remove('active');
-            }
-        };
-        window.addEventListener('resize', handleResize);
-        handleResize(); // Initial call
-
-        // Global Loading Logic for Forms
-        document.querySelectorAll('form').forEach(form => {
-            form.addEventListener('submit', function() {
-                // Don't show for tiny forms or if it has a specific no-loading class
-                if (!this.classList.contains('no-loading')) {
-                    document.getElementById('loading-overlay').style.display = 'block';
+            // ── Sidebar Toggle Logic ─────────────────────────────────────────
+            function toggleSidebar() {
+                const isHidden = sidebar.classList.toggle('sidebar-hidden');
+                overlay.classList.toggle('active');
+                
+                // Save state for desktop persistence
+                if (window.innerWidth >= 1024) {
+                    localStorage.setItem('sidebar_collapsed', isHidden);
                 }
+            }
+
+            if (toggleBtn) toggleBtn.addEventListener('click', toggleSidebar);
+            if (closeBtn) closeBtn.addEventListener('click', toggleSidebar);
+            if (overlay) overlay.addEventListener('click', toggleSidebar);
+
+            // ── Responsive & Persistence Handling ────────────────────────────
+            const handleResize = () => {
+                const isDesktop = window.innerWidth >= 1024;
+                const wasCollapsed = localStorage.getItem('sidebar_collapsed') === 'true';
+
+                if (isDesktop) {
+                    overlay.classList.remove('active');
+                    if (wasCollapsed) {
+                        sidebar.classList.add('sidebar-hidden');
+                    } else {
+                        sidebar.classList.remove('sidebar-hidden');
+                    }
+                } else {
+                    // Mobile: Always hidden by default on resize/init
+                    sidebar.classList.add('sidebar-hidden');
+                    overlay.classList.remove('active');
+                }
+            };
+
+            window.addEventListener('resize', handleResize);
+            handleResize(); // Initial call
+
+            // ── Global Loading Logic ────────────────────────────────────────
+            document.querySelectorAll('form').forEach(form => {
+                form.addEventListener('submit', function() {
+                    if (!this.classList.contains('no-loading')) {
+                        const loadingElem = document.getElementById('loading-overlay');
+                        if (loadingElem) loadingElem.style.display = 'block';
+                    }
+                });
             });
-        });
 
         // Global Notifications using SweetAlert2
         @if(Session::has('success'))
@@ -918,10 +973,14 @@
             @endforeach
             @php Session::forget('celebrations') @endphp
         @endif
-        // Open Arena Join Modal if session has open_arena_modal OR there are validation errors on 'code'
-        @if(Session::has('open_arena_modal') || $errors->has('code'))
-            document.getElementById('arenaJoinModal').classList.remove('hidden');
-        @endif
+            // ── Student Arena Auto-Open (Safe Check) ────────────────────────
+            @if(Session::has('open_arena_modal') || $errors->has('code'))
+                const arenaModal = document.getElementById('arenaJoinModal');
+                if (arenaModal) {
+                    arenaModal.classList.remove('hidden');
+                }
+            @endif
+        });
     </script>
     <script src="{{ asset('js/delete-modal.js') }}"></script>
     <!-- Avatar Generator -->

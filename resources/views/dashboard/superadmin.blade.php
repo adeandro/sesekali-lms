@@ -9,7 +9,7 @@
     <div class="flex items-center justify-between">
         <div class="space-y-1">
             <p class="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400">📍 Dashboard — Superadmin</p>
-            <h2 class="text-2xl font-black tracking-tight" style="color: var(--brand-text);">
+            <h2 class="text-2xl font-black tracking-tight animate-fadeIn" style="color: var(--brand-text);">
                 Selamat {{ $greetingWord }}, <span style="color: var(--brand-primary);">{{ auth()->user()->full_name }}!</span> {{ $greetingEmoji }}
             </h2>
             <p class="text-sm font-bold text-gray-500">{{ $greetingMotif }}</p>
@@ -22,7 +22,7 @@
     {{-- Main Stats Grid --}}
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {{-- Total Pengguna --}}
-        <div class="bg-white rounded-xl border theme-soft-shadow theme-card-hover p-6" style="border-color: var(--brand-glow);">
+        <div class="bg-white rounded-xl border theme-soft-shadow theme-card-hover p-6 animate-fadeIn" style="border-color: var(--brand-glow);">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Total Pengguna</p>
@@ -38,7 +38,7 @@
         </div>
 
         {{-- Guru --}}
-        <div class="bg-white rounded-xl border theme-soft-shadow theme-card-hover p-6" style="border-color: var(--brand-glow);">
+        <div class="bg-white rounded-xl border theme-soft-shadow theme-card-hover p-6 animate-fadeIn delay-100" style="border-color: var(--brand-glow);">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Guru (Teachers)</p>
@@ -52,7 +52,7 @@
         </div>
 
         {{-- Siswa --}}
-        <div class="bg-white rounded-xl border theme-soft-shadow theme-card-hover p-6" style="border-color: var(--brand-glow);">
+        <div class="bg-white rounded-xl border theme-soft-shadow theme-card-hover p-6 animate-fadeIn delay-200" style="border-color: var(--brand-glow);">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Siswa (Students)</p>
@@ -66,7 +66,7 @@
         </div>
 
         {{-- Superadmin --}}
-        <div class="bg-white rounded-xl border theme-soft-shadow theme-card-hover p-6" style="border-color: var(--brand-glow);">
+        <div class="bg-white rounded-xl border theme-soft-shadow theme-card-hover p-6 animate-fadeIn delay-300" style="border-color: var(--brand-glow);">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Superadmin</p>
@@ -77,6 +77,29 @@
                 </div>
             </div>
             <div class="mt-4 text-xs text-gray-400">Administrator utama</div>
+        </div>
+    </div>
+
+    {{-- Charts Section --}}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fadeIn delay-500">
+        <div class="bg-white rounded-3xl p-8 border border-indigo-50 shadow-sm">
+            <div class="flex items-center justify-between mb-8">
+                <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Distribusi Akun Pengguna</h3>
+                <i class="fas fa-chart-pie text-indigo-200"></i>
+            </div>
+            <div class="relative h-[300px]">
+                <canvas id="userDistChartSuper"></canvas>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-3xl p-8 border border-indigo-50 shadow-sm">
+            <div class="flex items-center justify-between mb-8">
+                <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Statistik Sistem</h3>
+                <i class="fas fa-chart-bar text-indigo-200"></i>
+            </div>
+            <div class="relative h-[300px]">
+                <canvas id="systemStatsChartSuper"></canvas>
+            </div>
         </div>
     </div>
 
@@ -162,5 +185,80 @@
                 </ul>
             </div>
         </div>
+    </div>
+</div>
 
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // User Distribution Chart
+        const userCtx = document.getElementById('userDistChartSuper').getContext('2d');
+        new Chart(userCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Guru', 'Siswa', 'Superadmin'],
+                datasets: [{
+                    data: [{{ $teacherCount }}, {{ $studentCount }}, {{ $superadminCount }}],
+                    backgroundColor: ['#6366f1', '#10b981', '#f43f5e'],
+                    borderWidth: 0,
+                    hoverOffset: 20
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '75%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 30,
+                            font: { size: 11, weight: 'bold' }
+                        }
+                    }
+                }
+            }
+        });
+
+        // System Stats Chart
+        const sysCtx = document.getElementById('systemStatsChartSuper').getContext('2d');
+        new Chart(sysCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Ujian', 'Mata Pelajaran', 'Ruang Ujian'],
+                datasets: [{
+                    label: 'Total Data',
+                    data: [
+                        {{ $configs['total_exams'] ?? 0 }}, 
+                        {{ $configs['total_subjects'] ?? 0 }}, 
+                        {{ $configs['total_rooms'] ?? 0 }}
+                    ],
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                    borderColor: '#6366f1',
+                    borderWidth: 2,
+                    borderRadius: 12,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { display: false } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    });
+</script>
+
+<style>
+    .animate-fadeIn { animation: fadeIn 0.4s ease-out both; }
+    .delay-100 { animation-delay: 0.1s; }
+    .delay-200 { animation-delay: 0.2s; }
+    .delay-300 { animation-delay: 0.3s; }
+    .delay-500 { animation-delay: 0.5s; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
 @endsection
