@@ -443,12 +443,51 @@ class ManualGradeController extends Controller
     private function getAccessibleClasses()
     {
         $user = auth()->user();
-        if ($user->role === 'superadmin') {
+        if (in_array($user->role, ['superadmin', 'principal'])) {
             return ClassRoom::active()->orderBy('grade', 'asc')->orderBy('name', 'asc')->get();
         }
-        return ClassRoom::where('homeroom_teacher_id', '=', $user->id, 'and')
-            ->active()
-            ->orderBy('grade', 'asc')
+
+        // Get grades from subjects assigned to teacher
+        $subjects = $user->subjects;
+        $allowedGrades = [];
+        $teachAllGrades = false;
+
+        foreach ($subjects as $subject) {
+            if ($subject->active_grades === null) {
+                $teachAllGrades = true;
+                break;
+            }
+            $allowedGrades = array_merge($allowedGrades, (array) $subject->active_grades);
+        }
+
+        $query = ClassRoom::active();
+
+        if ($teachAllGrades) {
+            // No grade restriction
+        } else if (!empty($allowedGrades)) {
+            $allowedGrades = array_unique($allowedGrades);
+
+            // Normalize grades (X <-> 10, etc.)
+            $map = ['10' => 'X', '11' => 'XI', '12' => 'XII', 'X' => '10', 'XI' => '11', 'XII' => '12'];
+            $normalizedGrades = $allowedGrades;
+            foreach ($allowedGrades as $g) {
+                $upperG = strtoupper(trim($g));
+                if (isset($map[$upperG])) {
+                    $normalizedGrades[] = $map[$upperG];
+                }
+            }
+            $normalizedGrades = array_unique($normalizedGrades);
+
+            $query->where(function ($q) use ($user, $normalizedGrades) {
+                $q->whereIn('grade', $normalizedGrades)
+                    ->orWhere('homeroom_teacher_id', $user->id);
+            });
+        } else {
+            // Fallback: only homeroom class
+            $query->where('homeroom_teacher_id', $user->id);
+        }
+
+        return $query->orderBy('grade', 'asc')
             ->orderBy('name', 'asc')
             ->get();
     }
@@ -456,14 +495,43 @@ class ManualGradeController extends Controller
     private function authorizeClass(int $classId): void
     {
         $user = auth()->user();
-        if ($user->role === 'superadmin') return;
+        if (in_array($user->role, ['superadmin', 'principal'])) return;
 
-        $allowed = ClassRoom::active()
-            ->where('id', '=', $classId, 'and')
-            ->where('homeroom_teacher_id', '=', $user->id, 'and')
-            ->exists();
+        // Get grades from subjects assigned to teacher
+        $subjects = $user->subjects;
+        $allowedGrades = [];
+        $teachAllGrades = false;
 
-        if (!$allowed) {
+        foreach ($subjects as $subject) {
+            if ($subject->active_grades === null) {
+                $teachAllGrades = true;
+                break;
+            }
+            $allowedGrades = array_merge($allowedGrades, (array) $subject->active_grades);
+        }
+
+        $class = ClassRoom::active()->find($classId);
+        if (!$class) {
+            abort(404, 'Kelas tidak ditemukan atau tidak aktif.');
+        }
+
+        $isHomeroom = $class->homeroom_teacher_id === $user->id;
+        
+        // Normalize check for subject teacher
+        $isSubjectTeacherForGrade = $teachAllGrades;
+        if (!$isSubjectTeacherForGrade && !empty($allowedGrades)) {
+            $map = ['10' => 'X', '11' => 'XI', '12' => 'XII', 'X' => '10', 'XI' => '11', 'XII' => '12'];
+            $normalizedGrades = $allowedGrades;
+            foreach ($allowedGrades as $g) {
+                $upperG = strtoupper(trim($g));
+                if (isset($map[$upperG])) {
+                    $normalizedGrades[] = $map[$upperG];
+                }
+            }
+            $isSubjectTeacherForGrade = in_array($class->grade, $normalizedGrades);
+        }
+
+        if (!$isHomeroom && !$isSubjectTeacherForGrade) {
             abort(403, 'Anda tidak memiliki akses ke kelas ini.');
         }
     }
