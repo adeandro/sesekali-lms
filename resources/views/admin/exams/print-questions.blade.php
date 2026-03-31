@@ -257,7 +257,15 @@
                 {{ strtoupper($configs['school_name'] ?? 'SMK') }}
             </div>
             <div class="program">
-                Kompetensi Keahlian: {{ $configs['letterhead_program'] ?? '' }}
+                @php
+                    $programDisplay = $configs['letterhead_program']
+                        ?? $configs['kompetensi_keahlian']
+                        ?? $configs['program_studi']
+                        ?? '';
+                @endphp
+                @if($programDisplay)
+                    Kompetensi Keahlian: {{ $programDisplay }}
+                @endif
             </div>
             <div class="address">
                 {{ $configs['school_address'] ?? '' }}
@@ -349,7 +357,15 @@
             <span class="question-number">{{ $index + 1 }}.</span>
             <div class="question-body">
                 <div class="question-text">
-                    {!! $question->question_text !!}
+                    @php
+                        $qt = $question->question_text;
+                        $isHtml = preg_match('/^\s*<(p|div|h[1-6]|ul|ol|table|br|span|strong|em)/i', $qt);
+                    @endphp
+                    @if($isHtml)
+                        {!! $qt !!}
+                    @else
+                        {!! nl2br(htmlspecialchars($qt ?? '', ENT_QUOTES, 'UTF-8')) !!}
+                    @endif
                 </div>
                 @if($question->question_image)
                     <img src="{{ asset('storage/' . $question->question_image) }}"
@@ -367,7 +383,14 @@
                             <span class="option-label">{{ $opt }}.</span>
                             <div>
                                 @if($optText)
-                                    <span>{!! $optText !!}</span>
+                                    @php
+                                        $isOptHtml = preg_match('/^\s*<(p|div|span|strong|em)/i', $optText ?? '');
+                                    @endphp
+                                    @if($isOptHtml)
+                                        {!! $optText !!}
+                                    @else
+                                        {!! htmlspecialchars($optText ?? '', ENT_QUOTES, 'UTF-8') !!}
+                                    @endif
                                 @endif
                                 @if($optImage)
                                     <img src="{{ asset('storage/' . $optImage) }}"
@@ -397,7 +420,15 @@
             <span class="question-number">{{ $index + 1 }}.</span>
             <div class="question-body">
                 <div class="question-text">
-                    {!! $question->question_text !!}
+                    @php
+                        $qt = $question->question_text;
+                        $isHtml = preg_match('/^\s*<(p|div|h[1-6]|ul|ol|table|br|span|strong|em)/i', $qt);
+                    @endphp
+                    @if($isHtml)
+                        {!! $qt !!}
+                    @else
+                        {!! nl2br(htmlspecialchars($qt ?? '', ENT_QUOTES, 'UTF-8')) !!}
+                    @endif
                 </div>
                 @if($question->question_image)
                     <img src="{{ asset('storage/' . $question->question_image) }}"
