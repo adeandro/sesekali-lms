@@ -23,11 +23,19 @@
                     <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-relaxed">Perbarui parameter, jadwal, atau aturan pelaksanaan ujian</p>
                 </div>
             </div>
-            @if(!$exam->canEdit())
-                <span class="px-4 py-2 bg-rose-50 text-rose-600 text-[10px] font-black uppercase tracking-[0.2em] rounded-full border border-rose-100 flex items-center gap-2">
-                    <i class="fas fa-lock text-[8px]"></i> Terkunci
-                </span>
-            @endif
+            <div class="flex items-center gap-3">
+                <a href="{{ route('admin.exams.print-questions', $exam) }}"
+                   target="_blank"
+                   class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-all shadow-sm">
+                    <i class="fas fa-file-alt text-indigo-500"></i>
+                    Cetak Soal
+                </a>
+                @if(!$exam->canEdit())
+                    <span class="px-4 py-2 bg-rose-50 text-rose-600 text-[10px] font-black uppercase tracking-[0.2em] rounded-full border border-rose-100 flex items-center gap-2">
+                        <i class="fas fa-lock text-[8px]"></i> Terkunci
+                    </span>
+                @endif
+            </div>
         </div>
     </div>
 

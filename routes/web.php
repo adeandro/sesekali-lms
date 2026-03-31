@@ -264,6 +264,7 @@ Route::middleware('auth')->group(function () {
         Route::post('exams/{exam}/questions/detach-all', [ExamController::class, 'detachAllQuestions'])->name('exams.detach-all-questions');
 
         // Exam Card / Certificate Routes
+        Route::get('exams/{exam}/print-questions', [ExamController::class, 'printQuestions'])->name('exams.print-questions');
         Route::get('exams/{exam}/print-card', [ExamCardController::class, 'printCard'])->name('exams.print-card');
         Route::get('exams/{exam}/print-credentials', [ExamCardController::class, 'printStudentCredentials'])->name('exams.print-credentials');
         Route::get('exams/print-all-cards', [ExamCardController::class, 'printAllCards'])->name('exams.print-all-cards');
@@ -530,5 +531,32 @@ Route::middleware('auth')->group(function () {
         Route::delete('messages/{message}', [MessageController::class, 'deleteMessage'])->name('messages.delete');
         Route::delete('messages/{message}/thread', [MessageController::class, 'deleteThread'])->name('messages.delete-thread');
     });
+
+    // ── Self-Service Letters ─────────────────────────
+    // SPPD Guru (teacher & principal)
+    Route::middleware('role:teacher,principal')
+        ->group(function () {
+            Route::get('/self-service/sppd',
+                [\App\Http\Controllers\SelfServiceLetterController::class,
+                 'sppdForm'])
+                ->name('self-service.sppd.form');
+            Route::post('/self-service/sppd',
+                [\App\Http\Controllers\SelfServiceLetterController::class,
+                 'sppdGenerate'])
+                ->name('self-service.sppd.generate');
+        });
+
+    // Surat Keterangan Aktif Siswa
+    Route::middleware('role:student')
+        ->group(function () {
+            Route::get('/self-service/sk-aktif',
+                [\App\Http\Controllers\SelfServiceLetterController::class,
+                 'skForm'])
+                ->name('self-service.sk.form');
+            Route::post('/self-service/sk-aktif',
+                [\App\Http\Controllers\SelfServiceLetterController::class,
+                 'skGenerate'])
+                ->name('self-service.sk.generate');
+        });
 
 }); // end auth middleware group

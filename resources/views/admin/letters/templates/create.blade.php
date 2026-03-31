@@ -60,6 +60,22 @@
                 </div>
 
                 <div class="space-y-3">
+                    <label for="letter_type_id" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Jenis Surat</label>
+                    <div class="relative">
+                        <select id="letter_type_id" name="letter_type_id" class="block w-full px-6 py-4 bg-gray-50 border-none rounded-2xl focus:ring-4 focus:ring-indigo-500/10 text-sm font-bold appearance-none cursor-pointer @error('letter_type_id') ring-2 ring-rose-500 @enderror">
+                            <option value="">-- Pilih Jenis (Default: Surat Lain) --</option>
+                            @foreach($letterTypes as $type)
+                            <option value="{{ $type->id }}" {{ old('letter_type_id') == $type->id ? 'selected' : '' }}>
+                                {{ $type->name }} ({{ $type->code }})
+                            </option>
+                            @endforeach
+                        </select>
+                        <i class="fas fa-chevron-down absolute right-6 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none text-[10px]"></i>
+                    </div>
+                    @error('letter_type_id')<p class="text-rose-500 text-[10px] font-black mt-2 ml-1 uppercase italic tracking-tighter">{{ $message }}</p>@enderror
+                </div>
+
+                <div class="space-y-3">
                     <label for="category" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Kategori <span class="text-rose-500">*</span></label>
                     <div class="relative">
                         <select id="category" name="category" class="block w-full px-6 py-4 bg-gray-50 border-none rounded-2xl focus:ring-4 focus:ring-indigo-500/10 text-sm font-bold appearance-none cursor-pointer @error('category') ring-2 ring-rose-500 @enderror" required>

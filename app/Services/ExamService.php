@@ -149,7 +149,13 @@ class ExamService
         // 2. Match the exam's jenjang (grade level)
         // 3. Not already attached to this exam
         return Question::where('subject_id', $exam->subject_id)
-            ->where('jenjang', $exam->jenjang)
+            ->where(function($q) use ($exam) {
+                $q->whereNull('jenjang')
+                  ->orWhere('jenjang', $exam->jenjang)
+                  ->orWhere('jenjang', 'like', $exam->jenjang . ',%')
+                  ->orWhere('jenjang', 'like', '%,' . $exam->jenjang)
+                  ->orWhere('jenjang', 'like', '%,' . $exam->jenjang . ',%');
+            })
             ->whereNotIn('id', $exam->questions()->pluck('questions.id')->toArray())
             ->paginate($perPage);
     }

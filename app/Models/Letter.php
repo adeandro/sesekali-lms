@@ -12,7 +12,7 @@ class Letter extends Model
     use HasFactory;
 
     protected $fillable = [
-        'template_id', 'letter_number', 'sequence_number',
+        'template_id', 'letter_type_id', 'format_type', 'letter_number', 'sequence_number',
         'year', 'recipient_type', 'recipient_id', 
         'recipient_name', 'body_rendered', 'created_by', 'issued_date'
     ];
@@ -24,6 +24,11 @@ class Letter extends Model
     public function template(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(LetterTemplate::class, 'template_id');
+    }
+
+    public function letterType(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(LetterType::class, 'letter_type_id');
     }
 
     public function recipient(): \Illuminate\Database\Eloquent\Relations\BelongsTo

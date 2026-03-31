@@ -132,9 +132,24 @@
                                 </td>
                                 <td class="px-6 py-6">
                                     <div class="flex flex-wrap justify-center gap-2">
-                                        <span class="px-3 py-1 bg-gray-50 text-gray-500 text-[9px] font-black uppercase tracking-widest rounded-full border border-gray-100">
-                                            KLS {{ $question->jenjang ?? '?' }}
-                                        </span>
+                                        @php
+                                            $jenjangList = $question->jenjang
+                                                ? explode(',', $question->jenjang)
+                                                : [];
+                                        @endphp
+                                        @if(empty($jenjangList))
+                                            <span class="text-[10px] font-black px-2 py-1 bg-gray-100 text-gray-400 rounded-lg">
+                                                Semua
+                                            </span>
+                                        @else
+                                            <div class="flex gap-1 flex-wrap justify-center">
+                                                @foreach($jenjangList as $j)
+                                                    <span class="text-[10px] font-black px-2 py-1 bg-indigo-100 text-indigo-700 rounded-lg">
+                                                        KLS {{ $j }}
+                                                    </span>
+                                                @endforeach
+                                            </div>
+                                        @endif
                                         <span class="px-3 py-1 {{ $question->question_type === 'multiple_choice' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-purple-50 text-purple-600 border-purple-100' }} text-[9px] font-black uppercase tracking-widest rounded-full border">
                                             {{ $question->question_type === 'multiple_choice' ? 'PG' : 'ESAI' }}
                                         </span>

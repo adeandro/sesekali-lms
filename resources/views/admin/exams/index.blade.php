@@ -186,6 +186,9 @@
                                     <a href="{{ route('admin.exams.edit', $exam) }}" class="w-10 h-10 flex items-center justify-center bg-amber-50 text-amber-600 rounded-xl hover:bg-amber-500 hover:text-white transition-all shadow-sm" title="Edit Ujian">
                                         <i class="fas fa-edit text-xs"></i>
                                     </a>
+                                    <a href="{{ route('admin.exams.print-questions', $exam) }}" target="_blank" class="w-10 h-10 flex items-center justify-center bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-500 hover:text-white transition-all shadow-sm" title="Cetak Soal">
+                                        <i class="fas fa-file-alt text-xs"></i>
+                                    </a>
                                     <a href="{{ route('admin.exams.print-credentials', $exam) }}" target="_blank" class="w-10 h-10 flex items-center justify-center bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-500 hover:text-white transition-all shadow-sm" title="Cetak Kartu">
                                         <i class="fas fa-print text-xs"></i>
                                     </a>

@@ -16,33 +16,53 @@ class LetterController extends Controller
 {
     // ── Helpers ──────────────────────────────────────────────────
 
-    private function generateLetterNumber(): array
-    {
-        $year = (int) date('Y');
+    private function generateLetterNumber(
+        ?string $letterTypeCode = null,
+        string $formatType = 'simple'
+    ): array {
+        $year  = (int) date('Y');
         $month = (int) date('m');
 
-        // Ambil sequence terakhir di tahun ini
-        $lastSequence = Letter::where('year', '=', $year)
+        // Sequence global per tahun (semua jenis digabung)
+        $lastInDb = Letter::where('year', '=', $year)
             ->max('sequence_number') ?? 0;
-        
-        $sequence = $lastSequence + 1;
 
-        // Konversi bulan ke Romawi
+        // Nomor awal yang dikonfigurasi admin (setting per tahun)
+        $sequenceStart = (int) Setting::get(
+            'letter_sequence_start_' . $year, 0
+        );
+
+        $lastSequence = max($lastInDb, $sequenceStart);
+        $sequence     = $lastSequence + 1;
+
         $romanMonths = [
-            1=>'I', 2=>'II', 3=>'III', 4=>'IV', 5=>'V', 6=>'VI',
-            7=>'VII', 8=>'VIII', 9=>'IX', 10=>'X', 11=>'XI', 12=>'XII'
+            1=>'I',   2=>'II',  3=>'III', 4=>'IV',
+            5=>'V',   6=>'VI',  7=>'VII', 8=>'VIII',
+            9=>'IX', 10=>'X',  11=>'XI', 12=>'XII',
         ];
 
-        $letterCode = Setting::get('letter_code', 'SMK');
-        $romanMonth = $romanMonths[$month];
+        $letterCode  = Setting::get('letter_code', 'SMK');
+        $romanMonth  = $romanMonths[$month];
+        $typeCode    = $letterTypeCode ?? 'L'; // fallback ke Surat Lain
 
-        $letterNumber = sprintf('%03d', $sequence) 
-            . '/' . $letterCode 
-            . '/' . $romanMonth 
-            . '/' . $year;
+        // Format: simple   → 003/SEd/002/I/2021
+        // Format: with_institution → 003/SEd.SMK.A/002/I/2021
+        if ($formatType === 'with_institution') {
+            $numberStr = sprintf('%03d', $sequence)
+                . '/' . $typeCode . '.' . $letterCode . '.A'
+                . '/' . sprintf('%03d', $sequence)
+                . '/' . $romanMonth
+                . '/' . $year;
+        } else {
+            $numberStr = sprintf('%03d', $sequence)
+                . '/' . $typeCode
+                . '/' . sprintf('%03d', $sequence)
+                . '/' . $romanMonth
+                . '/' . $year;
+        }
 
         return [
-            'letter_number'   => $letterNumber,
+            'letter_number'   => $numberStr,
             'sequence_number' => $sequence,
             'year'            => $year,
         ];
@@ -231,13 +251,15 @@ class LetterController extends Controller
             array_filter(array_merge($matches[1] ?? [], $matches[2] ?? []))
         );
 
+        $formatType = $request->input('format_type', 'simple');
+
         // Jika masih ada placeholder yang belum ter-replace,
         // kembalikan ke form dengan daftar field yang perlu diisi
         if (!empty($unreplacedPlaceholders) && !$request->has('custom_fields')) {
             $configs = Setting::pluck('value', 'key')->toArray();
             $principal = User::where('role', '=', 'principal')->first();
             return view('admin.letters.generate.custom-fields', compact(
-                'template', 'recipient', 'unreplacedPlaceholders', 'configs', 'principal'
+                'template', 'recipient', 'unreplacedPlaceholders', 'configs', 'principal', 'formatType'
             ));
         }
 
@@ -273,7 +295,7 @@ class LetterController extends Controller
 
         return view('admin.letters.generate.preview', compact(
             'template', 'recipient', 'bodyRendered', 
-            'configs', 'principal', 'data', 'customFields'
+            'configs', 'principal', 'data', 'customFields', 'formatType'
         ));
     }
 
@@ -294,7 +316,9 @@ class LetterController extends Controller
         }
 
         // Generate nomor surat asli
-        $numberData = $this->generateLetterNumber();
+        $letterTypeCode = $template->letterType?->code;
+        $formatType     = $request->input('format_type', 'simple');
+        $numberData     = $this->generateLetterNumber($letterTypeCode, $formatType);
 
         // Build data placeholder
         $data = $template->category === 'guru'
@@ -330,6 +354,8 @@ class LetterController extends Controller
         // Simpan ke tabel letters
         $letter = Letter::create([
             'template_id'     => $template->id,
+            'letter_type_id'  => $template->letter_type_id,
+            'format_type'     => $formatType,
             'letter_number'   => $numberData['letter_number'],
             'sequence_number' => $numberData['sequence_number'],
             'year'            => $numberData['year'],
@@ -476,6 +502,7 @@ class LetterController extends Controller
             ->with('bulk_data', [
                 'recipient_ids' => $request->recipient_ids,
                 'custom_fields' => $request->custom_fields ?? [],
+                'format_type'   => $request->input('format_type', 'simple'),
             ]);
     }
 
@@ -488,12 +515,13 @@ class LetterController extends Controller
         $bulkData     = session('bulk_data', []);
         $recipientIds = $request->recipient_ids ?? $bulkData['recipient_ids'] ?? [];
         $customFields = $request->custom_fields ?? $bulkData['custom_fields'] ?? [];
+        $formatType   = $request->format_type ?? $bulkData['format_type'] ?? 'simple';
         
         $totalCount    = count($recipientIds);
         $batchId       = str_replace('.', '_', uniqid('batch_', true));
 
         return view('admin.letters.generate.bulk-progress', compact(
-            'template', 'recipientIds', 'customFields', 
+            'template', 'recipientIds', 'customFields', 'formatType',
             'totalCount', 'batchId'
         ));
     }
@@ -508,6 +536,7 @@ class LetterController extends Controller
             'recipient_ids.*' => 'exists:users,id',
             'custom_fields'   => 'nullable|array',
             'batch_id'        => 'required|string',
+            'format_type'     => 'nullable|string',
         ]);
 
         set_time_limit(600);
@@ -516,6 +545,7 @@ class LetterController extends Controller
         $configs    = Setting::pluck('value', 'key')->toArray();
         $principal  = User::where('role', '=', 'principal')->first();
         $batchId    = $request->batch_id;
+        $formatType = $request->input('format_type', 'simple');
 
         // Direktori temp per batch
         $tmpDir = storage_path('app/temp/letters/' . $batchId);
@@ -551,7 +581,8 @@ class LetterController extends Controller
         }
 
         foreach ($recipients as $recipient) {
-            $numberData = $this->generateLetterNumber();
+            $letterTypeCode = $template->letterType?->code;
+            $numberData = $this->generateLetterNumber($letterTypeCode, $formatType);
             $data = $template->category === 'guru'
                 ? $this->buildTeacherData($recipient)
                 : $this->buildStudentData($recipient);
@@ -567,6 +598,8 @@ class LetterController extends Controller
             // Simpan Record History
             $letter = Letter::create([
                 'template_id'     => $template->id,
+                'letter_type_id'  => $template->letter_type_id,
+                'format_type'     => $formatType,
                 'letter_number'   => $numberData['letter_number'],
                 'sequence_number' => $numberData['sequence_number'],
                 'year'            => $numberData['year'],

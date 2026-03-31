@@ -62,6 +62,7 @@ class SettingController extends Controller
             'report_decimal', 'letter_code',
             'letterhead_foundation', 'letterhead_program', 'letterhead_email',
             'letterhead_website', 'letterhead_border_style',
+            'letter_sequence_start_' . date('Y'),
         ];
 
         foreach ($settingsToUpdate as $key) {

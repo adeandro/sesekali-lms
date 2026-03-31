@@ -48,7 +48,7 @@ class QuestionImport implements ToCollection, WithHeadingRow
 
                 $data = [
                     'subject_id' => $subject->id,
-                    'jenjang' => $row['jenjang'] ?? null,
+                    'jenjang' => $this->normalizeJenjang($row['jenjang'] ?? null),
                     'topic' => $row['topic'] ?? null,
                     'difficulty_level' => $row['difficulty'] ?? null,
                     'question_type' => $row['question_type'] ?? null,
@@ -177,5 +177,30 @@ class QuestionImport implements ToCollection, WithHeadingRow
         }
 
         return false;
+    }
+
+    private function normalizeJenjang(?string $raw): ?string
+    {
+        if (empty($raw)) {
+            return null; // null = semua jenjang
+        }
+
+        // Parse nilai yang diinput: bisa "10", "10,11", "10,11,12"
+        // Juga handle spasi: "10, 11, 12"
+        $parts = array_map(
+            'trim',
+            explode(',', (string) $raw)
+        );
+
+        // Filter hanya nilai valid (10, 11, 12)
+        $valid = array_filter($parts, fn($v) => in_array($v, ['10','11','12']));
+
+        if (empty($valid)) {
+            return null;
+        }
+
+        // Sort dan simpan sebagai comma-separated
+        sort($valid);
+        return implode(',', array_unique($valid));
     }
 }

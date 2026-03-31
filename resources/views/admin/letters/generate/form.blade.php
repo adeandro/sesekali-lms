@@ -31,7 +31,44 @@
     <form action="{{ route('admin.letters.preview', $template) }}" method="POST" id="generateForm" class="space-y-8">
         @csrf
         
-        <div class="bg-white rounded-[3rem] shadow-sm border border-gray-100 p-8 md:p-12 space-y-10">
+        <div class="bg-white rounded-[3rem] shadow-sm border border-gray-100 p-8 md:p-12 space-y-10" x-data="{ format: 'simple' }">
+            
+            <!-- Format Surat -->
+            <div class="space-y-4">
+                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                    Format Nomor Surat
+                </label>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <label class="relative flex flex-col p-5 rounded-2xl border-2 transition-all cursor-pointer group"
+                           :class="format == 'simple' ? 'bg-indigo-50 border-indigo-600' : 'bg-gray-50 border-transparent hover:bg-gray-100'">
+                        <input type="radio" name="format_type" value="simple" class="hidden" x-model="format">
+                        <div class="flex items-center gap-3">
+                            <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all shrink-0"
+                                 :class="format == 'simple' ? 'border-indigo-600 bg-indigo-600' : 'border-gray-300 bg-white'">
+                                <i class="fas fa-check text-[10px] text-white" x-show="format == 'simple'"></i>
+                            </div>
+                            <span class="text-sm font-bold" :class="format == 'simple' ? 'text-indigo-900' : 'text-gray-900'">Simple Format / Standar</span>
+                        </div>
+                        <p class="text-[10px] font-bold text-gray-500 mt-2 pl-8">Format sederhana, cocok untuk penggunaan internal sekolah (Contoh: 003/SEd/002/I/2021).</p>
+                    </label>
+                    
+                    <label class="relative flex flex-col p-5 rounded-2xl border-2 transition-all cursor-pointer group"
+                           :class="format == 'with_institution' ? 'bg-indigo-50 border-indigo-600' : 'bg-gray-50 border-transparent hover:bg-gray-100'">
+                        <input type="radio" name="format_type" value="with_institution" class="hidden" x-model="format">
+                        <div class="flex items-center gap-3">
+                            <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all shrink-0"
+                                 :class="format == 'with_institution' ? 'border-indigo-600 bg-indigo-600' : 'border-gray-300 bg-white'">
+                                <i class="fas fa-check text-[10px] text-white" x-show="format == 'with_institution'"></i>
+                            </div>
+                            <span class="text-sm font-bold" :class="format == 'with_institution' ? 'text-indigo-900' : 'text-gray-900'">With Institution / Resmi</span>
+                        </div>
+                        <p class="text-[10px] font-bold text-gray-500 mt-2 pl-8">Menyertakan kode identitas instansi sekolah (Contoh: 003/SEd.SMK.A/002/I/2021).</p>
+                    </label>
+                </div>
+            </div>
+
+            <hr class="border-gray-100 border-dashed border-2">
+
             <!-- Search & Filter -->
             <div class="relative">
                 <input type="text" 

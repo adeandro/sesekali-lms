@@ -176,6 +176,27 @@
                         <p class="text-xs font-bold text-gray-600">Track Kecurangan & Fokus.</p>
                     </div>
                 </a>
+                <a href="{{ route('self-service.sppd.form') }}"
+                   class="group p-6 rounded-[2rem] border
+                          transition-all hover:shadow-xl text-left
+                          space-y-4 bg-blue-50/40
+                          border-blue-100 hover:border-blue-200">
+                  <div class="w-12 h-12 bg-blue-100 text-blue-600
+                              rounded-2xl flex items-center
+                              justify-center group-hover:scale-110
+                              transition-transform">
+                    <i class="fas fa-route"></i>
+                  </div>
+                  <div>
+                    <p class="text-[10px] font-black text-blue-600
+                               uppercase tracking-widest mb-1">
+                      Cetak SPPD
+                    </p>
+                    <p class="text-xs font-bold text-gray-600">
+                      Surat Perjalanan Dinas Mandiri
+                    </p>
+                  </div>
+                </a>
             </div>
         </div>
     </div>

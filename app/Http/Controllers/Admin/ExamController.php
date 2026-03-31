@@ -290,7 +290,13 @@ class ExamController extends Controller
 
             // Get available questions (not yet attached) using random order
             $availableQuestions = Question::where('subject_id', $exam->subject_id)
-                ->where('jenjang', $exam->jenjang)
+                ->where(function($q) use ($exam) {
+                    $q->whereNull('jenjang')
+                      ->orWhere('jenjang', $exam->jenjang)
+                      ->orWhere('jenjang', 'like', $exam->jenjang . ',%')
+                      ->orWhere('jenjang', 'like', '%,' . $exam->jenjang)
+                      ->orWhere('jenjang', 'like', '%,' . $exam->jenjang . ',%');
+                })
                 ->whereNotIn('questions.id', $exam->questions()->select('questions.id')->pluck('questions.id'))
                 ->inRandomOrder()
                 ->limit($questionsNeeded)
@@ -512,5 +518,44 @@ class ExamController extends Controller
                 'message' => 'Gagal memperbarui token: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    public function printQuestions(Exam $exam)
+    {
+        // Ambil soal urut berdasarkan pivot (urutan asli, tidak acak)
+        $questions = $exam->questions()
+            ->orderBy('exam_question.id', 'asc')
+            ->get();
+
+        // Pisahkan soal PG dan Essay
+        $pgQuestions    = $questions->where('question_type', 'multiple_choice')
+                                    ->values();
+        $essayQuestions = $questions->where('question_type', 'essay')
+                                    ->values();
+
+        // Ambil configs untuk kop sekolah
+        $configs = \App\Models\Setting::pluck('value', 'key')->toArray();
+
+        // Data ujian untuk header
+        $subject     = $exam->subject;
+        $teacherName = 'Guru Mata Pelajaran';
+
+        // Ambil guru yang role-nya teacher/principal saja
+        // (exclude superadmin dan admin)
+        $teacher = $subject->teachers
+            ->whereIn('role', ['teacher', 'principal'])
+            ->first();
+
+        if ($teacher) {
+            $teacherName = $teacher->full_name;
+        } elseif ($exam->creator &&
+                  in_array($exam->creator->role, ['teacher','principal'])) {
+            $teacherName = $exam->creator->full_name;
+        }
+
+        return view('admin.exams.print-questions', compact(
+            'exam', 'pgQuestions', 'essayQuestions',
+            'configs', 'subject', 'teacherName'
+        ));
     }
 }

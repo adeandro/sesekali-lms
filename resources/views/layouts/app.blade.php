@@ -345,6 +345,10 @@
                            class="nav-item py-2 text-sm {{ request()->routeIs('admin.manual-grades.*') ? 'menu-item-active' : '' }}">
                             <i class="fas fa-pen-to-square w-4 mr-2"></i><span>Input Nilai</span>
                         </a>
+                        <a href="{{ route('self-service.sppd.form') }}" 
+                           class="nav-item py-2 text-sm {{ request()->routeIs('self-service.sppd.*') ? 'menu-item-active' : '' }}">
+                            <i class="fas fa-route w-4 mr-2 text-blue-500"></i><span>Cetak SPPD</span>
+                        </a>
                     </div>
                 </div>
                 @endif
@@ -483,7 +487,7 @@
                 <div class="pt-1">
                     <button @click="activeAccordion = (activeAccordion === 'student_akademik' ? null : 'student_akademik')" 
                             class="w-full nav-item justify-between 
-                                   {{ (request()->routeIs('student.exams.*') || request()->routeIs('student.results*') || request()->routeIs('student.coupons.*')) ? 'bg-gray-50' : '' }}">
+                                   {{ (request()->routeIs('student.exams.*') || request()->routeIs('student.results*')) ? 'bg-gray-50' : '' }}">
                         <div class="flex items-center">
                             <i class="fas fa-user-graduate w-5 text-lg mr-3"></i>
                             <span class="font-bold text-[11px] uppercase tracking-widest">Akademik</span>
@@ -501,9 +505,9 @@
                            class="nav-item py-2 text-sm {{ request()->routeIs('student.results*') ? 'menu-item-active' : '' }}">
                             <i class="fas fa-chart-line w-4 mr-2"></i><span>Hasil Saya</span>
                         </a>
-                        <a href="{{ route('student.coupons.index') }}" 
-                           class="nav-item py-2 text-sm {{ request()->routeIs('student.coupons.*') ? 'menu-item-active' : '' }}">
-                            <i class="fas fa-ticket-alt w-4 mr-2"></i><span>Kupon Fisik</span>
+                        <a href="{{ route('self-service.sk.form') }}" 
+                           class="nav-item py-2 text-sm {{ request()->routeIs('self-service.sk.*') ? 'menu-item-active' : '' }}">
+                            <i class="fas fa-file-signature w-4 mr-2 text-emerald-500"></i><span>Surat Aktif</span>
                         </a>
                     </div>
                 </div>
@@ -511,7 +515,7 @@
                 <div class="pt-2">
                     <button @click="activeAccordion = (activeAccordion === 'student_gamifikasi' ? null : 'student_gamifikasi')" 
                             class="w-full nav-item justify-between 
-                                   {{ (request()->routeIs('student.leaderboard') || request()->routeIs('student.arena.*')) ? 'bg-gray-50' : '' }}">
+                                   {{ (request()->routeIs('student.leaderboard') || request()->routeIs('student.arena.*') || request()->routeIs('student.coupons.*')) ? 'bg-gray-50' : '' }}">
                         <div class="flex items-center">
                             <i class="fas fa-gamepad w-5 text-lg mr-3"></i>
                             <span class="font-bold text-[11px] uppercase tracking-widest">Gamifikasi</span>
@@ -531,6 +535,10 @@
                             <i class="fas fa-fist-raised w-4 mr-2"></i>
                             <span class="flex-1">Battle Arena</span>
                             <span class="ml-auto text-[9px] font-black bg-red-500 text-white px-1.5 py-0.5 rounded-full uppercase tracking-widest">LIVE</span>
+                        </a>
+                        <a href="{{ route('student.coupons.index') }}" 
+                           class="nav-item py-2 text-sm {{ request()->routeIs('student.coupons.*') ? 'menu-item-active' : '' }}">
+                            <i class="fas fa-ticket-alt w-4 mr-2"></i><span>Kupon Fisik</span>
                         </a>
                     </div>
                 </div>
@@ -954,7 +962,7 @@
             @php Session::forget('celebrations') @endphp
         @endif
             // ── Student Arena Auto-Open (Safe Check) ────────────────────────
-            @if(Session::has('open_arena_modal') || $errors->has('code'))
+            @if(Session::has('open_arena_modal') || (isset($errors) && !is_array($errors) && $errors->has('code')))
                 const arenaModal = document.getElementById('arenaJoinModal');
                 if (arenaModal) {
                     arenaModal.classList.remove('hidden');
@@ -993,7 +1001,7 @@
                                value="{{ old('code') }}"
                                autocomplete="off" autocapitalize="characters"
                                oninput="this.value = this.value.toUpperCase()"
-                               class="w-full text-center text-2xl font-black tracking-[0.4em] uppercase bg-white/5 border {{ $errors->has('code') ? 'border-red-500/50 ring-2 ring-red-500/20' : 'border-white/10' }} text-white rounded-2xl py-4 px-4 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition placeholder:text-gray-600"
+                               class="w-full text-center text-2xl font-black tracking-[0.4em] uppercase bg-white/5 border {{ (isset($errors) && !is_array($errors) && $errors->has('code')) ? 'border-red-500/50 ring-2 ring-red-500/20' : 'border-white/10' }} text-white rounded-2xl py-4 px-4 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition placeholder:text-gray-600"
                                required>
                         <div id="arenaErrorContainer">
                             @error('code')

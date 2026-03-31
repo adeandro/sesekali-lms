@@ -11,7 +11,8 @@ class LetterTemplateController extends Controller
     // List semua template
     public function index()
     {
-        $templates = LetterTemplate::orderBy('sort_order')
+        $templates = LetterTemplate::with('letterType')
+            ->orderBy('sort_order')
             ->orderBy('category')
             ->get()
             ->groupBy('category');
@@ -25,24 +26,27 @@ class LetterTemplateController extends Controller
     // Form create template baru
     public function create()
     {
-        return view('admin.letters.templates.create');
+        $letterTypes = \App\Models\LetterType::orderBy('sort_order')->get();
+        return view('admin.letters.templates.create', compact('letterTypes'));
     }
 
     // Simpan template baru
     public function store(Request $request)
     {
         $request->validate([
-            'name'     => 'required|string|max:255',
-            'code'     => 'required|string|max:20|unique:letter_templates',
-            'category' => 'required|in:siswa,guru,custom',
-            'body'     => 'required|string',
+            'name'           => 'required|string|max:255',
+            'code'           => 'required|string|max:20|unique:letter_templates',
+            'letter_type_id' => 'nullable|exists:letter_types,id',
+            'category'       => 'required|in:siswa,guru,custom',
+            'body'           => 'required|string',
         ]);
 
         LetterTemplate::create([
-            'name'       => $request->name,
-            'code'       => strtoupper($request->code),
-            'category'   => $request->category,
-            'body'       => $request->body,
+            'name'           => $request->name,
+            'code'           => strtoupper($request->code),
+            'letter_type_id' => $request->letter_type_id,
+            'category'       => $request->category,
+            'body'           => $request->body,
             'is_active'  => true,
             'sort_order' => LetterTemplate::max('sort_order') + 1,
         ]);
@@ -54,25 +58,28 @@ class LetterTemplateController extends Controller
     // Form edit template
     public function edit(LetterTemplate $template)
     {
+        $letterTypes = \App\Models\LetterType::orderBy('sort_order')->get();
         return view('admin.letters.templates.edit', 
-            compact('template'));
+            compact('template', 'letterTypes'));
     }
 
     // Update template
     public function update(Request $request, LetterTemplate $template)
     {
         $request->validate([
-            'name'     => 'required|string|max:255',
-            'code'     => 'required|string|max:20|unique:letter_templates,code,' . $template->id,
-            'category' => 'required|in:siswa,guru,custom',
-            'body'     => 'required|string',
+            'name'           => 'required|string|max:255',
+            'code'           => 'required|string|max:20|unique:letter_templates,code,' . $template->id,
+            'letter_type_id' => 'nullable|exists:letter_types,id',
+            'category'       => 'required|in:siswa,guru,custom',
+            'body'           => 'required|string',
         ]);
 
         $template->update([
-            'name'     => $request->name,
-            'code'     => strtoupper($request->code),
-            'category' => $request->category,
-            'body'     => $request->body,
+            'name'           => $request->name,
+            'code'           => strtoupper($request->code),
+            'letter_type_id' => $request->letter_type_id,
+            'category'       => $request->category,
+            'body'           => $request->body,
         ]);
 
         return redirect()->route('admin.letters.templates.index')

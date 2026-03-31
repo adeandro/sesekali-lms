@@ -188,10 +188,16 @@ class QuestionService
             $errors['subject'] = 'Subject not found';
         }
 
-        // Check jenjang
-        if (!in_array($data['jenjang'] ?? null, ['10', '11', '12'])) {
-            $errors['jenjang'] = 'Invalid grade level';
+        // Check jenjang (supports comma-separated: "10", "10,11", "10,11,12", or null = all)
+        $jenjangRaw = $data['jenjang'] ?? null;
+        if (!empty($jenjangRaw)) {
+            $parts = array_map('trim', explode(',', (string) $jenjangRaw));
+            $invalid = array_filter($parts, fn($v) => !in_array($v, ['10', '11', '12']));
+            if (!empty($invalid)) {
+                $errors['jenjang'] = 'Invalid grade level';
+            }
         }
+        // null/kosong = semua jenjang, tidak perlu validasi
 
         // Check difficulty level
         if (!in_array($data['difficulty_level'] ?? null, ['easy', 'medium', 'hard'])) {

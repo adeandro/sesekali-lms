@@ -67,18 +67,30 @@
                     @error('subject_id')<p class="text-rose-500 text-[10px] font-black mt-2 ml-1 uppercase italic tracking-tighter">{{ $message }}</p>@enderror
                 </div>
 
-                <div class="space-y-3">
-                    <label for="jenjang" class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Kelas <span class="text-rose-500">*</span></label>
-                    <div class="relative">
-                        <select id="jenjang" name="jenjang" class="block w-full px-6 py-4 bg-gray-50 border-none rounded-2xl focus:ring-4 focus:ring-indigo-500/10 text-sm font-bold appearance-none cursor-pointer @error('jenjang') ring-2 ring-rose-500 @enderror" required>
-                            <option value="">Pilih Kelas</option>
-                            <option value="10" {{ old('jenjang', $question->jenjang) == '10' ? 'selected' : '' }}>Kelas 10</option>
-                            <option value="11" {{ old('jenjang', $question->jenjang) == '11' ? 'selected' : '' }}>Kelas 11</option>
-                            <option value="12" {{ old('jenjang', $question->jenjang) == '12' ? 'selected' : '' }}>Kelas 12</option>
-                        </select>
-                        <i class="fas fa-chevron-down absolute right-6 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none text-[10px]"></i>
+                <div class="space-y-3 md:col-span-2">
+                    @php
+                        $selectedJenjang = old('jenjang',
+                            $question->jenjang
+                                ? explode(',', $question->jenjang)
+                                : []
+                        );
+                    @endphp
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-2">Kelas <span class="text-rose-500">*</span></label>
+                    <div class="flex gap-3 flex-wrap px-2">
+                        @foreach(['10' => 'Kelas 10', '11' => 'Kelas 11', '12' => 'Kelas 12'] as $val => $label)
+                        <label class="flex items-center gap-2 cursor-pointer bg-gray-50 rounded-2xl px-4 py-3 border-2 transition-all has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50 border-transparent">
+                            <input type="checkbox"
+                                   name="jenjang[]"
+                                   value="{{ $val }}"
+                                   {{ in_array($val, $selectedJenjang) ? 'checked' : '' }}
+                                   class="w-4 h-4 rounded accent-indigo-600">
+                            <span class="text-sm font-bold text-gray-700">{{ $label }}</span>
+                        </label>
+                        @endforeach
                     </div>
-                    @error('jenjang')<p class="text-rose-500 text-[10px] font-black mt-2 ml-1 uppercase italic tracking-tighter">{{ $message }}</p>@enderror
+                    @error('jenjang')
+                        <p class="text-rose-500 text-[10px] font-black mt-2 ml-1 uppercase italic tracking-tighter">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 <div class="space-y-3">

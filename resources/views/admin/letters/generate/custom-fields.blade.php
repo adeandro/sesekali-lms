@@ -54,6 +54,7 @@
         <form action="{{ route('admin.letters.preview', $template) }}" method="POST" class="p-8">
             @csrf
             <input type="hidden" name="recipient_id" value="{{ $recipient->id }}">
+            <input type="hidden" name="format_type" value="{{ $formatType ?? 'simple' }}">
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 @foreach($unreplacedPlaceholders as $placeholder)

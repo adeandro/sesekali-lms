@@ -76,6 +76,22 @@
                                 <span class="px-3 py-1.5 bg-indigo-50 text-indigo-600 text-[9px] font-black uppercase tracking-tighter rounded-lg border border-indigo-100/50">{{ $col }}</span>
                             @endforeach
                         </div>
+
+                        <div class="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 mt-3 text-xs text-blue-700">
+                            <p class="font-black mb-1">Format kolom <code>jenjang</code>:</p>
+                            <ul class="space-y-0.5 list-disc list-inside">
+                                <li><code>10</code> — hanya kelas X</li>
+                                <li><code>11</code> — hanya kelas XI</li>
+                                <li><code>12</code> — hanya kelas XII</li>
+                                <li><code>10,11</code> — kelas X dan XI</li>
+                                <li><code>10,12</code> — kelas X dan XII</li>
+                                <li><code>10,11,12</code> — semua jenjang</li>
+                                <li>(kosong) — berlaku untuk semua jenjang</li>
+                            </ul>
+                            <p class="mt-2 text-blue-500 italic">
+                                Pastikan kolom jenjang diformat sebagai <strong>Text</strong> di Excel sebelum mengisi, agar nilai seperti "10,11,12" tidak berubah.
+                            </p>
+                        </div>
                     </div>
 
                     <div class="space-y-4 pt-4 border-t border-gray-50">

@@ -33,6 +33,7 @@
                 <form action="{{ route('admin.letters.generate', $template) }}" method="POST" class="no-loading">
                     @csrf
                     <input type="hidden" name="recipient_id" value="{{ $recipient->id }}">
+                    <input type="hidden" name="format_type" value="{{ $formatType ?? 'simple' }}">
                     
                     {{-- Pass custom fields jika ada --}}
                     @if(isset($customFields) && !empty($customFields))

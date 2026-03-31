@@ -520,6 +520,30 @@
             </div>
             @endif
 
+            <!-- Layanan Mandiri Card -->
+            <div class="bg-white rounded-[2.5rem] p-8 border-l-4 border-emerald-500 shadow-md shadow-emerald-50">
+                <div class="flex items-center justify-between mb-8">
+                    <h3 class="text-lg font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                        <i class="fas fa-file-signature text-emerald-500"></i>
+                        Layanan Mandiri
+                    </h3>
+                </div>
+                <div class="space-y-4">
+                    <a href="{{ route('self-service.sk.form') }}" 
+                       class="group p-4 bg-emerald-50/50 rounded-3xl hover:bg-emerald-50 border border-emerald-100/50 transition-all duration-300 block">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-2xl bg-white flex items-center justify-center text-emerald-600 shadow-sm group-hover:scale-110 transition-transform">
+                                <i class="fas fa-file-download"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-[11px] font-black text-gray-800 uppercase tracking-wide group-hover:text-emerald-600 transition-colors">Surat Aktif</p>
+                                <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-0.5 italic">Download Langsung</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
             <!-- Quick Info -->
             <div class="rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-2xl theme-soft-shadow" style="background-color: var(--brand-dark); box-shadow: 0 20px 60px -12px var(--brand-glow);">
                 <div class="absolute top-0 right-0 -mr-10 -mt-10 w-32 h-32 bg-white/5 rounded-full blur-2xl"></div>

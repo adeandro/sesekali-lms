@@ -284,6 +284,52 @@
                                 Digunakan di nomor surat: 001/SMK-TN/I/2026
                             </p>
                         </div>
+
+                        {{-- Nomor Awal Surat --}}
+                        @php
+                            $currentYear = date('Y');
+                            $sequenceStartKey = 'letter_sequence_start_' . $currentYear;
+                            $sequenceStartVal = $allSettings[$sequenceStartKey] ?? 0;
+                        @endphp
+                        <div class="space-y-4">
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                                Nomor Urut Awal Surat {{ $currentYear }}
+                            </label>
+                            <input type="number"
+                                   name="{{ $sequenceStartKey }}"
+                                   value="{{ $sequenceStartVal }}"
+                                   min="0"
+                                   placeholder="0"
+                                   class="w-full h-14 bg-gray-50 border-transparent rounded-2xl px-6 text-sm font-bold text-gray-900 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all">
+                            <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest ml-1 leading-relaxed">
+                                Isi dengan nomor terakhir yang sudah dipakai sebelum sistem ini diterapkan. Kosongkan atau isi 0 jika mulai dari awal. Surat berikutnya akan bernomor <strong>{{ $sequenceStartVal + 1 }}</strong>.
+                            </p>
+
+                            {{-- Preview nomor berikutnya --}}
+                            <div class="bg-indigo-50/50 border border-indigo-100/50 rounded-2xl px-6 py-4 mt-2">
+                                <p class="text-[9px] font-black text-indigo-600 uppercase tracking-widest mb-1">
+                                    Preview Nomor Surat Berikutnya
+                                </p>
+                                @php
+                                    $nextSeq = max(
+                                        \App\Models\Letter::where('year', $currentYear)->max('sequence_number') ?? 0,
+                                        $sequenceStartVal
+                                    ) + 1;
+                                    $months = [
+                                        1=>'I',2=>'II',3=>'III',4=>'IV',
+                                        5=>'V',6=>'VI',7=>'VII',8=>'VIII',
+                                        9=>'IX',10=>'X',11=>'XI',12=>'XII',
+                                    ];
+                                    $preview = sprintf('%03d', $nextSeq)
+                                        . '/' . ($allSettings['letter_code'] ?? 'SMK')
+                                        . '/' . $months[(int)date('m')]
+                                        . '/' . $currentYear;
+                                @endphp
+                                <p class="text-sm font-black text-indigo-900 font-mono tracking-widest">
+                                    {{ $preview }}
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

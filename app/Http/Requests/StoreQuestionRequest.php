@@ -16,12 +16,18 @@ class StoreQuestionRequest extends FormRequest
 
     /**
      * Prepare the data for validation.
+     * Normalize jenjang[] checkbox array → sorted comma-separated string.
      */
     protected function prepareForValidation()
     {
-        // For teachers, ensure subject_id is provided and valid, otherwise fallback to first or leave to validation
-        // But if they only have one, we can force it. If they have many, the form must provide it.
-        // We will keep the form's subject_id but validate it strictly in rules.
+        $jenjangArr = $this->input('jenjang', []);
+        if (is_array($jenjangArr)) {
+            $valid = array_filter($jenjangArr, fn($v) => in_array($v, ['10', '11', '12']));
+            sort($valid);
+            $this->merge([
+                'jenjang' => !empty($valid) ? implode(',', array_unique($valid)) : null,
+            ]);
+        }
     }
 
     /**
@@ -39,7 +45,7 @@ class StoreQuestionRequest extends FormRequest
                     }
                 },
             ],
-            'jenjang' => 'required|in:10,11,12',
+            'jenjang' => 'nullable|string',
             'topic' => 'required|string|max:255',
             'difficulty_level' => 'required|in:easy,medium,hard',
             'question_type' => 'required|in:multiple_choice,essay',

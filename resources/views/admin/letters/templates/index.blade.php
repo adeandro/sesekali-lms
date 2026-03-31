@@ -288,9 +288,14 @@
 
                                     <div class="space-y-2">
                                         <h4 class="text-sm font-black text-gray-900 uppercase tracking-tight leading-tight group-hover:text-indigo-600 transition-colors">{{ $template->name }}</h4>
-                                        <div class="flex items-center gap-3">
-                                            <span class="px-3 py-1 bg-gray-100 text-[8px] font-black text-gray-500 uppercase tracking-widest rounded-md">{{ $template->code }}</span>
-                                            <span class="text-[8px] font-bold text-gray-400 uppercase tracking-widest italic">{{ $template->letters_count ?? 0 }} Surat Dibuat</span>
+                                        <div class="flex flex-wrap items-center gap-2 mt-2">
+                                            <span class="px-3 py-1 bg-gray-100 text-[8px] font-black text-gray-500 uppercase tracking-widest rounded-md border border-gray-200">{{ $template->code }}</span>
+                                            @if($template->letterType)
+                                                <span class="px-3 py-1 bg-indigo-50 text-[8px] font-black text-indigo-600 uppercase tracking-widest rounded-md border border-indigo-100" title="{{ $template->letterType->name }}">
+                                                    {{ $template->letterType->code }}
+                                                </span>
+                                            @endif
+                                            <span class="text-[8px] font-bold text-gray-400 uppercase tracking-widest italic ml-auto">{{ $template->letters_count ?? 0 }} Surat</span>
                                         </div>
                                     </div>
 
