@@ -409,7 +409,10 @@
 
     {{-- ── BAGIAN B: ESSAY ── --}}
     @if($essayQuestions->count() > 0)
-    <div class="section-title" style="margin-top: 28px;">B. Essay</div>
+    <div class="section-title"
+         style="margin-top: 28px; page-break-before: always;">
+      B. Essay
+    </div>
     <div class="section-instruction">
         Jawablah pertanyaan berikut dengan benar dan lengkap!
     </div>
