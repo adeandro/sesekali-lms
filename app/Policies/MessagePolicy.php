@@ -25,7 +25,7 @@ class MessagePolicy
      */
     public function initiate(User $user): bool
     {
-        return in_array($user->role, ['superadmin', 'teacher']);
+        return in_array($user->role, ['superadmin', 'teacher', 'principal', 'tu']);
     }
 
     /**

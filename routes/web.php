@@ -95,8 +95,8 @@ Route::middleware('auth')->group(function () {
         // Template listing: visible to superadmin & TU (TU can view/use, not manage)
         Route::middleware('role:superadmin,tu')->get('templates', [LetterTemplateController::class, 'index'])->name('templates.index');
 
-        // Template CRUD: superadmin only
-        Route::middleware('role:superadmin')->group(function() {
+        // Template CRUD: superadmin & TU
+        Route::middleware('role:superadmin,tu')->group(function() {
             Route::get('templates/create', [LetterTemplateController::class, 'create'])->name('templates.create');
             Route::post('templates', [LetterTemplateController::class, 'store'])->name('templates.store');
             Route::get('templates/{template}/edit', [LetterTemplateController::class, 'edit'])->name('templates.edit');
@@ -508,7 +508,7 @@ Route::middleware('auth')->group(function () {
         })->name('notifications.latest');
 
         Route::get('announcements', [AnnouncementController::class, 'index'])->name('announcements.index');
-        Route::middleware('role:superadmin,teacher,principal')->group(function () {
+        Route::middleware('role:superadmin,teacher,principal,tu')->group(function () {
             Route::get('announcements/create', [AnnouncementController::class, 'create'])->name('announcements.create');
             Route::post('announcements', [AnnouncementController::class, 'store'])->name('announcements.store');
             Route::get('announcements/{announcement}/edit', [AnnouncementController::class, 'edit'])->name('announcements.edit');

@@ -23,7 +23,7 @@ class AnnouncementPolicy
      */
     public function create(User $user): bool
     {
-        return in_array($user->role, ['superadmin', 'teacher']);
+        return in_array($user->role, ['superadmin', 'teacher', 'principal', 'tu']);
     }
 
     /**
@@ -35,7 +35,7 @@ class AnnouncementPolicy
             return true;
         }
 
-        return $user->role === 'teacher' && $announcement->user_id === $user->id;
+        return in_array($user->role, ['teacher', 'principal', 'tu']) && $announcement->user_id === $user->id;
     }
 
     /**
@@ -47,7 +47,7 @@ class AnnouncementPolicy
             return true;
         }
 
-        return $user->role === 'teacher' && $announcement->user_id === $user->id;
+        return in_array($user->role, ['teacher', 'principal', 'tu']) && $announcement->user_id === $user->id;
     }
 
     /**
