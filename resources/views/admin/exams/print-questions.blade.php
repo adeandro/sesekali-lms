@@ -447,14 +447,6 @@
     @endif
 
     {{-- ── FOOTER / TTD ── --}}
-    <div class="exam-footer">
-        <div class="signature-block">
-            <div class="sign-label">
-                Guru Mata Pelajaran,
-            </div>
-            <div class="sign-name">{{ $teacherName }}</div>
-        </div>
-    </div>
 
 </div>
 
