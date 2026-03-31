@@ -91,9 +91,12 @@ Route::middleware('auth')->group(function () {
     // Letter Management (Templates & Generator)
     Route::group(['prefix' => 'admin/letters', 'as' => 'admin.letters.'], function () {
         
-        // 1. Template Management (Superadmin Only)
+        // 1. Template Management
+        // Template listing: visible to superadmin & TU (TU can view/use, not manage)
+        Route::middleware('role:superadmin,tu')->get('templates', [LetterTemplateController::class, 'index'])->name('templates.index');
+
+        // Template CRUD: superadmin only
         Route::middleware('role:superadmin')->group(function() {
-            Route::get('templates', [LetterTemplateController::class, 'index'])->name('templates.index');
             Route::get('templates/create', [LetterTemplateController::class, 'create'])->name('templates.create');
             Route::post('templates', [LetterTemplateController::class, 'store'])->name('templates.store');
             Route::get('templates/{template}/edit', [LetterTemplateController::class, 'edit'])->name('templates.edit');

@@ -22,10 +22,10 @@
                     Panel Tata Usaha siap membantu Anda mengelola administrasi surat-menyurat dengan lebih cepat, akurat, dan profesional.
                 </p>
                 <div class="flex flex-wrap items-center justify-center md:justify-start gap-4 pt-4">
-                    <a href="#" class="px-8 py-4 bg-white text-indigo-900 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-50 transition-all shadow-lg shadow-white/5">
+                    <a href="{{ route('admin.letters.index') }}" class="px-8 py-4 bg-white text-indigo-900 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-50 transition-all shadow-lg shadow-white/5">
                         <i class="fas fa-magic mr-2"></i> Buat Surat Baru
                     </a>
-                    <a href="#" class="px-8 py-4 bg-indigo-800/50 text-white border border-indigo-700/50 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-800 transition-all">
+                    <a href="{{ route('admin.letters.history') }}" class="px-8 py-4 bg-indigo-800/50 text-white border border-indigo-700/50 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-800 transition-all">
                         <i class="fas fa-history mr-2"></i> Arsip Surat
                     </a>
                 </div>
@@ -103,7 +103,7 @@
                     <h3 class="text-xl font-black text-gray-900 uppercase tracking-tight">Surat Baru Terbit</h3>
                     <span class="w-8 h-1 bg-indigo-600 rounded-full"></span>
                 </div>
-                <a href="#" class="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:underline">Lihat Semua</a>
+                <a href="{{ route('admin.letters.history') }}" class="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:underline">Lihat Semua</a>
             </div>
 
             <div class="bg-white rounded-[2.5rem] border border-gray-100 overflow-hidden shadow-sm">
