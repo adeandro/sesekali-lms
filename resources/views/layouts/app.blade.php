@@ -469,12 +469,11 @@
                            class="nav-item py-2 text-sm {{ request()->routeIs('admin.letters.history') ? 'menu-item-active' : '' }}">
                             <i class="fas fa-history w-4 mr-2"></i><span>Arsip Surat</span>
                         </a>
-                        @if(Auth::user()->role === 'superadmin')
-                            <a href="{{ route('admin.letters.templates.index') }}" 
-                               class="nav-item py-2 text-sm {{ request()->routeIs('admin.letters.templates.*') ? 'menu-item-active' : '' }}">
-                                <i class="fas fa-file-code w-4 mr-2"></i><span>Template Surat</span>
-                            </a>
-                        @endif
+                        <a href="{{ route('admin.letters.templates.index') }}" 
+                           class="nav-item py-2 text-sm {{ request()->routeIs('admin.letters.templates.*') ? 'menu-item-active' : '' }}">
+                            <i class="fas fa-file-code w-4 mr-2"></i><span>Template Surat</span>
+                        </a>
+
                     </div>
                 </div>
                 @endif
@@ -537,38 +536,7 @@
                 </div>
                 @endif
 
-                {{-- ── 9. TU MENU ── --}}
-                @if(Auth::user()->role === 'tu')
-                <a href="{{ route('dashboard.tu') }}" 
-                   class="nav-item {{ request()->routeIs('dashboard.tu') ? 'menu-item-active' : '' }}">
-                    <i class="fas fa-tachometer-alt w-5 text-lg mr-3"></i>
-                    <span>Dashboard TU</span>
-                </a>
 
-                {{-- Surat Menyurat (TU) --}}
-                <div class="pt-1">
-                    <button @click="activeAccordion = (activeAccordion === 'tu-letters' ? null : 'tu-letters')"
-                            class="w-full nav-item justify-between {{ request()->routeIs('admin.letters.*') ? 'bg-gray-50' : '' }}">
-                        <div class="flex items-center">
-                            <i class="fas fa-envelope-open-text w-5 text-lg mr-3"></i>
-                            <span class="font-bold text-[11px] uppercase tracking-widest">Surat Menyurat</span>
-                        </div>
-                        <i class="fas fa-chevron-down text-xs transition-transform duration-300"
-                           :class="activeAccordion === 'tu-letters' ? 'rotate-180' : ''"></i>
-                    </button>
-                    <div x-show="activeAccordion === 'tu-letters'" x-collapse class="ml-8 mt-1 space-y-1">
-                        <a href="{{ route('admin.letters.index') }}" class="nav-item py-2 text-sm {{ request()->routeIs('admin.letters.index') || request()->routeIs('admin.letters.form') || request()->routeIs('admin.letters.generate') ? 'menu-item-active' : '' }}">
-                            <i class="fas fa-pen-nib w-4 mr-2"></i><span>Buat Surat</span>
-                        </a>
-                        <a href="{{ route('admin.letters.templates.index') }}" class="nav-item py-2 text-sm {{ request()->routeIs('admin.letters.templates.index') ? 'menu-item-active' : '' }}">
-                            <i class="fas fa-file-invoice w-4 mr-2"></i><span>Template Surat</span>
-                        </a>
-                        <a href="{{ route('admin.letters.history') }}" class="nav-item py-2 text-sm {{ request()->routeIs('admin.letters.history') ? 'menu-item-active' : '' }}">
-                            <i class="fas fa-history w-4 mr-2"></i><span>Arsip Surat</span>
-                        </a>
-                    </div>
-                </div>
-                @endif
 
                 {{-- ── 10. GAMIFIKASI (superadmin only) ── --}}
                 @if(Auth::user()->role === 'superadmin')
