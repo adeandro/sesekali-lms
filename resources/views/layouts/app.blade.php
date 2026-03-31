@@ -350,7 +350,7 @@
                 @endif
 
                 {{-- ── 5. EKSTRAKURIKULER (teacher, superadmin) ── --}}
-                @if(in_array(Auth::user()->role, ['teacher', 'superadmin']))
+                @if(Auth::user()->role === 'superadmin' || Auth::user()->role === 'principal' || (Auth::user()->role === 'teacher' && Auth::user()->isExtracurricularCoach()))
                 <div class="pt-1">
                     <button @click="activeAccordion = (activeAccordion === 'ekskul' ? null : 'ekskul')" 
                             class="w-full nav-item justify-between 
@@ -370,7 +370,7 @@
                                 <i class="fas fa-tools w-4 mr-2"></i><span>Kelola Ekskul</span>
                             </a>
                         @endif
-                        @if(Auth::user()->role === 'superadmin' || Auth::user()->isExtracurricularCoach())
+                        @if(in_array(Auth::user()->role, ['superadmin', 'principal']) || Auth::user()->isExtracurricularCoach())
                             <a href="{{ route('admin.extracurriculars.my-assignments') }}" 
                                class="nav-item py-2 text-sm {{ (request()->routeIs('admin.extracurriculars.my-assignments') || request()->routeIs('admin.extracurriculars.sessions.*')) ? 'menu-item-active' : '' }}">
                                 <i class="fas fa-skating w-4 mr-2"></i><span>Ekskul Saya</span>

@@ -107,18 +107,16 @@
 
                             @foreach($categories as $key => $label)
                                 @if(isset($groupedSubjects[$key]))
-                                    <div x-data="{ 
-                                        selectedIds: [{{ implode(',', array_intersect($groupedSubjects[$key]->pluck('id')->toArray(), $assignedSubjects)) }}],
-                                        totalInCategory: {{ $groupedSubjects[$key]->count() }},
-                                        get allSelected() { return this.selectedIds.length === this.totalInCategory },
-                                        toggleAll() {
-                                            if (this.allSelected) {
-                                                this.selectedIds = [];
-                                            } else {
-                                                this.selectedIds = [{{ $groupedSubjects[$key]->pluck('id')->implode(',') }}];
-                                            }
-                                        }
-                                    }" class="category-group space-y-3">
+                                    @php
+                                        $catIds = $groupedSubjects[$key]->pluck('id')->toArray();
+                                        $selectedInCat = array_values(array_map('strval', array_intersect($catIds, $assignedSubjects)));
+                                        $allCatIds = array_values(array_map('strval', $catIds));
+                                        $jsSelected = json_encode($selectedInCat);
+                                        $jsAllIds = json_encode($allCatIds);
+                                        $catCount = $groupedSubjects[$key]->count();
+                                        $xData = "{ selectedIds: {$jsSelected}, totalInCategory: {$catCount}, get allSelected() { return this.selectedIds.length === this.totalInCategory }, toggleAll() { if (this.allSelected) { this.selectedIds = []; } else { this.selectedIds = {$jsAllIds}; } } }";
+                                    @endphp
+                                    <div x-data='{!! $xData !!}' class="category-group space-y-3">
                                         <div class="flex items-center justify-between border-b border-gray-100 pb-2">
                                             <h4 class="text-[11px] font-black uppercase tracking-widest text-indigo-600">{{ $label }}</h4>
                                             <button type="button" @click="toggleAll" 
