@@ -539,8 +539,8 @@
 
                 {{-- ── 9. TU MENU ── --}}
                 @if(Auth::user()->role === 'tu')
-                <a href="{{ route('tu.dashboard') }}" 
-                   class="nav-item {{ request()->routeIs('tu.dashboard') ? 'menu-item-active' : '' }}">
+                <a href="{{ route('dashboard.tu') }}" 
+                   class="nav-item {{ request()->routeIs('dashboard.tu') ? 'menu-item-active' : '' }}">
                     <i class="fas fa-tachometer-alt w-5 text-lg mr-3"></i>
                     <span>Dashboard TU</span>
                 </a>
