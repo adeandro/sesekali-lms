@@ -534,7 +534,7 @@ Route::middleware('auth')->group(function () {
 
     // ── Self-Service Letters ─────────────────────────
     // SPPD Guru (teacher & principal)
-    Route::middleware('role:teacher,principal')
+    Route::middleware('role:superadmin,tu,teacher,principal')
         ->group(function () {
             Route::get('/self-service/sppd',
                 [\App\Http\Controllers\SelfServiceLetterController::class,

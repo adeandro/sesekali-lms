@@ -90,17 +90,55 @@
 <script>
 function lobbyWatcher() {
     return {
+        pollInterval: 3000,
+        maxInterval: 10000,
+        errorCount: 0,
+
         init() {
-            setInterval(() => this.checkStatus(), 2000);
+            this.schedule();
         },
+
+        schedule() {
+            setTimeout(() => this.checkStatus(),
+                this.pollInterval);
+        },
+
         async checkStatus() {
             try {
-                const res = await fetch('{{ route('student.arena.lobby.status', $room) }}');
+                const res = await fetch(
+                    '{{ route('student.arena.lobby.status', $room) }}',
+                    {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    }
+                );
+
+                if (!res.ok) throw new Error('Server error');
+
                 const data = await res.json();
-                if (data.status === 'ongoing' && data.participant_id) {
-                    window.location.href = '{{ url('student/arena/' . $room->id . '/battle') }}/' + data.participant_id;
+
+                this.errorCount = 0;
+                this.pollInterval = 3000;
+
+                if (data.status === 'ongoing'
+                    && data.participant_id) {
+                    window.location.href =
+                        '{{ url('student/arena/' . $room->id . '/battle') }}/'
+                        + data.participant_id;
+                    return;
                 }
-            } catch(e) {}
+
+                this.schedule();
+
+            } catch(e) {
+                this.errorCount++;
+                this.pollInterval = Math.min(
+                    3000 * Math.pow(1.5, this.errorCount),
+                    this.maxInterval
+                );
+                this.schedule();
+            }
         }
     }
 }

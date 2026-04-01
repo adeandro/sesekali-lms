@@ -64,7 +64,12 @@ class SelfServiceLetterController extends Controller
     {
         $template = LetterTemplate::where('code', 'SPPD')
             ->where('is_active', true)
-            ->firstOrFail();
+            ->first();
+
+        if (!$template) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Template SPPD belum dikonfigurasi atau tidak aktif. Silakan hubungi admin.');
+        }
 
         $teacher = auth()->user();
         return view('self-service.sppd-form',
@@ -183,7 +188,12 @@ class SelfServiceLetterController extends Controller
     {
         $template = LetterTemplate::where('code', 'SKS-A')
             ->where('is_active', true)
-            ->firstOrFail();
+            ->first();
+
+        if (!$template) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Template Surat Keterangan Aktif belum dikonfigurasi atau tidak aktif.');
+        }
 
         $student = auth()->user()->load('classroom');
         return view('self-service.sk-form',

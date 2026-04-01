@@ -300,14 +300,28 @@ class ArenaController extends Controller
 
     public function studentLobbyStatus(BattleRoom $room)
     {
-        $participant = BattleParticipant::where('battle_room_id', $room->id)
+        // Ambil hanya kolom yang diperlukan
+        $participant = DB::table('battle_participants')
+            ->where('battle_room_id', $room->id)
             ->where('user_id', Auth::id())
+            ->select('id')
             ->first();
 
-        $participant?->update(['last_seen_at' => now()]);
+        // Update last_seen_at langsung via query
+        // tanpa overhead Eloquent model
+        if ($participant) {
+            DB::table('battle_participants')
+                ->where('id', $participant->id)
+                ->update(['last_seen_at' => now()]);
+        }
+
+        // Ambil status room langsung — tanpa load full model
+        $status = DB::table('battle_rooms')
+            ->where('id', $room->id)
+            ->value('status');
 
         return response()->json([
-            'status' => $room->status,
+            'status'         => $status,
             'participant_id' => $participant?->id,
         ]);
     }
