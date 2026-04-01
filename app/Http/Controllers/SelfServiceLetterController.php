@@ -62,16 +62,22 @@ class SelfServiceLetterController extends Controller
 
     public function sppdForm()
     {
-        $template = LetterTemplate::where('code', 'SPPD')
-            ->where('is_active', true)
-            ->first();
+        $user = auth()->user();
+        $query = LetterTemplate::where('code', 'SPPD');
+        
+        // Superadmin and TU can see it even if inactive (for setup)
+        if (!in_array($user->role, ['superadmin', 'tu'])) {
+            $query->where('is_active', true);
+        }
+
+        $template = $query->first();
 
         if (!$template) {
-            return redirect()->route('dashboard')
+            return redirect()->back()
                 ->with('error', 'Template SPPD belum dikonfigurasi atau tidak aktif. Silakan hubungi admin.');
         }
 
-        $teacher = auth()->user();
+        $teacher = $user;
         return view('self-service.sppd-form',
             compact('teacher', 'template'));
     }
@@ -186,16 +192,22 @@ class SelfServiceLetterController extends Controller
 
     public function skForm()
     {
-        $template = LetterTemplate::where('code', 'SKS-A')
-            ->where('is_active', true)
-            ->first();
+        $user = auth()->user();
+        $query = LetterTemplate::where('code', 'SKS-A');
+
+        // Superadmin and TU can see it even if inactive
+        if (!in_array($user->role, ['superadmin', 'tu'])) {
+            $query->where('is_active', true);
+        }
+
+        $template = $query->first();
 
         if (!$template) {
-            return redirect()->route('dashboard')
+            return redirect()->back()
                 ->with('error', 'Template Surat Keterangan Aktif belum dikonfigurasi atau tidak aktif.');
         }
 
-        $student = auth()->user()->load('classroom');
+        $student = $user->load('classroom');
         return view('self-service.sk-form',
             compact('student', 'template'));
     }
