@@ -153,6 +153,39 @@ class LetterTemplateSeeder extends Seeder
                 'is_active' => true,
                 'sort_order' => 7,
             ],
+            [
+                'name' => 'Surat Perintah Perjalanan Dinas',
+                'code' => 'SPPD',
+                'category' => 'guru',
+                'body' => '<div style="text-align:center; margin-bottom:20px;">
+  <h2 style="margin:0;">SURAT PERINTAH PERJALANAN DINAS</h2>
+  <p style="margin:4px 0;">Nomor: [nomor_surat]</p>
+</div>
+<p>Yang bertanda tangan di bawah ini, Kepala [nama_sekolah],
+dengan ini memberikan perintah perjalanan dinas kepada:</p>
+<table style="width:100%; margin:16px 0;">
+  <tr><td style="width:35%;">Nama</td>
+      <td>: [nama_guru]</td></tr>
+  <tr><td>NIP / NIY</td>
+      <td>: [nip_guru]</td></tr>
+  <tr><td>Jabatan</td>
+      <td>: [jabatan_guru]</td></tr>
+  <tr><td>Tujuan</td>
+      <td>: [tujuan]</td></tr>
+  <tr><td style="vertical-align:top;">Keperluan</td>
+      <td style="vertical-align:top;">: [keperluan]</td></tr>
+  <tr><td>Tanggal Berangkat</td>
+      <td>: [tanggal_berangkat]</td></tr>
+  <tr><td>Tanggal Kembali</td>
+      <td>: [tanggal_kembali]</td></tr>
+  <tr><td>Kendaraan</td>
+      <td>: [kendaraan]</td></tr>
+</table>
+<p>Demikian surat perintah perjalanan dinas ini dibuat
+untuk dapat dipergunakan sebagaimana mestinya.</p>',
+                'is_active' => true,
+                'sort_order' => 8,
+            ],
         ];
 
         foreach ($templates as $template) {
