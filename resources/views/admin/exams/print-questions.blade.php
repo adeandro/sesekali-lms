@@ -126,8 +126,26 @@
 
         /* ── SOAL PG ── */
         .question-item {
-            margin-bottom: 16px;
+            break-inside: avoid;
             page-break-inside: avoid;
+            margin-bottom: 14px;
+        }
+
+        .pg-columns {
+            column-count: 2;
+            column-gap: 24px;
+            column-rule: 1px solid #e5e7eb;
+        }
+
+        /* Gambar responsive dalam kolom */
+        .question-text img,
+        .option-row img,
+        .question-image,
+        .option-image {
+            max-width: 100% !important;
+            height: auto !important;
+            display: block;
+            margin: 4px 0;
         }
         .question-number-row {
             display: flex;
@@ -351,6 +369,7 @@
         silang (X) pada huruf a, b, c, d, atau e!
     </div>
 
+    <div class="pg-columns">
     @foreach($pgQuestions as $index => $question)
     <div class="question-item">
         <div class="question-number-row">
@@ -405,6 +424,7 @@
         </div>
     </div>
     @endforeach
+    </div>{{-- end pg-columns --}}
     @endif
 
     {{-- ── BAGIAN B: ESSAY ── --}}
@@ -447,6 +467,7 @@
         </div>
     </div>
     @endforeach
+    </div>{{-- end pg-columns --}}
     @endif
 
     {{-- ── FOOTER / TTD ── --}}
