@@ -46,7 +46,10 @@
             }
             .page-wrapper {
                 max-width: 100%;
-                padding: 0 !important;
+                padding-top: 1cm !important;
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+                padding-bottom: 0 !important;
                 box-shadow: none !important;
             }
         }
