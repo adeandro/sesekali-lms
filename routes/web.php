@@ -125,6 +125,9 @@ Route::middleware('auth')->group(function () {
         });
     });
 
+    // Shared Settings (Superadmin & TU)
+    Route::middleware('role:superadmin,tu')->post('admin/settings', [\App\Http\Controllers\Admin\SettingController::class, 'update'])->name('admin.settings.update');
+
     // TU (Tata Usaha) routes
     Route::middleware('role:tu')->group(function () {
         Route::get('/dashboard/tu', [\App\Http\Controllers\Tu\TuDashboardController::class, 'index'])->name('dashboard.tu');
@@ -387,6 +390,10 @@ Route::middleware('auth')->group(function () {
             Route::get('/template',                [StudentDudiController::class, 'downloadTemplate'])->name('template');
         });
 
+        // [SHARED ADMIN SETTINGS]
+        // Accessible by superadmin and tu
+        Route::middleware('role:superadmin,tu')->post('admin/settings', [SettingController::class, 'update'])->name('admin.settings.update');
+
         // [MODUL SUPERADMIN ONLY] Student Management routes
         Route::middleware('role:superadmin')->group(function () {
             // ── Sprint 1: Class Management (superadmin only) ──────────────────
@@ -415,7 +422,6 @@ Route::middleware('auth')->group(function () {
 
             // Settings Management
             Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
-            Route::post('settings', [SettingController::class, 'update'])->name('settings.update');
             Route::post('settings/profile', [SettingController::class, 'updateProfile'])->name('settings.update-profile');
             Route::delete('settings/signature', [SettingController::class, 'deleteSignature'])->name('settings.delete-signature');
 
