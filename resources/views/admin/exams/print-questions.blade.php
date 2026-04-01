@@ -53,7 +53,7 @@
 
         @page {
             size: A4;
-            margin: 20mm 30mm 20mm 30mm;
+            margin: 30mm 30mm 20mm 30mm;
         }
 
         .page-wrapper {
