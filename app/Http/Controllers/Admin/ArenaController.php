@@ -137,6 +137,10 @@ class ArenaController extends Controller
             'started_at' => now(),
         ]);
 
+        // Invalidate cache status room
+        // agar semua siswa langsung dapat status terbaru
+        \Cache::forget('battle_room_status_' . $room->id);
+
         return redirect()->route('admin.gamification.arena.spectator', $room)
             ->with('success', 'Battle dimulai! 🔥');
     }
@@ -288,6 +292,11 @@ class ArenaController extends Controller
             ]
         );
 
+        // Reset participant cache untuk user ini
+        \Cache::forget(
+            'participant_id_' . Auth::id() . '_' . $room->id
+        );
+
         // Redirect to battle if already started
         if (in_array($room->status, ['ongoing'])) {
             return redirect()->route('student.arena.battle', [$room, $participant]);
@@ -300,29 +309,48 @@ class ArenaController extends Controller
 
     public function studentLobbyStatus(BattleRoom $room)
     {
-        // Ambil hanya kolom yang diperlukan
-        $participant = DB::table('battle_participants')
-            ->where('battle_room_id', $room->id)
-            ->where('user_id', Auth::id())
-            ->select('id')
-            ->first();
+        // Ambil status room dari cache — hindari DB query
+        // Cache di-invalidate saat ignite/finish
+        $cacheKey = 'battle_room_status_' . $room->id;
 
-        // Update last_seen_at langsung via query
-        // tanpa overhead Eloquent model
-        if ($participant) {
-            DB::table('battle_participants')
-                ->where('id', $participant->id)
+        $status = \Cache::remember($cacheKey, 30, function () use ($room) {
+            return \DB::table('battle_rooms')
+                ->where('id', $room->id)
+                ->value('status');
+        });
+
+        // Update last_seen_at hanya jika sudah
+        // lebih dari 10 detik sejak update terakhir
+        // — kurangi write ke DB saat banyak siswa
+        $seenKey = 'participant_seen_' . Auth::id() . '_' . $room->id;
+
+        if (!\Cache::has($seenKey)) {
+            \DB::table('battle_participants')
+                ->where('battle_room_id', $room->id)
+                ->where('user_id', Auth::id())
                 ->update(['last_seen_at' => now()]);
+
+            // Throttle update last_seen_at — max 1x per 10 detik
+            \Cache::put($seenKey, 1, 10);
         }
 
-        // Ambil status room langsung — tanpa load full model
-        $status = DB::table('battle_rooms')
-            ->where('id', $room->id)
-            ->value('status');
+        // Ambil participant_id dari cache per user
+        $participantKey = 'participant_id_'
+            . Auth::id() . '_' . $room->id;
+
+        $participantId = \Cache::remember(
+            $participantKey, 300,
+            function () use ($room) {
+                return \DB::table('battle_participants')
+                    ->where('battle_room_id', $room->id)
+                    ->where('user_id', Auth::id())
+                    ->value('id');
+            }
+        );
 
         return response()->json([
             'status'         => $status,
-            'participant_id' => $participant?->id,
+            'participant_id' => $participantId,
         ]);
     }
 
@@ -501,6 +529,9 @@ class ArenaController extends Controller
 
         DB::transaction(function () use ($room) {
             $room->update(['status' => 'finished', 'ended_at' => now()]);
+
+            // Invalidate cache status room
+            \Cache::forget('battle_room_status_' . $room->id);
 
             if ($room->mode === 'class') {
                 // Rank fleets
