@@ -31,38 +31,8 @@ if (!$roomId) {
 $appDir = dirname(__DIR__);
 
 try {
-    // ── 1. Validasi session → dapat user_id ──────
-    $sessionFile = $appDir
-        . '/storage/framework/sessions/'
-        . $sessionId;
-
-    $userId = null;
-    if (file_exists($sessionFile)) {
-        $raw = file_get_contents($sessionFile);
-        // Cari login_web_{hash} di serialized session
-        if (preg_match(
-            '/"login_web_[^"]*";i:(\d+)/',
-            $raw, $m
-        )) {
-            $userId = (int) $m[1];
-        }
-        // Fallback pattern
-        if (!$userId && preg_match(
-            '/login_web[^;]+;i:(\d+)/',
-            $raw, $m
-        )) {
-            $userId = (int) $m[1];
-        }
-    }
-
-    if (!$userId) {
-        http_response_code(401);
-        header('Content-Type: application/json');
-        echo json_encode(['error' => 'Session invalid']);
-        exit;
-    }
-
-    // ── 2. Koneksi DB ────────────────────────────
+    // ── 1. Koneksi DB + Validasi session ─────────
+    // SESSION_DRIVER=database — baca dari tabel sessions
     $pdo = new PDO(
         'mysql:host=127.0.0.1;port=3306;'
         . 'dbname=almabru2_sesekali_lms;charset=utf8mb4',
@@ -75,7 +45,38 @@ try {
         ]
     );
 
-    // ── 3. Ambil status room dari file cache ─────
+    $stmt = $pdo->prepare(
+        'SELECT user_id, payload FROM sessions
+         WHERE id = ?
+         LIMIT 1'
+    );
+    $stmt->execute([$sessionId]);
+    $session = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    $userId = null;
+
+    if ($session && $session['user_id']) {
+        // user_id langsung tersedia di kolom sessions
+        $userId = (int) $session['user_id'];
+    } elseif ($session && $session['payload']) {
+        // Fallback: parse dari payload jika user_id null
+        $decoded = base64_decode($session['payload']);
+        if ($decoded && preg_match(
+            '/"login_web_[^"]*";i:(\d+)/',
+            $decoded, $m
+        )) {
+            $userId = (int) $m[1];
+        }
+    }
+
+    if (!$userId) {
+        http_response_code(401);
+        header('Content-Type: application/json');
+        echo json_encode(['error' => 'Session invalid']);
+        exit;
+    }
+
+    // ── 2. Ambil status room dari file cache ─────
     // Reuse cache file Laravel (format: sha1 key)
     $cacheKey  = 'battle_room_status_' . $roomId;
     $sha1Key   = sha1($cacheKey);
