@@ -153,11 +153,19 @@ return [
         ],
 
         'default' => [
-            'url' => env('REDIS_URL'),
-            'host' => env('REDIS_HOST', '127.0.0.1'),
+            'scheme'   => env('REDIS_SCHEME', 'tcp'),
+            'url'      => env('REDIS_URL'),
+            'host'     => env('REDIS_SCHEME', 'tcp') === 'unix'
+                          ? null
+                          : env('REDIS_HOST', '127.0.0.1'),
+            'path'     => env('REDIS_SCHEME', 'tcp') === 'unix'
+                          ? env('REDIS_HOST')
+                          : null,
             'username' => env('REDIS_USERNAME'),
             'password' => env('REDIS_PASSWORD'),
-            'port' => env('REDIS_PORT', '6379'),
+            'port'     => env('REDIS_SCHEME', 'tcp') === 'unix'
+                          ? null
+                          : env('REDIS_PORT', '6379'),
             'database' => env('REDIS_DB', '0'),
             'max_retries' => env('REDIS_MAX_RETRIES', 3),
             'backoff_algorithm' => env('REDIS_BACKOFF_ALGORITHM', 'decorrelated_jitter'),
@@ -166,11 +174,19 @@ return [
         ],
 
         'cache' => [
-            'url' => env('REDIS_URL'),
-            'host' => env('REDIS_HOST', '127.0.0.1'),
+            'scheme'   => env('REDIS_SCHEME', 'tcp'),
+            'url'      => env('REDIS_URL'),
+            'host'     => env('REDIS_SCHEME', 'tcp') === 'unix'
+                          ? null
+                          : env('REDIS_HOST', '127.0.0.1'),
+            'path'     => env('REDIS_SCHEME', 'tcp') === 'unix'
+                          ? env('REDIS_HOST')
+                          : null,
             'username' => env('REDIS_USERNAME'),
             'password' => env('REDIS_PASSWORD'),
-            'port' => env('REDIS_PORT', '6379'),
+            'port'     => env('REDIS_SCHEME', 'tcp') === 'unix'
+                          ? null
+                          : env('REDIS_PORT', '6379'),
             'database' => env('REDIS_CACHE_DB', '1'),
             'max_retries' => env('REDIS_MAX_RETRIES', 3),
             'backoff_algorithm' => env('REDIS_BACKOFF_ALGORITHM', 'decorrelated_jitter'),
