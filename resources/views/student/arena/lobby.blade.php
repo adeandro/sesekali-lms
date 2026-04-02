@@ -106,8 +106,9 @@ function lobbyWatcher() {
         async checkStatus() {
             try {
                 const res = await fetch(
-                    '{{ route('student.arena.lobby.status', $room) }}',
+                    '/arena-status.php?room={{ $room->id }}',
                     {
+                        credentials: 'same-origin',
                         headers: {
                             'X-Requested-With': 'XMLHttpRequest'
                         }
