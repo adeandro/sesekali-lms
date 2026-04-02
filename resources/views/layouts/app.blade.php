@@ -633,8 +633,8 @@
             <!-- Top Navigation Bar -->
             <nav class="z-20 flex-shrink-0" style="background-color: var(--brand-surface); box-shadow: 0 1px 0 rgba(0,0,0,0.05), 0 2px 8px -2px var(--brand-glow);">
                 <div class="px-4 lg:px-8 py-4 flex items-center justify-between gap-4">
-                    {{-- Desktop & Mobile Sidebar Toggle --}}
-                    <button id="toggleSidebarBtn" class="text-gray-600 hover:text-gray-900 p-2 -ml-2 transition-all hover:bg-gray-100 rounded-xl">
+                    {{-- Mobile Sidebar Toggle (Hidden on Desktop) --}}
+                    <button id="toggleSidebarBtn" class="lg:hidden text-gray-600 hover:text-gray-900 p-2 -ml-2 transition-all hover:bg-gray-100 rounded-xl">
                         <i class="fas fa-bars text-xl"></i>
                     </button>
 
