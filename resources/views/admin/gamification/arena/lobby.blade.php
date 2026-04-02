@@ -76,7 +76,13 @@
                    class="px-5 py-3 rounded-2xl text-xs font-black text-gray-400 bg-white/5 hover:bg-white/10 border border-white/10 transition">
                    Kembali
                 </a>
-                <form action="{{ route('admin.gamification.arena.ignite', $room) }}" method="POST">
+                <form action="{{ route('admin.gamification.arena.ignite', $room) }}" method="POST"
+                      x-data
+                      @submit="
+                        setTimeout(() => {
+                          window.location.href = '{{ route('admin.gamification.arena.spectator', $room) }}';
+                        }, 1500)
+                      ">
                     @csrf
                     <button type="submit"
                             class="px-8 py-3 bg-gradient-to-r from-red-500 to-orange-500 text-white font-black text-sm uppercase tracking-widest rounded-2xl shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 hover:-translate-y-0.5 transition-all duration-200">

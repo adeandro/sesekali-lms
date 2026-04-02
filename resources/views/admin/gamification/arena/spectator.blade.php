@@ -91,41 +91,68 @@
 
         @else
         {{-- Individual / Group Tracks --}}
-        <template x-for="p in participants" :key="p.id">
-            <div class="fleet-track rounded-[1.5rem] border border-white/10 p-3 flex items-center gap-4">
-                {{-- Avatar --}}
-                <img :src="p.avatar_url" :alt="p.name" class="w-10 h-10 rounded-full object-cover shrink-0 border-2"
-                     :class="p.status === 'disqualified' ? 'border-red-500/50 grayscale opacity-50' : 'border-indigo-500/50'">
+        {{-- TOP 5 AKTIF --}}
+        <div class="space-y-3">
+            <p class="text-[10px] font-black uppercase tracking-widest text-amber-400 mb-3">
+                <i class="fas fa-crown mr-1"></i> Top 5
+            </p>
+            <template x-for="(p, index) in top5" :key="p.id">
+                <div class="bg-white/5 backdrop-blur rounded-2xl border border-white/10 p-4 flex items-center gap-4">
+                    {{-- Rank badge --}}
+                    <div class="w-8 h-8 rounded-xl flex items-center justify-center font-black text-sm shrink-0"
+                         :class="{
+                           'bg-amber-500 text-white': index === 0,
+                           'bg-slate-400 text-white': index === 1,
+                           'bg-orange-600 text-white': index === 2,
+                           'bg-white/10 text-gray-400': index > 2
+                         }"
+                         x-text="index + 1">
+                    </div>
 
-                {{-- Track --}}
-                <div class="flex-1 space-y-1.5">
-                    <div class="flex items-center justify-between">
-                        <p class="text-xs font-black text-white" x-text="p.name"></p>
-                        <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded-full"
-                              :class="p.status === 'disqualified' ? 'bg-red-500/20 text-red-400' : (p.status === 'finished' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/10 text-gray-300')"
-                              x-text="p.status === 'disqualified' ? '💀 Gugur' : (p.status==='finished'?'✅ Selesai':'⚡ Active')"></span>
+                    {{-- Avatar --}}
+                    <img :src="p.avatar_url" class="w-10 h-10 rounded-full object-cover border-2 border-indigo-500/30 shrink-0">
+
+                    {{-- Info --}}
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-black text-white truncate" x-text="p.name"></p>
+                        <p class="text-[10px] text-gray-400" x-text="p.class_id"></p>
                     </div>
-                    {{-- Race bar --}}
-                    <div class="h-3 bg-white/5 rounded-full overflow-hidden">
-                        <div class="h-full rounded-full hp-bar"
-                             :class="p.status === 'disqualified' ? 'bg-red-700/50' : 'bg-gradient-to-r from-indigo-500 to-purple-500'"
-                             :style="'width:' + p.progress + '%'"></div>
+
+                    {{-- Stats --}}
+                    <div class="text-right shrink-0">
+                        <p class="text-sm font-black text-emerald-400" x-text="p.correct + ' ✓'"></p>
+                        <p class="text-[10px] font-bold"
+                           :class="p.hp > 50 ? 'text-emerald-400' : (p.hp > 20 ? 'text-amber-400' : 'text-red-400')"
+                           x-text="p.hp + ' HP'"></p>
                     </div>
-                    {{-- HP bar --}}
-                    <div class="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                        <div class="h-full rounded-full transition-all duration-500"
-                             :class="p.hp > 50 ? 'bg-emerald-500' : (p.hp > 20 ? 'bg-amber-500' : 'bg-red-500')"
-                             :style="'width:' + p.hp + '%'"></div>
+
+                    {{-- HP Bar --}}
+                    <div class="w-20 bg-white/10 rounded-full h-1.5 shrink-0">
+                        <div class="h-1.5 rounded-full transition-all duration-500"
+                             :class="p.hp > 50 ? 'bg-emerald-400' : (p.hp > 20 ? 'bg-amber-400' : 'bg-red-400')"
+                             :style="'width:' + p.hp + '%'">
+                        </div>
                     </div>
                 </div>
+            </template>
+        </div>
 
-                {{-- HP --}}
-                <div class="text-right shrink-0 w-16">
-                    <p class="text-lg font-black" :class="p.hp > 50 ? 'text-emerald-400' : (p.hp > 20 ? 'text-amber-400' : 'text-red-400')" x-text="p.hp + ' HP'"></p>
-                    <p class="text-[9px] text-gray-500" x-text="p.correct + ' benar'"></p>
-                </div>
+        {{-- DISKUALIFIKASI --}}
+        <div class="mt-6" x-show="disqualified.length > 0">
+            <p class="text-[10px] font-black uppercase tracking-widest text-red-400 mb-3">
+                <i class="fas fa-skull mr-1"></i> Gugur (<span x-text="disqualified.length"></span>)
+            </p>
+            <div class="space-y-2">
+                <template x-for="p in disqualified" :key="p.id">
+                    <div class="bg-red-500/5 border border-red-500/20 rounded-xl px-4 py-2 flex items-center gap-3 opacity-60">
+                        <i class="fas fa-skull text-red-400 text-xs"></i>
+                        <span class="text-sm text-gray-400 flex-1" x-text="p.name"></span>
+                        <span class="text-xs text-gray-600" x-text="p.correct + ' benar'"></span>
+                        <span class="text-[10px] text-red-400 font-mono" x-text="p.disqualified_at"></span>
+                    </div>
+                </template>
             </div>
-        </template>
+        </div>
         @endif
     </div>
 
@@ -141,7 +168,8 @@
 <script>
 function spectator() {
     return {
-        participants: [],
+        top5: [],
+        disqualified: [],
         fleets: {},
         remainingSeconds: {{ $room->remainingSeconds() }},
         isSuddenDeath: {{ $room->isSuddenDeath() ? 'true' : 'false' }},
@@ -161,7 +189,8 @@ function spectator() {
             try {
                 const res = await fetch('{{ route('admin.gamification.arena.spectator.data', $room) }}');
                 const data = await res.json();
-                this.participants      = data.participants || [];
+                this.top5         = data.top5 || [];
+                this.disqualified = data.disqualified || [];
                 this.fleets           = {};
                 if (data.fleet) {
                     data.fleet.forEach(f => this.fleets[f.class_id] = f);

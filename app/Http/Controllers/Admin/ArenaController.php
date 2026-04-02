@@ -164,16 +164,33 @@ class ArenaController extends Controller
             'remaining_seconds' => $room->remainingSeconds(),
             'is_sudden_death'   => $room->isSuddenDeath(),
             'fleet'             => array_values($room->fleetProgress()),
-            'participants'      => $room->participants->map(fn ($p) => [
-                'id'            => $p->id,
-                'name'          => $p->user->name,
-                'class_id'      => $p->class_id,
-                'hp'            => $p->hp,
-                'correct'       => $p->correct_count,
-                'status'        => $p->status,
-                'progress'      => $p->progressPercent($room->total_questions),
-                'avatar_url'    => $p->user->photo_url,
-            ]),
+            'top5' => $room->participants
+                ->whereIn('status', ['active', 'finished'])
+                ->sortByDesc('correct_count')
+                ->sortByDesc('hp')
+                ->take(5)
+                ->values()
+                ->map(fn ($p) => [
+                    'id'         => $p->id,
+                    'name'       => $p->user->name,
+                    'class_id'   => $p->class_id,
+                    'hp'         => $p->hp,
+                    'correct'    => $p->correct_count,
+                    'status'     => $p->status,
+                    'progress'   => $p->progressPercent($room->total_questions),
+                    'avatar_url' => $p->user->photo_url,
+                ]),
+            'disqualified' => $room->participants
+                ->where('status', 'disqualified')
+                ->sortByDesc('disqualified_at')
+                ->values()
+                ->map(fn ($p) => [
+                    'id'            => $p->id,
+                    'name'          => $p->user->name,
+                    'class_id'      => $p->class_id,
+                    'correct'       => $p->correct_count,
+                    'disqualified_at' => $p->disqualified_at?->format('H:i:s'),
+                ]),
         ];
 
         // Auto-finish check
@@ -199,8 +216,6 @@ class ArenaController extends Controller
 
     public function podium(BattleRoom $room)
     {
-        $room->load(['participants.user']);
-
         if ($room->mode === 'class') {
             // Fleet podium — ranked by fleet progress
             $fleet   = collect($room->fleetProgress())->values();
@@ -210,7 +225,7 @@ class ArenaController extends Controller
 
         // Individual / Group podium
         $winners = $room->participants()
-            ->with('user')
+            ->with(['user:id,name,nis,photo'])
             ->whereNotNull('rank')
             ->orderBy('rank')
             ->take(3)
@@ -240,6 +255,7 @@ class ArenaController extends Controller
 
     public function destroy(BattleRoom $room)
     {
+        \Cache::forget('battle_room_questions_' . $room->id);
         $room->delete();
         return redirect()->route('admin.gamification.arena.index')
             ->with('success', 'Battle Room dihapus.');
@@ -422,7 +438,11 @@ class ArenaController extends Controller
 
         $request->validate(['answer' => 'required|in:a,b,c,d,e']);
 
-        $questionIds = $room->question_ids ?? [];
+        $questionIds = \Cache::remember(
+            'battle_room_questions_' . $room->id,
+            3600,
+            fn() => $room->question_ids ?? []
+        );
         $idx         = $participant->current_question_index;
         $questionId  = $questionIds[$idx] ?? null;
 
@@ -430,7 +450,11 @@ class ArenaController extends Controller
             return response()->json(['error' => 'Soal tidak ditemukan.'], 422);
         }
 
-        $question  = Question::findOrFail($questionId);
+        $question = \Cache::remember(
+            'battle_question_' . $questionId,
+            3600,
+            fn() => Question::findOrFail($questionId)
+        );
         $isCorrect = strtolower($request->answer) === strtolower($question->correct_answer);
 
         // Determine HP delta
