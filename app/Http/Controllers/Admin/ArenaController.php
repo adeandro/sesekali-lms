@@ -307,6 +307,24 @@ class ArenaController extends Controller
 
     // ── Student: Lobby Status Poll ────────────────────────────────────────
 
+    /**
+     * Lightweight lobby status check untuk polling siswa.
+     *
+     * Optimasi yang sudah diterapkan:
+     * 1. Cache status room 30 detik (Cache::remember)
+     *    → DB hanya diquery saat cache miss
+     * 2. Throttle last_seen_at 1x per 10 detik per user
+     *    → Kurangi DB write dari N req/detik ke N/10
+     * 3. Cache participant_id 5 menit per user
+     *    → Tidak perlu SELECT setiap poll
+     *
+     * Dengan SESSION_DRIVER=file, session tidak
+     * hit DB sama sekali → total DB load turun ~90%
+     * dari kondisi awal (polling 2 detik tanpa cache).
+     *
+     * Estimasi 200 siswa: ~20 DB queries/detik
+     * (hanya last_seen_at throttled writes)
+     */
     public function studentLobbyStatus(BattleRoom $room)
     {
         // Ambil status room dari cache — hindari DB query
