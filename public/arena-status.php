@@ -12,7 +12,10 @@ if (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') !== 'XMLHttpRequest') {
 }
 
 // Baca session Laravel dari cookie
-$sessionId = $_COOKIE['laravel_session'] ?? null;
+// Coba beberapa kemungkinan nama cookie session
+$sessionId = $_COOKIE['examflow-session']
+    ?? $_COOKIE['laravel_session']
+    ?? null;
 if (!$sessionId) {
     http_response_code(401);
     header('Content-Type: application/json');
