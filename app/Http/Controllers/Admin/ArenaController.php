@@ -305,8 +305,6 @@ class ArenaController extends Controller
         return view('student.arena.lobby', compact('room', 'participant'));
     }
 
-    // ── Student: Lobby Status Poll ────────────────────────────────────────
-
     /**
      * Lightweight lobby status check untuk polling siswa.
      *
