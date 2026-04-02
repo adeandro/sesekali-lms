@@ -1,3 +1,6 @@
+// NOTE: This file is NOT used by Tailwind v4 (@tailwindcss/vite).
+// Configuration is now handled in resources/css/app.css via @source and @layer.
+// Kept for reference only.
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
