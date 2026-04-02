@@ -530,11 +530,10 @@
                             <i class="fas fa-trophy w-4 mr-2"></i><span>Hall of Fame</span>
                         </a>
                         <a href="#" 
-                           onclick="document.getElementById('arenaJoinModal').classList.remove('hidden'); return false;"
-                           class="nav-item py-2 text-sm {{ request()->routeIs('student.arena.*') ? 'menu-item-active' : '' }}">
+                           class="nav-item py-2 text-sm opacity-60 pointer-events-none grayscale">
                             <i class="fas fa-fist-raised w-4 mr-2"></i>
                             <span class="flex-1">Battle Arena</span>
-                            <span class="ml-auto text-[9px] font-black bg-red-500 text-white px-1.5 py-0.5 rounded-full uppercase tracking-widest">LIVE</span>
+                            <span class="ml-auto text-[9px] font-black bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full uppercase tracking-widest">SOON</span>
                         </a>
                         <a href="{{ route('student.coupons.index') }}" 
                            class="nav-item py-2 text-sm {{ request()->routeIs('student.coupons.*') ? 'menu-item-active' : '' }}">
@@ -575,9 +574,11 @@
                            class="nav-item py-2 text-sm {{ request()->routeIs('admin.gamification.themes*') ? 'menu-item-active' : '' }}">
                             <i class="fas fa-palette w-4 mr-2"></i><span>Themes</span>
                         </a>
-                        <a href="{{ route('admin.gamification.arena.index') }}" 
-                           class="nav-item py-2 text-sm {{ request()->routeIs('admin.gamification.arena*') ? 'menu-item-active' : '' }}">
-                            <i class="fas fa-fist-raised w-4 mr-2"></i><span>Battle Arena</span>
+                        <a href="#" 
+                           class="nav-item py-2 text-sm opacity-60 pointer-events-none grayscale">
+                            <i class="fas fa-fist-raised w-4 mr-2"></i>
+                            <span class="flex-1">Battle Arena</span>
+                            <span class="ml-auto text-[9px] font-black bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full uppercase tracking-widest">MAINTENANCE</span>
                         </a>
                         <a href="{{ route('admin.gamification.coupons.index') }}" 
                            class="nav-item py-2 text-sm {{ request()->routeIs('admin.gamification.coupons*') ? 'menu-item-active' : '' }}">

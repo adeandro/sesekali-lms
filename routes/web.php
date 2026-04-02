@@ -210,6 +210,18 @@ Route::middleware('auth')->group(function () {
         Route::get('student/results', [StudentResultController::class, 'index'])->name('student.results');
 
         // ── Student Battle Arena ──────────────────────────────────────────
+        // Temporary maintenance
+        Route::get('student/arena/{any?}', function() {
+            if (auth()->user()?->role === 'superadmin') {
+                return redirect()->route('student.dashboard')->with('open_arena_modal', true);
+            }
+            return view('maintenance.arena');
+        })->where('any', '.*');
+
+        Route::post('student/arena/{any?}', function() {
+            return response()->json(['error' => 'Fitur sedang dalam maintenance'], 503);
+        })->where('any', '.*');
+
         Route::get('student/arena', function() {
             return redirect()->route('student.dashboard')->with('open_arena_modal', true);
         })->name('student.arena.index');
@@ -452,6 +464,14 @@ Route::middleware('auth')->group(function () {
                 });
                 
                 // ── Battle Arena ──────────────────────────────────────────────
+                // Temporary maintenance
+                Route::get('arena/{any?}', function() {
+                    if (auth()->user()?->role === 'superadmin') {
+                        return redirect()->route('admin.gamification.arena.index');
+                    }
+                    return view('maintenance.arena');
+                })->where('any', '.*');
+                
                 Route::group(['prefix' => 'arena', 'as' => 'arena.'], function () {
                     Route::get('/', [ArenaController::class, 'index'])->name('index');
                     Route::get('create', [ArenaController::class, 'create'])->name('create');
