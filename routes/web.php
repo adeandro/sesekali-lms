@@ -23,7 +23,8 @@ use App\Http\Controllers\Admin\GamificationController;
 use App\Http\Controllers\UserPreferenceController;
 use App\Http\Controllers\Communication\AnnouncementController;
 use App\Http\Controllers\Communication\MessageController;
-use App\Http\Controllers\Admin\ArenaController;
+use App\Http\Controllers\Admin\ArenaController as AdminArenaController;
+use App\Http\Controllers\Student\ArenaController as StudentArenaController;
 use App\Http\Controllers\Admin\AlumniController;
 use App\Http\Controllers\Student\LeaderboardController;
 use App\Http\Controllers\Admin\SeasonController;
@@ -209,33 +210,32 @@ Route::middleware('auth')->group(function () {
         // Student Results routes
         Route::get('student/results', [StudentResultController::class, 'index'])->name('student.results');
 
-        // ── Student Battle Arena ──────────────────────────────────────────
-        // Temporary maintenance
-        Route::get('student/arena/{any?}', function() {
-            if (auth()->user()?->role === 'superadmin') {
-                return redirect()->route('student.dashboard')->with('open_arena_modal', true);
-            }
-            return view('maintenance.arena');
-        })->where('any', '.*');
+        // ── Battle Arena Siswa (V2) ──────────────────────────────────────
+        Route::prefix('student/arena')
+            ->name('student.arena.')
+            ->group(function () {
 
-        Route::post('student/arena/{any?}', function() {
-            return response()->json(['error' => 'Fitur sedang dalam maintenance'], 503);
-        })->where('any', '.*');
+                Route::get('/', [StudentArenaController::class, 'index'])
+                    ->name('index');
 
-        Route::get('student/arena', function() {
-            return redirect()->route('student.dashboard')->with('open_arena_modal', true);
-        })->name('student.arena.index');
-        Route::post('student/arena/join', [ArenaController::class, 'studentJoin'])->name('student.arena.join');
-        Route::get('student/arena/{room}/lobby', [ArenaController::class, 'studentLobby'])->name('student.arena.lobby');
-        Route::get('student/arena/{room}/lobby/status', [ArenaController::class, 'studentLobbyStatus'])->name('student.arena.lobby.status');
-        Route::get('student/arena/{room}/battle/{participant}', [ArenaController::class, 'battle'])->name('student.arena.battle');
-        Route::post('student/arena/{room}/battle/{participant}/submit', [ArenaController::class, 'submitAnswer'])->name('student.arena.submit');
-        Route::post('student/arena/{room}/battle/{participant}/heartbeat', [ArenaController::class, 'heartbeat'])->name('student.arena.heartbeat');
-        Route::post('student/arena/{room}/battle/{participant}/tab-penalty', [ArenaController::class, 'tabPenalty'])->name('student.arena.tab-penalty');
-        Route::group(['prefix' => 'arena', 'as' => 'student.arena.'], function () {
-            Route::post('answer', [\App\Http\Controllers\Student\BattleController::class, 'answer'])->name('answer');
-            Route::post('powerup/activate', [\App\Http\Controllers\Student\BattleController::class, 'activatePowerup'])->name('powerup.activate');
-        });
+                Route::post('join', [StudentArenaController::class, 'join'])
+                    ->name('join');
+
+                Route::get('{room}/lobby', [StudentArenaController::class, 'lobby'])
+                    ->name('lobby');
+
+                Route::get('{room}/lobby/status', [StudentArenaController::class, 'lobbyStatus'])
+                    ->name('lobby.status');
+
+                Route::get('{room}/battle', [StudentArenaController::class, 'battle'])
+                    ->name('battle');
+
+                Route::get('{room}/battle/data', [StudentArenaController::class, 'battleData'])
+                    ->name('battle.data');
+
+                Route::post('{room}/answer', [StudentArenaController::class, 'submitAnswer'])
+                    ->name('answer');
+            });
 
         // Digital Coupon Wallet
         Route::get('student/coupons', [\App\Http\Controllers\Student\CouponController::class, 'index'])->name('student.coupons.index');
@@ -463,28 +463,48 @@ Route::middleware('auth')->group(function () {
                     Route::post('refresh', [AdminLeaderboardController::class, 'refreshCache'])->name('refresh');
                 });
                 
-                // ── Battle Arena ──────────────────────────────────────────────
-                // Temporary maintenance
-                Route::get('arena/{any?}', function() {
-                    if (auth()->user()?->role === 'superadmin') {
-                        return redirect()->route('admin.gamification.arena.index');
-                    }
-                    return view('maintenance.arena');
-                })->where('any', '.*');
-                
-                Route::group(['prefix' => 'arena', 'as' => 'arena.'], function () {
-                    Route::get('/', [ArenaController::class, 'index'])->name('index');
-                    Route::get('create', [ArenaController::class, 'create'])->name('create');
-                    Route::post('/', [ArenaController::class, 'store'])->name('store');
-                    Route::get('{room}/lobby', [ArenaController::class, 'lobby'])->name('lobby');
-                    Route::post('{room}/ignite', [ArenaController::class, 'ignite'])->name('ignite');
-                    Route::get('{room}/spectator', [ArenaController::class, 'spectator'])->name('spectator');
-                    Route::get('{room}/spectator/data', [ArenaController::class, 'spectatorData'])->name('spectator.data');
-                    Route::post('{room}/finish', [ArenaController::class, 'finish'])->name('finish');
-                    Route::get('{room}/podium', [ArenaController::class, 'podium'])->name('podium');
-                    Route::get('{room}/debriefing', [ArenaController::class, 'debriefing'])->name('debriefing');
-                    Route::delete('{room}', [ArenaController::class, 'destroy'])->name('destroy');
-                });
+                // ── Battle Arena Admin (V2) ───────────────────────────────────
+                Route::prefix('arena')
+                    ->name('arena.')
+                    ->middleware(['auth', 'role:superadmin,teacher'])
+                    ->group(function () {
+
+                        Route::get('/', [AdminArenaController::class, 'index'])
+                            ->name('index');
+
+                        Route::get('create', [AdminArenaController::class, 'create'])
+                            ->name('create');
+
+                        Route::post('/', [AdminArenaController::class, 'store'])
+                            ->name('store');
+
+                        Route::delete('{room}', [AdminArenaController::class, 'destroy'])
+                            ->name('destroy');
+
+                        // Control panel guru
+                        Route::get('{room}/control', [AdminArenaController::class, 'control'])
+                            ->name('control');
+
+                        Route::post('{room}/control/state', [AdminArenaController::class, 'setState'])
+                            ->name('control.setState');
+
+                        Route::get('{room}/control/data', [AdminArenaController::class, 'controlData'])
+                            ->name('control.data');
+
+                        // Proyektor display
+                        Route::get('{room}/display', [AdminArenaController::class, 'display'])
+                            ->name('display');
+
+                        Route::get('{room}/display/data', [AdminArenaController::class, 'displayData'])
+                            ->name('display.data');
+
+                        // Podium & debriefing
+                        Route::get('{room}/podium', [AdminArenaController::class, 'podium'])
+                            ->name('podium');
+
+                        Route::get('{room}/debriefing', [AdminArenaController::class, 'debriefing'])
+                            ->name('debriefing');
+                    });
 
                 // ── Season Management ─────────────────────────────────────────
                 Route::group(['prefix' => 'seasons', 'as' => 'seasons.'], function () {

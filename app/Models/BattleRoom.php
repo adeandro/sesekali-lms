@@ -1,11 +1,10 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
 
 class BattleRoom extends Model
@@ -13,37 +12,42 @@ class BattleRoom extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'name', 'code', 'mode', 'source_type', 'source_id', 'created_by',
-        'winner_count', 'duration_minutes', 'penalty_hp', 'lock_on_start',
-        'status', 'started_at', 'ended_at', 'total_questions', 'question_ids',
-        'settings', 'sudden_death_warning_seconds', 'sudden_death_trigger_seconds',
+        'token', 'name', 'mode',
+        'source_type', 'source_id',
+        'question_ids', 'total_questions',
+        'duration_per_question',
+        'group_count', 'group_names',
+        'max_per_group', 'status',
+        'current_q_index',
+        'reward_rank1_exp', 'reward_rank2_exp',
+        'reward_rank3_exp', 'reward_theme_id',
+        'reward_physical', 'created_by',
+        'started_at', 'ended_at',
     ];
 
     protected $casts = [
-        'lock_on_start'  => 'boolean',
-        'question_ids'   => 'array',
-        'settings'       => 'array',
-        'started_at'     => 'datetime',
-        'ended_at'       => 'datetime',
-        'sudden_death_warning_seconds' => 'integer',
-        'sudden_death_trigger_seconds' => 'integer',
+        'question_ids' => 'array',
+        'group_names'  => 'array',
+        'started_at'   => 'datetime',
+        'ended_at'     => 'datetime',
     ];
 
     protected static function boot(): void
     {
         parent::boot();
         static::creating(function (self $room) {
-            if (empty($room->code)) {
-                $room->code = strtoupper(Str::random(6));
+            if (empty($room->token)) {
+                do {
+                    $token = strtoupper(Str::random(6));
+                } while (self::where('token', $token)->exists());
+                $room->token = $token;
             }
         });
     }
 
-    // ── Relationships ────────────────────────────────────────────
-
-    public function creator(): BelongsTo
+    public function getRouteKeyName(): string
     {
-        return $this->belongsTo(User::class, 'created_by');
+        return 'token';
     }
 
     public function participants(): HasMany
@@ -51,65 +55,28 @@ class BattleRoom extends Model
         return $this->hasMany(BattleParticipant::class);
     }
 
-    public function activeParticipants(): HasMany
+    public function creator(): BelongsTo
     {
-        return $this->hasMany(BattleParticipant::class)->where('status', 'active');
+        return $this->belongsTo(User::class, 'created_by');
     }
 
-    // ── Computed helpers ─────────────────────────────────────────
-
-    /**
-     * Fleet progress calculation: AVG(correct_count) / total_questions × 100
-     * Returns an array keyed by class_id => [ 'progress' => %, 'active' => n, 'fallen' => n, 'total' => n ]
-     */
-    public function fleetProgress(): array
+    public function isFull(): bool
     {
-        if (!$this->total_questions) return [];
-
-        $participants = $this->participants()->with('user')->get();
-
-        $groups = [];
-        foreach ($participants as $p) {
-            $key = $p->class_id ?? 'Fleet';
-            $groups[$key][] = $p;
-        }
-
-        $result = [];
-        foreach ($groups as $classId => $members) {
-            $active = collect($members)->where('status', 'active');
-            $fallen = collect($members)->where('status', 'disqualified');
-            $avgCorrect = $active->count()
-                ? $active->avg('correct_count')
-                : collect($members)->avg('correct_count');
-
-            $result[$classId] = [
-                'class_id' => $classId,
-                'progress' => round($avgCorrect / $this->total_questions * 100, 1),
-                'active'   => $active->count(),
-                'fallen'   => $fallen->count(),
-                'total'    => count($members),
-                'members'  => $members,
-            ];
-        }
-
-        // Sort by progress desc
-        uasort($result, fn ($a, $b) => $b['progress'] <=> $a['progress']);
-        return $result;
+        return $this->participants()->count() >= 40;
     }
 
-    /** Remaining seconds from started_at + duration_minutes */
-    public function remainingSeconds(): int
+    public function isGroupFull(string $groupLabel): bool
     {
-        if (!$this->started_at) return $this->duration_minutes * 60;
-        $elapsed = now()->diffInSeconds($this->started_at, false);
-        return max(0, $this->duration_minutes * 60 - $elapsed);
+        if (!$this->max_per_group) return false;
+        return $this->participants()
+            ->where('group_label', $groupLabel)
+            ->count() >= $this->max_per_group;
     }
 
-    /** True if in last 2 minutes or custom trigger time (Sudden Death) */
-    public function isSuddenDeath(): bool
+    // Redis cache key prefix
+    public function cacheKey(string $suffix = ''): string
     {
-        if ($this->status === 'sudden_death') return true;
-        $trigger = $this->sudden_death_trigger_seconds ?? 120;
-        return $this->status === 'ongoing' && $this->remainingSeconds() <= $trigger;
+        return 'battle:' . $this->token
+            . ($suffix ? ':' . $suffix : '');
     }
 }

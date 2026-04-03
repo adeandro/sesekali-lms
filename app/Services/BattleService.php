@@ -1,145 +1,285 @@
 <?php
-
 namespace App\Services;
 
 use App\Models\BattleRoom;
 use App\Models\BattleParticipant;
-use App\Models\BattleAnswer;
-use Illuminate\Support\Facades\DB;
-use App\Services\AchievementService;
+use App\Models\Question;
+use Illuminate\Support\Facades\Cache;
 
 class BattleService
 {
-    /**
-     * Handle a single answer submission in a battle arena.
-     * Calculates streaks, multipliers, EXP, and manages comeback/sudden death impacts.
-     */
-    public function handleAnswer(BattleParticipant $participant, bool $isCorrect): array
+    const VALID_STATES = [
+        'lobby', 'preview', 'question',
+        'discussion', 'leaderboard', 'finish'
+    ];
+
+    const TTL = 4 * 60 * 60; // 4 jam
+
+    // ── State Management ─────────────────────
+
+    public function getState(BattleRoom $room): array
     {
-        $room = $participant->room;
-        $baseExp = 10;
-        $expEarned = 0;
-        $newPowerup = null;
-
-        return DB::transaction(function () use ($participant, $room, $isCorrect, $baseExp, &$expEarned, &$newPowerup) {
-            if ($isCorrect) {
-                // Correct answer logic
-                $participant->correct_count += 1;
-                $participant->current_streak += 1;
-
-                if ($participant->current_streak > $participant->max_streak) {
-                    $participant->max_streak = $participant->current_streak;
-                }
-
-                // Power-up acquisition trigger: every 5 correct answers
-                if ($participant->correct_count > 0 && $participant->correct_count % 5 === 0) {
-                    $newPowerup = app(PowerupService::class)->tryAcquire($participant->user, $room);
-                }
-
-                // Determine multiplier
-                $multiplier = 1.0;
-                if ($participant->current_streak >= 5) {
-                    $multiplier = 2.0;
-                } elseif ($participant->current_streak >= 3) {
-                    $multiplier = 1.5;
-                }
-
-                $participant->exp_multiplier = $multiplier;
-                $expEarned = (int) ($baseExp * $multiplier);
-
-                // Award XP
-                app(AchievementService::class)->awardXp($participant->user, $expEarned);
-
-                // Log EXP
-                DB::table('exp_logs')->insert([
-                    'user_id' => $participant->user_id,
-                    'season_id' => $participant->user->current_season_id,
-                    'source' => 'battle',
-                    'exp_amount' => $expEarned,
-                    'multiplier' => $multiplier,
-                    'reference_id' => $room->id,
-                    'reference_type' => BattleRoom::class,
-                    'earned_at' => now(),
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-
-                // Comeback logic check
-                if ($participant->comeback_active) {
-                    $participant->comeback_questions_left -= 1;
-                    if ($participant->comeback_questions_left <= 0) {
-                        $participant->comeback_active = false;
-                        $participant->comeback_questions_left = 0;
-                    }
-                }
-            } else {
-                // Wrong answer logic
-                $participant->current_streak = 0;
-                $participant->exp_multiplier = 1.0;
-
-                // Shield Power-up check
-                if ($participant->active_powerup === 'shield') {
-                    $participant->active_powerup = 'none';
-                    // HP tidak berkurang, tapi streak tetap reset
-                } else {
-                    $damage = 1;
-                    if ($room->status === 'sudden_death') {
-                        $damage = 2;
-                    }
-
-                    $participant->hp -= $damage;
-                    if ($participant->hp <= 0) {
-                        $participant->hp = 0;
-                        $participant->status = 'eliminated';
-                    }
-                }
-
-                // Comeback trigger check
-                $leaderCorrectCount = BattleParticipant::where('battle_room_id', $room->id)
-                    ->max('correct_count') ?? 0;
-
-                if ($leaderCorrectCount > 0 && ($participant->correct_count / $leaderCorrectCount) < 0.7) {
-                    if (!$participant->comeback_active) {
-                        $participant->comeback_active = true;
-                        $participant->comeback_questions_left = 5;
-                    }
-                }
-            }
-
-            $participant->save();
-
-            return [
-                'hp'            => $participant->hp,
-                'correct_count' => $participant->correct_count,
-                'streak'        => $participant->current_streak,
-                'multiplier'    => $participant->exp_multiplier,
-                'exp_earned'    => $expEarned,
-                'status'        => $participant->status,
-                'new_powerup'   => $newPowerup ? [
-                    'id'   => $newPowerup->id,
-                    'type' => $newPowerup->type,
-                ] : null,
-            ];
-        });
+        $key = $room->cacheKey('state');
+        return Cache::get($key, [
+            'state'   => 'lobby',
+            'q_index' => 0,
+            'q_total' => $room->total_questions,
+            'room_id' => $room->id,
+            'mode'    => $room->mode,
+        ]);
     }
 
-    /**
-     * Check if a room should enter sudden death mode.
-     */
-    public function checkSuddenDeath(BattleRoom $room): bool
+    public function setState(
+        BattleRoom $room,
+        string $state,
+        array $extra = []
+    ): array {
+        $current = $this->getState($room);
+        $new = array_merge($current, $extra, [
+            'state'      => $state,
+            'updated_at' => now()->timestamp,
+        ]);
+
+        // Jika masuk state QUESTION, catat timestamp
+        if ($state === 'question') {
+            $new['question_started_at'] = now()->timestamp;
+            $new['question_duration']   =
+                $room->duration_per_question;
+        }
+
+        Cache::put($room->cacheKey('state'),
+            $new, self::TTL);
+        return $new;
+    }
+
+    public function nextQuestion(
+        BattleRoom $room
+    ): array {
+        $state   = $this->getState($room);
+        $current = $state['q_index'] ?? 0;
+        $total   = $room->total_questions;
+
+        if ($current + 1 >= $total) {
+            // Semua soal selesai → finish
+            return $this->setState($room, 'finish', [
+                'q_index' => $current,
+            ]);
+        }
+
+        // Reset jawaban soal ini
+        Cache::forget($room->cacheKey('answers'));
+
+        return $this->setState($room, 'preview', [
+            'q_index' => $current + 1,
+        ]);
+    }
+
+    // ── Member Management ────────────────────
+
+    public function addMember(
+        BattleRoom $room,
+        BattleParticipant $participant
+    ): void {
+        $key     = $room->cacheKey('members');
+        $members = Cache::get($key, []);
+
+        $members[$participant->user_id] = [
+            'id'          => $participant->id,
+            'user_id'     => $participant->user_id,
+            'name'        => $participant->user->name,
+            'avatar_url'  => $participant->user->photo_url,
+            'group_label' => $participant->group_label,
+            'joined_at'   => now()->timestamp,
+        ];
+
+        Cache::put($key, $members, self::TTL);
+    }
+
+    public function getMembers(BattleRoom $room): array
     {
-        if ($room->status !== 'ongoing') {
-            return false;
+        return Cache::get($room->cacheKey('members'), []);
+    }
+
+    // ── Score Management ─────────────────────
+
+    public function initScores(BattleRoom $room): void
+    {
+        $members = $this->getMembers($room);
+        $scores  = [];
+
+        foreach ($members as $userId => $member) {
+            $scores[$userId] = [
+                'user_id'     => $userId,
+                'name'        => $member['name'],
+                'avatar_url'  => $member['avatar_url'],
+                'group_label' => $member['group_label'],
+                'total_score' => 0,
+                'correct'     => 0,
+                'wrong'       => 0,
+                'streak'      => 0,
+                'rank'        => 0,
+            ];
         }
 
-        $remainingSeconds = $room->remainingSeconds();
-        $triggerSeconds = $room->sudden_death_trigger_seconds ?? 120; // Default 2 minutes
+        Cache::put($room->cacheKey('scores'),
+            $scores, self::TTL);
+    }
 
-        if ($remainingSeconds <= $triggerSeconds) {
-            $room->status = 'sudden_death';
-            return $room->save();
+    public function getScores(BattleRoom $room): array
+    {
+        return Cache::get(
+            $room->cacheKey('scores'), []
+        );
+    }
+
+    public function calculateScore(
+        bool $isCorrect,
+        int $timeRemaining,
+        int $totalDuration,
+        int $streak
+    ): int {
+        if (!$isCorrect) return 0;
+
+        $base        = 500;
+        $speedBonus  = (int) round(
+            ($timeRemaining / $totalDuration) * 300
+        );
+        $streakBonus = min($streak * 50, 200);
+
+        return $base + $speedBonus + $streakBonus;
+    }
+
+    public function updateScore(
+        BattleRoom $room,
+        int $userId,
+        bool $isCorrect,
+        int $scoreEarned
+    ): void {
+        $key    = $room->cacheKey('scores');
+        $scores = Cache::get($key, []);
+
+        if (!isset($scores[$userId])) return;
+
+        if ($isCorrect) {
+            $scores[$userId]['total_score'] += $scoreEarned;
+            $scores[$userId]['correct']++;
+            $scores[$userId]['streak']++;
+        } else {
+            $scores[$userId]['wrong']++;
+            $scores[$userId]['streak'] = 0;
         }
 
-        return false;
+        // Recalculate ranks
+        $sorted = collect($scores)
+            ->sortByDesc('total_score')
+            ->values();
+
+        foreach ($sorted as $i => $s) {
+            $scores[$s['user_id']]['rank'] = $i + 1;
+        }
+
+        Cache::put($key, $scores, self::TTL);
+    }
+
+    // ── Answer Management ────────────────────
+
+    public function recordAnswer(
+        BattleRoom $room,
+        int $userId,
+        string $answer,
+        bool $isCorrect,
+        int $scoreEarned
+    ): void {
+        $key     = $room->cacheKey('answers');
+        $answers = Cache::get($key, []);
+
+        $answers[$userId] = [
+            'answer'       => $answer,
+            'is_correct'   => $isCorrect,
+            'score_earned' => $scoreEarned,
+            'answered_at'  => now()->timestamp,
+        ];
+
+        Cache::put($key, $answers, self::TTL);
+    }
+
+    public function getAnswers(BattleRoom $room): array
+    {
+        return Cache::get(
+            $room->cacheKey('answers'), []
+        );
+    }
+
+    public function hasAnswered(
+        BattleRoom $room,
+        int $userId
+    ): bool {
+        $answers = $this->getAnswers($room);
+        return isset($answers[$userId]);
+    }
+
+    public function getAnswerStats(
+        BattleRoom $room,
+        array $options
+    ): array {
+        $answers = $this->getAnswers($room);
+        $total   = count($answers);
+        $stats   = [];
+
+        foreach ($options as $opt) {
+            $count = collect($answers)
+                ->where('answer', $opt)
+                ->count();
+            $stats[$opt] = [
+                'count'   => $count,
+                'percent' => $total > 0
+                    ? round(($count / $total) * 100)
+                    : 0,
+            ];
+        }
+
+        return $stats;
+    }
+
+    // ── Group Scoring ────────────────────────
+
+    public function getGroupScores(
+        BattleRoom $room
+    ): array {
+        $scores = $this->getScores($room);
+        $groups = [];
+
+        foreach ($scores as $score) {
+            $label = $score['group_label'] ?? 'Tanpa Grup';
+            if (!isset($groups[$label])) {
+                $groups[$label] = [
+                    'label'       => $label,
+                    'total_score' => 0,
+                    'members'     => 0,
+                ];
+            }
+            $groups[$label]['total_score'] +=
+                $score['total_score'];
+            $groups[$label]['members']++;
+        }
+
+        return collect($groups)
+            ->sortByDesc('total_score')
+            ->values()
+            ->toArray();
+    }
+
+    // ── Cleanup ──────────────────────────────
+
+    public function cleanup(BattleRoom $room): void
+    {
+        foreach (['state', 'scores', 'answers',
+                  'members'] as $suffix) {
+            Cache::forget($room->cacheKey($suffix));
+        }
+        // Hapus cache soal
+        for ($i = 0; $i < $room->total_questions; $i++) {
+            Cache::forget($room->cacheKey('q:' . $i));
+        }
     }
 }
