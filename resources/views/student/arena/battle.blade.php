@@ -65,9 +65,6 @@
                    max-w-[120px] truncate">
           {{ $authUser->name }}
         </p>
-        <p class="text-xs text-purple-600 dark:text-purple-400 font-bold"
-           x-text="(myScore?.total_score ?? 0).toLocaleString() + ' pts'">
-        </p>
       </div>
     </div>
 
