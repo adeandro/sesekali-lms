@@ -11,7 +11,7 @@ class BattleParticipant extends Model
         'battle_room_id', 'user_id',
         'group_label', 'total_score',
         'correct_count', 'wrong_count',
-        'rank', 'joined_at', 'finished_at',
+        'rank', 'physical_reward', 'joined_at', 'finished_at',
     ];
 
     protected $casts = [

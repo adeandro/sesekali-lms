@@ -11,19 +11,32 @@ class BattleRoom extends Model
 {
     use SoftDeletes;
 
+    protected $attributes = [
+        'show_question_on_device' => true,
+    ];
+
     protected $fillable = [
         'token', 'name', 'mode',
         'source_type', 'source_id',
         'question_ids', 'total_questions',
-        'duration_per_question',
+        'duration_per_question', 'show_question_on_device',
         'group_count', 'group_names',
         'max_per_group', 'status',
         'current_q_index',
-        'reward_rank1_exp', 'reward_rank2_exp',
-        'reward_rank3_exp', 'reward_theme_id',
-        'reward_physical', 'created_by',
+        'reward_rank1_exp',
+        'reward_rank1_theme_id',
+        'reward_rank1_physical',
+        'reward_rank2_exp',
+        'reward_rank2_theme_id',
+        'reward_rank2_physical',
+        'reward_rank3_exp',
+        'reward_rank3_theme_id',
+        'reward_rank3_physical',
+        'reward_participant_theme_id',
+        'created_by',
         'started_at', 'ended_at',
     ];
+
 
     protected $casts = [
         'question_ids' => 'array',

@@ -47,9 +47,22 @@ class AvatarController extends Controller
                         'survivor-common' => ['rank' => null, 'name' => 'Partisipan Battle Arena'],
                     ];
 
-                    if (array_key_exists($theme->slug, $arenaThemes)) {
+                    // Priority 1: Check theme_user (New System)
+                    $unlockedByArena = \Illuminate\Support\Facades\DB::table('theme_user')
+                        ->where('user_id', $user->id)
+                        ->where('theme_id', $theme->id)
+                        ->where(function ($q) {
+                            $q->whereNull('expires_at')
+                              ->orWhere('expires_at', '>', now());
+                        })
+                        ->exists();
+
+                    if ($unlockedByArena) {
+                        $locked = false;
+                        $reason = '';
+                    } elseif (array_key_exists($theme->slug, $arenaThemes)) {
+                        // Priority 2: Legacy Hardcoded Mapping
                         $req = $arenaThemes[$theme->slug];
-                        
                         if (!$latestRank) {
                             $locked = true;
                             $reason = "Hanya untuk Partisipan Battle Arena";
@@ -60,14 +73,13 @@ class AvatarController extends Controller
                             }
                         }
                     } else {
-                        // Normal Themes check Level (Using Global Level calculated from all-time EXP)
+                        // Priority 3: Level & Achievement
                         $globalLevel = floor($user->exp_total_alltime / 100) + 1;
                         if ($globalLevel < $theme->min_level) {
                             $locked = true;
                             $reason = "Level {$theme->min_level} (Global)";
                         }
                         
-                        // Normal Themes check Achievement
                         if ($theme->required_achievement_id) {
                             $hasAchievement = $user->achievements()
                                 ->where('achievements.id', $theme->required_achievement_id)
@@ -266,30 +278,42 @@ class AvatarController extends Controller
                 'survivor-common' => ['rank' => null, 'name' => 'Partisipan Battle Arena'],
             ];
 
-            if (array_key_exists($theme->slug, $arenaThemes)) {
-                $req = $arenaThemes[$theme->slug];
-                
-                if (!$latestRank) {
-                    return $this->themeError("Tema \"{$theme->name}\" hanya untuk Partisipan Battle Arena!");
-                }
+            // Priority 1: Check theme_user (New)
+            $unlockedByArena = \Illuminate\Support\Facades\DB::table('theme_user')
+                ->where('user_id', $user->id)
+                ->where('theme_id', $theme->id)
+                ->where(function ($q) {
+                    $q->whereNull('expires_at')
+                      ->orWhere('expires_at', '>', now());
+                })
+                ->exists();
 
-                if ($req['rank'] && $latestRank !== $req['rank']) {
-                    return $this->themeError("Tema \"{$theme->name}\" terkunci! Kamu harus menjadi {$req['name']}.");
-                }
-            } else {
-                $globalLevel = floor($user->exp_total_alltime / 100) + 1;
-                if ($globalLevel < $theme->min_level) {
-                    return $this->themeError("Tema \"{$theme->name}\" terbuka di Level {$theme->min_level} (Global)!");
-                }
-
-                if ($theme->required_achievement_id) {
-                    $hasAchievement = $user->achievements()
-                        ->where('achievements.id', $theme->required_achievement_id)
-                        ->exists();
+            if (!$unlockedByArena) {
+                if (array_key_exists($theme->slug, $arenaThemes)) {
+                    $req = $arenaThemes[$theme->slug];
                     
-                    if (!$hasAchievement) {
-                        $achievementTitle = $theme->requiredAchievement->title ?? 'Pencapaian Tertentu';
-                        return $this->themeError("Tema \"{$theme->name}\" terkunci! Kamu butuh achievement '{$achievementTitle}'.");
+                    if (!$latestRank) {
+                        return $this->themeError("Tema \"{$theme->name}\" hanya untuk Partisipan Battle Arena!");
+                    }
+
+                    if ($req['rank'] && $latestRank !== $req['rank']) {
+                        return $this->themeError("Tema \"{$theme->name}\" terkunci! Kamu harus menjadi {$req['name']}.");
+                    }
+                } else {
+                    $globalLevel = floor($user->exp_total_alltime / 100) + 1;
+                    if ($globalLevel < $theme->min_level) {
+                        return $this->themeError("Tema \"{$theme->name}\" terbuka di Level {$theme->min_level} (Global)!");
+                    }
+
+                    if ($theme->required_achievement_id) {
+                        $hasAchievement = $user->achievements()
+                            ->where('achievements.id', $theme->required_achievement_id)
+                            ->exists();
+                        
+                        if (!$hasAchievement) {
+                            $achievementTitle = $theme->requiredAchievement->title ?? 'Pencapaian Tertentu';
+                            return $this->themeError("Tema \"{$theme->name}\" terkunci! Kamu butuh achievement '{$achievementTitle}'.");
+                        }
                     }
                 }
             }

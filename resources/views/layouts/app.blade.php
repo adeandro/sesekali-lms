@@ -50,7 +50,8 @@
             --sidebar-header:    linear-gradient(135deg, #4f46e5, #3730a3) !important;
         }
         @endif
-    </style>
+        
+        [x-cloak] { display: none !important; }
     </style>
     <style>
         .sticky-save-bar {
@@ -529,11 +530,10 @@
                            class="nav-item py-2 text-sm {{ request()->routeIs('student.leaderboard') ? 'menu-item-active' : '' }}">
                             <i class="fas fa-trophy w-4 mr-2"></i><span>Hall of Fame</span>
                         </a>
-                        <a href="#" 
-                           class="nav-item py-2 text-sm opacity-60 pointer-events-none grayscale">
+                        <a href="{{ route('student.arena.index') }}" 
+                           class="nav-item py-2 text-sm {{ request()->routeIs('student.arena.*') ? 'menu-item-active' : '' }}">
                             <i class="fas fa-fist-raised w-4 mr-2"></i>
                             <span class="flex-1">Battle Arena</span>
-                            <span class="ml-auto text-[9px] font-black bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full uppercase tracking-widest">SOON</span>
                         </a>
                         <a href="{{ route('student.coupons.index') }}" 
                            class="nav-item py-2 text-sm {{ request()->routeIs('student.coupons.*') ? 'menu-item-active' : '' }}">
@@ -574,11 +574,10 @@
                            class="nav-item py-2 text-sm {{ request()->routeIs('admin.gamification.themes*') ? 'menu-item-active' : '' }}">
                             <i class="fas fa-palette w-4 mr-2"></i><span>Themes</span>
                         </a>
-                        <a href="#" 
-                           class="nav-item py-2 text-sm opacity-60 pointer-events-none grayscale">
+                        <a href="{{ route('admin.gamification.arena.index') }}" 
+                           class="nav-item py-2 text-sm {{ request()->routeIs('admin.gamification.arena.*') ? 'menu-item-active' : '' }}">
                             <i class="fas fa-fist-raised w-4 mr-2"></i>
                             <span class="flex-1">Battle Arena</span>
-                            <span class="ml-auto text-[9px] font-black bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full uppercase tracking-widest">MAINTENANCE</span>
                         </a>
                         <a href="{{ route('admin.gamification.coupons.index') }}" 
                            class="nav-item py-2 text-sm {{ request()->routeIs('admin.gamification.coupons*') ? 'menu-item-active' : '' }}">
@@ -631,19 +630,16 @@
         <!-- Main Content Area -->
         <div class="flex flex-col flex-1 overflow-hidden">
             <!-- Top Navigation Bar -->
-            <nav class="z-20 flex-shrink-0" style="background-color: var(--brand-surface); box-shadow: 0 1px 0 rgba(0,0,0,0.05), 0 2px 8px -2px var(--brand-glow);">
+            <nav class="z-50 flex-shrink-0" style="background-color: var(--brand-surface); box-shadow: 0 1px 0 rgba(0,0,0,0.05), 0 2px 8px -2px var(--brand-glow);">
                 <div class="px-4 lg:px-8 py-4 flex items-center justify-between gap-4">
                     {{-- Desktop & Mobile Sidebar Toggle --}}
                     <button id="toggleSidebarBtn" class="lg:hidden text-gray-600 hover:text-gray-900 p-2 -ml-2 transition-all hover:bg-gray-100 rounded-xl">
                         <i class="fas fa-bars text-xl"></i>
                     </button>
 
-                    <div class="flex items-center gap-4">
-                    <!-- <div class="hidden lg:block flex-1">
-                        <h1 class="text-2xl font-bold text-gray-900">@yield('page-title', 'Dashboard')</h1>
-                    </div> -->
-                    <div class="flex items-center gap-4">
-                    <div class="flex items-center gap-4">
+                    <div class="flex-1"></div>
+
+                    <div class="flex items-center gap-3 sm:gap-4">
                         {{-- Universal Notification Bell --}}
                         <div x-data="{ 
                             open: false, 
@@ -651,10 +647,12 @@
                         }" class="relative">
                             <button @click="open = !open" @click.away="open = false" class="relative p-2 text-gray-400 hover:text-[var(--brand-primary)] bg-gray-50 hover:bg-[var(--brand-glow)] rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-2">
                                 <i class="fas fa-bell text-lg"></i>
+                                @if(Auth::user()->unreadNotifications->count() > 0)
                                 <span x-show="unreadCount > 0" x-cloak class="absolute top-0 right-0 p-1 flex items-center justify-center">
                                     <span class="absolute inline-flex h-full w-full rounded-full bg-[var(--color-notification-unread,theme(colors.rose.400))] opacity-75 animate-ping"></span>
                                     <span class="relative inline-flex items-center justify-center rounded-full h-4 w-4 bg-[var(--color-notification-unread,theme(colors.rose.500))] text-white text-[8px] font-black border-2 border-white" x-text="unreadCount > 99 ? '99+' : unreadCount"></span>
                                 </span>
+                                @endif
                             </button>
 
                             {{-- Dropdown --}}
@@ -665,7 +663,7 @@
                                  x-transition:leave="transition ease-in duration-150"
                                  x-transition:leave-start="opacity-100 scale-100 translate-y-0"
                                  x-transition:leave-end="opacity-0 scale-95 -translate-y-2"
-                                 class="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] border border-gray-100 overflow-hidden z-[60]" style="display: none;">
+                                 class="absolute right-0 mt-3 w-[calc(100vw-2rem)] sm:w-80 bg-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] border border-gray-100 overflow-hidden z-[60]" style="display: none;">
                                 
                                 <div class="bg-gray-50 px-4 py-3 border-b border-gray-100 flex justify-between items-center">
                                     <h3 class="text-[11px] font-black uppercase tracking-widest text-gray-900">Notifikasi</h3>

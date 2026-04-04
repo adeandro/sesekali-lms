@@ -17,9 +17,9 @@
        Added !important to override any colliding styles.
        ────────────────────────────────────────────────────────
     */
-    .grid   { display: grid !important; }
-    .flex   { display: flex !important; }
-    .block  { display: block !important; }
+    .grid   { display: grid; }
+    .flex   { display: flex; }
+    .block  { display: block; }
     .hidden { display: none !important; }
 
     /* LG: Responsive Breakpoint (1024px+) */

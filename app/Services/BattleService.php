@@ -20,13 +20,20 @@ class BattleService
     public function getState(BattleRoom $room): array
     {
         $key = $room->cacheKey('state');
-        return Cache::get($key, [
+        $cached = Cache::get($key, [
             'state'   => 'lobby',
             'q_index' => 0,
             'q_total' => $room->total_questions,
             'room_id' => $room->id,
             'mode'    => $room->mode,
         ]);
+
+        // Ensure mode is always present (for older caches)
+        if (!isset($cached['mode'])) {
+            $cached['mode'] = $room->mode;
+        }
+
+        return $cached;
     }
 
     public function setState(
@@ -87,7 +94,10 @@ class BattleService
             'id'          => $participant->id,
             'user_id'     => $participant->user_id,
             'name'        => $participant->user->name,
-            'avatar_url'  => $participant->user->photo_url,
+            'initials'    => $participant->user->initials,
+            'avatar_url'  => $participant->user->avatar_url,
+            'is_avatar_seed'=> $participant->user->is_avatar_seed,
+            'avatar_seed' => $participant->user->avatar_seed,
             'group_label' => $participant->group_label,
             'joined_at'   => now()->timestamp,
         ];
@@ -98,6 +108,28 @@ class BattleService
     public function getMembers(BattleRoom $room): array
     {
         return Cache::get($room->cacheKey('members'), []);
+    }
+
+    public function updateMemberGroup(
+        BattleRoom $room,
+        int $userId,
+        string $groupLabel
+    ): void {
+        $key     = $room->cacheKey('members');
+        $members = Cache::get($key, []);
+
+        if (isset($members[$userId])) {
+            $members[$userId]['group_label'] = $groupLabel;
+            Cache::put($key, $members, self::TTL);
+        }
+
+        // Juga update scores cache jika sudah ada
+        $scoreKey = $room->cacheKey('scores');
+        $scores   = Cache::get($scoreKey, []);
+        if (isset($scores[$userId])) {
+            $scores[$userId]['group_label'] = $groupLabel;
+            Cache::put($scoreKey, $scores, self::TTL);
+        }
     }
 
     // ── Score Management ─────────────────────
@@ -112,6 +144,8 @@ class BattleService
                 'user_id'     => $userId,
                 'name'        => $member['name'],
                 'avatar_url'  => $member['avatar_url'],
+                'is_avatar_seed'=> $member['is_avatar_seed'] ?? false,
+                'avatar_seed' => $member['avatar_seed'] ?? null,
                 'group_label' => $member['group_label'],
                 'total_score' => 0,
                 'correct'     => 0,
@@ -194,7 +228,7 @@ class BattleService
         $answers = Cache::get($key, []);
 
         $answers[$userId] = [
-            'answer'       => $answer,
+            'answer'       => $answer === 'none' ? null : $answer,
             'is_correct'   => $isCorrect,
             'score_earned' => $scoreEarned,
             'answered_at'  => now()->timestamp,
@@ -247,26 +281,57 @@ class BattleService
         BattleRoom $room
     ): array {
         $scores = $this->getScores($room);
+        $members = $this->getMembers($room);
+        
+        // Gunakan group_names dari room sebagai base agar grup kosong tetap tampil
+        $groupLabels = $room->group_names ?? [];
+        if (empty($groupLabels) && $room->group_count > 0) {
+            for ($i = 1; $i <= $room->group_count; $i++) {
+                $groupLabels[] = "Grup " . $i;
+            }
+        }
+        if (empty($groupLabels)) {
+            $groupLabels = ['Merah', 'Biru'];
+        }
         $groups = [];
+        foreach ($groupLabels as $label) {
+            $groups[$label] = [
+                'group_label' => $label,
+                'name'        => $label, // Alias for frontend compatibility
+                'total_score' => 0,
+                'members'     => 0,
+                'top_contributors' => [],
+            ];
+        }
+
+        // Urutkan scores untuk ambil kontributor tertinggi
+        $sortedScores = collect($scores)->sortByDesc('total_score');
 
         foreach ($scores as $score) {
-            $label = $score['group_label'] ?? 'Tanpa Grup';
-            if (!isset($groups[$label])) {
-                $groups[$label] = [
-                    'label'       => $label,
-                    'total_score' => 0,
-                    'members'     => 0,
-                ];
-            }
-            $groups[$label]['total_score'] +=
-                $score['total_score'];
+            $label = $score['group_label'];
+            if (!$label || !isset($groups[$label])) continue;
+            
+            $groups[$label]['total_score'] += $score['total_score'];
             $groups[$label]['members']++;
         }
 
-        return collect($groups)
-            ->sortByDesc('total_score')
-            ->values()
-            ->toArray();
+        // Ambil 3 kontributor teratas untuk tiap grup
+        foreach ($groups as $label => &$group) {
+            $group['top_contributors'] = $sortedScores
+                ->where('group_label', $label)
+                ->take(3)
+                ->map(fn($s) => [
+                    'name' => $s['name'],
+                    'score' => $s['total_score'],
+                    'avatar_url' => $s['avatar_url'],
+                    'is_avatar_seed' => $s['is_avatar_seed'] ?? false,
+                    'avatar_seed' => $s['avatar_seed'] ?? null,
+                ])
+                ->values()
+                ->toArray();
+        }
+
+        return collect($groups)->sortByDesc('total_score')->values()->toArray();
     }
 
     // ── Cleanup ──────────────────────────────

@@ -221,6 +221,12 @@ Route::middleware('auth')->group(function () {
                 Route::post('join', [StudentArenaController::class, 'join'])
                     ->name('join');
 
+                Route::get('{room}/pick-group', [StudentArenaController::class, 'pickGroup'])
+                    ->name('pick-group');
+
+                Route::post('{room}/update-group', [StudentArenaController::class, 'updateGroup'])
+                    ->name('update-group');
+
                 Route::get('{room}/lobby', [StudentArenaController::class, 'lobby'])
                     ->name('lobby');
 
@@ -491,6 +497,9 @@ Route::middleware('auth')->group(function () {
                         Route::get('{room}/control/data', [AdminArenaController::class, 'controlData'])
                             ->name('control.data');
 
+                        Route::post('{room}/toggle-show-question', [AdminArenaController::class, 'toggleShowQuestion'])
+                            ->name('toggle-show-question');
+
                         // Proyektor display
                         Route::get('{room}/display', [AdminArenaController::class, 'display'])
                             ->name('display');
@@ -504,6 +513,10 @@ Route::middleware('auth')->group(function () {
 
                         Route::get('{room}/debriefing', [AdminArenaController::class, 'debriefing'])
                             ->name('debriefing');
+
+                        // AJAX — exam preview (Sprint 2)
+                        Route::get('exam-preview', [AdminArenaController::class, 'examPreview'])
+                            ->name('exam.preview');
                     });
 
                 // ── Season Management ─────────────────────────────────────────

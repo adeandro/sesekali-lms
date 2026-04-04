@@ -236,7 +236,7 @@
 
         @if($isLeaderboardEnabled)
         {{-- KOLOM KANAN: Leaderboard (desktop only) --}}
-        <div class="hidden md:flex flex-1 flex-col justify-between px-9 py-11 relative overflow-hidden"
+        <div class="flex-1 flex-col justify-between px-9 py-11 relative overflow-hidden max-md:hidden"
 
              style="background: linear-gradient(160deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%);">
 
