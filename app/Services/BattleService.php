@@ -17,7 +17,7 @@ class BattleService
 
     // ── State Management ─────────────────────
 
-    public function getState(BattleRoom $room): array
+    public function getState(BattleRoom $room, bool $autoAdvance = true): array
     {
         $key = $room->cacheKey('state');
         $cached = Cache::get($key, [
@@ -33,6 +33,17 @@ class BattleService
             $cached['mode'] = $room->mode;
         }
 
+        // ── AUTO ADVANCE: Question -> Discussion ──
+        if ($autoAdvance && ($cached['state'] ?? '') === 'question') {
+            $started = $cached['question_started_at'] ?? 0;
+            $duration = $cached['question_duration'] ?? $room->duration_per_question;
+            
+            // Beri grace period 1 detik untuk network latency
+            if ($started > 0 && (now()->timestamp > ($started + $duration + 1))) {
+                return $this->setState($room, 'discussion');
+            }
+        }
+
         return $cached;
     }
 
@@ -41,7 +52,8 @@ class BattleService
         string $state,
         array $extra = []
     ): array {
-        $current = $this->getState($room);
+        // Jangan auto-advance saat sedang di-set manual (hindari rekursi)
+        $current = $this->getState($room, false);
         $new = array_merge($current, $extra, [
             'state'      => $state,
             'updated_at' => now()->timestamp,

@@ -65,10 +65,8 @@
                    max-w-[120px] truncate">
           {{ $authUser->name }}
         </p>
-        <p class="text-xs text-purple-600
-                   dark:text-purple-400 font-bold"
-           x-text="(myScore?.total_score ?? 0)
-                    .toLocaleString() + ' pts'">
+        <p class="text-xs text-purple-600 dark:text-purple-400 font-bold"
+           x-text="(myScore?.total_score ?? 0).toLocaleString() + ' pts'">
         </p>
       </div>
     </div>
@@ -78,16 +76,13 @@
       <div class="flex flex-col items-center">
         <div class="w-12 h-12 rounded-full border-4
                     flex items-center justify-center
-                    font-black text-xl transition-all"
+                    font-black text-xl transition-all shadow-inner"
              :class="remainingTime <= 5
-               ? 'border-red-500 text-red-600
-                  animate-pulse bg-red-50'
+               ? 'border-red-500 text-red-600 animate-pulse bg-red-50'
                : remainingTime <= 10
-                 ? 'border-amber-500 text-amber-600
-                    bg-amber-50'
-                 : 'border-emerald-500
-                    text-emerald-600 bg-emerald-50'">
-          <span x-text="remainingTime"></span>
+                 ? 'border-amber-500 text-amber-600 bg-amber-50'
+                 : 'border-emerald-500 text-emerald-600 bg-emerald-50'">
+          <span x-text="remainingTime ?? '--'"></span>
         </div>
         <p class="text-[10px] text-gray-400 mt-0.5
                    font-bold uppercase tracking-wider">
@@ -97,20 +92,8 @@
     </template>
 
     <template x-if="state.state !== 'question'">
-      <div class="px-3 py-1.5 rounded-xl
-                  bg-gray-100 dark:bg-gray-700
-                  text-xs font-black text-gray-500
-                  dark:text-gray-400 uppercase
-                  tracking-wider"
-           x-text="state.state === 'lobby'
-             ? 'Menunggu'
-             : state.state === 'preview'
-               ? 'Siap!'
-               : state.state === 'discussion'
-                 ? 'Diskusi'
-                 : state.state === 'leaderboard'
-                   ? 'Ranking'
-                   : 'Selesai'">
+      <div class="px-3 py-1.5 rounded-xl bg-gray-100 dark:bg-gray-700 text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+           x-text="state.state === 'lobby' ? 'Menunggu' : state.state === 'preview' ? 'Siap!' : state.state === 'discussion' ? 'Diskusi' : state.state === 'leaderboard' ? 'Ranking' : 'Selesai'">
       </div>
     </template>
   </div>
@@ -567,6 +550,7 @@ function studentBattle(token) {
 
         initBattle() {
             this.pollData();
+            this.tickTimer();
             // Poll tiap 2 detik — sesuai Sprint 3
             this.pollInterval = setInterval(
                 () => this.pollData(), 2000
@@ -578,12 +562,16 @@ function studentBattle(token) {
         },
 
         tickTimer() {
-            if (this.state.state !== 'question') return;
+            if (this.state.state !== 'question') {
+                this.remainingTime = 0;
+                return;
+            }
             if (!this.state.question_started_at) return;
 
-            const elapsed = Math.floor(Date.now() / 1000)
-                            - this.state.question_started_at;
-            const dur = this.state.question_duration ?? 0;
+            const now = Math.floor(Date.now() / 1000);
+            const elapsed = now - this.state.question_started_at;
+            const dur = this.state.question_duration || {{ $room->duration_per_question }};
+            
             this.remainingTime = Math.max(0, dur - elapsed);
         },
 

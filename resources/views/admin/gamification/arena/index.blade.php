@@ -17,8 +17,7 @@
           Battle Arena
         </h1>
       </div>
-      <p class="text-sm font-bold text-gray-600
-                  dark:text-gray-400 ml-13">
+      <p class="text-slate-600 font-bold">
         Kelola sesi kuis interaktif untuk kelasmu
       </p>
     </div>
@@ -151,21 +150,9 @@
               {{ $room->token }}
             </code>
           </div>
-          <div class="flex items-center gap-3
-                       text-[11px] font-bold text-gray-500
-                       dark:text-gray-400">
-            <span>
-              <i class="fas fa-list-ol mr-1 opacity-70"></i>
-              {{ $room->total_questions }} soal
-            </span>
-            <span>·</span>
-            <span>
-              <i class="fas fa-clock mr-1 opacity-70"></i>
-              {{ $room->duration_per_question }}d/soal
-            </span>
-            <span>·</span>
-            <span class="uppercase tracking-wide">{{ $modeLabel[0] }}</span>
-          </div>
+          <p class="text-slate-600 text-xs font-bold mt-1 opacity-90">
+            {{ $room->total_questions }} soal • {{ $room->duration_per_question }} dtk • {{ ucfirst($room->mode) }}
+          </p>
         </div>
 
         {{-- Status + Actions --}}

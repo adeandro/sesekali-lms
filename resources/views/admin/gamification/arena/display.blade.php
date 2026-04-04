@@ -57,8 +57,8 @@
                 <i class="fas fa-fist-raised text-2xl text-white"></i>
             </div>
             <div>
-                <h1 class="text-xl font-black uppercase tracking-widest text-indigo-100">{{ $room->name }}</h1>
-                <p class="text-[10px] text-indigo-300 font-bold tracking-widest uppercase">Battle Arena V2</p>
+                <h1 class="text-xl font-black uppercase tracking-widest text-white">{{ $room->name }}</h1>
+                <p class="text-[10px] text-indigo-200 font-black tracking-widest uppercase opacity-90">Battle Arena V2</p>
             </div>
         </div>
         <div class="flex gap-4 items-center">
@@ -1032,9 +1032,17 @@
 
             async pollData() {
                 try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
                     const res = await fetch('{{ route('admin.gamification.arena.display.data', $room->token) }}', {
-                        headers: { 'Accept': 'application/json' }
+                        headers: { 'Accept': 'application/json' },
+                        signal: controller.signal
                     });
+                    
+                    clearTimeout(timeoutId);
+                    
+                    if (!res.ok) throw new Error('Network response was not ok');
                     const data = await res.json();
                     
                     this.state = data.state ?? {};

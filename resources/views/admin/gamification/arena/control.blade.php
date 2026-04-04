@@ -131,7 +131,9 @@
                         
                         <div class="relative w-32 h-32 mx-auto flex items-center justify-center rounded-full bg-slate-800 border-4 border-slate-700">
                             <div class="text-center w-full">
-                                <p class="text-[10px] uppercase font-black tracking-widest text-emerald-400">Terjawab</p>
+                                <p class="text-slate-500 font-black text-xs uppercase tracking-[0.2em] mb-1">
+                                    Terjawab
+                                </p>
                                 <p class="text-4xl font-black text-white tabular-nums leading-none mt-1">
                                     <span x-text="answersCount">0</span>
                                 </p>
