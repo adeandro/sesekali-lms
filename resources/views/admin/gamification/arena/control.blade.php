@@ -206,12 +206,26 @@
                 <template x-if="state.state === 'finish'">
                     <div class="w-full space-y-4">
                         <i class="fas fa-flag-checkered text-5xl text-red-600 mb-2"></i>
-                        <p class="text-xl font-black text-gray-900">Battle Selesai!</p>
+                        <p class="text-xl font-black text-white">Battle Selesai!</p>
                         <p class="text-sm text-slate-400">Hasil tersimpan ke database.</p>
                         <a href="{{ route('admin.gamification.arena.index') }}"
-                           class="inline-block mt-4 px-6 py-2 bg-slate-800 text-slate-300 hover:bg-gray-200 font-bold rounded-xl transition-colors">
+                           class="inline-block mt-4 px-6 py-3 bg-slate-800 text-slate-300 hover:bg-slate-700 font-bold rounded-xl transition-colors border border-slate-700">
                             Kembali ke Daftar Room
                         </a>
+                    </div>
+                </template>
+
+                {{-- DANGER ZONE: FORCE FINISH (Always visible when active) --}}
+                <template x-if="state.state !== 'lobby' && state.state !== 'finish'">
+                    <div class="pt-6 mt-6 border-t border-slate-800/50">
+                        <button @click="forceFinish" :disabled="isProcessing"
+                                class="w-full py-2.5 rounded-xl font-bold text-[10px]
+                                       uppercase tracking-[0.2em] transition-all
+                                       active:scale-[0.98] disabled:opacity-40
+                                       disabled:cursor-not-allowed
+                                       border border-rose-500/30 text-rose-500/70 hover:bg-rose-500/5 hover:text-rose-400">
+                            <i class="fas fa-power-off mr-2"></i> Hentikan Paksa Battle
+                        </button>
                     </div>
                 </template>
 
