@@ -535,10 +535,6 @@
                             <i class="fas fa-fist-raised w-4 mr-2"></i>
                             <span class="flex-1">Battle Arena</span>
                         </a>
-                        <a href="{{ route('student.coupons.index') }}" 
-                           class="nav-item py-2 text-sm {{ request()->routeIs('student.coupons.*') ? 'menu-item-active' : '' }}">
-                            <i class="fas fa-ticket-alt w-4 mr-2"></i><span>Kupon Fisik</span>
-                        </a>
                     </div>
                 </div>
                 @endif
@@ -578,10 +574,6 @@
                            class="nav-item py-2 text-sm {{ request()->routeIs('admin.gamification.arena.*') ? 'menu-item-active' : '' }}">
                             <i class="fas fa-fist-raised w-4 mr-2"></i>
                             <span class="flex-1">Battle Arena</span>
-                        </a>
-                        <a href="{{ route('admin.gamification.coupons.index') }}" 
-                           class="nav-item py-2 text-sm {{ request()->routeIs('admin.gamification.coupons*') ? 'menu-item-active' : '' }}">
-                            <i class="fas fa-ticket-alt w-4 mr-2"></i><span>Kupon Hadiah</span>
                         </a>
                         <a href="{{ route('admin.gamification.seasons.index') }}" 
                            class="nav-item py-2 text-sm {{ request()->routeIs('admin.gamification.seasons*') ? 'menu-item-active' : '' }}">

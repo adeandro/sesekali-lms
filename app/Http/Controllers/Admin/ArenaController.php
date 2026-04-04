@@ -427,7 +427,7 @@ class ArenaController extends Controller
             if (isset($rankRewards[$rank])) {
                 $themeId = $rankRewards[$rank]['theme_id'];
             } elseif ($room->reward_participant_theme_id) {
-                $alreadyHas = \Illuminate\Support\Facades\DB::table('user_themes')
+                $alreadyHas = \Illuminate\Support\Facades\DB::table('theme_user')
                     ->where('user_id', $userId)
                     ->where('theme_id', $room->reward_participant_theme_id)
                     ->exists();
