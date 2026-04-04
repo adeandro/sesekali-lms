@@ -500,6 +500,9 @@ Route::middleware('auth')->group(function () {
                         Route::post('{room}/toggle-show-question', [AdminArenaController::class, 'toggleShowQuestion'])
                             ->name('toggle-show-question');
 
+                        Route::post('{room}/toggle-lock', [AdminArenaController::class, 'toggleLock'])
+                            ->name('toggle-lock');
+
                         // Proyektor display
                         Route::get('{room}/display', [AdminArenaController::class, 'display'])
                             ->name('display');

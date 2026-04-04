@@ -376,37 +376,43 @@
 
         {{-- MODE GRUP --}}
         <template x-if="state.mode === 'group'">
-          <template x-for="(g, idx) in groupScores" :key="g.group_label">
-            <div class="glass-panel p-6 rounded-[3rem] flex items-center justify-between border-2 transition-all duration-1000 min-h-[110px]"
-                 :class="{
-                   'bg-blue-600/10 border-blue-500/40 shadow-[0_0_30px_rgba(59,130,246,0.2)]': getGroupColorKey(g.name || g.group_label, idx) === 'blue',
-                   'bg-rose-600/10 border-rose-500/40 shadow-[0_0_30px_rgba(244,63,94,0.2)]': getGroupColorKey(g.name || g.group_label, idx) === 'rose',
-                   'bg-amber-600/10 border-amber-500/40 shadow-[0_0_30px_rgba(245,158,11,0.2)]': getGroupColorKey(g.name || g.group_label, idx) === 'amber',
-                   'bg-emerald-600/10 border-emerald-500/40 shadow-[0_0_30px_rgba(16,185,129,0.2)]': getGroupColorKey(g.name || g.group_label, idx) === 'emerald'
-                 }"
-                 x-transition:enter="transition ease-out duration-700"
-                 x-transition:enter-start="opacity-0 translateY-8"
-                 x-transition:enter-end="opacity-100 translateY-0">
-              
-              <div class="flex items-center gap-8">
-                 <div class="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl font-black text-white shadow-lg shrink-0"
-                      :class="{
-                        'bg-blue-500': getGroupColorKey(g.name || g.group_label, idx) === 'blue',
-                        'bg-rose-500': getGroupColorKey(g.name || g.group_label, idx) === 'rose',
-                        'bg-amber-500': getGroupColorKey(g.name || g.group_label, idx) === 'amber',
-                        'bg-emerald-500': getGroupColorKey(g.name || g.group_label, idx) === 'emerald'
-                      }"
-                      x-text="'#' + (idx + 1)"></div>
-                 <h3 class="text-4xl font-black uppercase text-white tracking-tighter drop-shadow-md truncate max-w-[400px]" x-text="g.name || g.group_label"></h3>
+          <div class="flex flex-col gap-8">
+            <template x-for="(g, idx) in groupScores" :key="g.group_label">
+              <div class="glass-panel p-8 rounded-[4rem] flex items-center justify-between border-4 transition-all duration-1000 min-h-[140px]"
+                   :class="{
+                     'bg-blue-600/10 border-blue-500/40 shadow-[0_0_40px_rgba(59,130,246,0.3)]': getGroupColorKey(g.name || g.group_label, idx) === 'blue',
+                     'bg-rose-600/10 border-rose-500/40 shadow-[0_0_40px_rgba(244,63,94,0.3)]': getGroupColorKey(g.name || g.group_label, idx) === 'rose',
+                     'bg-amber-600/10 border-amber-500/40 shadow-[0_0_40px_rgba(245,158,11,0.3)]': getGroupColorKey(g.name || g.group_label, idx) === 'amber',
+                     'bg-emerald-600/10 border-emerald-500/40 shadow-[0_0_40px_rgba(16,185,129,0.3)]': getGroupColorKey(g.name || g.group_label, idx) === 'emerald'
+                   }"
+                   x-transition:enter="transition ease-out duration-700"
+                   x-transition:enter-start="opacity-0 translateY-12"
+                   x-transition:enter-end="opacity-100 translateY-0">
+                
+                <div class="flex items-center gap-12">
+                   <div class="w-24 h-24 rounded-[2rem] flex items-center justify-center text-5xl font-black text-white shadow-2xl shrink-0"
+                        :class="{
+                          'bg-blue-500': getGroupColorKey(g.name || g.group_label, idx) === 'blue',
+                          'bg-rose-500': getGroupColorKey(g.name || g.group_label, idx) === 'rose',
+                          'bg-amber-500': getGroupColorKey(g.name || g.group_label, idx) === 'amber',
+                          'bg-emerald-500': getGroupColorKey(g.name || g.group_label, idx) === 'emerald'
+                        }"
+                        x-text="'#' + (idx + 1)"></div>
+                   <h3 class="text-7xl font-black uppercase text-white tracking-tighter drop-shadow-2xl truncate max-w-[600px]" x-text="g.name || g.group_label"></h3>
+                </div>
+  
+                <div class="text-right shrink-0">
+                   <p class="text-9xl font-black text-white tabular-nums tracking-tighter drop-shadow-2xl" x-text="g.total_score.toLocaleString()"></p>
+                   <p class="text-sm font-black text-white/40 uppercase tracking-[0.5em] mt-2">TOTAL TEAM POINTS</p>
+                </div>
               </div>
-
-              <div class="text-right shrink-0">
-                 <p class="text-6xl font-black text-white tabular-nums tracking-tighter drop-shadow-lg" x-text="g.total_score.toLocaleString()"></p>
-                 <p class="text-[10px] font-black text-white/50 uppercase tracking-[0.3em] mt-1">TOTAL TEAM POINTS</p>
-              </div>
-            </div>
-          </template>
+            </template>
+          </div>
         </template>
+  
+      </div>
+    </div>
+  </template>
 
       </div>
     </div>
@@ -807,6 +813,7 @@
             animatingScores: {},
             isAnimating: false,
             
+            scoresMap: {},
             podiumStep: 0,
             podiumCountdown: 0,
             podiumInterval: null,
@@ -847,7 +854,13 @@
                     return prev && prev.total_score !== s.total_score;
                 });
 
-                if (!hasChanges && this.leaderboard.length > 0) {
+                if (!this.leaderboard || this.leaderboard.length === 0) {
+                    this.leaderboard = sorted.slice(0, 5);
+                    this.isAnimating = false;
+                    return;
+                }
+
+                if (!hasChanges) {
                     this.leaderboard = sorted.slice(0, 5);
                     return;
                 }
@@ -1047,7 +1060,14 @@
                     
                     this.state = data.state ?? {};
                     this.members = data.members ?? [];
+                    
+                    let smap = {};
+                    if (data.scores) {
+                        data.scores.forEach(s => smap[s.user_id] = s);
+                    }
+                    this.scoresMap = smap;
                     this.scores = data.scores ?? [];
+                    
                     this.question = data.question;
                     this.stats = data.stats ?? {};
 
@@ -1073,8 +1093,8 @@
             
             topMembers(limit) {
                 return [...this.members].sort((a,b) => {
-                    let rA = this.scores[a.user_id]?.rank || 9999;
-                    let rB = this.scores[b.user_id]?.rank || 9999;
+                    let rA = this.scoresMap[a.user_id]?.rank || 9999;
+                    let rB = this.scoresMap[b.user_id]?.rank || 9999;
                     return rA - rB;
                 }).slice(0, limit);
             },

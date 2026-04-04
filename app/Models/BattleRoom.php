@@ -21,7 +21,7 @@ class BattleRoom extends Model
         'question_ids', 'total_questions',
         'duration_per_question', 'show_question_on_device',
         'group_count', 'group_names',
-        'max_per_group', 'status',
+        'max_per_group', 'status', 'is_locked',
         'current_q_index',
         'reward_rank1_exp',
         'reward_rank1_theme_id',

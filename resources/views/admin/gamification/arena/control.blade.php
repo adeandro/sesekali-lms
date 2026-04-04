@@ -98,14 +98,30 @@
                     <div class="w-full space-y-4">
                         <i class="fas fa-users text-5xl text-gray-300 mb-2"></i>
                         <p class="text-sm text-slate-400">Tunggu peserta bergabung. Saat siap, mulai battle.</p>
-                        <button @click="setState('preview')" :disabled="isProcessing || count === 0"
-                                class="w-full py-3 rounded-xl font-black text-sm
-                                       uppercase tracking-widest transition-all
-                                       active:scale-[0.98] disabled:opacity-40
-                                       disabled:cursor-not-allowed
-                                       bg-purple-600 text-white hover:bg-purple-700">
-                            <i class="fas fa-rocket mr-2"></i> MULAI BATTLE
-                        </button>
+                        
+                        <div class="flex flex-col gap-3 pt-2">
+                            <button @click="setState('preview')" :disabled="isProcessing || count === 0"
+                                    class="w-full py-4 rounded-2xl font-black text-sm
+                                           uppercase tracking-widest transition-all
+                                           active:scale-[0.98] disabled:opacity-40
+                                           disabled:cursor-not-allowed
+                                           bg-gradient-to-r from-purple-600 to-indigo-600 
+                                           text-white hover:from-purple-500 hover:to-indigo-500
+                                           shadow-lg shadow-purple-500/20">
+                                <i class="fas fa-rocket mr-2"></i> MULAI BATTLE
+                            </button>
+
+                            <button @click="toggleLock()" :disabled="isProcessing"
+                                    class="w-full py-3 rounded-xl font-bold text-xs
+                                           uppercase tracking-widest transition-all
+                                           active:scale-[0.95] border-2"
+                                    :class="isLocked 
+                                        ? 'bg-rose-500/10 border-rose-500/50 text-rose-500 hover:bg-rose-500 hover:text-white' 
+                                        : 'bg-emerald-500/10 border-emerald-500/50 text-emerald-500 hover:bg-emerald-500 hover:text-white'">
+                                <i class="fas mr-2" :class="isLocked ? 'fa-lock' : 'fa-lock-open'"></i>
+                                <span x-text="isLocked ? 'ROOM TERKUNCI (BUKA)' : 'KUNCI PENDAFTARAN'"></span>
+                            </button>
+                        </div>
                     </div>
                 </template>
 
@@ -353,6 +369,7 @@ function arenaControl(token) {
         isProcessing: false,
         pollInterval: null,
         showQuestionOnDevice: {{ $room->show_question_on_device ? 'true' : 'false' }},
+        isLocked: {{ $room->is_locked ? 'true' : 'false' }},
         autoAdvanceTriggered: false,
         totalQuestions: {{ $room->total_questions }},
         lastQIndex: -1,
@@ -384,6 +401,7 @@ function arenaControl(token) {
                 this.count = data.count;
                 this.question = data.question;
                 this.answersCount = data.answers_count;
+                this.isLocked = data.is_locked;
 
                 const newQIndex = data.state?.q_index ?? 0;
                 if (newQIndex !== this.lastQIndex) {
@@ -440,6 +458,41 @@ function arenaControl(token) {
                 // Reset flag untuk soal berikutnya
                 this.autoAdvanceTriggered = false;
             } catch(e) {}
+        },
+
+        async toggleLock() {
+            this.isProcessing = true;
+            try {
+                const res = await fetch(
+                    '{{ route('admin.gamification.arena.toggle-lock', $room->token) }}',
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document
+                                .querySelector(
+                                    'meta[name="csrf-token"]'
+                                ).content,
+                        }
+                    }
+                );
+                const data = await res.json();
+                this.isLocked = data.is_locked;
+                if(this.isLocked) {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: 'Room Berhasil Terkunci',
+                        showConfirmButton: false,
+                        timer: 2000
+                    });
+                }
+            } catch(e) {
+                console.error("Toggle lock error", e);
+            } finally {
+                this.isProcessing = false;
+            }
         },
 
         async toggleShowQuestion() {

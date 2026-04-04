@@ -44,6 +44,11 @@ class ArenaController extends Controller
                 'token' => 'Battle sudah berlangsung, tidak bisa join.'
             ]);
         }
+        if ($room->is_locked) {
+            return back()->withErrors([
+                'token' => 'Pendaftaran room sudah dikunci oleh guru.'
+            ]);
+        }
         if ($room->isFull()) {
             return back()->withErrors([
                 'token' => 'Room sudah penuh (maksimal 40 peserta).'
@@ -178,6 +183,7 @@ class ArenaController extends Controller
             'state'   => $state['state'],
             'count'   => count($members),
             'members' => array_values($members),
+            'is_locked' => (bool)$room->is_locked,
         ]);
     }
 

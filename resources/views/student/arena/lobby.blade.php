@@ -12,8 +12,7 @@
 <div class="fixed inset-0 bg-[#020617] -z-10"></div>
 <div class="min-h-[85vh] flex flex-col items-center justify-center px-4 py-8 select-none relative z-10"
      x-data="lobbyPoller()"
-     x-init="init()"
-     @click="checkFullscreen()">
+     x-init="init()">
 
     {{-- Main Container --}}
     <div class="w-full max-w-md space-y-8">
@@ -198,6 +197,30 @@
             </div>
         </template>
         @endif
+        
+        {{-- OVERLAY ROOM LOCKED --}}
+        <template x-if="isLocked">
+            <div class="fixed inset-0 z-[200] flex flex-col items-center justify-center p-8 bg-slate-950/80 backdrop-blur-md transition-all"
+                 x-transition:enter="transition ease-out duration-500"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100">
+                
+                <div class="w-24 h-24 rounded-full bg-rose-500/20 border-2 border-rose-500/50 flex items-center justify-center mb-6 shadow-[0_0_50px_rgba(244,63,94,0.3)]">
+                    <i class="fas fa-lock text-4xl text-rose-500 animate-pulse"></i>
+                </div>
+                
+                <h2 class="text-3xl font-black text-rose-500 uppercase tracking-tighter mb-2 text-center">ROOM LOCKED</h2>
+                <div class="w-12 h-1 bg-rose-500/30 rounded-full mb-6"></div>
+                
+                <p class="text-slate-300 text-center font-bold max-w-xs leading-relaxed">
+                    Guru telah mengunci pendaftaran. Tidak ada peserta baru yang dapat bergabung.
+                </p>
+                
+                <p class="text-slate-500 text-[10px] uppercase font-black tracking-[0.2em] mt-10">
+                    Kamu tetap bisa mengikuti battle
+                </p>
+            </div>
+        </template>
     </div>
 </div>
 
@@ -207,16 +230,12 @@ function lobbyPoller() {
         count: {{ $room->participants()->count() }},
         pollInterval: null,
         showGroupModal: {{ ($room->mode === 'group' && !$participant->group_label) ? 'true' : 'false' }},
+        isLocked: {{ $room->is_locked ? 'true' : 'false' }},
         loading: false,
 
         init() {
             this.fetchStatus();
             this.pollInterval = setInterval(() => this.fetchStatus(), 3000);
-            
-            // Auto check fullscreen on init if group already picked
-            if (!this.showGroupModal) {
-                this.checkFullscreen();
-            }
         },
 
         async selectGroup(label) {
@@ -245,22 +264,6 @@ function lobbyPoller() {
             }
         },
 
-        checkFullscreen() {
-            if (!document.fullscreenElement) {
-                this.enterFullscreen();
-            }
-        },
-
-        enterFullscreen() {
-            const el = document.documentElement;
-            try {
-                if (el.requestFullscreen) el.requestFullscreen();
-                else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-                else if (el.msRequestFullscreen) el.msRequestFullscreen();
-            } catch (e) {
-                console.log('Fullscreen failed:', e);
-            }
-        },
 
         async fetchStatus() {
             try {

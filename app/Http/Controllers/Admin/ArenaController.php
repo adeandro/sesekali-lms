@@ -239,6 +239,7 @@ class ArenaController extends Controller
 
         if ($newState === 'preview') {
             if ($currentState === 'lobby') {
+                $room->update(['is_locked' => true]);
                 $this->battleService->initScores($room);
                 $this->cacheQuestionData($room, 0);
                 $this->battleService->setState($room, 'preview', ['q_index' => 0]);
@@ -471,6 +472,18 @@ class ArenaController extends Controller
         }
     }
 
+    public function toggleLock(BattleRoom $room)
+    {
+        $room->update([
+            'is_locked' => !$room->is_locked,
+        ]);
+
+        return response()->json([
+            'status'    => 'ok',
+            'is_locked' => $room->is_locked,
+        ]);
+    }
+
     public function toggleShowQuestion(
         Request $request,
         BattleRoom $room
@@ -505,6 +518,7 @@ class ArenaController extends Controller
             'answers_count' => $answersCount,
             'question' => $question,
             'show_question_on_device' => $room->show_question_on_device,
+            'is_locked' => $room->is_locked,
         ]);
     }
 
@@ -552,6 +566,7 @@ class ArenaController extends Controller
             'group_scores' => $groupScores,
             'question' => $question,
             'stats' => $stats,
+            'is_locked' => $room->is_locked,
         ]);
     }
 

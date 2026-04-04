@@ -218,7 +218,7 @@
                 elseif (request()->routeIs('dashboard.principal') || request()->is('admin/reports*')) $activeAccordion = 'monitoring';
                 elseif (request()->is('admin/report-data*') || request()->is('admin/dudi*')) $activeAccordion = 'raport';
                 elseif (request()->is('admin/letters*')) $activeAccordion = 'surat';
-                elseif (request()->is('student/exams*') || request()->is('student/results*') || request()->is('student/coupons*')) $activeAccordion = 'student_akademik';
+                elseif (request()->is('student/exams*') || request()->is('student/results*')) $activeAccordion = 'student_akademik';
                 elseif (request()->is('student/leaderboard*') || request()->is('student/arena*')) $activeAccordion = 'student_gamifikasi';
                 elseif (request()->is('admin/gamification*')) $activeAccordion = 'gamification';
             @endphp
@@ -516,7 +516,7 @@
                 <div class="pt-2">
                     <button @click="activeAccordion = (activeAccordion === 'student_gamifikasi' ? null : 'student_gamifikasi')" 
                             class="w-full nav-item justify-between 
-                                   {{ (request()->routeIs('student.leaderboard') || request()->routeIs('student.arena.*') || request()->routeIs('student.coupons.*')) ? 'bg-gray-50' : '' }}">
+                                   {{ (request()->routeIs('student.leaderboard') || request()->routeIs('student.arena.*')) ? 'bg-gray-50' : '' }}">
                         <div class="flex items-center">
                             <i class="fas fa-gamepad w-5 text-lg mr-3"></i>
                             <span class="font-bold text-[11px] uppercase tracking-widest">Gamifikasi</span>
