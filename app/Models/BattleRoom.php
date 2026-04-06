@@ -75,7 +75,7 @@ class BattleRoom extends Model
 
     public function isFull(): bool
     {
-        return $this->participants()->count() >= 200;
+        return $this->participants()->count() >= 40;
     }
 
     public function isGroupFull(string $groupLabel): bool
