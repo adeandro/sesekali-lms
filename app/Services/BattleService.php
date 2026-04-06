@@ -117,7 +117,7 @@ class BattleService
 
         $stats = [];
         if (($state['state'] ?? '') === 'discussion') {
-            $stats = $this->getAnswerStats($room, ['a', 'b', 'c', 'd', 'e']);
+            $stats = $this->getAnswerStats($room, ['A', 'B', 'C', 'D', 'E']);
         }
 
         $currentState = $state['state'] ?? '';
@@ -357,7 +357,9 @@ class BattleService
 
         foreach ($options as $opt) {
             $count = collect($answers)
-                ->where('answer', $opt)
+                ->filter(function($ans) use ($opt) {
+                    return strtoupper($ans['answer'] ?? '') === strtoupper($opt);
+                })
                 ->count();
             $stats[$opt] = [
                 'count'   => $count,

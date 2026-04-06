@@ -1110,8 +1110,22 @@
                     }
                 }
                 
-                this.question = data.question;
-                this.stats = data.stats ?? {};
+                // Persistence for Question & Stats (Jangan timpa data lengkap dengan data pruned)
+                if (data.question) {
+                     const isNewPruned = !data.question.correct_answer;
+                     const isCurrentlyDiscussion = (this.state.state === 'discussion');
+                     
+                     if (isCurrentlyDiscussion && isNewPruned && this.question?.correct_answer) {
+                         // Mantain existing data if new one is pruned during discussion
+                         this.question = { ...this.question, ...data.question, correct_answer: this.question.correct_answer, explanation: this.question.explanation };
+                     } else {
+                         this.question = data.question;
+                     }
+                }
+                
+                if (data.stats && Object.keys(data.stats).length > 0) {
+                    this.stats = data.stats;
+                }
                 
                 if (data.group_scores && this.state.state !== 'finish') {
                     this.updateGroupLeaderboard(data.group_scores);
