@@ -403,12 +403,9 @@ function arenaControl(token) {
         },
 
         applyData(data) {
-            // Sync Drift (Server vs Client) dengan proteksi jitter
-            if (data.updated_at) {
-                const newDrift = data.updated_at - Math.floor(Date.now() / 1000);
-                if (Math.abs(newDrift - this.serverDrift) > 1 || this.serverDrift === 0) {
-                    this.serverDrift = newDrift;
-                }
+            // Sync Drift (Server vs Client) - HANYA HITUNG SEKALI agar tidak jitter/looping
+            if (data.updated_at && this.serverDrift === 0) {
+                this.serverDrift = data.updated_at - Math.floor(Date.now() / 1000);
             }
 
             this.state = data.state || {};

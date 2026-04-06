@@ -237,6 +237,7 @@ function lobbyPoller() {
         showGroupModal: {{ ($room->mode === 'group' && !$participant->group_label) ? 'true' : 'false' }},
         isLocked: {{ $room->is_locked ? 'true' : 'false' }},
         loading: false,
+        isNavigating: false,
 
         init() {
             // Jitter awal agar tidak semua nembak di detik yg sama
@@ -248,6 +249,7 @@ function lobbyPoller() {
 
             // Mencegah siswa keluar tidak sengaja (Browser Warning)
             window.addEventListener('beforeunload', (e) => {
+                if (this.isNavigating) return; // Jangan munculkan popup jika navigasi resmi (battle mulai)
                 if (this.isLocked || this.count > 0) {
                     e.preventDefault();
                     e.returnValue = '';
@@ -300,6 +302,7 @@ function lobbyPoller() {
                 this.isLocked = data.is_locked || false;
 
                 if (data.state && data.state.state !== 'lobby') {
+                    this.isNavigating = true;
                     clearInterval(this.pollInterval);
                     window.location.href = '{{ route('student.arena.battle', $room->token) }}';
                 }
@@ -316,6 +319,7 @@ function lobbyPoller() {
                 const data = await res.json();
                 this.count = data.count;
                 if (data.state && data.state !== 'lobby') {
+                    this.isNavigating = true;
                     clearInterval(this.pollInterval);
                     window.location.href = '{{ route('student.arena.battle', $room->token) }}';
                 }

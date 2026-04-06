@@ -604,12 +604,9 @@ function studentBattle(token) {
 
                 const mirror = await resMirror.json();
                 
-                // Sync Drift (Server vs Client) dengan proteksi jitter (+/- 1s)
-                if (mirror.updated_at) {
-                    const newDrift = mirror.updated_at - Math.floor(Date.now() / 1000);
-                    if (Math.abs(newDrift - this.serverDrift) > 1 || this.serverDrift === 0) {
-                        this.serverDrift = newDrift;
-                    }
+                // Sync Drift (Server vs Client) - HANYA HITUNG SEKALI agar tidak jitter/looping
+                if (mirror.updated_at && this.serverDrift === 0) {
+                    this.serverDrift = mirror.updated_at - Math.floor(Date.now() / 1000);
                 }
 
                 const newStateStr = `${mirror.state?.state}-${mirror.state?.q_index}-${mirror.updated_at}`;
