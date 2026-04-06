@@ -1105,7 +1105,7 @@
                     this.scoresMap = smap;
                     this.scores = data.scores;
                     
-                    if (this.state.state !== 'finish' && !in_array(this.state.state, ['preview', 'question'])) {
+                    if (this.state.state !== 'finish' && !['preview', 'question'].includes(this.state.state)) {
                         this.updateLeaderboard(data.scores);
                     }
                 }

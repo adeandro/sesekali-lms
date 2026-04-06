@@ -141,7 +141,7 @@ class BattleService
         } elseif ($isDiscussion) {
             // Saat pembahasan, kirim top 5 skor saja untuk leaderboard kecil
             $scoresToSync = array_slice(array_values($scores), 0, 5); 
-            $membersToSync = []; // Nama dikaitkan via ID jika sudah ada di cache lokal
+            $membersToSync = array_values($members); // Pulihkan list nama agar leaderboard samping tetap tampil
         } elseif ($isLeaderboard) {
             // Saat podium, butuh list skor penuh dan nama
             $scoresToSync = array_values($scores);
