@@ -1065,7 +1065,7 @@
 
                     if (resMirror.ok) {
                         const data = await resMirror.json();
-                        this.applyData(data);
+                        this.applyData(data, resMirror);
                         return;
                     }
 
@@ -1075,17 +1075,20 @@
                     });
                     if (res.ok) {
                         const data = await res.json();
-                        this.applyData(data);
+                        this.applyData(data, res);
                     }
                 } catch(e) {
                     console.error("Display poll error", e);
                 }
             },
 
-            applyData(data) {
-                // Sync Drift (Server vs Client) - HANYA HITUNG SEKALI agar tidak jitter/looping
-                if (data.updated_at && this.serverDrift === 0) {
-                    this.serverDrift = data.updated_at - Math.floor(Date.now() / 1000);
+            applyData(data, res) {
+                // Sync Drift (Authoritative via HTTP Header) - HANYA HITUNG SEKALI
+                if (this.serverDrift === 0 && res) {
+                    const sDate = res.headers.get('Date');
+                    if (sDate) {
+                        this.serverDrift = Math.floor(new Date(sDate).getTime() / 1000) - Math.floor(Date.now() / 1000);
+                    }
                 }
 
                 this.state = data.state ?? {};
