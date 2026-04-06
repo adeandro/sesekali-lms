@@ -145,22 +145,6 @@
                 <template x-if="state.state === 'question'">
                     <div class="w-full space-y-4">
                         
-                        <div class="relative w-32 h-32 mx-auto flex items-center justify-center rounded-full bg-slate-800 border-4 border-slate-700">
-                            <div class="text-center w-full">
-                                <p class="text-slate-500 font-black text-xs uppercase tracking-[0.2em] mb-1">
-                                    Terjawab
-                                </p>
-                                <p class="text-4xl font-black text-white tabular-nums leading-none mt-1">
-                                    <span x-text="answersCount">0</span>
-                                </p>
-                                <div class="w-12 h-1 bg-slate-700 mx-auto mt-2 rounded-full overflow-hidden">
-                                     <div class="h-full bg-emerald-500 transition-all duration-300 shadow-[0_0_10px_rgba(16,185,129,0.5)]" :style="'width: ' + ((answersCount / (count || 1)) * 100) + '%'"></div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <p class="text-sm text-slate-400 mt-4 mb-2">Siswa sedang menjawab...</p>
-                        
                         <button @click="setState('discussion')" :disabled="isProcessing"
                                 class="w-full py-3 rounded-xl font-black text-sm
                                        uppercase tracking-widest transition-all
@@ -365,7 +349,6 @@ function arenaControl(token) {
         scores: [],
         question: null,
         count: 0,
-        answersCount: 0,
         isProcessing: false,
         pollInterval: null,
         showQuestionOnDevice: {{ $room->show_question_on_device ? 'true' : 'false' }},
@@ -416,7 +399,6 @@ function arenaControl(token) {
             this.state = data.state || {};
             this.count = data.member_count || data.count || 0;
             this.question = data.question;
-            this.answersCount = data.answers_count || 0;
             this.isLocked = data.is_locked;
             this.showQuestionOnDevice = data.show_on_device !== undefined ? data.show_on_device : data.show_question_on_device;
 

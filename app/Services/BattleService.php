@@ -132,7 +132,6 @@ class BattleService
             'stats'          => $stats,
             'is_locked'      => (bool) $room->is_locked,
             'show_on_device' => (bool) $room->show_question_on_device,
-            'answers_count'  => count($this->getAnswers($room)),
             'updated_at'     => now()->timestamp,
         ];
 

@@ -230,6 +230,8 @@ class ArenaController extends Controller
     public function control(BattleRoom $room)
     {
         $state = $this->battleService->getState($room);
+        $this->battleService->syncStaticMirror($room, $state);
+
         return view(
             'admin.gamification.arena.control',
             compact('room', 'state')
