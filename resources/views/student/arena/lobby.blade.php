@@ -3,6 +3,11 @@
 @section('content')
 @push('styles')
 <style>
+    /* Sembunyikan navigasi bawaan layout agar siswa fokus */
+    aside#sidebar, nav.z-50 { display: none !important; }
+    /* Pastikan konten utama mengambil area penuh */
+    main { margin-left: 0 !important; width: 100% !important; height: 100vh !important; }
+    
     main#main-content-scroll { 
         background-color: #020617 !important; 
     }
@@ -240,6 +245,14 @@ function lobbyPoller() {
                 this.fetchStatus();
                 this.pollInterval = setInterval(() => this.fetchStatus(), 3000);
             }, jitter);
+
+            // Mencegah siswa keluar tidak sengaja (Browser Warning)
+            window.addEventListener('beforeunload', (e) => {
+                if (this.isLocked || this.count > 0) {
+                    e.preventDefault();
+                    e.returnValue = '';
+                }
+            });
         },
 
         async selectGroup(label) {

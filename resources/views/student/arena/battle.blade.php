@@ -543,6 +543,7 @@ function studentBattle(token) {
         pollInterval:   null,
         lastStateStr:   '',     // format: {state}-{q_index}
         isLocked:       false,
+        serverDrift:    0,
 
         initBattle() {
             // Jitter awal (0-1500ms) agar riuh request tidak barengan
@@ -581,8 +582,8 @@ function studentBattle(token) {
             }
             if (!this.state.question_started_at) return;
 
-            const now = Math.floor(Date.now() / 1000);
-            const elapsed = now - this.state.question_started_at;
+            const nowCorrected = Math.floor(Date.now() / 1000) + this.serverDrift;
+            const elapsed = nowCorrected - this.state.question_started_at;
             const dur = this.state.question_duration || {{ $room->duration_per_question }};
             
             this.remainingTime = Math.max(0, dur - elapsed);
@@ -602,6 +603,12 @@ function studentBattle(token) {
                 }
 
                 const mirror = await resMirror.json();
+                
+                // Sync Drift (Server vs Client)
+                if (mirror.updated_at) {
+                    this.serverDrift = mirror.updated_at - Math.floor(Date.now() / 1000);
+                }
+
                 const newStateStr = `${mirror.state?.state}-${mirror.state?.q_index}-${mirror.updated_at}`;
 
                 // Update global state dari mirror (sangat ringan)

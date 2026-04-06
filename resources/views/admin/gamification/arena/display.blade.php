@@ -85,17 +85,10 @@
     <div class="text-center w-full max-w-6xl
                 animate-fadeIn">
 
-      {{-- Judul sedang --}}
-      <h2 class="text-4xl font-black uppercase
-                  tracking-tight mb-2 text-transparent
-                  bg-clip-text bg-gradient-to-r
-                  from-indigo-400 via-purple-300
-                  to-indigo-400">
-        Bergabunglah!
-      </h2>
-      <p class="text-lg text-indigo-300/80 mb-6 font-bold uppercase tracking-widest">
-        Buka <span class="text-white bg-indigo-500/20 px-3 py-1 rounded-lg border border-indigo-400/30">{{ config('app.url') }}</span> & Masukkan PIN
-      </p>
+      {{-- Simbol Battle --}}
+      <div class="mb-6 opacity-40">
+        <i class="fas fa-fist-raised text-6xl text-indigo-500 animate-bounce"></i>
+      </div>
 
       {{-- Counter sedang --}}
       <div class="flex items-center justify-center gap-4 mb-2">
@@ -134,15 +127,21 @@
       </div>
 
       {{-- Avatar grid — MAJESTIC GRID --}}
-      <div class="flex flex-wrap justify-center gap-12 max-w-6xl mx-auto py-12 px-4 transition-all">
+      <div class="flex flex-wrap justify-center gap-6 max-w-7xl mx-auto py-8 px-4 transition-all">
         <template x-for="m in members" :key="m.user_id">
-          <div class="flex flex-col items-center gap-5 animate-popIn group">
+          <div class="flex flex-col items-center gap-3 animate-popIn group">
             {{-- Avatar Wrapper dengan Glow --}}
             <div class="relative">
                 <div class="absolute inset-0 bg-indigo-500 rounded-full blur-3xl opacity-10 group-hover:opacity-40 transition-opacity duration-700"></div>
                 <div class="absolute -inset-1 bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 rounded-full blur opacity-0 group-hover:opacity-60 transition-opacity duration-500"></div>
                 
-                <div class="w-24 h-24 rounded-full overflow-hidden bg-slate-900 border-2 border-white/20 shadow-2xl relative z-10 transition-all duration-500 group-hover:scale-115 group-hover:border-indigo-400 group-hover:rotate-3 shadow-indigo-500/10">
+                <div class="rounded-full overflow-hidden bg-slate-900 border-2 border-white/20 shadow-2xl relative z-10 transition-all duration-500 group-hover:scale-115 group-hover:border-indigo-400 group-hover:rotate-3 shadow-indigo-500/10"
+                     :class="{
+                        'w-24 h-24': members.length <= 12,
+                        'w-20 h-20': members.length > 12 && members.length <= 24,
+                        'w-16 h-16': members.length > 24 && members.length <= 48,
+                        'w-12 h-12': members.length > 48
+                     }">
                     <template x-if="m.is_avatar_seed && m.avatar_seed">
                         <div class="w-full h-full [&>svg]:w-full [&>svg]:h-full [&>svg]:block transition-transform duration-500 group-hover:scale-110"
                              x-html="typeof multiavatar === 'function' ? multiavatar(m.avatar_seed) : ''">
@@ -157,9 +156,21 @@
                     <i class="fas fa-check text-[10px] text-white"></i>
                 </div>
             </div>
-            <div class="text-center max-w-[140px]">
-                <p class="text-white font-black text-xl uppercase tracking-tighter drop-shadow-2xl leading-none group-hover:text-indigo-200 transition-colors" x-text="m.name"></p>
-                <div class="h-1.5 w-8 bg-indigo-500 mx-auto rounded-full mt-3 opacity-30 group-hover:w-full transition-all duration-700 shadow-[0_0_10px_rgba(99,102,241,0.5)]"></div>
+            <div class="text-center transition-all"
+                 :class="{
+                    'max-w-[140px]': members.length <= 24,
+                    'max-w-[100px]': members.length > 24
+                 }">
+                <p class="text-white font-black uppercase tracking-tighter drop-shadow-2xl leading-none group-hover:text-indigo-200 transition-colors" 
+                   :class="{
+                      'text-xl': members.length <= 12,
+                      'text-lg': members.length > 12 && members.length <= 24,
+                      'text-sm': members.length > 24 && members.length <= 48,
+                      'text-[10px]': members.length > 48
+                   }"
+                   x-text="m.name"></p>
+                <div class="h-1 bg-indigo-500 mx-auto rounded-full mt-2 opacity-30 group-hover:w-full transition-all duration-700 shadow-[0_0_10px_rgba(99,102,241,0.5)]"
+                     :class="members.length > 24 ? 'w-4' : 'w-8'"></div>
             </div>
           </div>
         </template>
@@ -817,6 +828,7 @@
             podiumStep: 0,
             podiumCountdown: 0,
             podiumInterval: null,
+            serverDrift: 0,
 
             getGroupColorKey(name, idx) {
                 const n = (name || '').toLowerCase();
@@ -836,7 +848,8 @@
                 
                 this.timerInterval = setInterval(() => {
                     if (this.state.state === 'question' && this.state.question_started_at) {
-                        const elapsed = Math.floor(Date.now() / 1000) - this.state.question_started_at;
+                        const correctedNow = Math.floor(Date.now() / 1000) + this.serverDrift;
+                        const elapsed = correctedNow - this.state.question_started_at;
                         const dur = this.state.question_duration || 0;
                         const left = dur - elapsed;
                         this.remainingTime = left > 0 ? left : 0;
@@ -1070,6 +1083,11 @@
             },
 
             applyData(data) {
+                // Sync Drift (Server vs Client)
+                if (data.updated_at) {
+                    this.serverDrift = data.updated_at - Math.floor(Date.now() / 1000);
+                }
+
                 this.state = data.state ?? {};
                 this.members = data.members ?? [];
                 
