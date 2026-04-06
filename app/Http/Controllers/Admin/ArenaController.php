@@ -214,6 +214,13 @@ class ArenaController extends Controller
     public function destroy(BattleRoom $room)
     {
         $this->battleService->cleanup($room);
+        
+        // Hapus file mirror
+        $path = public_path("battle-mirror/{$room->token}.json");
+        if (file_exists($path)) {
+            @unlink($path);
+        }
+
         $room->delete();
         return back()->with('success', 'Room dihapus.');
     }
@@ -478,6 +485,8 @@ class ArenaController extends Controller
             'is_locked' => !$room->is_locked,
         ]);
 
+        $this->battleService->syncStaticMirror($room);
+
         return response()->json([
             'status'    => 'ok',
             'is_locked' => $room->is_locked,
@@ -492,6 +501,8 @@ class ArenaController extends Controller
             'show_question_on_device' =>
                 !$room->show_question_on_device,
         ]);
+
+        $this->battleService->syncStaticMirror($room);
 
         return response()->json([
             'status'              => 'ok',

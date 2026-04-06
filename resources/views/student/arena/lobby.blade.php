@@ -234,8 +234,12 @@ function lobbyPoller() {
         loading: false,
 
         init() {
-            this.fetchStatus();
-            this.pollInterval = setInterval(() => this.fetchStatus(), 3000);
+            // Jitter awal agar tidak semua nembak di detik yg sama
+            const jitter = Math.floor(Math.random() * 1500);
+            setTimeout(() => {
+                this.fetchStatus();
+                this.pollInterval = setInterval(() => this.fetchStatus(), 3000);
+            }, jitter);
         },
 
         async selectGroup(label) {
@@ -267,12 +271,37 @@ function lobbyPoller() {
 
         async fetchStatus() {
             try {
+                // Poll Mirror JSON (Statik - No PHP)
+                const res = await fetch(`/battle-mirror/${this.token}.json?t=${Date.now()}`, {
+                    headers: { 'Accept': 'application/json' }
+                });
+                
+                if (!res.ok) {
+                    // Fallback ke PHP jika mirror belum terbuat
+                    this.fetchStatusFallback();
+                    return;
+                }
+
+                const data = await res.json();
+                this.count = data.member_count || 0;
+                this.isLocked = data.is_locked || false;
+
+                if (data.state && data.state.state !== 'lobby') {
+                    clearInterval(this.pollInterval);
+                    window.location.href = '{{ route('student.arena.battle', $room->token) }}';
+                }
+            } catch (e) {
+                // Silent fail
+            }
+        },
+
+        async fetchStatusFallback() {
+            try {
                 const res = await fetch('{{ route('student.arena.lobby.status', $room->token) }}', {
                     headers: { 'Accept': 'application/json' }
                 });
                 const data = await res.json();
                 this.count = data.count;
-
                 if (data.state && data.state !== 'lobby') {
                     clearInterval(this.pollInterval);
                     window.location.href = '{{ route('student.arena.battle', $room->token) }}';

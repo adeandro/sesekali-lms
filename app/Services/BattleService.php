@@ -68,6 +68,9 @@ class BattleService
 
         Cache::put($room->cacheKey('state'),
             $new, self::TTL);
+        
+        $this->syncStaticMirror($room, $new);
+
         return $new;
     }
 
@@ -93,6 +96,55 @@ class BattleService
         ]);
     }
 
+    public function syncStaticMirror(BattleRoom $room, ?array $state = null): void
+    {
+        if (!$state) {
+            $state = $this->getState($room, false);
+        }
+
+        $members = $this->getMembers($room);
+        $scores = $this->getScores($room);
+        $groupScores = ($room->mode === 'group') ? $this->getGroupScores($room) : [];
+        
+        $qIndex = $state['q_index'] ?? 0;
+        $question = Cache::get("battle:{$room->token}:q:{$qIndex}");
+
+        // Sanitasi data soal: hanya tampilkan jawaban saat diskusi
+        if ($question && ($state['state'] ?? '') !== 'discussion') {
+            unset($question['correct_answer']);
+            unset($question['explanation']);
+        }
+
+        $stats = [];
+        if (($state['state'] ?? '') === 'discussion') {
+            $stats = $this->getAnswerStats($room, ['a', 'b', 'c', 'd', 'e']);
+        }
+
+        $mirrorData = [
+            'room_id'        => $room->id,
+            'token'          => $room->token,
+            'state'          => $state,
+            'member_count'   => count($members),
+            'members'        => array_values($members),
+            'scores'         => array_values($scores),
+            'group_scores'   => $groupScores,
+            'question'       => $question,
+            'stats'          => $stats,
+            'is_locked'      => (bool) $room->is_locked,
+            'show_on_device' => (bool) $room->show_question_on_device,
+            'updated_at'     => now()->timestamp,
+        ];
+
+        $path = public_path("battle-mirror/{$room->token}.json");
+        
+        // Buat folder jika belum ada (antisipasi pertama kali)
+        if (!is_dir(dirname($path))) {
+            mkdir(dirname($path), 0755, true);
+        }
+
+        file_put_contents($path, json_encode($mirrorData, JSON_UNESCAPED_UNICODE));
+    }
+
     // ── Member Management ────────────────────
 
     public function addMember(
@@ -115,6 +167,7 @@ class BattleService
         ];
 
         Cache::put($key, $members, self::TTL);
+        $this->syncStaticMirror($room);
     }
 
     public function getMembers(BattleRoom $room): array
@@ -142,6 +195,8 @@ class BattleService
             $scores[$userId]['group_label'] = $groupLabel;
             Cache::put($scoreKey, $scores, self::TTL);
         }
+
+        $this->syncStaticMirror($room);
     }
 
     // ── Score Management ─────────────────────

@@ -1045,49 +1045,58 @@
 
             async pollData() {
                 try {
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 8000);
-
-                    const res = await fetch('{{ route('admin.gamification.arena.display.data', $room->token) }}', {
-                        headers: { 'Accept': 'application/json' },
-                        signal: controller.signal
+                    // Try Static Mirror first
+                    const resMirror = await fetch(`/battle-mirror/${this.token}.json?t=${Date.now()}`, {
+                        headers: { 'Accept': 'application/json' }
                     });
-                    
-                    clearTimeout(timeoutId);
-                    
-                    if (!res.ok) throw new Error('Network response was not ok');
-                    const data = await res.json();
-                    
-                    this.state = data.state ?? {};
-                    this.members = data.members ?? [];
-                    
-                    let smap = {};
-                    if (data.scores) {
-                        data.scores.forEach(s => smap[s.user_id] = s);
-                    }
-                    this.scoresMap = smap;
-                    this.scores = data.scores ?? [];
-                    
-                    this.question = data.question;
-                    this.stats = data.stats ?? {};
 
-                    if (data.scores && this.state.state !== 'finish') {
-                        this.updateLeaderboard(data.scores);
-                    }
-                    
-                    if (data.group_scores && this.state.state !== 'finish') {
-                        this.updateGroupLeaderboard(data.group_scores);
+                    if (resMirror.ok) {
+                        const data = await resMirror.json();
+                        this.applyData(data);
+                        return;
                     }
 
-                    if (this.state.state === 'finish') {
-                        clearInterval(this.pollInterval);
-                        if (!this.confettiFired) {
-                            this.confettiFired = true;
-                            this.initPodium();
-                        }
+                    // Fallback to PHP
+                    const res = await fetch('{{ route('admin.gamification.arena.display.data', $room->token) }}', {
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        this.applyData(data);
                     }
                 } catch(e) {
                     console.error("Display poll error", e);
+                }
+            },
+
+            applyData(data) {
+                this.state = data.state ?? {};
+                this.members = data.members ?? [];
+                
+                let smap = {};
+                if (data.scores) {
+                    data.scores.forEach(s => smap[s.user_id] = s);
+                }
+                this.scoresMap = smap;
+                this.scores = data.scores ?? [];
+                
+                this.question = data.question;
+                this.stats = data.stats ?? {};
+
+                if (data.scores && this.state.state !== 'finish') {
+                    this.updateLeaderboard(data.scores);
+                }
+                
+                if (data.group_scores && this.state.state !== 'finish') {
+                    this.updateGroupLeaderboard(data.group_scores);
+                }
+
+                if (this.state.state === 'finish') {
+                    clearInterval(this.pollInterval);
+                    if (!this.confettiFired) {
+                        this.confettiFired = true;
+                        this.initPodium();
+                    }
                 }
             },
             

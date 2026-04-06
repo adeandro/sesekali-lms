@@ -541,21 +541,37 @@ function studentBattle(token) {
         isSubmitting:   false,
         timerInterval:  null,
         pollInterval:   null,
-        lastQIndex:     -1,     // deteksi pergantian soal
-        authName:       '{{ auth()->user()->name }}',
-        authAvatarUrl:  '{{ auth()->user()->avatar_url }}',
+        lastStateStr:   '',     // format: {state}-{q_index}
+        isLocked:       false,
 
         initBattle() {
-            this.pollData();
-            this.tickTimer();
-            // Poll tiap 2 detik — sesuai Sprint 3
-            this.pollInterval = setInterval(
-                () => this.pollData(), 2000
-            );
-            // Timer client-side tiap 1 detik
-            this.timerInterval = setInterval(
-                () => this.tickTimer(), 1000
-            );
+            // Jitter awal (0-1500ms) agar riuh request tidak barengan
+            const jitter = Math.floor(Math.random() * 1500);
+            
+            setTimeout(() => {
+                this.pollData();
+                this.tickTimer();
+                this.startAdaptivePolling();
+                
+                // Timer client-side tetap 1 detik untuk UI smooth
+                this.timerInterval = setInterval(() => this.tickTimer(), 1000);
+            }, jitter);
+        },
+
+        startAdaptivePolling() {
+            if (this.pollInterval) clearInterval(this.pollInterval);
+            
+            let interval = 3000; // default
+            
+            if (this.state.state === 'question') {
+                interval = 2000; // lebih cepat saat soal aktif
+            } else if (this.state.state === 'lobby') {
+                interval = 5000;
+            } else if (this.state.state === 'finish') {
+                return; // stop polling
+            }
+
+            this.pollInterval = setInterval(() => this.pollData(), interval);
         },
 
         tickTimer() {
@@ -574,62 +590,74 @@ function studentBattle(token) {
 
         async pollData() {
             try {
-                const res = await fetch(
-                    '/student/arena/' + this.token + '/battle/data',
-                    { headers: { 'Accept': 'application/json' } }
-                );
-                const data = await res.json();
+                // 1. Ambil data dari Static Mirror (.json) - NO PHP
+                const resMirror = await fetch(`/battle-mirror/${this.token}.json?t=${Date.now()}`, {
+                    headers: { 'Accept': 'application/json' }
+                });
 
-                // Deteksi pergantian soal → reset state lokal
-                const newQIndex = data.state?.q_index ?? 0;
-                if (newQIndex !== this.lastQIndex) {
-                    this.lastQIndex   = newQIndex;
-                    this.hasAnswered  = false;
-                    this.answerResult = null;
+                if (!resMirror.ok) {
+                    // Fallback ke PHP jika mirror rusak/hilang
+                    await this.syncWithServer();
+                    return;
                 }
 
-                // Auto Fullscreen Request
-                if (data.state && data.state.state !== 'lobby') {
-                    // this.attemptFullscreen(); -- Removed per request
-                }
+                const mirror = await resMirror.json();
+                const newStateStr = `${mirror.state?.state}-${mirror.state?.q_index}-${mirror.updated_at}`;
 
-                this.state    = data.state ?? {};
-                this.myScore  = data.my_score;
-                this.groupScore = data.group_score;
-                this.question = data.question;
+                // Update global state dari mirror (sangat ringan)
+                this.state = mirror.state || {};
+                this.question = mirror.question;
+                this.showQuestion = Boolean(mirror.show_on_device);
+                this.isLocked = mirror.is_locked;
 
-                // Jangan override true → false karena network delay
-                if (data.has_answered) {
-                    this.hasAnswered = true;
-                }
+                // 2. Cek apakah status berubah? Jika ya, atau jika baru awal, 
+                //    PANGGIL PHP untuk ambil skor/status pribadi.
+                if (newStateStr !== this.lastStateStr) {
+                    this.lastStateStr = newStateStr;
+                    
+                    // Reset local state jika soal berubah
+                    const newQIndex = mirror.state?.q_index ?? 0;
+                    if (newQIndex !== this.lastQIndex) {
+                        this.lastQIndex   = newQIndex;
+                        this.hasAnswered  = false;
+                        this.answerResult = null;
+                    }
 
-                // answer_result dari server saat discussion
-                if (data.answer_result) {
-                    this.answerResult = data.answer_result;
-                }
-
-                // Stop polling saat finish
-                if (this.state.state === 'finish') {
-                    clearInterval(this.pollInterval);
-                    clearInterval(this.timerInterval);
-                }
-
-                // Ambil state dari room untuk toggle
-                if (data.show_question_on_device !== undefined) {
-                    this.showQuestion = Boolean(data.show_question_on_device);
+                    await this.syncWithServer();
+                    this.startAdaptivePolling(); // Sesuaikan kecepatan polling
                 }
             } catch (e) {
                 // Silent fail
             }
         },
 
+        async syncWithServer() {
+            try {
+                // Ambil data pribadi (skor, rank, hasAnswered) via PHP
+                const res = await fetch(`/student/arena/${this.token}/battle/data`, {
+                    headers: { 'Accept': 'application/json' }
+                });
+                const data = await res.json();
+
+                this.myScore = data.my_score;
+                this.groupScore = data.group_score;
+                
+                if (data.has_answered) {
+                    this.hasAnswered = true;
+                }
+                if (data.answer_result) {
+                    this.answerResult = data.answer_result;
+                }
+
+                if (this.state.state === 'finish') {
+                    clearInterval(this.pollInterval);
+                    clearInterval(this.timerInterval);
+                }
+            } catch (e) {}
+        },
+
         async submitAnswer(opt) {
-            // Guard: jangan kirim kalau sudah jawab,
-            // sedang submit, timer habis, atau null
-            if (this.isSubmitting) return;
-            if (this.hasAnswered)  return;
-            if (this.remainingTime === 0) return;
-            if (opt === null) return;
+            if (this.isSubmitting || this.hasAnswered || this.remainingTime === 0 || opt === null) return;
 
             this.isSubmitting = true;
 
@@ -641,10 +669,7 @@ function studentBattle(token) {
                         headers: {
                             'Content-Type': 'application/json',
                             'Accept': 'application/json',
-                            'X-CSRF-TOKEN': document
-                                .querySelector(
-                                    'meta[name="csrf-token"]'
-                                ).content,
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                         },
                         body: JSON.stringify({
                             answer:         opt,
@@ -657,25 +682,15 @@ function studentBattle(token) {
 
                 if (data.status === 'ok') {
                     this.hasAnswered = true;
-                    // Update skor langsung dari response
-                    // tanpa menunggu poll berikutnya
                     if (this.myScore) {
                         this.myScore.total_score = data.total_score;
                         this.myScore.rank        = data.rank;
                         this.myScore.streak      = data.streak;
                     }
-                } else if (data.status === 'rejected'
-                           && data.reason === 'time_expired') {
-                    // Server tolak karena timer habis
+                } else if (data.status === 'rejected' && data.reason === 'time_expired') {
                     this.remainingTime = 0;
                 }
-                // 'already_answered' → hasAnswered sudah true,
-                // tidak perlu action tambahan
-
-            } catch (e) {
-                // Silent fail — siswa bisa coba lagi
-                // selama timer belum habis
-            }
+            } catch (e) {}
 
             this.isSubmitting = false;
         },
