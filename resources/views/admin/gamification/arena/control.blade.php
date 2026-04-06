@@ -371,6 +371,7 @@ function arenaControl(token) {
         showQuestionOnDevice: {{ $room->show_question_on_device ? 'true' : 'false' }},
         isLocked: {{ $room->is_locked ? 'true' : 'false' }},
         autoAdvanceTriggered: false,
+        serverDrift: 0,
         totalQuestions: {{ $room->total_questions }},
         lastQIndex: -1,
 
@@ -384,38 +385,61 @@ function arenaControl(token) {
 
         async fetchData() {
             try {
+                // 1. Coba Static Mirror dulu (Sangat Ringan)
+                const resMirror = await fetch(`/battle-mirror/${this.token}.json?t=${Date.now()}`);
+                if (resMirror.ok) {
+                    const data = await resMirror.json();
+                    this.applyData(data);
+                    return;
+                }
+
+                // 2. Fallback ke PHP jika mirror belum siap
                 const res = await fetch('{{ url("admin/gamification/arena") }}/' + this.token + '/control/data');
                 const data = await res.json();
-                this.state = data.state;
-                // Kita sort members berdasarkan rank score mereka
-                let s_map = {};
-                if(data.scores) {
-                    data.scores.forEach(s => s_map[s.user_id] = s);
-                }
-                this.scores = s_map;
-                this.members = (data.members || []).sort((a,b) => {
-                    let rA = s_map[a.user_id]?.rank || 999;
-                    let rB = s_map[b.user_id]?.rank || 999;
-                    return rA - rB;
-                });
-                this.count = data.count;
-                this.question = data.question;
-                this.answersCount = data.answers_count;
-                this.isLocked = data.is_locked;
-
-                const newQIndex = data.state?.q_index ?? 0;
-                if (newQIndex !== this.lastQIndex) {
-                    this.lastQIndex = newQIndex;
-                    this.autoAdvanceTriggered = false; // reset
-                }
-
-                this.checkAutoAdvance();
-
-                if (this.state.state === 'finish') {
-                    clearInterval(this.pollInterval);
-                }
+                this.applyData(data);
             } catch(e) {
                 console.error("Polling error", e);
+            }
+        },
+
+        applyData(data) {
+            // Sync Drift (Server vs Client) dengan proteksi jitter
+            if (data.updated_at) {
+                const newDrift = data.updated_at - Math.floor(Date.now() / 1000);
+                if (Math.abs(newDrift - this.serverDrift) > 1 || this.serverDrift === 0) {
+                    this.serverDrift = newDrift;
+                }
+            }
+
+            this.state = data.state || {};
+            this.count = data.member_count || data.count || 0;
+            this.question = data.question;
+            this.answersCount = data.answers_count || 0;
+            this.isLocked = data.is_locked;
+            this.showQuestionOnDevice = data.show_on_device !== undefined ? data.show_on_device : data.show_question_on_device;
+
+            // Update Members & Scores
+            let s_map = {};
+            const scores = data.scores || [];
+            scores.forEach(s => s_map[s.user_id] = s);
+            this.scores = s_map;
+
+            this.members = (data.members || []).sort((a,b) => {
+                let rA = s_map[a.user_id]?.rank || 999;
+                let rB = s_map[b.user_id]?.rank || 999;
+                return rA - rB;
+            });
+
+            const newQIndex = data.state?.q_index ?? 0;
+            if (newQIndex !== this.lastQIndex) {
+                this.lastQIndex = newQIndex;
+                this.autoAdvanceTriggered = false;
+            }
+
+            this.checkAutoAdvance();
+
+            if (this.state.state === 'finish') {
+                clearInterval(this.pollInterval);
             }
         },
 
@@ -425,8 +449,8 @@ function arenaControl(token) {
             if (!s.question_started_at) return;
             if (this.autoAdvanceTriggered) return;
 
-            const elapsed = Math.floor(Date.now() / 1000)
-                            - s.question_started_at;
+            const nowCorrected = Math.floor(Date.now() / 1000) + this.serverDrift;
+            const elapsed = nowCorrected - s.question_started_at;
             const dur = s.question_duration ?? 0;
 
             // Timer habis + 2 detik grace period

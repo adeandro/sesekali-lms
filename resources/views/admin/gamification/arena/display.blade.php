@@ -1083,9 +1083,12 @@
             },
 
             applyData(data) {
-                // Sync Drift (Server vs Client)
+                // Sync Drift (Server vs Client) dengan proteksi jitter (+/- 1s)
                 if (data.updated_at) {
-                    this.serverDrift = data.updated_at - Math.floor(Date.now() / 1000);
+                    const newDrift = data.updated_at - Math.floor(Date.now() / 1000);
+                    if (Math.abs(newDrift - this.serverDrift) > 1 || this.serverDrift === 0) {
+                        this.serverDrift = newDrift;
+                    }
                 }
 
                 this.state = data.state ?? {};
