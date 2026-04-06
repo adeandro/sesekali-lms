@@ -1092,21 +1092,26 @@
                 }
 
                 this.state = data.state ?? {};
-                this.members = data.members ?? [];
+                this.count = data.member_count ?? 0;
                 
-                let smap = {};
-                if (data.scores) {
-                    data.scores.forEach(s => smap[s.user_id] = s);
+                // Persistence: Only update if server sends new data
+                if (data.members && data.members.length > 0) {
+                    this.members = data.members;
                 }
-                this.scoresMap = smap;
-                this.scores = data.scores ?? [];
+                
+                if (data.scores && data.scores.length > 0) {
+                    let smap = {};
+                    data.scores.forEach(s => smap[s.user_id] = s);
+                    this.scoresMap = smap;
+                    this.scores = data.scores;
+                    
+                    if (this.state.state !== 'finish' && !in_array(this.state.state, ['preview', 'question'])) {
+                        this.updateLeaderboard(data.scores);
+                    }
+                }
                 
                 this.question = data.question;
                 this.stats = data.stats ?? {};
-
-                if (data.scores && this.state.state !== 'finish') {
-                    this.updateLeaderboard(data.scores);
-                }
                 
                 if (data.group_scores && this.state.state !== 'finish') {
                     this.updateGroupLeaderboard(data.group_scores);

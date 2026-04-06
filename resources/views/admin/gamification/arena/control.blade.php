@@ -402,17 +402,30 @@ function arenaControl(token) {
             this.isLocked = data.is_locked;
             this.showQuestionOnDevice = data.show_on_device !== undefined ? data.show_on_device : data.show_question_on_device;
 
-            // Update Members & Scores
-            let s_map = {};
-            const scores = data.scores || [];
-            scores.forEach(s => s_map[s.user_id] = s);
-            this.scores = s_map;
+            // Updated persistence logic for bandwidth saving (Pruning)
+            if (data.scores && data.scores.length > 0) {
+                let s_map = {};
+                data.scores.forEach(s => s_map[s.user_id] = s);
+                this.scores = s_map;
+                
+                // Re-sort members if scores updated
+                if (this.members && this.members.length > 0) {
+                    this.members.sort((a,b) => {
+                        let rA = this.scores[a.user_id]?.rank || 999;
+                        let rB = this.scores[b.user_id]?.rank || 999;
+                        return rA - rB;
+                    });
+                }
+            }
 
-            this.members = (data.members || []).sort((a,b) => {
-                let rA = s_map[a.user_id]?.rank || 999;
-                let rB = s_map[b.user_id]?.rank || 999;
-                return rA - rB;
-            });
+            if (data.members && data.members.length > 0) {
+                const s_map = this.scores || {};
+                this.members = data.members.sort((a,b) => {
+                    let rA = s_map[a.user_id]?.rank || 999;
+                    let rB = s_map[b.user_id]?.rank || 999;
+                    return rA - rB;
+                });
+            }
 
             const newQIndex = data.state?.q_index ?? 0;
             if (newQIndex !== this.lastQIndex) {

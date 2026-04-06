@@ -120,13 +120,41 @@ class BattleService
             $stats = $this->getAnswerStats($room, ['a', 'b', 'c', 'd', 'e']);
         }
 
+        $currentState = $state['state'] ?? '';
+        $isLobby = ($currentState === 'lobby');
+        $isQuestion = in_array($currentState, ['preview', 'question']);
+        $isDiscussion = ($currentState === 'discussion');
+        $isLeaderboard = ($currentState === 'leaderboard');
+
+        // Payload Pruning (Bandwidth Hub)
+        $membersToSync = [];
+        $scoresToSync = [];
+
+        if ($isLobby) {
+            // Lobby butuh list nama lengkap untuk daftar hadir
+            $membersToSync = array_values($members);
+        } elseif ($isQuestion) {
+            // Saat soal berlangsung, SEMUA list anggota & skor dihapus dari pengiriman
+            // (Siswa tidak perlu data ini saat sedang countdown)
+            $membersToSync = [];
+            $scoresToSync = [];
+        } elseif ($isDiscussion) {
+            // Saat pembahasan, kirim top 5 skor saja untuk leaderboard kecil
+            $scoresToSync = array_slice(array_values($scores), 0, 5); 
+            $membersToSync = []; // Nama dikaitkan via ID jika sudah ada di cache lokal
+        } elseif ($isLeaderboard) {
+            // Saat podium, butuh list skor penuh dan nama
+            $scoresToSync = array_values($scores);
+            $membersToSync = array_values($members);
+        }
+
         $mirrorData = [
             'room_id'        => $room->id,
             'token'          => $room->token,
             'state'          => $state,
             'member_count'   => count($members),
-            'members'        => array_values($members),
-            'scores'         => array_values($scores),
+            'members'        => $membersToSync,
+            'scores'         => $scoresToSync,
             'group_scores'   => $groupScores,
             'question'       => $question,
             'stats'          => $stats,
