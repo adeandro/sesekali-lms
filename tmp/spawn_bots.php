@@ -45,7 +45,6 @@ for ($i = 1; $i <= $count; $i++) {
     DB::table('battle_participants')->insert([
         'battle_room_id' => $room->id,
         'user_id' => $uid,
-        'class_id' => 'STRESS-TEST',
         'hp' => 100,
         'status' => 'active',
         'joined_at' => now(),
