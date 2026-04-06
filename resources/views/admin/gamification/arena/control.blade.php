@@ -372,15 +372,17 @@ function arenaControl(token) {
         isLocked: {{ $room->is_locked ? 'true' : 'false' }},
         autoAdvanceTriggered: false,
         serverDrift: 0,
+        advanceInterval: null,
         totalQuestions: {{ $room->total_questions }},
         lastQIndex: -1,
 
         initControl() {
             this.fetchData();
-            // Guru nge-poll setiap detiknya konstan untuk counter realtime (2000ms)
-            this.pollInterval = setInterval(() => {
-                this.fetchData();
-            }, 2000);
+            // Polling Mirror JSON (2s)
+            this.pollInterval = setInterval(() => this.fetchData(), 2000);
+
+            // Timer Cepat Khusus Auto-Advance (500ms) - Agar transisi instan saat 0s
+            this.advanceInterval = setInterval(() => this.checkAutoAdvance(), 500);
         },
 
         async fetchData() {
@@ -433,10 +435,9 @@ function arenaControl(token) {
                 this.autoAdvanceTriggered = false;
             }
 
-            this.checkAutoAdvance();
-
             if (this.state.state === 'finish') {
                 clearInterval(this.pollInterval);
+                clearInterval(this.advanceInterval);
             }
         },
 
@@ -450,8 +451,8 @@ function arenaControl(token) {
             const elapsed = nowCorrected - s.question_started_at;
             const dur = s.question_duration ?? 0;
 
-            // Timer habis + 2 detik grace period
-            if (elapsed >= dur + 2) {
+            // Timer habis + 0.5 detik grace period (Instan!)
+            if (elapsed >= dur + 0.5) {
                 this.autoAdvanceTriggered = true;
                 this.advanceToDiscussion();
             }
