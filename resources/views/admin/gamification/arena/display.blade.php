@@ -40,6 +40,80 @@
         .animate-popIn {
             animation: popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
+
+        /* --- PODIUM STYLES --- */
+        .podium-stage {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 2rem;
+            padding-bottom: 2rem;
+            perspective: 1000px;
+        }
+        .pedestal {
+            width: 250px;
+            border-radius: 2rem 2rem 1rem 1rem;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            padding-bottom: 2rem;
+            border: 2px solid rgba(255,255,255,0.1);
+            transition: all 1s ease-out;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        .pedestal-1 { 
+            height: 320px; 
+            z-index: 10;
+            background: linear-gradient(to bottom, rgba(251, 191, 36, 0.2), #0f172a);
+            border-top: 4px solid #fbbf24;
+        }
+        .pedestal-2 { 
+            height: 240px; 
+            background: linear-gradient(to bottom, rgba(203, 213, 225, 0.2), #0f172a);
+            border-top: 4px solid #cbd5e1;
+        }
+        .pedestal-3 { 
+            height: 180px; 
+            background: linear-gradient(to bottom, rgba(168, 85, 247, 0.2), #0f172a);
+            border-top: 4px solid #a855f7;
+        }
+        .medal-float {
+            animation: float 3s ease-in-out infinite;
+            filter: drop-shadow(0 0 15px currentColor);
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-15px) rotate(5deg); }
+        }
+        .winner-aura {
+            position: absolute;
+            top: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, var(--aura-color) 0%, transparent 70%);
+            opacity: 0.3;
+            filter: blur(40px);
+            z-index: -1;
+            animation: pulse 4s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { scale: 1; opacity: 0.3; }
+            50% { scale: 1.2; opacity: 0.5; }
+        }
+        .spotlight {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 50% 30%, transparent 10%, rgba(0,0,0,0.85) 60%);
+            z-index: 50;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body x-data="arenaDisplay('{{ $room->token }}')" 
@@ -426,354 +500,144 @@
   </template>
 
       </div>
-    </div>
-  </template>
-
-  {{-- STATE: FINISH --}}
+    </div>  {{-- STATE: FINISH (PODIUM) --}}
   <template x-if="state.state === 'finish'">
-    <div class="text-center w-full max-w-6xl">
+    <div class="relative w-full max-w-6xl min-h-[600px] flex flex-col items-center justify-center">
+      
+      {{-- SPOTLIGHT EFFECT (Saat reveal tertentu) --}}
+      <template x-if="podiumStep === 1 || podiumStep === 3 || podiumStep === 5">
+        <div class="spotlight"></div>
+      </template>
 
-      <template x-if="state.mode !== 'group'">
-        <div>
-          <h2 class="text-5xl font-black uppercase tracking-tight text-white mb-2 animate-fadeIn">
-            Battle Selesai!
-          </h2>
-          <p class="text-lg text-indigo-300 mb-10 animate-fadeIn">Pengumuman pemenang...</p>
+      {{-- HEADER --}}
+      <div class="mb-12 z-20">
+        <h2 class="text-6xl font-black uppercase tracking-tighter text-white drop-shadow-2xl animate-popIn">
+          <span class="text-amber-400">🏆</span> HALL OF FAME <span class="text-amber-400">🏆</span>
+        </h2>
+        <p class="text-indigo-300 font-bold uppercase tracking-[0.3em] mt-2 opacity-80">Battle Arena Champions</p>
+      </div>
+
+      {{-- COUNTDOWN OVERLAY --}}
+      <template x-if="podiumStep === 1 || podiumStep === 3 || podiumStep === 5">
+        <div class="fixed inset-0 z-[60] flex flex-col items-center justify-center pointer-events-none">
+          <p class="text-4xl text-amber-400 font-black uppercase tracking-[0.5em] mb-10 drop-shadow-lg"
+             x-text="podiumStep === 1 ? 'Mencari Juara 3...' : podiumStep === 3 ? 'Siapakah Juara 2?' : '👑 SANG JUARA 👑'"></p>
+          <div class="text-[250px] font-black text-white leading-none drop-shadow-[0_0_100px_rgba(251,191,36,0.5)] animate-pulse"
+               x-text="podiumCountdown"></div>
         </div>
       </template>
 
-      {{-- ─── GROUP MODE REVEAL (3-2-1 Sequence) ─── --}}
-      <template x-if="state.mode === 'group'">
-        <div class="w-full flex flex-col items-center">
+      {{-- PODIUM STAGE --}}
+      <div class="podium-stage w-full mt-10">
+
+        {{-- JUARA 2 (Left Back) --}}
+        <template x-if="(state.mode === 'group' ? groupScores.length >= 2 : topMembers(3)[1]) && podiumStep >= 4">
+          <div class="pedestal pedestal-2" x-transition:enter="transition cubic-bezier(0.34, 1.56, 0.64, 1) duration-1000" x-transition:enter-start="opacity-0 translate-y-32 scale-75" x-transition:enter-end="opacity-100 translate-y-0 scale-100">
+            <div class="medal-float text-6xl mb-6 text-slate-300">🥈</div>
             
-            {{-- COUNTDOWN OVERLAY (Group Mode) --}}
-            <template x-if="podiumStep === 1 || podiumStep === 3 || podiumStep === 5">
-                <div class="flex flex-col items-center justify-center py-16 animate-fadeIn">
-                    <p class="text-3xl text-indigo-300 font-black uppercase tracking-[0.5em] mb-8"
-                       x-text="podiumStep === 1 ? 'Juara ke-3...' : podiumStep === 3 ? 'Juara ke-2...' : '🏆 SANG JUARA!'"></p>
-                    <div class="text-[200px] font-black text-white leading-none tabular-nums drop-shadow-[0_0_80px_rgba(244,63,94,0.6)] animate-pulse"
-                         x-text="podiumCountdown"></div>
-                </div>
-            </template>
-
-            {{-- PODIUM REVEAL --}}
-            <div class="flex items-end justify-center gap-10 min-h-[500px] w-full max-w-6xl mt-12 px-6">
-                
-                {{-- Juara 2 (Step >= 4) --}}
-                <template x-if="groupScores.length >= 2 && podiumStep >= 4">
-                    <div class="flex flex-col items-center w-1/3" x-transition:enter="transition ease-out duration-1000" x-transition:enter-start="opacity-0 translateY-20 scale-90" x-transition:enter-end="opacity-100 translateY-0 scale-100">
-                        <div class="text-6xl mb-6">🥈</div>
-                        <div class="glass-panel w-full p-10 rounded-[3rem] border-4 flex flex-col items-center gap-4 shadow-lg transition-all duration-1000"
-                             :class="{
-                                'bg-gradient-to-b from-blue-600/20 to-slate-950 border-blue-500/50 shadow-[0_0_50px_rgba(59,130,246,0.3)]': getGroupColorKey(groupScores[1].name || groupScores[1].group_label, 1) === 'blue',
-                                'bg-gradient-to-b from-rose-600/20 to-slate-950 border-rose-500/50 shadow-[0_0_50px_rgba(244,63,94,0.3)]': getGroupColorKey(groupScores[1].name || groupScores[1].group_label, 1) === 'rose',
-                                'bg-gradient-to-b from-amber-600/20 to-slate-950 border-amber-500/50 shadow-[0_0_50px_rgba(245,158,11,0.3)]': getGroupColorKey(groupScores[1].name || groupScores[1].group_label, 1) === 'amber',
-                                'bg-gradient-to-b from-emerald-600/20 to-slate-950 border-emerald-500/50 shadow-[0_0_50px_rgba(16,185,129,0.3)]': getGroupColorKey(groupScores[1].name || groupScores[1].group_label, 1) === 'emerald'
-                             }">
-                            <h3 class="text-6xl font-black uppercase text-white tracking-tighter text-center leading-none drop-shadow-lg" x-text="groupScores[1].name || groupScores[1].group_label"></h3>
-                            <div class="h-px w-12 bg-white/10 my-2"></div>
-                            <p class="text-5xl font-black text-white tabular-nums" x-text="groupScores[1].total_score.toLocaleString()"></p>
-                        </div>
+            {{-- Avatar/Group Name --}}
+            <div class="flex flex-col items-center mb-6">
+                {{-- Individual mode --}}
+                <template x-if="state.mode !== 'group'">
+                    <div class="w-24 h-24 rounded-full border-4 border-slate-300/50 mb-3 bg-slate-900 overflow-hidden shadow-2xl">
+                        <template x-if="topMembers(3)[1].is_avatar_seed && topMembers(3)[1].avatar_seed">
+                            <div class="w-full h-full" x-html="typeof multiavatar === 'function' ? multiavatar(topMembers(3)[1].avatar_seed) : ''"></div>
+                        </template>
+                        <template x-if="!topMembers(3)[1].is_avatar_seed && topMembers(3)[1].avatar_url">
+                            <img :src="topMembers(3)[1].avatar_url" class="w-full h-full object-cover">
+                        </template>
                     </div>
                 </template>
-
-                {{-- Juara 1 (Step >= 6) --}}
-                <template x-if="groupScores.length >= 1 && podiumStep >= 6">
-                    <div class="flex flex-col items-center w-2/5 -mt-20 z-10" x-transition:enter="transition ease-out duration-1000" x-transition:enter-start="opacity-0 translateY-20 scale-90" x-transition:enter-end="opacity-100 translateY-0 scale-110">
-                        <div class="text-9xl mb-8 animate-bounce drop-shadow-[0_0_40px_rgba(251,191,36,0.6)]">🏆</div>
-                        <div class="glass-panel w-full p-14 rounded-[4rem] border-4 flex flex-col items-center gap-6 shadow-xl transition-all duration-1000"
-                             :class="{
-                                'bg-gradient-to-b from-blue-600/30 to-slate-950 border-blue-400 shadow-[0_0_100px_rgba(59,130,246,0.4)]': getGroupColorKey(groupScores[0].name || groupScores[0].group_label, 0) === 'blue',
-                                'bg-gradient-to-b from-rose-600/30 to-slate-950 border-rose-400 shadow-[0_0_100px_rgba(244,63,94,0.4)]': getGroupColorKey(groupScores[0].name || groupScores[0].group_label, 0) === 'rose',
-                                'bg-gradient-to-b from-amber-600/30 to-slate-950 border-amber-400 shadow-[0_0_100px_rgba(245,158,11,0.4)]': getGroupColorKey(groupScores[0].name || groupScores[0].group_label, 0) === 'amber',
-                                'bg-gradient-to-b from-emerald-600/30 to-slate-950 border-emerald-400 shadow-[0_0_100px_rgba(16,185,129,0.4)]': getGroupColorKey(groupScores[0].name || groupScores[0].group_label, 0) === 'emerald'
-                             }">
-                            <h3 class="text-8xl font-black uppercase text-white tracking-tighter text-center leading-none drop-shadow-lg" x-text="groupScores[0].name || groupScores[0].group_label"></h3>
-                            <div class="h-px w-20 bg-blue-400/30 my-2"></div>
-                            <p class="text-7xl font-black text-white tabular-nums" x-text="groupScores[0].total_score.toLocaleString()"></p>
-                        </div>
-                    </div>
-                </template>
-
-                {{-- Juara 3 (Step >= 2) --}}
-                <template x-if="groupScores.length >= 3 && podiumStep >= 2">
-                    <div class="flex flex-col items-center w-1/4" x-transition:enter="transition ease-out duration-1000" x-transition:enter-start="opacity-0 translateY-20 scale-90" x-transition:enter-end="opacity-100 translateY-0 scale-100">
-                        <div class="text-5xl mb-4">🥉</div>
-                        <div class="glass-panel w-full p-8 rounded-[2.5rem] border-4 flex flex-col items-center gap-4 shadow-md transition-all duration-1000"
-                             :class="{
-                                'bg-gradient-to-b from-blue-600/20 to-slate-950 border-blue-500/50 shadow-[0_0_50px_rgba(59,130,246,0.2)]': getGroupColorKey(groupScores[2].name || groupScores[2].group_label, 2) === 'blue',
-                                'bg-gradient-to-b from-rose-600/20 to-slate-950 border-rose-500/50 shadow-[0_0_50px_rgba(244,63,94,0.2)]': getGroupColorKey(groupScores[2].name || groupScores[2].group_label, 2) === 'rose',
-                                'bg-gradient-to-b from-amber-600/20 to-slate-950 border-amber-500/50 shadow-[0_0_50px_rgba(245,158,11,0.2)]': getGroupColorKey(groupScores[2].name || groupScores[2].group_label, 2) === 'amber',
-                                'bg-gradient-to-b from-emerald-600/20 to-slate-950 border-emerald-500/50 shadow-[0_0_50px_rgba(16,185,129,0.2)]': getGroupColorKey(groupScores[2].name || groupScores[2].group_label, 2) === 'emerald'
-                             }">
-                            <h3 class="text-5xl font-black uppercase text-white tracking-tighter text-center leading-none drop-shadow-lg" x-text="groupScores[2].name || groupScores[2].group_label"></h3>
-                            <div class="h-px w-10 bg-white/10 my-2"></div>
-                            <p class="text-4xl font-black text-white tabular-nums" x-text="groupScores[2].total_score.toLocaleString()"></p>
-                        </div>
-                    </div>
-                </template>
-
+                <h3 class="text-3xl font-black text-white uppercase tracking-tighter text-center line-clamp-2"
+                    x-text="state.mode === 'group' ? (groupScores[1].name || groupScores[1].group_label) : topMembers(3)[1].name"></h3>
+                <p class="text-2xl font-black text-slate-300 tabular-nums">
+                    <span x-text="(state.mode === 'group' ? groupScores[1].total_score : scores[topMembers(3)[1].user_id]?.total_score)?.toLocaleString()"></span> PTS
+                </p>
             </div>
-        </div>
-      </template>
-
-      {{-- COUNTDOWN OVERLAY (Individual Mode) --}}
-      <template x-if="state.mode !== 'group' && (podiumStep === 1 || podiumStep === 3 || podiumStep === 5)">
-        <div class="flex flex-col items-center
-                     justify-center py-16">
-          <p class="text-2xl text-indigo-300 font-black
-                     uppercase tracking-widest mb-6"
-             x-text="podiumStep === 1
-                      ? 'Juara ke-3...'
-                      : podiumStep === 3
-                        ? 'Juara ke-2...'
-                        : '🏆 Juara ke-1!'">
-          </p>
-          <div class="text-[180px] font-black text-white
-                       leading-none tabular-nums
-                       drop-shadow-[0_0_60px_rgba(99,102,241,0.8)]
-                       animate-pulse"
-               x-text="podiumCountdown">
           </div>
-        </div>
-      </template>
+        </template>
 
-      {{-- PODIUM WRAPPER (Individual Mode) --}}
-      <template x-if="state.mode !== 'group' && podiumStep >= 2">
-        <div class="flex items-end justify-center
-                     gap-6 min-h-[420px] px-4">
-
-          {{-- ─── JUARA 2 (reveal saat step >= 4) ─── --}}
-          <template x-if="topMembers(3)[1] && podiumStep >= 4">
-            <div class="relative flex flex-col items-center
-                         w-1/4"
-                 x-transition:enter="transition ease-out duration-700"
-                 x-transition:enter-start="opacity-0 translateY-16"
-                 x-transition:enter-end="opacity-100 translateY-0">
-
-              <div class="text-3xl mb-2">🥈</div>
-              <div class="w-24 h-24 rounded-full
-                           overflow-hidden border-4
-                           border-slate-300 mb-4 bg-slate-800
-                           shadow-[0_0_30px_rgba(203,213,225,0.3)]
-                           z-10 relative">
-                <template x-if="topMembers(3)[1].is_avatar_seed
-                                  && topMembers(3)[1].avatar_seed">
-                  <div class="w-full h-full overflow-hidden
-                               [&>svg]:w-full [&>svg]:h-full"
-                       x-html="typeof multiavatar !== 'undefined'
-                                ? multiavatar(topMembers(3)[1].avatar_seed)
-                                : ''">
-                  </div>
+        {{-- JUARA 1 (Center Front) --}}
+        <template x-if="(state.mode === 'group' ? groupScores.length >= 1 : topMembers(3)[0]) && podiumStep >= 6">
+          <div class="pedestal pedestal-1" x-transition:enter="transition cubic-bezier(0.34, 1.56, 0.64, 1) duration-1000" x-transition:enter-start="opacity-0 translate-y-48 scale-50" x-transition:enter-end="opacity-100 translate-y-0 scale-110">
+            <div class="winner-aura" style="--aura-color: rgba(251,191,36,0.4)"></div>
+            <div class="medal-float text-8xl mb-4 text-amber-400 drop-shadow-[0_0_30px_rgba(251,191,36,0.8)]">👑</div>
+            
+            <div class="flex flex-col items-center mb-8">
+                <template x-if="state.mode !== 'group'">
+                    <div class="w-32 h-32 rounded-full border-4 border-amber-400 mb-4 bg-slate-900 overflow-hidden shadow-[0_0_50px_rgba(251,191,36,0.3)]">
+                        <template x-if="topMembers(3)[0].is_avatar_seed && topMembers(3)[0].avatar_seed">
+                            <div class="w-full h-full" x-html="typeof multiavatar === 'function' ? multiavatar(topMembers(3)[0].avatar_seed) : ''"></div>
+                        </template>
+                        <template x-if="!topMembers(3)[0].is_avatar_seed && topMembers(3)[0].avatar_url">
+                            <img :src="topMembers(3)[0].avatar_url" class="w-full h-full object-cover">
+                        </template>
+                    </div>
                 </template>
-                <template x-if="!topMembers(3)[1].is_avatar_seed
-                                  && topMembers(3)[1].avatar_url">
-                  <img :src="topMembers(3)[1].avatar_url"
-                       class="w-full h-full object-cover">
-                </template>
-                <template x-if="!topMembers(3)[1].is_avatar_seed
-                                  && !topMembers(3)[1].avatar_url">
-                  <div class="w-full h-full bg-slate-700
-                               flex items-center justify-center
-                               text-white font-black text-2xl"
-                       x-text="topMembers(3)[1].name?.charAt(0)">
-                  </div>
-                </template>
-              </div>
-
-              <div class="glass-panel w-full pt-12 pb-6
-                           px-4 rounded-t-3xl -mt-12
-                           h-[200px] flex flex-col
-                           justify-end border-slate-400/30
-                           bg-gradient-to-t from-slate-900
-                           via-slate-800/80 to-slate-800/30">
-                <p class="font-black text-xl text-white
-                            truncate"
-                   x-text="topMembers(3)[1].name.split(' ')[0]">
+                <h3 class="text-5xl font-black text-white uppercase tracking-tighter text-center leading-none"
+                    x-text="state.mode === 'group' ? (groupScores[0].name || groupScores[0].group_label) : topMembers(3)[0].name"></h3>
+                <p class="text-4xl font-black text-amber-400 tabular-nums mt-1 drop-shadow-md">
+                    <span x-text="(state.mode === 'group' ? groupScores[0].total_score : scores[topMembers(3)[0].user_id]?.total_score)?.toLocaleString()"></span> PTS
                 </p>
-                <p class="text-slate-300 font-bold text-sm mt-1">
-                  <span x-text="scores[topMembers(3)[1].user_id]
-                                 ?.total_score?.toLocaleString()">
-                  </span> PTS
-                </p>
-              </div>
             </div>
-          </template>
+          </div>
+        </template>
 
-          {{-- ─── JUARA 1 (reveal saat step >= 6) ─── --}}
-          <template x-if="topMembers(3)[0] && podiumStep >= 6">
-            <div class="relative flex flex-col items-center
-                         w-1/3"
-                 x-transition:enter="transition ease-out duration-1000"
-                 x-transition:enter-start="opacity-0 scale-75"
-                 x-transition:enter-end="opacity-100 scale-100">
-
-              <div class="text-5xl mb-2
-                           drop-shadow-[0_0_20px_rgba(251,191,36,0.8)]
-                           animate-bounce">
-                👑
-              </div>
-              <div class="w-36 h-36 rounded-full
-                           overflow-hidden border-4
-                           border-amber-400 mb-4 bg-slate-800
-                           shadow-[0_0_60px_rgba(251,191,36,0.6)]
-                           z-10 relative">
-                <template x-if="topMembers(3)[0].is_avatar_seed
-                                  && topMembers(3)[0].avatar_seed">
-                  <div class="w-full h-full overflow-hidden
-                               [&>svg]:w-full [&>svg]:h-full"
-                       x-html="typeof multiavatar !== 'undefined'
-                                ? multiavatar(topMembers(3)[0].avatar_seed)
-                                : ''">
-                  </div>
+        {{-- JUARA 3 (Right Back) --}}
+        <template x-if="(state.mode === 'group' ? groupScores.length >= 3 : topMembers(3)[2]) && podiumStep >= 2">
+          <div class="pedestal pedestal-3" x-transition:enter="transition cubic-bezier(0.34, 1.56, 0.64, 1) duration-1000" x-transition:enter-start="opacity-0 translate-y-32 scale-75" x-transition:enter-end="opacity-100 translate-y-0 scale-100">
+            <div class="medal-float text-5xl mb-4 text-purple-400">🥉</div>
+            
+            <div class="flex flex-col items-center mb-4">
+                <template x-if="state.mode !== 'group'">
+                    <div class="w-20 h-20 rounded-full border-4 border-purple-400/40 mb-3 bg-slate-900 overflow-hidden shadow-xl">
+                        <template x-if="topMembers(3)[2].is_avatar_seed && topMembers(3)[2].avatar_seed">
+                            <div class="w-full h-full" x-html="typeof multiavatar === 'function' ? multiavatar(topMembers(3)[2].avatar_seed) : ''"></div>
+                        </template>
+                        <template x-if="!topMembers(3)[2].is_avatar_seed && topMembers(3)[2].avatar_url">
+                            <img :src="topMembers(3)[2].avatar_url" class="w-full h-full object-cover">
+                        </template>
+                    </div>
                 </template>
-                <template x-if="!topMembers(3)[0].is_avatar_seed
-                                  && topMembers(3)[0].avatar_url">
-                  <img :src="topMembers(3)[0].avatar_url"
-                       class="w-full h-full object-cover">
-                </template>
-                <template x-if="!topMembers(3)[0].is_avatar_seed
-                                  && !topMembers(3)[0].avatar_url">
-                  <div class="w-full h-full bg-slate-700
-                               flex items-center justify-center
-                               text-white font-black text-3xl"
-                       x-text="topMembers(3)[0].name?.charAt(0)">
-                  </div>
-                </template>
-              </div>
-
-              <div class="glass-panel w-full pt-16 pb-6
-                           px-4 rounded-t-3xl -mt-16
-                           h-[280px] flex flex-col
-                           justify-end border-amber-500/40
-                           bg-gradient-to-t from-amber-900/60
-                           via-amber-800/30 to-amber-800/10
-                           shadow-[0_-20px_60px_rgba(251,191,36,0.15)]">
-                <p class="font-black text-3xl text-white
-                            truncate"
-                   x-text="topMembers(3)[0].name.split(' ')[0]">
+                <h3 class="text-2xl font-black text-white uppercase tracking-tighter text-center"
+                    x-text="state.mode === 'group' ? (groupScores[2].name || groupScores[2].group_label) : topMembers(3)[2].name"></h3>
+                <p class="text-xl font-black text-purple-400 tabular-nums">
+                    <span x-text="(state.mode === 'group' ? groupScores[2].total_score : scores[topMembers(3)[2].user_id]?.total_score)?.toLocaleString()"></span> PTS
                 </p>
-                <p class="text-amber-400 font-bold text-xl mt-1">
-                  <span x-text="scores[topMembers(3)[0].user_id]
-                                 ?.total_score?.toLocaleString()">
-                  </span> PTS
-                </p>
-                <p class="text-amber-300/60 text-xs mt-2
-                            font-bold uppercase tracking-widest">
-                  Benar: <span x-text="scores[topMembers(3)[0].user_id]
-                                        ?.correct ?? 0"></span>
-                  soal
-                </p>
-              </div>
             </div>
-          </template>
+          </div>
+        </template>
 
-          {{-- ─── JUARA 3 (reveal saat step >= 2) ─── --}}
-          <template x-if="topMembers(3)[2] && podiumStep >= 2">
-            <div class="relative flex flex-col items-center
-                         w-1/4"
-                 x-transition:enter="transition ease-out duration-700"
-                 x-transition:enter-start="opacity-0 translateY-16"
-                 x-transition:enter-end="opacity-100 translateY-0">
-
-              <div class="text-2xl mb-2">🥉</div>
-              <div class="w-20 h-20 rounded-full
-                           overflow-hidden border-4
-                           border-orange-400 mb-4 bg-slate-800
-                           shadow-[0_0_30px_rgba(251,146,60,0.3)]
-                           z-10 relative">
-                <template x-if="topMembers(3)[2].is_avatar_seed
-                                  && topMembers(3)[2].avatar_seed">
-                  <div class="w-full h-full overflow-hidden
-                               [&>svg]:w-full [&>svg]:h-full"
-                       x-html="typeof multiavatar !== 'undefined'
-                                ? multiavatar(topMembers(3)[2].avatar_seed)
-                                : ''">
-                  </div>
-                </template>
-                <template x-if="!topMembers(3)[2].is_avatar_seed
-                                  && topMembers(3)[2].avatar_url">
-                  <img :src="topMembers(3)[2].avatar_url"
-                       class="w-full h-full object-cover">
-                </template>
-                <template x-if="!topMembers(3)[2].is_avatar_seed
-                                  && !topMembers(3)[2].avatar_url">
-                  <div class="w-full h-full bg-slate-700
-                               flex items-center justify-center
-                               text-white font-black text-xl"
-                       x-text="topMembers(3)[2].name?.charAt(0)">
-                  </div>
-                </template>
-              </div>
-
-              <div class="glass-panel w-full pt-10 pb-6
-                           px-4 rounded-t-3xl -mt-10
-                           h-[170px] flex flex-col
-                           justify-end border-orange-700/40
-                           bg-gradient-to-t from-orange-950
-                           via-orange-900/50 to-orange-900/20">
-                <p class="font-black text-lg text-white
-                            truncate"
-                   x-text="topMembers(3)[2].name.split(' ')[0]">
-                </p>
-                <p class="text-orange-400 font-bold text-sm mt-1">
-                  <span x-text="scores[topMembers(3)[2].user_id]
-                                 ?.total_score?.toLocaleString()">
-                  </span> PTS
-                </p>
-              </div>
-            </div>
-          </template>
-
-        </div>
-      </template>
-
-      {{-- Placeholder saat podiumStep === 0 (loading awal) --}}
-      <template x-if="podiumStep === 0">
-        <div class="flex items-center justify-center
-                     py-20 text-indigo-400">
-          <div class="w-12 h-12 border-4 border-indigo-500
-                       border-t-transparent rounded-full
-                       animate-spin"></div>
-        </div>
-      </template>
-
-      {{-- Reward fisik (jika ada) --}}
-      @if($room->reward_physical)
-      <div class="mt-10 inline-flex items-center gap-3
-                   px-6 py-3 bg-amber-500/10
-                   border border-amber-500/30
-                   rounded-2xl animate-fadeIn">
-        <span class="text-2xl">🎁</span>
-        <div class="text-left">
-          <p class="text-xs text-amber-400 font-black
-                     uppercase tracking-widest">
-            Hadiah Fisik
-          </p>
-          <p class="text-white font-bold">
-            {{ $room->reward_physical }}
-          </p>
-        </div>
-      </div>
-      @endif
-
-      <div class="mt-6">
-        <a href="{{ route('admin.gamification.arena.debriefing',
-                    $room->token) }}"
-           class="inline-flex items-center gap-2 px-6 py-3
-                  bg-white/10 hover:bg-white/20
-                  border border-white/20 rounded-2xl
-                  text-white font-bold text-sm
-                  transition-colors">
-          <i class="fas fa-chart-bar"></i>
-          Lihat Rekap Lengkap
-        </a>
       </div>
 
+      {{-- FOOTER ACTIONS & REWARDS --}}
+      <div class="mt-16 flex flex-col items-center gap-6 z-20">
+          @if($room->reward_physical)
+            <div class="flex items-center gap-4 px-8 py-4 bg-amber-500/10 border-2 border-amber-500/30 rounded-3xl animate-bounce">
+                <span class="text-4xl text-amber-400">🎁</span>
+                <div class="text-left">
+                    <p class="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500/60">Grand Reward</p>
+                    <p class="text-2xl font-black text-white uppercase leading-none">{{ $room->reward_physical }}</p>
+                </div>
+            </div>
+          @endif
+
+          <div class="flex gap-4">
+            <a href="{{ route('admin.gamification.arena.debriefing', $room->token) }}"
+               class="px-8 py-4 bg-white/10 hover:bg-white/20 border border-white/20 rounded-3xl text-white font-black uppercase tracking-widest transition-all">
+               📜 Lihat Rekap Skor
+            </a>
+            <button @click="window.location.reload()"
+                    class="px-8 py-4 bg-indigo-600 hover:bg-indigo-500 rounded-3xl text-white font-black uppercase tracking-widest shadow-2xl transition-all">
+                🔄 Selesai
+            </button>
+          </div>
+      </div>
+
+      </div>
     </div>
   </template>
-        
-    </main>
+</main>
 
     <style>
         @keyframes slideInRight {
@@ -829,6 +693,31 @@
             podiumCountdown: 0,
             podiumInterval: null,
             serverDrift: 0,
+            drumRollAudio: null,
+
+            getAuraColor(idx) {
+                const colors = ['#fbbf24', '#cbd5e1', '#a855f7'];
+                return colors[idx] || '#6366f1';
+            },
+
+            playDrumRoll() {
+                try {
+                    if (this.drumRollAudio) {
+                        this.drumRollAudio.pause();
+                        this.drumRollAudio.currentTime = 0;
+                    }
+                    this.drumRollAudio = new Audio('/sound/ElevenLabs_Dramatic_drum_roll.mp3');
+                    this.drumRollAudio.play();
+                } catch(e) {
+                    console.error("Audio error", e);
+                }
+            },
+
+            stopDrumRoll() {
+                if (this.drumRollAudio) {
+                    this.drumRollAudio.pause();
+                }
+            },
 
             getGroupColorKey(name, idx) {
                 const n = (name || '').toLowerCase();
@@ -973,29 +862,35 @@
             initGroupPodium() {
                 this.podiumStep = 1; // Show Countdown 3rd
                 this.podiumCountdown = 3;
+                this.playDrumRoll();
                 const cd3 = setInterval(() => {
                     this.podiumCountdown--;
                     if (this.podiumCountdown <= 0) {
                         clearInterval(cd3);
                         this.podiumStep = 2; // Reveal 3rd
+                        this.stopDrumRoll();
                         
                         setTimeout(() => {
                             this.podiumStep = 3; // Show Countdown 2nd
                             this.podiumCountdown = 3;
+                            this.playDrumRoll();
                             const cd2 = setInterval(() => {
                                 this.podiumCountdown--;
                                 if (this.podiumCountdown <= 0) {
                                     clearInterval(cd2);
                                     this.podiumStep = 4; // Reveal 2nd
+                                    this.stopDrumRoll();
                                     
                                     setTimeout(() => {
                                         this.podiumStep = 5; // Show Countdown 1st
                                         this.podiumCountdown = 3;
+                                        this.playDrumRoll();
                                         const cd1 = setInterval(() => {
                                             this.podiumCountdown--;
                                             if (this.podiumCountdown <= 0) {
                                                 clearInterval(cd1);
                                                 this.podiumStep = 6; // Reveal 1st
+                                                this.stopDrumRoll();
                                                 this.fireConfetti();
                                             }
                                         }, 1000);
@@ -1019,29 +914,35 @@
                 setTimeout(() => {
                     this.podiumStep = 1; // show countdown
                     this.podiumCountdown = 3;
+                    this.playDrumRoll();
                     const cd3 = setInterval(() => {
                         this.podiumCountdown--;
                         if (this.podiumCountdown <= 0) {
                             clearInterval(cd3);
                             this.podiumStep = 2; // reveal juara 3
+                            this.stopDrumRoll();
 
                             setTimeout(() => {
                                 this.podiumStep = 3;
                                 this.podiumCountdown = 3;
+                                this.playDrumRoll();
                                 const cd2 = setInterval(() => {
                                     this.podiumCountdown--;
                                     if (this.podiumCountdown <= 0) {
                                         clearInterval(cd2);
                                         this.podiumStep = 4; // reveal juara 2
+                                        this.stopDrumRoll();
 
                                         setTimeout(() => {
                                             this.podiumStep = 5;
                                             this.podiumCountdown = 3;
+                                            this.playDrumRoll();
                                             const cd1 = setInterval(() => {
                                                 this.podiumCountdown--;
                                                 if (this.podiumCountdown <= 0) {
                                                     clearInterval(cd1);
                                                     this.podiumStep = 6; // reveal juara 1
+                                                    this.stopDrumRoll();
                                                     setTimeout(() => {
                                                         this.fireConfetti();
                                                     }, 500);
@@ -1149,30 +1050,43 @@
             },
             
             fireConfetti() {
-                const duration = 5 * 1000;
+                const duration = 7 * 1000;
                 const animationEnd = Date.now() + duration;
                 
-                let colors = ['#6366f1', '#a855f7', '#ec4899'];
-                if (this.state.mode === 'group' && this.groupScores.length > 0) {
-                    const winner = [...this.groupScores].sort((a,b) => b.total_score - a.total_score)[0];
-                    if (winner.group_label === 'Merah') colors = ['#f43f5e', '#fb7185', '#fda4af'];
-                    if (winner.group_label === 'Biru') colors = ['#3b82f6', '#60a5fa', '#93c5fd'];
-                }
-
-                const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100, colors: colors };
-
-                function randomInRange(min, max) {
-                    return Math.random() * (max - min) + min;
-                }
-
+                let colors = ['#fbbf24', '#cbd5e1', '#a855f7', '#6366f1'];
+                
                 const interval = setInterval(function() {
                     const timeLeft = animationEnd - Date.now();
                     if (timeLeft <= 0) {
                         return clearInterval(interval);
                     }
-                    const particleCount = 50 * (timeLeft / duration);
-                    confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
-                    confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+                    
+                    const particleCount = 60 * (timeLeft / duration);
+                    
+                    // Sebar dari kiri ke kanan
+                    confetti({
+                        particleCount,
+                        angle: 60,
+                        spread: 55,
+                        origin: { x: 0, y: 0.8 },
+                        colors: colors
+                    });
+                    confetti({
+                        particleCount,
+                        angle: 120,
+                        spread: 55,
+                        origin: { x: 1, y: 0.8 },
+                        colors: colors
+                    });
+                    
+                    // Efek burst di tengah sesekali
+                    if (Math.random() > 0.7) {
+                        confetti({
+                            particleCount: 20,
+                            origin: { x: 0.5, y: 0.7 },
+                            colors: ['#ffffff', '#fbbf24']
+                        });
+                    }
                 }, 250);
             }
         }
