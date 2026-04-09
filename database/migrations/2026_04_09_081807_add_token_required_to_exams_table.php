@@ -11,11 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasColumn('battle_rooms', 'is_locked')) {
-            Schema::table('battle_rooms', function (Blueprint $table) {
-                $table->boolean('is_locked')->default(false)->after('status');
-            });
-        }
+        Schema::table('exams', function (Blueprint $table) {
+            $table->boolean('token_required')->default(true)->after('token');
+        });
     }
 
     /**
@@ -23,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('battle_rooms', function (Blueprint $table) {
-            $table->dropColumn('is_locked');
+        Schema::table('exams', function (Blueprint $table) {
+            $table->dropColumn('token_required');
         });
     }
 };

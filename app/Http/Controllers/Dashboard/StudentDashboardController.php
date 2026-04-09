@@ -149,6 +149,7 @@ class StudentDashboardController extends Controller
             ->toArray();
 
         $availableExams = Exam::where('status', '=', 'published')
+            ->where('token_required', true)
             ->whereNotIn('id', $submittedExamIds)
             ->where(function($q) use ($user) {
                 $q->whereNull('jenjang')
@@ -158,6 +159,18 @@ class StudentDashboardController extends Controller
             ->with(['subject'])
             ->orderBy('start_time', 'asc')
             ->take(6)
+            ->get();
+
+        $freeExams = Exam::where('status', '=', 'published')
+            ->where('token_required', false)
+            ->whereNotIn('id', $submittedExamIds)
+            ->where(function($q) use ($user) {
+                $q->whereNull('jenjang')
+                  ->orWhere('jenjang', '=', $user->grade);
+            })
+            ->where('end_time', '>', now())
+            ->with(['subject'])
+            ->orderBy('start_time', 'asc')
             ->get();
 
         $recentResults = $user->examAttempts()
@@ -181,6 +194,7 @@ class StudentDashboardController extends Controller
         return view('dashboard.student', compact(
             'stats', 
             'availableExams', 
+            'freeExams',
             'recentResults', 
             'angkatanLeaderboard', 
             'classLeaderboard',

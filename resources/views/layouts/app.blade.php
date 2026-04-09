@@ -350,11 +350,21 @@
                            class="nav-item py-2 text-sm {{ request()->routeIs('self-service.sppd.*') ? 'menu-item-active' : '' }}">
                             <i class="fas fa-route w-4 mr-2 text-blue-500"></i><span>Cetak SPPD</span>
                         </a>
-                    </div>
                 </div>
                 @endif
 
-                {{-- ── 5. EKSTRAKURIKULER (teacher, superadmin) ── --}}
+                {{-- ── 5. E-LEARNING (teacher, superadmin) ── --}}
+                @if(in_array(Auth::user()->role, ['teacher', 'superadmin']))
+                <div class="pt-1">
+                    <a href="{{ route('admin.learning.materials.index') }}" 
+                       class="nav-item {{ request()->is('admin/learning*') ? 'menu-item-active' : '' }}">
+                        <i class="fas fa-book-reader w-5 text-lg mr-3 text-indigo-500"></i>
+                        <span class="font-bold text-[11px] uppercase tracking-widest leading-none">E-Learning</span>
+                    </a>
+                </div>
+                @endif
+
+                {{-- ── 6. EKSTRAKURIKULER (teacher, superadmin) ── --}}
                 @if(Auth::user()->role === 'superadmin' || Auth::user()->role === 'principal' || (Auth::user()->role === 'teacher' && Auth::user()->isExtracurricularCoach()))
                 <div class="pt-1">
                     <button @click="activeAccordion = (activeAccordion === 'ekskul' ? null : 'ekskul')" 
@@ -536,6 +546,16 @@
                             <span class="flex-1">Battle Arena</span>
                         </a>
                     </div>
+                @endif
+
+                {{-- ── 9. E-LEARNING (student role) ── --}}
+                @if(Auth::user()->role === 'student')
+                <div class="pt-2">
+                    <a href="{{ route('learning.index') }}" 
+                       class="nav-item {{ request()->is('learning*') ? 'menu-item-active' : '' }}">
+                        <i class="fas fa-graduation-cap w-5 text-lg mr-3 text-emerald-500"></i>
+                        <span class="font-bold text-[11px] uppercase tracking-widest leading-none">Materi Belajar</span>
+                    </a>
                 </div>
                 @endif
 

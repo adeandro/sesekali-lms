@@ -33,7 +33,7 @@ class UpdateExamRequest extends FormRequest
         }
 
         // Handle unchecked checkboxes - HTML doesn't send them, so we need to explicitly set to false
-        $booleanFields = ['randomize_questions', 'randomize_options', 'show_score_after_submit', 'allow_review_results', 'include_in_report'];
+        $booleanFields = ['randomize_questions', 'randomize_options', 'show_score_after_submit', 'allow_review_results', 'include_in_report', 'token_required'];
         foreach ($booleanFields as $field) {
             if (!$this->has($field)) {
                 $this->merge([$field => false]);
@@ -71,6 +71,7 @@ class UpdateExamRequest extends FormRequest
             'randomize_options' => 'boolean',
             'show_score_after_submit' => 'boolean',
             'allow_review_results' => 'boolean',
+            'token_required' => 'boolean',
             'weight_pg' => 'required|integer|min:0|max:100',
             'weight_essay' => 'required|integer|min:0|max:100',
             'status' => 'required|in:draft,published',

@@ -251,6 +251,7 @@ Route::middleware('auth')->group(function () {
 
         // Prestige
         Route::post('student/profile/prestige', [\App\Http\Controllers\Student\PrestigeController::class, 'prestige'])->name('student.prestige');
+
     });
 
     // Subject & Question Management routes
@@ -292,6 +293,14 @@ Route::middleware('auth')->group(function () {
         Route::get('exams/{exam}/card/{studentId}', [ExamCardController::class, 'generateStudentCard'])->name('exams.card-single');
 
         Route::resource('exams', ExamController::class);
+
+        // E-Learning Management
+        Route::group(['prefix' => 'learning', 'as' => 'learning.'], function () {
+            Route::resource('materials', \App\Http\Controllers\Admin\LearningMaterialController::class);
+            Route::post('materials/{material}/sections/reorder', [\App\Http\Controllers\Admin\LearningSectionController::class, 'reorder'])->name('sections.reorder');
+            Route::delete('sections/{section}/file', [\App\Http\Controllers\Admin\LearningSectionController::class, 'deleteFile'])->name('sections.delete-file');
+            Route::resource('materials.sections', \App\Http\Controllers\Admin\LearningSectionController::class)->shallow();
+        });
 
         // Report Data Management (Sprint 1.5)
         Route::group(['prefix' => 'report-data', 'as' => 'report-data.'], function () {
@@ -620,5 +629,13 @@ Route::middleware('auth')->group(function () {
                  'skGenerate'])
                 ->name('self-service.sk.generate');
         });
+
+    // ── E-Learning Viewer ───────────────────────────────────────────
+    // Accessible by all academic roles (students learn, teachers present)
+    Route::group(['middleware' => 'role:student,teacher,superadmin,principal,tu', 'prefix' => 'learning', 'as' => 'learning.'], function () {
+        Route::get('/', [\App\Http\Controllers\Student\LearningController::class, 'index'])->name('index');
+        Route::get('{material}', [\App\Http\Controllers\Student\LearningController::class, 'show'])->name('show');
+        Route::post('{material}/complete', [\App\Http\Controllers\Student\LearningController::class, 'complete'])->name('complete');
+    });
 
 }); // end auth middleware group

@@ -63,7 +63,7 @@ class PointService
                 ->get();
 
             if ($lastTwo->count() === 2) {
-                if ($lastTwo[0]->pg_score + $lastTwo[0]->essay_score > $lastTwo[1]->pg_score + $lastTwo[1]->essay_score) {
+                if ($lastTwo[0]->final_score > $lastTwo[1]->final_score) {
                     $bonus += 2;
                 }
             }

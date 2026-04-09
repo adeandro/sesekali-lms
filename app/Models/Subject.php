@@ -110,4 +110,12 @@ class Subject extends Model
     {
         return $this->hasMany(ManualGrade::class);
     }
+
+    /**
+     * Get all learning materials for this subject.
+     */
+    public function learningMaterials(): HasMany
+    {
+        return $this->hasMany(LearningMaterial::class);
+    }
 }

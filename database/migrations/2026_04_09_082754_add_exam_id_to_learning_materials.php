@@ -11,11 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasColumn('battle_rooms', 'is_locked')) {
-            Schema::table('battle_rooms', function (Blueprint $table) {
-                $table->boolean('is_locked')->default(false)->after('status');
-            });
-        }
+        Schema::table('learning_materials', function (Blueprint $table) {
+            $table->foreignId('exam_id')->nullable()->constrained('exams')->onDelete('set null');
+        });
     }
 
     /**
@@ -23,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('battle_rooms', function (Blueprint $table) {
-            $table->dropColumn('is_locked');
+        Schema::table('learning_materials', function (Blueprint $table) {
+            $table->dropConstrainedForeignId('exam_id');
         });
     }
 };

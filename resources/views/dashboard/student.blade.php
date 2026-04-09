@@ -112,73 +112,56 @@
                 </a>
             </div>
 
-            @if($availableExams->isEmpty())
-                <div class="bg-white rounded-[2rem] p-12 border-2 border-dashed border-gray-100 text-center space-y-4 shadow-sm">
-                    <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
-                        <i class="fas fa-calendar-check text-4xl"></i>
+            <!-- Free Practice Section (Latihan Bebas) -->
+            @if(!$freeExams->isEmpty())
+                <div class="space-y-6 pt-8">
+                    <div class="flex items-center justify-between px-2">
+                        <h3 class="text-xl font-black text-gray-900 flex items-center gap-3 uppercase tracking-wider">
+                            <span class="w-2 h-8 bg-emerald-500 rounded-full"></span>
+                            Latihan Soal Bebas
+                        </h3>
                     </div>
-                    <h4 class="text-lg font-black text-gray-900">Tidak Ada Ujian Aktif</h4>
-                    <p class="text-sm text-gray-400 font-medium">Semua ujian telah diselesaikan atau belum ada ujian yang dijadwalkan.</p>
-                </div>
-            @else
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    @foreach($availableExams as $exam)
-                        @php
-                            $attempt = Auth::user()->examAttempts()->where('exam_id', $exam->id)->first();
-                            $isInProgress = $attempt && $attempt->status === 'in_progress';
-                        @endphp
-                        <div class="group relative bg-white rounded-[2rem] p-7 border theme-soft-shadow hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 overflow-hidden" style="border-color: var(--brand-glow);">
-                            <!-- Background Decoration -->
-                            <div class="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700" style="background-color: var(--brand-glow);"></div>
 
-                            <div class="relative flex flex-col h-full">
-                                <div class="flex items-start justify-between mb-6">
-                                    <div class="w-14 h-14 bg-[var(--brand-glow)] text-[var(--brand-primary)] rounded-2xl flex items-center justify-center text-2xl group-hover:bg-[var(--brand-primary)] group-hover:text-white transition-colors duration-500 shadow-sm">
-                                        <i class="fas fa-book-open"></i>
-                                    </div>
-                                    @if($isInProgress)
-                                        <span class="px-4 py-1.5 bg-amber-100 text-amber-700 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-2 border border-amber-200">
-                                            <span class="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse"></span>
-                                            Lanjutkan
-                                        </span>
-                                    @else
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        @foreach($freeExams as $exam)
+                            <div class="group relative bg-white rounded-[2rem] p-7 border border-emerald-100 theme-soft-shadow hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 overflow-hidden">
+                                <div class="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-emerald-50"></div>
+
+                                <div class="relative flex flex-col h-full">
+                                    <div class="flex items-start justify-between mb-6">
+                                        <div class="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-2xl group-hover:bg-emerald-600 group-hover:text-white transition-colors duration-500 shadow-sm">
+                                            <i class="fas fa-pencil-alt"></i>
+                                        </div>
                                         <span class="px-4 py-1.5 bg-emerald-100 text-emerald-700 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-2 border border-emerald-200">
-                                            <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
-                                            Tersedia
+                                            <i class="fas fa-unlock text-[8px]"></i> Tanpa Token
                                         </span>
-                                    @endif
-                                </div>
+                                    </div>
 
-                                <div class="flex-grow">
-                                    <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-1 italic" style="color: var(--brand-primary);">{{ $exam->subject->name }}</p>
-                                    <h4 class="text-lg font-black text-gray-900 leading-tight mb-4 group-hover:text-[var(--brand-primary)] transition-colors">{{ $exam->title }}</h4>
-                                    
-                                    <div class="flex items-center gap-5 text-gray-400">
-                                        <div class="flex items-center gap-2">
-                                            <i class="far fa-clock text-xs"></i>
-                                            <span class="text-[11px] font-bold uppercase tracking-wider">{{ $exam->duration_minutes }} Menit</span>
-                                        </div>
-                                        <div class="flex items-center gap-2">
-                                            <i class="far fa-file-alt text-xs"></i>
-                                            <span class="text-[11px] font-bold uppercase tracking-wider">{{ $exam->total_questions }} Soal</span>
+                                    <div class="flex-grow">
+                                        <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-1 italic text-emerald-600">{{ $exam->subject->name }}</p>
+                                        <h4 class="text-lg font-black text-gray-900 leading-tight mb-4 group-hover:text-emerald-600 transition-colors uppercase">{{ $exam->title }}</h4>
+                                        
+                                        <div class="flex items-center gap-5 text-gray-400">
+                                            <div class="flex items-center gap-2">
+                                                <i class="far fa-clock text-xs"></i>
+                                                <span class="text-[11px] font-bold uppercase tracking-wider">{{ $exam->duration_minutes }} Menit</span>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <i class="far fa-file-alt text-xs"></i>
+                                                <span class="text-[11px] font-bold uppercase tracking-wider">{{ $exam->total_questions }} Soal</span>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                <div class="mt-8">
-                                    @if($isInProgress)
-                                        <a href="{{ route('student.exams.start', $attempt->exam) }}" class="w-full py-4 bg-amber-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-amber-100 hover:bg-amber-600 transition-all flex items-center justify-center gap-3 group/btn">
-                                            Lanjutkan Ujian <i class="fas fa-arrow-right group-hover/btn:translate-x-1 transition-transform"></i>
+                                    <div class="mt-8">
+                                        <a href="{{ route('student.exams.start', $exam) }}" class="w-full py-4 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 group/btn hover:bg-emerald-700 shadow-lg shadow-emerald-100">
+                                            Mulai Latihan <i class="fas fa-play text-[8px] group-hover/btn:translate-x-1 transition-transform"></i>
                                         </a>
-                                    @else
-                                        <a href="{{ route('student.exams.start', $exam) }}" class="w-full py-4 theme-primary-btn text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 group/btn animate-pulse-slow">
-                                            Mulai Sekarang <i class="fas fa-play text-[8px] group-hover/btn:translate-x-1 transition-transform"></i>
-                                        </a>
-                                    @endif
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    @endforeach
+                        @endforeach
+                    </div>
                 </div>
             @endif
 
@@ -228,6 +211,21 @@
 
         <!-- Sidebar Section (Right) -->
         <div class="space-y-8">
+            <!-- Learning Center Banner -->
+            <a href="{{ route('learning.index') }}" class="group relative block bg-indigo-600 rounded-[2.5rem] p-8 text-white shadow-xl shadow-indigo-100 overflow-hidden hover:scale-[1.02] transition-all duration-500">
+                <div class="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700"></div>
+                <div class="relative z-10">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-xl">
+                            <i class="fas fa-graduation-cap"></i>
+                        </div>
+                        <i class="fas fa-arrow-right opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all"></i>
+                    </div>
+                    <h3 class="text-xl font-black uppercase tracking-tight mb-2">Pusat Belajar</h3>
+                    <p class="text-[10px] font-medium text-indigo-100 leading-relaxed uppercase tracking-widest opacity-80">Akses materi PDF, Video & Artikel pembelajaran</p>
+                </div>
+            </a>
+
             <!-- Results Card -->
             <div class="bg-white rounded-[2.5rem] p-8 border-l-4 border-[var(--brand-primary)] shadow-md shadow-[var(--brand-glow)]">
                 <div class="flex items-center justify-between mb-8">

@@ -43,6 +43,7 @@ class Exam extends Model
         'semester',
         'academic_year',
         'include_in_report',
+        'token_required',
     ];
 
     protected $casts = [
@@ -60,6 +61,7 @@ class Exam extends Model
         'weight_essay' => 'integer',
         // Sprint 1 — Raport casts
         'include_in_report' => 'boolean',
+        'token_required' => 'boolean',
         'semester' => 'integer',
     ];
 

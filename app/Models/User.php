@@ -148,6 +148,13 @@ class User extends Authenticatable
     {
         return $this->hasMany(BattleParticipant::class, 'user_id');
     }
+    /**
+     * Get learning progress for this student.
+     */
+    public function learningProgress(): HasMany
+    {
+        return $this->hasMany(LearningProgress::class, 'user_id');
+    }
 
     /**
      * The subjects assigned to the teacher.

@@ -22,17 +22,14 @@ class ExtracurricularController extends Controller
         $academicYear = $request->academic_year 
             ?? Setting::get('academic_year', '2024/2025');
 
-        // Superadmin lihat semua, teacher hanya yang dia bina
-        if ($user->role === 'superadmin') {
-            $assignments = ExtracurricularCoach::where('academic_year', '=', $academicYear)
-                ->with('extracurricular')
-                ->get();
-        } else {
-            $assignments = ExtracurricularCoach::where('teacher_id', $user->id)
-                ->where('academic_year', '=', $academicYear)
-                ->with('extracurricular')
-                ->get();
-        }
+        // Show only extracurriculars assigned to the current user (Personalized view)
+        // Even superadmins see only their own assignments here.
+        // For 'all view', use the main index page.
+        $assignments = ExtracurricularCoach::where('teacher_id', $user->id)
+            ->where('academic_year', '=', $academicYear)
+            ->with('extracurricular')
+            ->get()
+            ->unique('extracurricular_id');
 
         return view('admin.extracurriculars.my-assignments', compact(
             'assignments', 'academicYear'

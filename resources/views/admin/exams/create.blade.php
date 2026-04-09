@@ -258,12 +258,39 @@
                         <span class="pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform duration-200 translate-x-0"></span>
                     </div>
                 </label>
+
+                <!-- Token Required Toggle -->
+                <label class="group relative flex items-center p-6 bg-gray-50 rounded-[2rem] border-2 border-transparent hover:border-[var(--brand-primary)] hover:bg-white transition-all duration-200 cursor-pointer overflow-hidden shadow-sm hover:shadow-lg">
+                    <input type="checkbox" name="token_required" value="1" x-model="tokenRequired" class="hidden peer">
+                    <!-- Icon Box -->
+                    <div class="w-12 h-12 rounded-2xl flex items-center justify-center mr-5 shadow-sm transition-colors duration-200 bg-gray-300 text-gray-500 peer-checked:bg-[var(--brand-primary)] peer-checked:text-white">
+                        <i class="fas fa-key"></i>
+                    </div>
+                    <!-- Text Info -->
+                    <div class="flex flex-col flex-1">
+                        <span class="text-sm font-black text-gray-900 leading-tight">Butuh Token</span>
+                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mt-1 leading-relaxed">Siswa wajib memasukkan token untuk memulai</span>
+                    </div>
+                    <div class="relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out bg-gray-300 peer-checked:bg-[var(--brand-primary)] peer-checked:[&>span]:translate-x-5">
+                        <span class="pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform duration-200 translate-x-0"></span>
+                    </div>
+                </label>
             </div>
         </div>
 
         {{-- ── Klasifikasi Raport ─────────────────────────────────────────────── --}}
         <div class="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden group hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-500"
-             x-data="{ examType: '{{ old('exam_type', 'harian') }}' }">
+             x-data="{ 
+                examType: '{{ old('exam_type', 'harian') }}',
+                tokenRequired: {{ old('token_required', true) ? 'true' : 'false' }},
+                init() {
+                    this.$watch('examType', value => {
+                        if (value === 'latihan') {
+                            this.tokenRequired = false;
+                        }
+                    });
+                }
+             }">
             <div class="p-8 border-b border-gray-50 flex items-center gap-4">
                 <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
                     <i class="fas fa-file-invoice text-sm"></i>

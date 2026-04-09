@@ -31,9 +31,6 @@ class StudentExamController extends Controller
         return view('student.exams.index', compact('exams', 'attempts'));
     }
 
-    /**
-     * Start an exam - show token validation form.
-     */
     public function start(Exam $exam)
     {
         try {
@@ -52,6 +49,17 @@ class StudentExamController extends Controller
             if ($exam->end_time < $now) {
                 return redirect()->route('student.exams.index')
                     ->with('error', 'Ujian ini telah berakhir.');
+            }
+
+            // If token is NOT required, start exam immediately
+            if (!$exam->token_required) {
+                $attempt = \App\Services\ExamEngineService::startExam($exam, auth()->user(), 'NO_TOKEN');
+                
+                // Set session for legacy tracking
+                session(['authorized_exam_' . $exam->id => true]);
+                session(['exam_attempt_' . $exam->id => $attempt->id]);
+
+                return redirect()->route('student.exams.take', $attempt->id);
             }
 
             // Show token validation form
@@ -89,8 +97,8 @@ class StudentExamController extends Controller
             return redirect()->route('student.exams.result', $attempt->id);
         }
 
-        // Verify valid token was used
-        if (!$attempt->token) {
+        // Verify valid token was used ONLY if required
+        if ($attempt->exam->token_required && !$attempt->token) {
             return redirect()->route('student.exams.index')
                 ->with('error', 'Token ujian tidak valid.');
         }
@@ -393,29 +401,26 @@ class StudentExamController extends Controller
                 ], 400);
             }
 
-            // 2. REFRESH TOKEN IF NEEDED
-            if ($exam->tokenNeedsRefresh()) {
-                $this->regenerateExamToken($exam);
-                // Reload exam from database to get fresh token value
-                $exam->refresh();
-            }
+            // 3. VALIDATE TOKEN (ONLY IF REQUIRED)
+            if ($exam->token_required) {
+                $inputToken = strtoupper(trim($request->token));
+                $examToken = strtoupper($exam->token ?? '');
 
-            // 3. VALIDATE TOKEN
-            $inputToken = strtoupper(trim($request->token));
-            $examToken = strtoupper($exam->token ?? '');
+                if (!$examToken) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Token ujian belum ditetapkan oleh admin. Silakan hubungi pengawas.',
+                    ], 400);
+                }
 
-            if (!$examToken) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Token ujian belum ditetapkan oleh admin. Silakan hubungi pengawas.',
-                ], 400);
-            }
-
-            if ($inputToken !== $examToken) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Token salah atau sudah kadaluwarsa. Silakan hubungi pengawas.',
-                ], 400);
+                if ($inputToken !== $examToken) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Token salah atau sudah kadaluwarsa. Silakan hubungi pengawas.',
+                    ], 400);
+                }
+            } else {
+                $inputToken = 'NO_TOKEN';
             }
 
             // 4. CREATE EXAM ATTEMPT (with status = in_progress)
