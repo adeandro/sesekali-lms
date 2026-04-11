@@ -11,6 +11,14 @@ use Illuminate\Support\Facades\Storage;
 class LearningSectionController extends Controller
 {
     /**
+     * Display a listing of the resource.
+     */
+    public function index(LearningMaterial $material)
+    {
+        return redirect()->route('admin.learning.materials.show', $material);
+    }
+
+    /**
      * Show the form for creating a new resource.
      */
     public function create(LearningMaterial $material)
