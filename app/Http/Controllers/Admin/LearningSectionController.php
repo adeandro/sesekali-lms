@@ -140,4 +140,23 @@ class LearningSectionController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+    /**
+     * Upload image from editor via AJAX.
+     */
+    public function uploadImage(Request $request)
+    {
+        $request->validate([
+            'image' => 'required|image|max:2048', // Max 2MB
+        ]);
+
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('learning/images', 'public');
+            return response()->json([
+                'url' => asset('storage/' . $path)
+            ]);
+        }
+
+        return response()->json(['error' => 'Gagal mengunggah gambar.'], 400);
+    }
 }

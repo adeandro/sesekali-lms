@@ -299,6 +299,7 @@ Route::middleware('auth')->group(function () {
             Route::resource('materials', \App\Http\Controllers\Admin\LearningMaterialController::class);
             Route::post('materials/{material}/sections/reorder', [\App\Http\Controllers\Admin\LearningSectionController::class, 'reorder'])->name('sections.reorder');
             Route::delete('sections/{section}/file', [\App\Http\Controllers\Admin\LearningSectionController::class, 'deleteFile'])->name('sections.delete-file');
+            Route::post('materials/sections/upload-image', [\App\Http\Controllers\Admin\LearningSectionController::class, 'uploadImage'])->name('sections.upload-image');
             Route::resource('materials.sections', \App\Http\Controllers\Admin\LearningSectionController::class)->shallow();
         });
 
