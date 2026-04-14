@@ -2467,24 +2467,24 @@
 
         <div class="mt-8 text-center">
           <h2 class="text-2xl font-bold text-gray-900 mb-2">Konfirmasi Pengerjaan Ujian</h2>
-          <p class="text-gray-500 mb-6">Ujian akan dimulai dalam mode layar penuh untuk menjaga integritas ujian.</p>
+          <!-- <p class="text-gray-300 text-sm mb-6">Ujian akan dimulai dalam mode layar penuh untuk menjaga integritas ujian.</p> -->
         </div>
 
-        <div class="bg-gray-50 rounded-xl p-5 mb-6 border border-gray-100">
+        <div class="bg-gray-50 rounded-xl p-5 mb-2 border border-gray-100">
           <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
             <i class="fas fa-clipboard-list text-[var(--brand-primary)]"></i> TATA TERTIB UJIAN
           </h3>
           <ul class="space-y-3 text-sm text-gray-600">
             <li class="flex items-start gap-3"><i class="fas fa-expand text-indigo-500 mt-1"></i> Mode Layar Penuh Wajib — ujian hanya bisa dikerjakan dalam fullscreen</li>
             <li class="flex items-start gap-3"><i class="fas fa-eye text-emerald-500 mt-1"></i> Fokus pada Ujian — dilarang pindah tab atau jendela</li>
-            <li class="flex items-start gap-3"><i class="fas fa-copy text-rose-500 mt-1"></i> Dilarang Menyalin — fungsi copy-paste dinonaktifkan</li>
-            <li class="flex items-start gap-3"><i class="fas fa-code text-amber-500 mt-1"></i> Dilarang Inspect Element — developer tools tidak diizinkan</li>
+            <!-- <li class="flex items-start gap-3"><i class="fas fa-copy text-rose-500 mt-1"></i> Dilarang Menyalin — fungsi copy-paste dinonaktifkan</li>
+            <li class="flex items-start gap-3"><i class="fas fa-code text-amber-500 mt-1"></i> Dilarang Inspect Element — developer tools tidak diizinkan</li> -->
             <li class="flex items-start gap-3"><i class="fas fa-hand-paper text-orange-500 mt-1"></i> Batasan Pelanggaran — {{ $configs['max_violations'] ?? 3 }} pelanggaran akan otomatis submit</li>
             <li class="flex items-start gap-3"><i class="fas fa-hourglass-half text-blue-500 mt-1"></i> Waktu Terbatas — ujian otomatis submit jika waktu habis</li>
           </ul>
         </div>
 
-        <div class="bg-amber-50 rounded-lg p-4 mb-8 border border-amber-200 flex gap-3 text-amber-800 text-sm">
+        <div class="bg-amber-50 rounded-lg p-4 mb-2 border border-amber-200 flex gap-1 text-amber-800 text-sm">
           <i class="fas fa-exclamation-triangle mt-0.5"></i>
           <div><strong class="font-bold">Peringatan:</strong> Setiap pelanggaran dicatat di sistem dan dapat mempengaruhi nilai ujian Anda.</div>
         </div>
