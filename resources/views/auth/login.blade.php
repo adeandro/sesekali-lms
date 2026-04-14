@@ -408,6 +408,16 @@
         }
         input.focus();
     }
+
+    {{-- Session Heartbeat to prevent 419 Page Expired (every 15 mins) --}}
+    setInterval(function() {
+        fetch('{{ route('login') }}', {
+            method: 'HEAD',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        }).catch(err => console.log('Heartbeat failed', err));
+    }, 15 * 60 * 1000);
 </script>
 
 {{-- ═══════════════════════════════════════════════════════════════ --}}
