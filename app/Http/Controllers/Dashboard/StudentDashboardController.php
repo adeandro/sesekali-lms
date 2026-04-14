@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Exam;
 use App\Models\ExamAttempt;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class StudentDashboardController extends Controller
 {
@@ -25,91 +26,101 @@ class StudentDashboardController extends Controller
         $avgScore = $user->examAttempts()->whereNotNull('final_score')->avg('final_score') ?? 0;
         
         // 2. Angkatan Leaderboard (Same Grade)
-        $angkatanLeaderboard = \App\Models\User::where('role', '=', 'student', 'and')
-            ->where('status', '=', 'Aktif', 'and')
-            ->where('grade', '=', $user->grade, 'and')
-            ->select('users.*')
-            ->withAvg(['examAttempts as avg_score' => function($q) {
-                $q->whereNotNull('submitted_at');
-            }], 'final_score')
-            ->withCount(['examAttempts as total_sessions' => function($q) {
-                $q->whereNotNull('submitted_at');
-            }])
-            ->selectRaw('(COALESCE((SELECT AVG(final_score) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL), 0) + 
-                (SELECT COUNT(*) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) * 2 +
-                ((SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id) * 1 +
-                 (SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id AND `rank` = 1) * 5)) as performance_points')
-            ->orderByDesc('performance_points')
-            ->take(10)
-            ->get();
+        $angkatanLeaderboard = Cache::remember("leaderboard_angkatan_{$user->grade}", 600, function() use ($user) {
+            return \App\Models\User::where('role', '=', 'student', 'and')
+                ->where('status', '=', 'Aktif', 'and')
+                ->where('grade', '=', $user->grade, 'and')
+                ->select('users.*')
+                ->withAvg(['examAttempts as avg_score' => function($q) {
+                    $q->whereNotNull('submitted_at');
+                }], 'final_score')
+                ->withCount(['examAttempts as total_sessions' => function($q) {
+                    $q->whereNotNull('submitted_at');
+                }])
+                ->selectRaw('(COALESCE((SELECT AVG(final_score) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL), 0) + 
+                    (SELECT COUNT(*) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) * 2 +
+                    ((SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id) * 1 +
+                     (SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id AND `rank` = 1) * 5)) as performance_points')
+                ->orderByDesc('performance_points')
+                ->take(10)
+                ->get();
+        });
             
         // 3.1 Class Leaderboard (Same Grade & Class Group)
-        $classLeaderboard = \App\Models\User::where('role', '=', 'student', 'and')
-            ->where('status', '=', 'Aktif', 'and')
-            ->where('grade', '=', $user->grade, 'and')
-            ->where('class_group', '=', $user->class_group, 'and')
-            ->select('users.*')
-            ->withAvg(['examAttempts as avg_score' => function($q) {
-                $q->whereNotNull('submitted_at');
-            }], 'final_score')
-            ->withCount(['examAttempts as total_sessions' => function($q) {
-                $q->whereNotNull('submitted_at');
-            }])
-            ->selectRaw('(COALESCE((SELECT AVG(final_score) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL), 0) + 
-                (SELECT COUNT(*) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) * 2 +
-                ((SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id) * 1 +
-                 (SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id AND `rank` = 1) * 5)) as performance_points')
-            ->orderByDesc('performance_points')
-            ->take(10)
-            ->get();
+        $classLeaderboard = Cache::remember("leaderboard_class_{$user->grade}_{$user->class_group}", 600, function() use ($user) {
+            return \App\Models\User::where('role', '=', 'student', 'and')
+                ->where('status', '=', 'Aktif', 'and')
+                ->where('grade', '=', $user->grade, 'and')
+                ->where('class_group', '=', $user->class_group, 'and')
+                ->select('users.*')
+                ->withAvg(['examAttempts as avg_score' => function($q) {
+                    $q->whereNotNull('submitted_at');
+                }], 'final_score')
+                ->withCount(['examAttempts as total_sessions' => function($q) {
+                    $q->whereNotNull('submitted_at');
+                }])
+                ->selectRaw('(COALESCE((SELECT AVG(final_score) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL), 0) + 
+                    (SELECT COUNT(*) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) * 2 +
+                    ((SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id) * 1 +
+                     (SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id AND `rank` = 1) * 5)) as performance_points')
+                ->orderByDesc('performance_points')
+                ->take(10)
+                ->get();
+        });
 
         // 3.2 Global Leaderboard
-        $globalLeaderboard = \App\Models\User::where('role', '=', 'student', 'and')
-            ->where('status', '=', 'Aktif', 'and')
-            ->select('users.*')
-            ->withAvg(['examAttempts as avg_score' => function($q) {
-                $q->whereNotNull('submitted_at');
-            }], 'final_score')
-            ->withCount(['examAttempts as total_sessions' => function($q) {
-                $q->whereNotNull('submitted_at');
-            }])
-            ->selectRaw('(COALESCE((SELECT AVG(final_score) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL), 0) + 
-                (SELECT COUNT(*) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) * 2 +
-                ((SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id) * 1 +
-                 (SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id AND `rank` = 1) * 5)) as performance_points')
-            ->orderByDesc('performance_points')
-            ->take(10)
-            ->get();
+        $globalLeaderboard = Cache::remember("leaderboard_global", 600, function() {
+            return \App\Models\User::where('role', '=', 'student', 'and')
+                ->where('status', '=', 'Aktif', 'and')
+                ->select('users.*')
+                ->withAvg(['examAttempts as avg_score' => function($q) {
+                    $q->whereNotNull('submitted_at');
+                }], 'final_score')
+                ->withCount(['examAttempts as total_sessions' => function($q) {
+                    $q->whereNotNull('submitted_at');
+                }])
+                ->selectRaw('(COALESCE((SELECT AVG(final_score) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL), 0) + 
+                    (SELECT COUNT(*) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) * 2 +
+                    ((SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id) * 1 +
+                     (SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id AND `rank` = 1) * 5)) as performance_points')
+                ->orderByDesc('performance_points')
+                ->take(10)
+                ->get();
+        });
 
         // 4. Current Student Rank (Angkatan & Class)
-        $angkatanRankedStudents = \App\Models\User::where('role', '=', 'student')
-            ->where('status', '=', 'Aktif')
-            ->where('grade', '=', $user->grade)
-            ->select('id')
-            ->selectRaw('(COALESCE((SELECT AVG(final_score) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL), 0) + 
-                (SELECT COUNT(*) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) * 2 +
-                ((SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id) * 1 +
-                 (SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id AND `rank` = 1) * 5)) as performance_points')
-            ->orderByDesc('performance_points')
-            ->pluck('id')
-            ->toArray();
+        $angkatanRankedStudents = Cache::remember("ranked_ids_angkatan_{$user->grade}", 600, function() use ($user) {
+            return \App\Models\User::where('role', '=', 'student')
+                ->where('status', '=', 'Aktif')
+                ->where('grade', '=', $user->grade)
+                ->select('id')
+                ->selectRaw('(COALESCE((SELECT AVG(final_score) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL), 0) + 
+                    (SELECT COUNT(*) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) * 2 +
+                    ((SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id) * 1 +
+                     (SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id AND `rank` = 1) * 5)) as performance_points')
+                ->orderByDesc('performance_points')
+                ->pluck('id')
+                ->toArray();
+        });
         
         $currentAngkatanRank = array_search($user->id, $angkatanRankedStudents) !== false 
             ? array_search($user->id, $angkatanRankedStudents) + 1 
             : '-';
 
-        $classRankedStudents = \App\Models\User::where('role', '=', 'student', 'and')
-            ->where('status', '=', 'Aktif', 'and')
-            ->where('grade', '=', $user->grade, 'and')
-            ->where('class_group', '=', $user->class_group, 'and')
-            ->select('id')
-            ->selectRaw('(COALESCE((SELECT AVG(final_score) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL), 0) + 
-                (SELECT COUNT(*) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) * 2 +
-                ((SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id) * 1 +
-                 (SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id AND `rank` = 1) * 5)) as performance_points')
-            ->orderByDesc('performance_points')
-            ->pluck('id')
-            ->toArray();
+        $classRankedStudents = Cache::remember("ranked_ids_class_{$user->grade}_{$user->class_group}", 600, function() use ($user) {
+            return \App\Models\User::where('role', '=', 'student', 'and')
+                ->where('status', '=', 'Aktif', 'and')
+                ->where('grade', '=', $user->grade, 'and')
+                ->where('class_group', '=', $user->class_group, 'and')
+                ->select('id')
+                ->selectRaw('(COALESCE((SELECT AVG(final_score) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL), 0) + 
+                    (SELECT COUNT(*) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) * 2 +
+                    ((SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id) * 1 +
+                     (SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id AND `rank` = 1) * 5)) as performance_points')
+                ->orderByDesc('performance_points')
+                ->pluck('id')
+                ->toArray();
+        });
         
         $currentClassRank = array_search($user->id, $classRankedStudents) !== false 
             ? array_search($user->id, $classRankedStudents) + 1 

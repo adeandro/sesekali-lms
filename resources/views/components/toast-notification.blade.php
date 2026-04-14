@@ -119,10 +119,15 @@
                 
                 this.pollInterval = setInterval(async () => {
                     await this.fetchLatest();
-                }, 15000);
+                }, 60000); // Increased to 60 seconds
             },
 
             async fetchLatest() {
+                // Skip polling if tab is not active
+                if (document.visibilityState !== 'visible') {
+                    return;
+                }
+
                 try {
                     const response = await fetch('/communication/notifications/latest-unread', {
                         headers: {
