@@ -15,15 +15,26 @@ class StudentDashboardController extends Controller
     {
         $user = Auth::user();
         
-        // Check and award achievements if enabled
+        // Check and award achievements if enabled — throttled to once per 5 minutes per user
         if (\App\Models\Setting::get('enable_gamification', '1') == '1') {
-            $achievementService->checkAchievements($user);
+            $achKey = "achievement_checked_{$user->id}";
+            if (!Cache::has($achKey)) {
+                $achievementService->checkAchievements($user);
+                Cache::put($achKey, true, 300);
+            }
         }
         
-        // 1. Statistics
-        $totalAttempts = $user->examAttempts()->count();
-        $completedExams = $user->examAttempts()->whereNotNull('submitted_at')->count();
-        $avgScore = $user->examAttempts()->whereNotNull('final_score')->avg('final_score') ?? 0;
+        // 1. Statistics — cached per-user for 5 minutes
+        $userStats = Cache::remember("student_stats_{$user->id}", 300, function () use ($user) {
+            return [
+                'total'     => $user->examAttempts()->count(),
+                'completed' => $user->examAttempts()->whereNotNull('submitted_at')->count(),
+                'avg_score' => $user->examAttempts()->whereNotNull('final_score')->avg('final_score') ?? 0,
+            ];
+        });
+        $totalAttempts = $userStats['total'];
+        $completedExams = $userStats['completed'];
+        $avgScore = $userStats['avg_score'];
         
         // 2. Angkatan Leaderboard (Same Grade)
         $angkatanLeaderboard = Cache::remember("leaderboard_angkatan_{$user->grade}", 600, function() use ($user) {
@@ -153,43 +164,51 @@ class StudentDashboardController extends Controller
             }
         }
 
-        // 7. Available Exams
-        $submittedExamIds = $user->examAttempts()
-            ->where('status', '=', 'submitted', 'and')
-            ->pluck('exam_id')
-            ->toArray();
+        // 7. Available Exams — cached per-user+grade for 3 minutes
+        $submittedExamIds = Cache::remember("submitted_exam_ids_{$user->id}", 180, function () use ($user) {
+            return $user->examAttempts()
+                ->where('status', '=', 'submitted', 'and')
+                ->pluck('exam_id')
+                ->toArray();
+        });
 
-        $availableExams = Exam::where('status', '=', 'published')
-            ->where('token_required', true)
-            ->whereNotIn('id', $submittedExamIds)
-            ->where(function($q) use ($user) {
-                $q->whereNull('jenjang')
-                  ->orWhere('jenjang', '=', $user->grade);
-            })
-            ->where('end_time', '>', now())
-            ->with(['subject'])
-            ->orderBy('start_time', 'asc')
-            ->take(6)
-            ->get();
+        $availableExams = Cache::remember("available_exams_{$user->id}_{$user->grade}", 180, function () use ($user, $submittedExamIds) {
+            return Exam::where('status', '=', 'published')
+                ->where('token_required', true)
+                ->whereNotIn('id', $submittedExamIds)
+                ->where(function ($q) use ($user) {
+                    $q->whereNull('jenjang')
+                      ->orWhere('jenjang', '=', $user->grade);
+                })
+                ->where('end_time', '>', now())
+                ->with(['subject'])
+                ->orderBy('start_time', 'asc')
+                ->take(6)
+                ->get();
+        });
 
-        $freeExams = Exam::where('status', '=', 'published')
-            ->where('token_required', false)
-            ->whereNotIn('id', $submittedExamIds)
-            ->where(function($q) use ($user) {
-                $q->whereNull('jenjang')
-                  ->orWhere('jenjang', '=', $user->grade);
-            })
-            ->where('end_time', '>', now())
-            ->with(['subject'])
-            ->orderBy('start_time', 'asc')
-            ->get();
+        $freeExams = Cache::remember("free_exams_{$user->id}_{$user->grade}", 180, function () use ($user, $submittedExamIds) {
+            return Exam::where('status', '=', 'published')
+                ->where('token_required', false)
+                ->whereNotIn('id', $submittedExamIds)
+                ->where(function ($q) use ($user) {
+                    $q->whereNull('jenjang')
+                      ->orWhere('jenjang', '=', $user->grade);
+                })
+                ->where('end_time', '>', now())
+                ->with(['subject'])
+                ->orderBy('start_time', 'asc')
+                ->get();
+        });
 
-        $recentResults = $user->examAttempts()
-            ->with('exam.subject')
-            ->where('status', '=', 'submitted', 'and')
-            ->orderBy('submitted_at', 'DESC')
-            ->take(5)
-            ->get();
+        $recentResults = Cache::remember("recent_results_{$user->id}", 180, function () use ($user) {
+            return $user->examAttempts()
+                ->with('exam.subject')
+                ->where('status', '=', 'submitted', 'and')
+                ->orderBy('submitted_at', 'DESC')
+                ->take(5)
+                ->get();
+        });
 
         $stats = [
             'total_attempts' => $totalAttempts,
