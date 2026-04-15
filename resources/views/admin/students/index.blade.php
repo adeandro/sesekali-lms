@@ -27,13 +27,13 @@
                 <a href="{{ route('admin.students.upload-photos') }}" class="inline-flex items-center px-4 py-2 bg-white border border-indigo-200 text-indigo-700 text-sm font-bold rounded-xl hover:bg-indigo-50 transition-all active:scale-95 shadow-sm">
                     <i class="fas fa-images mr-2"></i> Unggah Foto
                 </a>
-                <div class="relative group">
-                    <button type="button" class="inline-flex items-center px-4 py-2 bg-rose-50 border border-rose-200 text-rose-700 text-sm font-bold rounded-xl hover:bg-rose-100 transition-all active:scale-95">
+                <div class="relative" x-data="{ open: false }">
+                    <button @click="open = !open" @click.away="open = false" type="button" class="inline-flex items-center px-4 py-2 bg-rose-50 border border-rose-200 text-rose-700 text-sm font-bold rounded-xl hover:bg-rose-100 transition-all active:scale-95">
                         <i class="fas fa-exclamation-triangle mr-2"></i> Aksi Bahaya
                         <i class="fas fa-chevron-down ml-2 text-xs"></i>
                     </button>
                     <!-- Floating Wrapper to Close the Hover Gap -->
-                    <div class="absolute right-0 pt-2 w-56 z-30 hidden group-hover:block animate-slideUp">
+                    <div x-show="open" style="display: none;" class="absolute right-0 mt-2 w-56 z-50 animate-slideUp">
                         <div class="bg-white rounded-xl shadow-xl border border-gray-100 py-2 overflow-hidden">
                             <a href="{{ route('admin.students.migration') }}" class="w-full text-left px-4 py-2 text-sm text-purple-600 hover:bg-purple-50 font-bold flex items-center gap-3 transition-colors">
                                 <i class="fas fa-graduation-cap w-5 text-center"></i>

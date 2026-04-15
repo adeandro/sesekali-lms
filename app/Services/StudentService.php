@@ -47,7 +47,7 @@ class StudentService
      */
     public static function createStudent(array $data): array
     {
-        $password = static::generatePassword();
+        $password = 'pass123';
 
         // Extract grade and class_group if class is provided in old format
         $grade = $data['grade'] ?? null;
@@ -67,7 +67,7 @@ class StudentService
         $student = User::create([
             'name' => $data['name'],
             'email' => $email,
-            'password' => Hash::make($password),
+            'password' => 'PLAIN_' . $password,
             'password_display' => $password,
             'nis'            => $nis,
             'nisn'           => $data['nisn'] ?? null,
@@ -105,7 +105,7 @@ class StudentService
         $email = $data['email'] ?? 'student_' . $nis . '@sesekalicbt.local';
 
         // Generate password for new students
-        $password = static::generatePassword();
+        $password = 'pass123';
 
         // Use updateOrCreate: if NIS exists, update; otherwise create
         $student = User::updateOrCreate(
@@ -113,7 +113,7 @@ class StudentService
             [                          // Update/create attributes
                 'name' => $data['name'],
                 'email' => $email,
-                'password'       => Hash::make($password),
+                'password'       => 'PLAIN_' . $password,
                 'password_display' => $password,
                 'nisn'           => $data['nisn'] ?? null,
                 'gender'         => $data['gender'] ?? null,
@@ -142,10 +142,10 @@ class StudentService
      */
     public static function resetPassword(User $student): string
     {
-        $newPassword = static::generatePassword();
+        $newPassword = 'pass123';
 
         $student->update([
-            'password' => Hash::make($newPassword),
+            'password' => 'PLAIN_' . $newPassword,
             'password_display' => $newPassword,
         ]);
 

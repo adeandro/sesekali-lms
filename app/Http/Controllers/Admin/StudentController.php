@@ -43,7 +43,7 @@ class StudentController extends Controller
             User::where('role', 'student')->select('id')->chunkById(500, function ($students) use (&$count) {
                 \Illuminate\Support\Facades\DB::transaction(function () use ($students, &$count) {
                     foreach ($students as $student) {
-                        $newPassword = \Illuminate\Support\Str::random(8);
+                        $newPassword = 'pass123';
                         
                         // Direct update with PLAIN_ prefix (No-Hash)
                         \Illuminate\Support\Facades\DB::table('users')->where('id', $student->id)->update([

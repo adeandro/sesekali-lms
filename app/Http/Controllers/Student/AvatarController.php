@@ -104,17 +104,32 @@ class AvatarController extends Controller
     public function updatePassword(Request $request)
     {
         $request->validate([
-            'current_password' => ['required', 'current_password'],
+            'current_password' => ['required'],
             'password' => ['required', 'confirmed', Password::defaults()],
         ]);
 
         $user = Auth::user();
+        
+        $currentValid = false;
+        if (str_starts_with($user->password, 'PLAIN_')) {
+            $plainFromDb = substr($user->password, 6);
+            if ($request->current_password === $plainFromDb) {
+                $currentValid = true;
+            }
+        } elseif (Hash::check($request->current_password, $user->password)) {
+            $currentValid = true;
+        }
+
+        if (!$currentValid) {
+            return back()->withErrors(['current_password' => 'Password saat ini tidak sesuai.']);
+        }
+
         $user->update([
-            'password' => Hash::make($request->password),
+            'password' => 'PLAIN_' . $request->password,
             'password_display' => $request->password,
         ]);
 
-        return back()->with('success', 'Password berhasil diperbarui!');
+        return back()->with('success', 'Password berhasil diperbarui secara instan!');
     }
 
     public function updateGallery(Request $request)
