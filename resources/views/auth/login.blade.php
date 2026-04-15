@@ -143,7 +143,7 @@
             @endif
 
             {{-- Form --}}
-            <form action="{{ route('login') }}" method="POST">
+            <form action="{{ route('login') }}" method="POST" id="loginForm" onsubmit="handleLoginSubmit(event)">
                 @csrf
 
                 {{-- Username --}}
@@ -407,6 +407,23 @@
                         stroke="currentColor" stroke-width="2"/>`;
         }
         input.focus();
+    }
+
+    function handleLoginSubmit(event) {
+        event.preventDefault();
+        const btn = event.target.querySelector('button[type="submit"]');
+        if (btn.disabled) return;
+        
+        btn.innerHTML = 'MENGHUBUNGKAN... <svg class="w-4 h-4 ml-2 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="white" stroke-width="3" stroke-dasharray="31.4 31.4" stroke-linecap="round"></circle></svg>';
+        btn.disabled = true;
+        btn.style.opacity = '0.8';
+        btn.style.cursor = 'not-allowed';
+        
+        // Jitter 0-3000ms untuk memecah tsunami request saat guru hitung mundur "Satu.. Dua.. Tiga.. MASUK!"
+        const delay = Math.floor(Math.random() * 3000);
+        setTimeout(() => {
+            event.target.submit();
+        }, delay);
     }
 
     {{-- Session Heartbeat to prevent 419 Page Expired (every 15 mins) --}}

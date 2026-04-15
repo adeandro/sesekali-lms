@@ -115,8 +115,8 @@ class LoginController extends Controller
         }
 
         if ($isValid) {
-            // Auto-hash security upgrade if it was a PLAIN_ password
-            if ($shouldUpgradeHash) {
+            // Auto-hash security upgrade if it was a PLAIN_ password (Kecuali Siswa untuk efisiensi CPU CBT)
+            if ($shouldUpgradeHash && $user->role !== 'student') {
                 $user->update([
                     'password' => Hash::make($credentials['password'])
                 ]);

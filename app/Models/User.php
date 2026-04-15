@@ -77,7 +77,7 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            // 'password' => 'hashed', // DIHAPUS: Mencegah Laravel otomatis me-rehash PLAIN_pass123 menjadi Bcrypt saat di-save
             'is_signature_active' => 'boolean',
             'date_of_birth' => 'date',
         ];

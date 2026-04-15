@@ -633,6 +633,10 @@ function studentBattle(token) {
                         this.answerResult = null;
                     }
 
+                    // Tambahkan jitter 0-1500ms agar 40 siswa tidak hit PHP bersamaan (mencegah 508 Resource Limit)
+                    const jitter = Math.floor(Math.random() * 1500);
+                    await new Promise(r => setTimeout(r, jitter));
+
                     await this.syncWithServer();
                     this.startAdaptivePolling(); // Sesuaikan kecepatan polling
                 }
