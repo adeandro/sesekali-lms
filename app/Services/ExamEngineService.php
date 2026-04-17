@@ -322,14 +322,14 @@ class ExamEngineService
             
             // Store the actual TEXT that's currently displayed (handles shuffled options)
             if ($question === null) {
+                // Perform a minimal query to avoid fetching all columns if possible, but for simplicity:
                 $question = \App\Models\Question::find($questionId);
             }
             
             if ($question && $question->question_type === 'multiple_choice') {
-                // CRITICAL: Always store the selected answer TEXT
-                // This is what the student actually saw and clicked on
-                $attempt = $attempt->refresh(); // Ensure fresh instance
-                $exam = $attempt->exam;
+                // Avoid $attempt->refresh() which is expensive. 
+                // We use $attempt directly and load $exam if not already present.
+                $exam = $attempt->relationLoaded('exam') ? $attempt->exam : $attempt->exam()->first();
                 
                 $selectedText = null;
                 
@@ -339,34 +339,18 @@ class ExamEngineService
                     $optionMap = session()->get($optionMapKey);
                     
                     if ($optionMap) {
-                        // optionMap[display_pos] = original_pos
-                        // Student selected a display position, convert to original position
                         $originalPosition = $optionMap[$selectedAnswer] ?? null;
                         if ($originalPosition) {
-                            // Get text of the ORIGINAL position
                             $selectedText = $question->{"option_" . $originalPosition} ?? null;
                         }
                     } else {
-                        // Fallback if map not found (shouldn't happen)
                         $selectedText = $question->{"option_" . $selectedAnswer} ?? null;
                     }
                 } else {
-                    // No shuffling: direct text lookup
                     $selectedText = $question->{"option_" . $selectedAnswer} ?? null;
                 }
                 
-                // Store it - this is the TEXT the student saw
                 $answer->selected_answer_text = $selectedText;
-                
-                \Log::debug('Autosaving MC answer', [
-                    'attempt_id' => $attempt->id,
-                    'question_id' => $question->id,
-                    'selected_display_position' => $selectedAnswer,
-                    'selected_original_position' => $optionMap[$selectedAnswer] ?? null,
-                    'selected_text_raw' => $selectedText,
-                    'selected_text_normalized' => ScoringService::normalizeAnswerText($selectedText),
-                    'has_shuffle' => $exam?->randomize_options,
-                ]);
             }
         }
 
@@ -375,6 +359,19 @@ class ExamEngineService
         }
 
         $answer->save();
+
+        // [Consolidation] Update heartbeat and progress in a single burst
+        // This replaces the separate 'record-answer' and periodic 'heartbeat' requests
+        $attempt->updateQuietly([
+            'heartbeat_last_seen' => now(),
+        ]);
+
+        // Update session progress if it exists
+        \App\Models\ExamSession::where('exam_attempt_id', $attempt->id)
+            ->update([
+                'current_question' => $questionId,
+                'last_heartbeat' => now(),
+            ]);
 
         return $answer;
     }

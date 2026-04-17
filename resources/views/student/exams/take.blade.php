@@ -930,7 +930,7 @@
             initAntiCheating();
             initTimer();
             initEventListeners();
-            initializeHeartbeat();
+            // Heartbeat disabled for performance hardening (no real-time monitoring needed)
             setupConfetti();
             
             // [FIX] Tambahkan delay 1 detik sebelum memulai continuous check.
@@ -1843,9 +1843,7 @@
                 if (result.success) {
                     const cacheKey = `exam_attempt_${attempt_id}_question_${questionId}`;
                     localStorage.setItem(cacheKey, JSON.stringify(data));
-                    
-                    // Also send real-time progress update (non-blocking)
-                    sendAnswerProgress(questionId, data.selected_answer || data.essay_answer || null);
+                    // Success! No extra progress request needed (now handled by autosave logic in backend)
                 }
             } catch (error) {
                 console.error(`Error autosaving question ${questionId}:`, error);
@@ -1876,37 +1874,6 @@
         // REAL-TIME PROGRESS TRACKING
         // ============================================
 
-        /**
-         * Send answer progress to backend in real-time
-         */
-        async function sendAnswerProgress(questionId, answer) {
-            try {
-                const response = await fetch(`/student/exams/${attempt_id}/record-answer`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('input[name="_token"]')?.value || '',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: JSON.stringify({
-                        question_id: questionId,
-                        answer: answer || null
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-
-                const result = await response.json();
-                if (result.success) {
-                    console.log(`✓ Progress saved: ${result.total_answered} questions answered`);
-                }
-            } catch (error) {
-                console.log(`⚠️ Could not send progress: ${error.message} - will retry`);
-                // Silent fail - autosave is main method, this is supplementary
-            }
-        }
 
         /**
          * Report violation in real-time
@@ -1950,92 +1917,6 @@
         }
 
         // ============================================
-        // HEARTBEAT SYSTEM - Real-time Session Monitoring
-        // ============================================
-        let heartbeatInterval;
-        let isExamSubmitted = false;
-        let offlineAnswerCache = [];
-
-        /**
-         * Initialize heartbeat system on exam start
-         * Sends session signal every 20 seconds to server
-         */
-        function initializeHeartbeat() {
-            const data = localStorage.getItem('exam_session_data');
-            if (!data) return;
-
-            const sessionData = JSON.parse(data);
-            
-            // First heartbeat after 5 seconds
-            setTimeout(() => sendHeartbeat(sessionData), 5000);
-
-            // Then every 20 seconds
-            heartbeatInterval = setInterval(() => {
-                if (!isExamSubmitted) {
-                    sendHeartbeat(sessionData);
-                }
-            }, 20000);
-
-            // Cleanup on page leave
-            window.addEventListener('beforeunload', () => {
-                if (heartbeatInterval) clearInterval(heartbeatInterval);
-            });
-
-            console.log('✅ Heartbeat system initialized - 20s interval');
-        }
-
-        /**
-         * Send heartbeat signal to server every 20 seconds
-         * Includes: current_question, violation_count, session_id
-         */
-        async function sendHeartbeat(sessionData) {
-            try {
-                const currentSlide = document.querySelector('[data-slide-active="true"]');
-                const currentQuestion = currentSlide ? 
-                    parseInt(currentSlide.dataset.questionId) : 
-                    getCurrentQuestionId();
-                
-                const violationCount = parseInt(
-                    document.querySelector('#violationCount')?.textContent || '0'
-                );
-
-                const response = await fetch(`/student/exams/${attempt_id}/heartbeat`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: JSON.stringify({
-                        current_question: currentQuestion,
-                        violation_count: violationCount,
-                        session_id: sessionData.session_id
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`Heartbeat failed: ${response.statusText}`);
-                }
-
-                const result = await response.json();
-                
-                // Check if session is still active
-                if (result.session_status === 'locked' || result.session_status === 'ended') {
-                    handleSessionEnded(result.reason);
-                }
-
-                // Store heartbeat timestamp for offline detection
-                localStorage.setItem('last_heartbeat_time', Date.now());
-                
-            } catch (error) {
-                console.error('❌ Heartbeat error:', error);
-                
-                // Try to cache answer if offline
-                if (!navigator.onLine) {
-                    cacheAnswersForSync();
-                }
-            }
-        }
 
         /**
          * Cache answers to localStorage when offline

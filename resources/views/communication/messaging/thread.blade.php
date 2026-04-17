@@ -262,12 +262,12 @@ function appendMessage(msg, isSent) {
     chatArea.scrollTop = chatArea.scrollHeight;
 }
 
-// Start polling every 3 seconds for threads
-let threadPollInterval = setInterval(pollMessages, 3000);
+// Start polling every 30 seconds for threads (RAMAH HOSTING)
+let threadPollInterval = setInterval(pollMessages, 30000);
 
 document.addEventListener('visibilitychange', () => {
     if (document.hidden) clearInterval(threadPollInterval);
-    else threadPollInterval = setInterval(pollMessages, 3000);
+    else threadPollInterval = setInterval(pollMessages, 30000);
 });
 </script>
 @endsection

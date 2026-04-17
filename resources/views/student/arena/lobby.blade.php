@@ -238,18 +238,24 @@ function lobbyPoller() {
         isLocked: {{ $room->is_locked ? 'true' : 'false' }},
         loading: false,
         isNavigating: false,
+        roomToken: '{{ $room->token }}',
 
         init() {
-            // Jitter awal agar tidak semua nembak di detik yg sama
-            const jitter = Math.floor(Math.random() * 1500);
+            // Jitter awal agar tidak semua nembak di detik yg sama (0-2 detik)
+            const jitter = Math.floor(Math.random() * 2000);
             setTimeout(() => {
                 this.fetchStatus();
-                this.pollInterval = setInterval(() => this.fetchStatus(), 3000);
+                // Polling diubah menjadi 10 detik (RAMAH HOSTING)
+                this.pollInterval = setInterval(() => {
+                    if (!document.hidden) {
+                        this.fetchStatus();
+                    }
+                }, 10000);
             }, jitter);
 
             // Mencegah siswa keluar tidak sengaja (Browser Warning)
             window.addEventListener('beforeunload', (e) => {
-                if (this.isNavigating) return; // Jangan munculkan popup jika navigasi resmi (battle mulai)
+                if (this.isNavigating) return; 
                 if (this.isLocked || this.count > 0) {
                     e.preventDefault();
                     e.returnValue = '';
@@ -271,7 +277,6 @@ function lobbyPoller() {
                 const data = await res.json();
                 if (data.status === 'ok') {
                     this.showGroupModal = false;
-                    // Force refresh to update UI with group name or just update local
                     window.location.reload(); 
                 } else {
                     alert(data.message || 'Gagal memilih grup.');
@@ -283,17 +288,19 @@ function lobbyPoller() {
             }
         },
 
-
         async fetchStatus() {
             try {
                 // Poll Mirror JSON (Statik - No PHP)
-                const res = await fetch(`/battle-mirror/${this.token}.json?t=${Date.now()}`, {
+                // Cache-busting t= agar tidak nyangkut di cache browser / ISP
+                const res = await fetch(`/battle-mirror/${this.roomToken}.json?t=${Math.floor(Date.now()/10000)}`, {
                     headers: { 'Accept': 'application/json' }
                 });
                 
                 if (!res.ok) {
-                    // Fallback ke PHP jika mirror belum terbuat
-                    this.fetchStatusFallback();
+                    // Fallback ke PHP HANYA jika file JSON benar-benar tidak ada (404)
+                    if (res.status === 404) {
+                        this.fetchStatusFallback();
+                    }
                     return;
                 }
 
@@ -301,13 +308,16 @@ function lobbyPoller() {
                 this.count = data.member_count || 0;
                 this.isLocked = data.is_locked || false;
 
+                // Navigasi otomatis jika room state berubah (Mulai Battle)
                 if (data.state && data.state.state !== 'lobby') {
                     this.isNavigating = true;
                     clearInterval(this.pollInterval);
                     window.location.href = '{{ route('student.arena.battle', $room->token) }}';
                 }
+                
+                // Jika sudah berhasil baca JSON, JANGAN lanjut ke fallback PHP
             } catch (e) {
-                // Silent fail
+                // Jika network error (CORS/Offline), diam saja
             }
         },
 

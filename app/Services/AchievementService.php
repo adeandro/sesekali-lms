@@ -16,26 +16,40 @@ class AchievementService
     public function checkSubmissionAchievements(ExamAttempt $attempt)
     {
         try {
-            // Refresh student from DB to ensure we have latest data
+            // Refresh student from DB
             $user = $attempt->student()->first();
             if (!$user) return;
 
-            // Fetch all active achievements
-            $activeAchievements = Achievement::where('is_active', true)->get();
+            // Cache active achievements for 1 hour to avoid DB hit every submission
+            $activeAchievements = \Illuminate\Support\Facades\Cache::remember('active_achievements_list', 3600, function() {
+                return Achievement::where('is_active', true)->get();
+            });
+
+            // Pre-calculate user summary stats once per submission session
+            $stats = $user->examAttempts()
+                ->where('status', 'submitted')
+                ->selectRaw('COUNT(*) as total_exams, AVG(final_score) as average_score')
+                ->first();
 
             foreach ($activeAchievements as $achievement) {
+                // Avoid awarding if already have it
+                if ($user->achievements()->where('achievement_id', $achievement->id)->exists()) {
+                    continue;
+                }
+
                 $type  = $achievement->criteria_type;
                 $value = (float) $achievement->criteria_value;
 
                 $shouldAward = match ($type) {
-                    'exam_count'          => $this->checkExamCount($user, $value),
-                    'final_score'         => $this->checkFinalScore($attempt, $value),
+                    'exam_count'          => ($stats->total_exams ?? 0) >= $value,
+                    'final_score'         => $attempt->final_score >= $value,
                     'consecutive_pass'    => $this->checkConsecutivePass($user, $value),
                     'first_submit'        => $this->checkFirstSubmit($attempt),
                     'completion_time_pct' => $this->checkCompletionTimePct($attempt, $value),
                     'score_increase'      => $this->checkScoreIncrease($attempt, $value),
                     'submission_hour'     => $this->checkSubmissionHour($attempt, $value),
-                    'avg_score'           => $this->checkAvgScore($user, $value),
+                    'avg_score'           => ($stats->average_score ?? 0) >= $value,
+                    'arena_win_count'     => $this->checkArenaWinCount($user, $value),
                     default               => false,
                 };
 
@@ -45,7 +59,6 @@ class AchievementService
             }
 
             // Award XP for completion
-            // Fix: correct_answers column doesn't exist in exam_attempts, count from relation
             $correctCount = $attempt->answers()
                 ->where('is_correct', true)
                 ->count();

@@ -274,13 +274,13 @@ function pollInbox() {
     .catch(e => console.error('Poll error:', e));
 }
 
-// Start polling every 5 seconds
-let inboxPollInterval = setInterval(pollInbox, 5000);
+// Start polling every 5 minutes (300 seconds) - No need for real-time inbox on shared hosting
+let inboxPollInterval = setInterval(pollInbox, 300000);
 
 // Stop polling when page hidden
 document.addEventListener('visibilitychange', () => {
     if (document.hidden) clearInterval(inboxPollInterval);
-    else inboxPollInterval = setInterval(pollInbox, 5000);
+    else inboxPollInterval = setInterval(pollInbox, 300000);
 });
 // AJAX for composeForm
 const composeForm = document.getElementById('composeForm');

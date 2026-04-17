@@ -562,17 +562,21 @@ function studentBattle(token) {
         startAdaptivePolling() {
             if (this.pollInterval) clearInterval(this.pollInterval);
             
-            let interval = 3000; // default
+            let interval = 5000; // default (RAMAH HOSTING)
             
             if (this.state.state === 'question') {
-                interval = 2000; // lebih cepat saat soal aktif
+                interval = 3000; // 3 detik saat soal aktif (cukup cepat untuk sync)
             } else if (this.state.state === 'lobby') {
-                interval = 5000;
+                interval = 10000; // 10 detik saat di lobby (konsisten dengan lobby.blade)
             } else if (this.state.state === 'finish') {
                 return; // stop polling
             }
 
-            this.pollInterval = setInterval(() => this.pollData(), interval);
+            this.pollInterval = setInterval(() => {
+                if (!document.hidden) { // Hemat resource saat tab tidak aktif
+                    this.pollData();
+                }
+            }, interval);
         },
 
         tickTimer() {
@@ -592,13 +596,15 @@ function studentBattle(token) {
         async pollData() {
             try {
                 // 1. Ambil data dari Static Mirror (.json) - NO PHP
-                const resMirror = await fetch(`/battle-mirror/${this.token}.json?t=${Date.now()}`, {
+                const resMirror = await fetch(`/battle-mirror/${this.token}.json?t=${Math.floor(Date.now()/5000)}`, {
                     headers: { 'Accept': 'application/json' }
                 });
 
                 if (!resMirror.ok) {
-                    // Fallback ke PHP jika mirror rusak/hilang
-                    await this.syncWithServer();
+                    // Fallback ke PHP HANYA jika mirror benar-benar hilang (404)
+                    if (resMirror.status === 404) {
+                        await this.syncWithServer();
+                    }
                     return;
                 }
 

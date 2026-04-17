@@ -148,8 +148,8 @@ class ArenaController extends Controller
         ])->firstOrFail();
 
         $participant->update(['group_label' => $groupLabel]);
-        
-        // Update Redis cache
+
+        // Sync ke Cache (Redis) dan Static Mirror (JSON) agar muncul di lobby teman-temannya
         $this->battleService->updateMemberGroup($room, $userId, $groupLabel);
 
         return response()->json(['status' => 'ok']);
