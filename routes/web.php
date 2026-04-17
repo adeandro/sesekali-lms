@@ -528,6 +528,7 @@ Route::middleware('auth')->group(function () {
                     Route::get('/', [AdminLeaderboardController::class, 'index'])->name('index');
                     Route::get('hall-of-fame', [AdminLeaderboardController::class, 'hallOfFame'])->name('hall-of-fame');
                     Route::post('refresh', [AdminLeaderboardController::class, 'refreshCache'])->name('refresh');
+                    Route::post('sync-dashboards', [AdminLeaderboardController::class, 'syncStudentDashboards'])->name('sync-dashboards');
                 });
                 
                 // ── Battle Arena Admin (V2) ───────────────────────────────────

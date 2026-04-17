@@ -57,6 +57,50 @@ class LeaderboardController extends Controller
         return back()->with('success', 'Cache leaderboard berhasil di-refresh! ⚡');
     }
 
+    public function syncStudentDashboards()
+    {
+        // 1. Ambil SEMUA siswa aktif beserta performance_points mereka dalam 1 kueri besar
+        $allStudents = User::where('role', 'student')
+            ->where('status', 'Aktif')
+            ->select('users.*')
+            ->withAvg(['examAttempts as avg_score' => function($q) {
+                $q->whereNotNull('submitted_at');
+            }], 'final_score')
+            ->withCount(['examAttempts as total_sessions' => function($q) {
+                $q->whereNotNull('submitted_at');
+            }])
+            ->selectRaw('(COALESCE((SELECT AVG(final_score) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL), 0) + 
+                (SELECT COUNT(*) FROM exam_attempts WHERE exam_attempts.student_id = users.id AND submitted_at IS NOT NULL) * 2 +
+                ((SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id) * 1 +
+                 (SELECT COUNT(*) FROM battle_participants WHERE battle_participants.user_id = users.id AND `rank` = 1) * 5)) as performance_points')
+            ->orderByDesc('performance_points')
+            ->get();
+
+        // 2. Simpan Global Leaderboard (Top 10)
+        Cache::forever('leaderboard_global', $allStudents->take(10));
+
+        // 3. Kelompokkan berdasarkan Grade untuk Leaderboard Angkatan
+        $byGrade = $allStudents->groupBy('grade');
+
+        foreach ($byGrade as $grade => $students) {
+            // Leaderboard Angkatan (Top 10)
+            Cache::forever("leaderboard_angkatan_{$grade}", $students->take(10));
+            // Ranked IDs Angkatan (Semua untuk hitung rank si siswa)
+            Cache::forever("ranked_ids_angkatan_{$grade}", $students->pluck('id')->toArray());
+
+            // 4. Kelompokkan lagi berdasarkan Class Group untuk Leaderboard Kelas
+            $byClass = $students->groupBy('class_group');
+            foreach ($byClass as $classGroup => $classStudents) {
+                // Leaderboard Kelas (Top 10)
+                Cache::forever("leaderboard_class_{$grade}_{$classGroup}", $classStudents->take(10));
+                // Ranked IDs Kelas
+                Cache::forever("ranked_ids_class_{$grade}_{$classGroup}", $classStudents->pluck('id')->toArray());
+            }
+        }
+
+        return back()->with('success', 'Dasbor Siswa berhasil disinkronkan! Seluruh leaderboard sekarang dalam kondisi optimal. 🚀');
+    }
+
     // ── Hall of Fame Full Page ─────────────────────────────────────────────
 
     public function hallOfFame()

@@ -25,8 +25,16 @@
             {{-- Refresh Cache --}}
             <form action="{{ route('admin.gamification.leaderboard.refresh') }}" method="POST" class="no-loading">
                 @csrf
-                <button type="submit" class="px-4 py-2 bg-gray-100 hover:bg-indigo-100 text-gray-600 hover:text-indigo-700 rounded-2xl text-sm font-bold transition">
-                    <i class="fas fa-sync-alt mr-1"></i> Refresh Cache
+                <button type="submit" title="Refresh Cache Admin" class="px-4 py-2 bg-gray-100 hover:bg-indigo-100 text-gray-600 hover:text-indigo-700 rounded-2xl text-sm font-bold transition">
+                    <i class="fas fa-sync-alt mr-1"></i>
+                </button>
+            </form>
+
+            {{-- Sinkronisasi Dasbor Siswa --}}
+            <form action="{{ route('admin.gamification.leaderboard.sync-dashboards') }}" method="POST" class="no-loading">
+                @csrf
+                <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-sm font-black shadow-lg shadow-indigo-200 transition-all hover:scale-105">
+                    <i class="fas fa-bolt mr-2"></i> Sinkronisasi Dasbor Siswa
                 </button>
             </form>
         </div>
