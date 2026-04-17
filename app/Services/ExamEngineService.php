@@ -21,33 +21,36 @@ class ExamEngineService
     public static function getAvailableExams(User $student)
     {
         $now = now();
+        $cacheKey = "available_exams_user_{$student->id}";
 
-        return Exam::where('status', 'published')
-            ->where(function($q) use ($student) {
-                $q->whereNull('jenjang')
-                  ->orWhere('jenjang', $student->grade);
-            })
-            ->where(function ($query) use ($student, $now) {
-                // Show exams that haven't ended yet
-                $query->where('end_time', '>=', $now)
-                    // OR show exams with in_progress attempts (reopened exams)
-                    ->orWhereIn('id', function ($subquery) use ($student) {
-                        $subquery->select('exam_id')
-                            ->from('exam_attempts')
-                            ->where('student_id', $student->id)
-                            ->where('status', 'in_progress');
-                    });
-            })
-            ->whereNotIn('id', function ($query) use ($student) {
-                // Exclude exams with submitted attempts (fully completed)
-                $query->select('exam_id')
-                    ->from('exam_attempts')
-                    ->where('student_id', $student->id)
-                    ->where('status', 'submitted');
-            })
-            ->with('subject')
-            ->orderBy('start_time')
-            ->get();
+        return \Illuminate\Support\Facades\Cache::remember($cacheKey, 30, function() use ($student, $now) {
+            return Exam::where('status', 'published')
+                ->where(function($q) use ($student) {
+                    $q->whereNull('jenjang')
+                      ->orWhere('jenjang', $student->grade);
+                })
+                ->where(function ($query) use ($student, $now) {
+                    // Show exams that haven't ended yet
+                    $query->where('end_time', '>=', $now)
+                        // OR show exams with in_progress attempts (reopened exams)
+                        ->orWhereIn('id', function ($subquery) use ($student) {
+                            $subquery->select('exam_id')
+                                ->from('exam_attempts')
+                                ->where('student_id', $student->id)
+                                ->where('status', 'in_progress');
+                        });
+                })
+                ->whereNotIn('id', function ($query) use ($student) {
+                    // Exclude exams with submitted attempts (fully completed)
+                    $query->select('exam_id')
+                        ->from('exam_attempts')
+                        ->where('student_id', $student->id)
+                        ->where('status', 'submitted');
+                })
+                ->with('subject')
+                ->orderBy('start_time')
+                ->get();
+        });
     }
 
     /**
@@ -100,27 +103,39 @@ class ExamEngineService
      */
     private static function initializeAnswers(ExamAttempt $attempt, Exam $exam)
     {
+        // 1. Ambil pertanyaan dan jawaban yang sudah ada (untuk efisiensi resume)
         $questions = $exam->questions()->get();
+        $existingQuestionIds = ExamAnswer::where('attempt_id', $attempt->id)
+            ->pluck('question_id')
+            ->toArray();
+
+        $rowsToInsert = [];
+        $now = now();
+
         foreach ($questions as $question) {
-            // Only create if doesn't exist
-            $exists = ExamAnswer::where('attempt_id', $attempt->id)
-                ->where('question_id', $question->id)
-                ->exists();
-            
-            if (!$exists) {
-                $creationData = [
-                    'attempt_id' => $attempt->id,
-                    'question_id' => $question->id,
-                ];
-                
-                if ($question->question_type === 'multiple_choice') {
-                    $correctAnswerPosition = strtolower($question->correct_answer);
-                    $correctAnswerText = $question->{"option_" . $correctAnswerPosition} ?? null;
-                    $creationData['correct_answer_text'] = $correctAnswerText;
-                }
-                
-                ExamAnswer::create($creationData);
+            // Cepat: Lewati jika sudah ada di array memori (bukan kueri DB di dalam loop)
+            if (in_array($question->id, $existingQuestionIds)) {
+                continue;
             }
+
+            $creationData = [
+                'attempt_id'   => $attempt->id,
+                'question_id'  => $question->id,
+                'created_at'   => $now,
+                'updated_at'   => $now,
+            ];
+
+            if ($question->question_type === 'multiple_choice') {
+                $correctPos = strtolower($question->correct_answer);
+                $creationData['correct_answer_text'] = $question->{"option_" . $correctPos} ?? null;
+            }
+
+            $rowsToInsert[] = $creationData;
+        }
+
+        // 2. Eksekusi SATU kueri Bulk Insert untuk seluruh soal
+        if (!empty($rowsToInsert)) {
+            ExamAnswer::insert($rowsToInsert);
         }
     }
 

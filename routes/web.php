@@ -618,18 +618,25 @@ Route::middleware('auth')->group(function () {
             return back();
         })->name('notifications.read.all');
 
-        // Polling endpoint for Alpine.js Toast
+        // Polling endpoint for Alpine.js Toast (Throttled with Cache)
         Route::get('notifications/latest-unread', function () {
             if (!auth()->check()) return response()->json(['notification' => null, 'unread_count' => 0]);
             
             $user = auth()->user();
-            $notification = $user->unreadNotifications()->latest()->first();
-            $unreadCount = $user->unreadNotifications->count();
-            
-            return response()->json([
-                'notification' => $notification,
-                'unread_count' => $unreadCount
-            ]);
+            $cacheKey = "notif_poll_user_{$user->id}";
+
+            return \Illuminate\Support\Facades\Cache::remember($cacheKey, 60, function() use ($user) {
+                $notification = $user->unreadNotifications()->latest()->first();
+                $unreadCount = $user->unreadNotifications->count();
+                
+                return [
+                    'notification' => $notification ? [
+                        'id' => $notification->id,
+                        'data' => $notification->data,
+                    ] : null,
+                    'unread_count' => $unreadCount
+                ];
+            });
         })->name('notifications.latest');
 
         Route::get('announcements', [AnnouncementController::class, 'index'])->name('announcements.index');

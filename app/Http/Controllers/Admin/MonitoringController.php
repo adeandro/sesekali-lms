@@ -23,6 +23,9 @@ class MonitoringController extends Controller
             abort(403, 'Unauthorized.');
         }
 
+        // 1. PRA-KALKULASI TIPE UJIAN (Hanya 1 kueri, bukan N+1 di dalam loop)
+        $examType = $this->getExamType($exam);
+
         // Get total students in this grade/jenjang
         $totalStudentsInGrade = User::where('grade', $exam->jenjang)
             ->where('role', 'student')
@@ -31,13 +34,12 @@ class MonitoringController extends Controller
         // Get only COMPLETED attempts (status = submitted) with exam sessions
         $completedAttempts = ExamAttempt::where('exam_id', $exam->id)
             ->where('status', 'submitted')  // Only submitted/completed
-            ->with(['student', 'exam', 'session'])
+            ->with(['student', 'session'])
             ->orderBy('submitted_at', 'desc')
             ->get();
 
-        // Build data for display
-        $completedStudents = $completedAttempts->map(function ($attempt) {
-            $session = $attempt->session;
+        // Build data for display menggunakan examType yang sudah dihitung di awal
+        $completedStudents = $completedAttempts->map(function ($attempt) use ($examType) {
             return [
                 'attempt_id' => $attempt->id,
                 'student_id' => $attempt->student_id,
@@ -47,7 +49,7 @@ class MonitoringController extends Controller
                 'is_avatar_seed' => $attempt->student->is_avatar_seed,
                 'avatar_url' => $attempt->student->avatar_url,
                 'photo_url' => $attempt->student->photo_url,
-                'exam_type' => $this->getExamType($attempt),
+                'exam_type' => $examType,
                 'score_mc' => $attempt->score_mc,
                 'score_essay' => $attempt->score_essay,
                 'final_score' => $attempt->final_score,
@@ -71,11 +73,11 @@ class MonitoringController extends Controller
     }
 
     /**
-     * Determine exam type from attempt.
+     * Determine exam type from exam model.
      */
-    private function getExamType($attempt)
+    private function getExamType(Exam $exam)
     {
-        $questions = $attempt->exam->questions()->get();
+        $questions = $exam->questions()->select('question_type')->get();
         $hasMC = $questions->where('question_type', 'multiple_choice')->count() > 0;
         $hasEssay = $questions->where('question_type', 'essay')->count() > 0;
 
