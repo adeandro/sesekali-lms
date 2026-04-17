@@ -18,15 +18,16 @@ class SimulateBattleStress extends Command
         $studentsCount = (int) $this->option('students');
         $pacingMs = (int) $this->option('pacing');
         $batchSize = (int) $this->option('batch');
+        $routeMode = $this->option('route');
         
         $room = BattleRoom::where('token', strtoupper($token))->first();
-        if (!$room) { $this->error("Room tidak ditemukan."); return 1; }
+        if (!$room && $routeMode !== 'login') { $this->error("Room tidak ditemukan."); return 1; }
 
         $students = User::where('role', 'student')->limit($studentsCount)->get();
         if ($students->isEmpty()) { $this->error("Tidak ada siswa."); return 1; }
 
-        $url = url('/load-test/arena-join');
-        $this->info("🚀 Stress Test LVE LIMIT: {$studentsCount} Request");
+        $url = $routeMode === 'login' ? url('/load-test/login') : url('/load-test/arena-join');
+        $this->info("🚀 Stress Test LVE LIMIT: {$studentsCount} Request ke {$routeMode}");
         $this->info("   Batch Size: {$batchSize} concurrent | Jeda: {$pacingMs}ms");
 
         $timeStart = microtime(true);
@@ -35,12 +36,17 @@ class SimulateBattleStress extends Command
         $chunks = $students->chunk($batchSize);
 
         foreach ($chunks as $chunk) {
-            $responses = Http::pool(function (\Illuminate\Http\Client\Pool $pool) use ($chunk, $token, $url) {
+            $responses = Http::pool(function (\Illuminate\Http\Client\Pool $pool) use ($chunk, $token, $url, $routeMode) {
                 $reqs = [];
                 foreach ($chunk as $s) {
+                    $payload = ['secret' => 'simulasi-stress', 'user_id' => $s->id, 'token' => $token];
+                    if ($routeMode === 'login') {
+                        $payload['username'] = $s->email ?? $s->nis ?? $s->nip;
+                        $payload['password'] = 'pass123'; // Asumsi default pass123 dari update sebelumnya
+                    }
                     $reqs[] = $pool->as("req_{$s->id}")
                         ->withHeaders(['Connection' => 'close'])
-                        ->post($url, ['secret' => 'simulasi-stress', 'user_id' => $s->id, 'token' => $token]);
+                        ->post($url, $payload);
                 }
                 return $reqs;
             });

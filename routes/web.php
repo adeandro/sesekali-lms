@@ -73,6 +73,35 @@ Route::post('/load-test/arena-join', function(\Illuminate\Http\Request $request)
     return response()->json(['status' => 'ok', 'user_id' => $user->id]);
 })->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
 
+// ── LOGIN LOAD TESTER (TEMPORARY) ────────────
+Route::post('/load-test/login', function(\Illuminate\Http\Request $request) {
+    if ($request->secret !== 'simulasi-stress') abort(403);
+    
+    // Simulate LoginController@login queries and processing
+    $user = \App\Models\User::where('nis', $request->username)
+          ->orWhere('nip', $request->username)
+          ->orWhere('niy', $request->username)
+          ->first();
+          
+    if (!$user) {
+        $user = \App\Models\User::where('email', $request->username)->first();
+    }
+    
+    if (!$user) abort(404, 'User not found');
+    
+    if (str_starts_with($user->password, 'PLAIN_')) {
+        $plain = substr($user->password, 6);
+        if ($request->password !== $plain) abort(401);
+    } else {
+        if (!\Illuminate\Support\Facades\Hash::check($request->password, $user->password)) abort(401);
+    }
+    
+    Auth::login($user, false);
+    $request->session()->regenerate();
+    
+    return response()->json(['status' => 'ok', 'role' => $user->role]);
+})->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
+
 // Public Info Page (announcements — no auth)
 Route::get('/informasi', [InformationController::class, 'index'])->name('information.index');
 

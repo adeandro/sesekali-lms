@@ -18,28 +18,30 @@ class LoginController extends Controller
 
         if ($isLeaderboardEnabled) {
             try {
-                $topStudents = \App\Models\User::where('role', '=', 'student')
-                    ->where('status', '=', 'Aktif')
-                    ->orderBy('total_exp', 'desc')
-                    ->take(3)
-                    ->get()
-                    ->values()
-                    ->map(function ($user, $index) {
-                        $name  = trim($user->full_name ?? $user->name ?? '');
-                        $words = array_values(array_filter(explode(' ', $name)));
-                        $initials = count($words) >= 2
-                            ? strtoupper(substr($words[0],0,1).substr($words[1],0,1))
-                            : strtoupper(substr($name, 0, 2));
-                        $shortName = count($words) >= 2
-                            ? $words[0].' '.substr($words[1], 0, 4)
-                            : ($words[0] ?? 'Siswa');
-                        return [
-                            'rank'     => $index + 1,
-                            'initials' => $initials,
-                            'name'     => $shortName,
-                            'points'   => number_format($user->total_exp ?? 0),
-                        ];
-                    });
+                $topStudents = \Illuminate\Support\Facades\Cache::remember('login_leaderboard_top3', 300, function() {
+                    return \App\Models\User::where('role', '=', 'student')
+                        ->where('status', '=', 'Aktif')
+                        ->orderBy('total_exp', 'desc')
+                        ->take(3)
+                        ->get()
+                        ->values()
+                        ->map(function ($user, $index) {
+                            $name  = trim($user->full_name ?? $user->name ?? '');
+                            $words = array_values(array_filter(explode(' ', $name)));
+                            $initials = count($words) >= 2
+                                ? strtoupper(substr($words[0],0,1).substr($words[1],0,1))
+                                : strtoupper(substr($name, 0, 2));
+                            $shortName = count($words) >= 2
+                                ? $words[0].' '.substr($words[1], 0, 4)
+                                : ($words[0] ?? 'Siswa');
+                            return [
+                                'rank'     => $index + 1,
+                                'initials' => $initials,
+                                'name'     => $shortName,
+                                'points'   => number_format($user->total_exp ?? 0),
+                            ];
+                        });
+                });
             } catch (\Throwable $e) {
                 // Fallback to empty collection
             }
@@ -49,7 +51,9 @@ class LoginController extends Controller
         $urgentAnnouncements  = collect([]);
         $rollingAnnouncements = collect([]);
         try {
-            $loginAnnouncements   = Announcement::forLogin()->get();
+            $loginAnnouncements = \Illuminate\Support\Facades\Cache::remember('login_announcements_cache', 300, function() {
+                return Announcement::forLogin()->get();
+            });
             $urgentAnnouncements  = $loginAnnouncements->where('type', 'urgent')->values();
             $rollingAnnouncements = $loginAnnouncements->where('type', '!=', 'urgent')->values();
         } catch (\Throwable $e) {
