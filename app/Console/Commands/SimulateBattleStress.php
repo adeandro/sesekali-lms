@@ -38,7 +38,9 @@ class SimulateBattleStress extends Command
             $responses = Http::pool(function (\Illuminate\Http\Client\Pool $pool) use ($chunk, $token, $url) {
                 $reqs = [];
                 foreach ($chunk as $s) {
-                    $reqs[] = $pool->as("req_{$s->id}")->post($url, ['secret' => 'simulasi-stress', 'user_id' => $s->id, 'token' => $token]);
+                    $reqs[] = $pool->as("req_{$s->id}")
+                        ->withHeaders(['Connection' => 'close'])
+                        ->post($url, ['secret' => 'simulasi-stress', 'user_id' => $s->id, 'token' => $token]);
                 }
                 return $reqs;
             });
