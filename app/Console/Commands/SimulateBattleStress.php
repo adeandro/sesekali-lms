@@ -54,10 +54,15 @@ class SimulateBattleStress extends Command
 
         $successCount = 0;
         $failCount = 0;
+        $firstErrorDisplayed = false;
 
         foreach ($responses as $res) {
             if ($res instanceof \Exception || !$res->successful()) {
                 $failCount++;
+                if (!$firstErrorDisplayed) {
+                    $this->error("Contoh Error: " . ($res instanceof \Exception ? $res->getMessage() : $res->status() . " " . $res->body()));
+                    $firstErrorDisplayed = true;
+                }
             } else {
                 $successCount++;
             }

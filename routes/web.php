@@ -62,17 +62,15 @@ Route::post('/load-test/arena-join', function(\Illuminate\Http\Request $request)
     $groupLabel = $user->classroom?->name ?? $user->class_group ?? 'Kelas';
     
     // Simulate doJoin without authentication or CSRF
-    $participant = \App\Models\BattleParticipant::create([
-        'battle_room_id' => $room->id,
-        'user_id' => $user->id,
-        'group_label' => $groupLabel,
-        'joined_at' => now(),
-    ]);
+    $participant = \App\Models\BattleParticipant::firstOrCreate(
+        ['battle_room_id' => $room->id, 'user_id' => $user->id],
+        ['group_label' => $groupLabel, 'joined_at' => now()]
+    );
 
     $participant->load('user');
     app(\App\Services\BattleService::class)->addMember($room, $participant);
 
-    return response()->json(['status' => 'ok']);
+    return response()->json(['status' => 'ok', 'user_id' => $user->id]);
 })->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
 
 // Public Info Page (announcements — no auth)
