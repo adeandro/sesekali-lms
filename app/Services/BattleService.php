@@ -126,25 +126,15 @@ class BattleService
         $isDiscussion = ($currentState === 'discussion');
         $isLeaderboard = ($currentState === 'leaderboard');
 
-        // Payload Pruning (Bandwidth Hub)
-        $membersToSync = [];
-        $scoresToSync = [];
-
+        $scoresToSync = array_values($scores); // Always include scores so frontend doesn't need to hit PHP
+        
         if ($isLobby) {
-            // Lobby butuh list nama lengkap untuk daftar hadir
             $membersToSync = array_values($members);
         } elseif ($isQuestion) {
-            // Saat soal berlangsung, SEMUA list anggota & skor dihapus dari pengiriman
-            // (Siswa tidak perlu data ini saat sedang countdown)
             $membersToSync = [];
-            $scoresToSync = [];
         } elseif ($isDiscussion) {
-            // Saat pembahasan, kirim top 5 skor saja untuk leaderboard kecil
-            $scoresToSync = array_slice(array_values($scores), 0, 5); 
-            $membersToSync = array_values($members); // Pulihkan list nama agar leaderboard samping tetap tampil
+            $membersToSync = array_values($members);
         } elseif ($isLeaderboard) {
-            // Saat podium, butuh list skor penuh dan nama
-            $scoresToSync = array_values($scores);
             $membersToSync = array_values($members);
         }
 
@@ -158,6 +148,8 @@ class BattleService
             'group_scores'   => $groupScores,
             'question'       => $question,
             'stats'          => $stats,
+            'answered_users' => array_keys($this->getAnswers($room)),
+            'answers'        => $isDiscussion ? $this->getAnswers($room) : null,
             'is_locked'      => (bool) $room->is_locked,
             'show_on_device' => (bool) $room->show_question_on_device,
             'updated_at'     => now()->timestamp,
@@ -170,7 +162,10 @@ class BattleService
             mkdir(dirname($path), 0755, true);
         }
 
-        file_put_contents($path, json_encode($mirrorData, JSON_UNESCAPED_UNICODE));
+        // Tulis atomik untuk menghindari JSON terpotong (Race condition / corrupted read by NGINX)
+        $tempPath = $path . '.' . uniqid(mt_rand(), true) . '.tmp';
+        file_put_contents($tempPath, json_encode($mirrorData, JSON_UNESCAPED_UNICODE));
+        rename($tempPath, $path);
     }
 
     // ── Member Management ────────────────────

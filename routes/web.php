@@ -51,6 +51,30 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
+// ── BATTLE LOAD TESTER (TEMPORARY) ────────────
+Route::post('/load-test/arena-join', function(\Illuminate\Http\Request $request) {
+    if ($request->secret !== 'simulasi-stress') abort(403);
+    $room = \App\Models\BattleRoom::where('token', strtoupper($request->token))->first();
+    if (!$room) abort(404, 'Room not found');
+    $user = \App\Models\User::find($request->user_id);
+    if (!$user) abort(404);
+    
+    $groupLabel = $user->classroom?->name ?? $user->class_group ?? 'Kelas';
+    
+    // Simulate doJoin without authentication or CSRF
+    $participant = \App\Models\BattleParticipant::create([
+        'battle_room_id' => $room->id,
+        'user_id' => $user->id,
+        'group_label' => $groupLabel,
+        'joined_at' => now(),
+    ]);
+
+    $participant->load('user');
+    app(\App\Services\BattleService::class)->addMember($room, $participant);
+
+    return response()->json(['status' => 'ok']);
+})->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
+
 // Public Info Page (announcements — no auth)
 Route::get('/informasi', [InformationController::class, 'index'])->name('information.index');
 

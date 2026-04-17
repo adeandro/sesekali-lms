@@ -620,8 +620,29 @@ function studentBattle(token) {
                 this.showQuestion = Boolean(mirror.show_on_device);
                 this.isLocked = mirror.is_locked;
 
-                // 2. Cek apakah status berubah? Jika ya, atau jika baru awal, 
-                //    PANGGIL PHP untuk ambil skor/status pribadi.
+                const myUserId = {{ Auth::id() }};
+                
+                // Update Personal Data directly from Mirror to AVOID hitting PHP
+                if (mirror.scores !== undefined && mirror.scores.length > 0) {
+                    const myScoreData = mirror.scores.find(s => s.user_id == myUserId);
+                    if (myScoreData) this.myScore = myScoreData;
+                }
+                if (mirror.group_scores && this.myScore && this.myScore.group_label) {
+                    const myGroup = mirror.group_scores.find(g => g.group_label === this.myScore.group_label);
+                    if (myGroup) this.groupScore = myGroup.total_score;
+                }
+                if (mirror.answered_users && mirror.answered_users.includes(myUserId)) {
+                    this.hasAnswered = true;
+                }
+                if (mirror.answers && mirror.answers[myUserId]) {
+                    this.answerResult = {
+                        chosen: mirror.answers[myUserId].answer,
+                        is_correct: mirror.answers[myUserId].is_correct,
+                        score_earned: mirror.answers[myUserId].score_earned
+                    };
+                }
+
+                // 2. Cek apakah status berubah?
                 if (newStateStr !== this.lastStateStr) {
                     this.lastStateStr = newStateStr;
                     
@@ -633,11 +654,7 @@ function studentBattle(token) {
                         this.answerResult = null;
                     }
 
-                    // Tambahkan jitter 0-1500ms agar 40 siswa tidak hit PHP bersamaan (mencegah 508 Resource Limit)
-                    const jitter = Math.floor(Math.random() * 1500);
-                    await new Promise(r => setTimeout(r, jitter));
-
-                    await this.syncWithServer();
+                    // No need to hit PHP anymore! Data is completely loaded from Mirror.
                     this.startAdaptivePolling(); // Sesuaikan kecepatan polling
                 }
             } catch (e) {
