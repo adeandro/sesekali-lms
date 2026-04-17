@@ -6,76 +6,64 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use App\Models\BattleRoom;
 use App\Models\User;
-use Illuminate\Http\Client\Pool;
 
 class SimulateBattleStress extends Command
 {
-    protected $signature = 'simulate:stress {token} {--students=50} {--route=join}';
-    protected $description = 'Simulasi HTTP Concurrency nyata menggunakan Guzzle Async.';
+    protected $signature = 'simulate:stress {token} {--students=50} {--route=join} {--pacing=0 : Jeda antar batch dalam milidetik} {--batch=50 : Berapa request per batch}';
+    protected $description = 'Simulasi HTTP Concurrency dengan LVE Limit awareness.';
 
     public function handle(): int
     {
         $token = $this->argument('token');
         $studentsCount = (int) $this->option('students');
-        $routeMode = $this->option('route');
+        $pacingMs = (int) $this->option('pacing');
+        $batchSize = (int) $this->option('batch');
         
         $room = BattleRoom::where('token', strtoupper($token))->first();
-        if (!$room) {
-            $this->error("Room $token tidak ditemukan.");
-            return 1;
-        }
+        if (!$room) { $this->error("Room tidak ditemukan."); return 1; }
 
         $students = User::where('role', 'student')->limit($studentsCount)->get();
-        if ($students->isEmpty()) {
-            $this->error("Tidak ada data siswa.");
-            return 1;
-        }
+        if ($students->isEmpty()) { $this->error("Tidak ada siswa."); return 1; }
 
         $url = url('/load-test/arena-join');
-        $this->info("🚀 Menembakkan HTTP POST serentak ke: {$url}");
-        $this->line("   Membawa beban {$studentsCount} concurrent requests untuk token: {$token}...");
+        $this->info("🚀 Stress Test LVE LIMIT: {$studentsCount} Request");
+        $this->info("   Batch Size: {$batchSize} concurrent | Jeda: {$pacingMs}ms");
 
         $timeStart = microtime(true);
+        $successCount = 0; $failCount = 0; $firstError = false;
 
-        $responses = Http::pool(function (Pool $pool) use ($students, $token, $url) {
-            $requests = [];
-            foreach ($students as $s) {
-                $requests[] = $pool->as("req_{$s->id}")->post($url, [
-                    'secret'  => 'simulasi-stress',
-                    'user_id' => $s->id,
-                    'token'   => $token,
-                ]);
-            }
-            return $requests;
-        });
+        $chunks = $students->chunk($batchSize);
 
-        $timeEnd = microtime(true);
-        $elapsed = round(($timeEnd - $timeStart) * 1000, 2);
-
-        $successCount = 0;
-        $failCount = 0;
-        $firstErrorDisplayed = false;
-
-        foreach ($responses as $res) {
-            if ($res instanceof \Exception || !$res->successful()) {
-                $failCount++;
-                if (!$firstErrorDisplayed) {
-                    $this->error("Contoh Error: " . ($res instanceof \Exception ? $res->getMessage() : $res->status() . " " . $res->body()));
-                    $firstErrorDisplayed = true;
+        foreach ($chunks as $chunk) {
+            $responses = Http::pool(function (\Illuminate\Http\Client\Pool $pool) use ($chunk, $token, $url) {
+                $reqs = [];
+                foreach ($chunk as $s) {
+                    $reqs[] = $pool->as("req_{$s->id}")->post($url, ['secret' => 'simulasi-stress', 'user_id' => $s->id, 'token' => $token]);
                 }
-            } else {
-                $successCount++;
+                return $reqs;
+            });
+
+            foreach ($responses as $res) {
+                if ($res instanceof \Exception || !$res->successful()) {
+                    $failCount++;
+                    if (!$firstError) {
+                        $this->error("Contoh 508 Error: " . ($res instanceof \Exception ? $res->getMessage() : $res->status()));
+                        $firstError = true;
+                    }
+                } else {
+                    $successCount++;
+                }
+            }
+
+            if ($pacingMs > 0) {
+                usleep($pacingMs * 1000);
             }
         }
 
+        $elapsed = round((microtime(true) - $timeStart) * 1000, 2);
         $this->line('');
-        $this->info("✅ Simulasi Selesai dalam {$elapsed} ms!");
-        $this->line("   Berhasil: {$successCount} requests");
-        if ($failCount > 0) {
-            $this->error("   Gagal / 508 / Timeout: {$failCount} requests");
-        } else {
-            $this->info("   Gagal: {$failCount} requests (Server Tahan Banting!)");
-        }
+        $this->info("✅ Simulasi Selesai dalam {$elapsed} ms");
+        $this->line("   Berhasil: {$successCount} | Gagal: {$failCount}");
 
         return 0;
     }
