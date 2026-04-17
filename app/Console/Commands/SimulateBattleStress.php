@@ -49,7 +49,16 @@ class SimulateBattleStress extends Command
                 if ($res instanceof \Exception || !$res->successful()) {
                     $failCount++;
                     if (!$firstError) {
-                        $this->error("Contoh 508 Error: " . ($res instanceof \Exception ? $res->getMessage() : $res->status()));
+                        if ($res instanceof \Exception) {
+                            try {
+                                $body = method_exists($res, 'getResponse') && $res->getResponse() ? substr($res->getResponse()->getBody()->getContents(), 0, 100) : '';
+                                $this->error("Contoh Error: " . $res->getMessage() . " | Body: " . preg_replace('/\s+/', ' ', strip_tags($body)));
+                            } catch (\Exception $e) {
+                                $this->error("Contoh Error: " . $res->getMessage());
+                            }
+                        } else {
+                            $this->error("Contoh Status: " . $res->status() . " | Body: " . preg_replace('/\s+/', ' ', strip_tags(substr($res->body(), 0, 100))));
+                        }
                         $firstError = true;
                     }
                 } else {
