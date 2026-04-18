@@ -552,10 +552,11 @@ function arenaControl(token) {
                 if(res.ok) {
                     await this.fetchData();
                 } else {
-                    Swal.fire('Gagal', 'Terjadi kesalahan ubah state', 'error');
+                    const errorData = await res.json();
+                    Swal.fire('Gagal', errorData.message || 'Terjadi kesalahan ubah state', 'error');
                 }
             } catch(e) {
-                Swal.fire('Error', 'Sistem Gagal. ' + e, 'error');
+                Swal.fire('Error', 'Sistem Gagal terhubung ke server. ' + e.message, 'error');
             }
             this.isProcessing = false;
         },

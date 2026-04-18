@@ -246,36 +246,46 @@ class ArenaController extends Controller
         $newState = $request->input('state');
         $currentState = $this->battleService->getState($room)['state'];
 
-        if ($newState === 'preview') {
-            if ($currentState === 'lobby') {
-                $room->update(['is_locked' => true]);
-                $this->battleService->initScores($room);
-                $this->cacheQuestionData($room, 0);
-                $this->battleService->setState($room, 'preview', ['q_index' => 0]);
-            }
-        } elseif ($newState === 'question') {
-            $this->battleService->setState($room, 'question');
-        } elseif ($newState === 'discussion') {
-            $this->battleService->setState($room, 'discussion');
-        } elseif ($newState === 'leaderboard') {
-            $this->battleService->setState($room, 'leaderboard');
-        } elseif ($newState === 'next') {
-            $this->accumulateAnswers($room);
-            $res = $this->battleService->nextQuestion($room);
-            if ($res['state'] === 'preview') {
-                $this->cacheQuestionData($room, $res['q_index']);
-            } elseif ($res['state'] === 'finish') {
-                $this->processFinish($room);
-            }
-        } elseif ($newState === 'finish') {
-            if ($currentState !== 'finish') {
+        try {
+            if ($newState === 'preview') {
+                if ($currentState === 'lobby') {
+                    $room->update(['is_locked' => true]);
+                    $this->battleService->initScores($room);
+                    $this->cacheQuestionData($room, 0);
+                    $this->battleService->setState($room, 'preview', ['q_index' => 0]);
+                }
+            } elseif ($newState === 'question') {
+                $this->battleService->setState($room, 'question');
+            } elseif ($newState === 'discussion') {
+                $this->battleService->setState($room, 'discussion');
+            } elseif ($newState === 'leaderboard') {
+                $this->battleService->setState($room, 'leaderboard');
+            } elseif ($newState === 'next') {
                 $this->accumulateAnswers($room);
-                $this->battleService->setState($room, 'finish');
-                $this->processFinish($room);
+                $res = $this->battleService->nextQuestion($room);
+                if ($res['state'] === 'preview') {
+                    $this->cacheQuestionData($room, $res['q_index']);
+                } elseif ($res['state'] === 'finish') {
+                    $this->processFinish($room);
+                }
+            } elseif ($newState === 'finish') {
+                if ($currentState !== 'finish') {
+                    $this->accumulateAnswers($room);
+                    $this->battleService->setState($room, 'finish');
+                    $this->processFinish($room);
+                }
             }
+            return response()->json(['status' => 'ok']);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Battle State Error [{$newState}]: " . $e->getMessage(), [
+                'token' => $room->token,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal merubah state: ' . $e->getMessage()
+            ], 500);
         }
-
-        return response()->json(['status' => 'ok']);
     }
 
     private function accumulateAnswers(BattleRoom $room)
@@ -294,13 +304,11 @@ class ArenaController extends Controller
             $memberId = $members[$userId]['id'] ?? null;
             if ($memberId) {
                 $allAnswers[] = [
-                    'battle_room_id' => $room->id,
                     'battle_participant_id' => $memberId,
                     'question_id' => $questionId,
-                    'q_index' => $qIndex,
                     'chosen_option' => $ans['answer'],
                     'is_correct' => $ans['is_correct'] ? 1 : 0,
-                    'score_earned' => $ans['score_earned'],
+                    'hp_delta' => $ans['score_earned'], // Mapping score -> hp_delta per migration
                     'answered_at' => date('Y-m-d H:i:s', $ans['answered_at']),
                 ];
             }
@@ -340,35 +348,37 @@ class ArenaController extends Controller
 
     private function processFinish(BattleRoom $room)
     {
-        $room->update([
-            'status' => 'finished',
-            'ended_at' => now(),
-        ]);
-        
-        $scores = $this->battleService->getScores($room);
-        $members = $this->battleService->getMembers($room);
-        
-        foreach ($scores as $userId => $score) {
-            if (isset($members[$userId])) {
-                \App\Models\BattleParticipant::where('id', $members[$userId]['id'])->update([
-                    'total_score' => $score['total_score'],
-                    'correct_count' => $score['correct'],
-                    'wrong_count' => $score['wrong'],
-                    'rank' => $score['rank'],
-                    'finished_at' => now(),
-                ]);
+        \Illuminate\Support\Facades\DB::transaction(function() use ($room) {
+            $room->update([
+                'status' => 'finished',
+                'ended_at' => now(),
+            ]);
+            
+            $scores = $this->battleService->getScores($room);
+            $members = $this->battleService->getMembers($room);
+            
+            foreach ($scores as $userId => $score) {
+                if (isset($members[$userId])) {
+                    \App\Models\BattleParticipant::where('id', $members[$userId]['id'])->update([
+                        'total_score' => $score['total_score'],
+                        'correct_count' => $score['correct'],
+                        'wrong_count' => $score['wrong'],
+                        'rank' => $score['rank'],
+                        'finished_at' => now(),
+                    ]);
+                }
             }
-        }
-        
-        $allAnswers = \Illuminate\Support\Facades\Cache::get($room->cacheKey('all_answers'), []);
-        if (!empty($allAnswers)) {
-            \App\Models\BattleAnswer::insert($allAnswers);
-        }
-        
-        \Illuminate\Support\Facades\Cache::forget($room->cacheKey('all_answers'));
+            
+            $allAnswers = \Illuminate\Support\Facades\Cache::get($room->cacheKey('all_answers'), []);
+            if (!empty($allAnswers)) {
+                \App\Models\BattleAnswer::insert($allAnswers);
+            }
+            
+            \Illuminate\Support\Facades\Cache::forget($room->cacheKey('all_answers'));
 
-        // ── BARU: Distribusi Reward ───────────────
-        $this->distributeRewards($room, $scores, $members);
+            // ── BARU: Distribusi Reward ───────────────
+            $this->distributeRewards($room, $scores, $members);
+        });
 
         // NOTE: Jangan panggil battleService->cleanup($room) di sini.
         // Data Redis (state, scores, members) harus tetap ada agar proyektor

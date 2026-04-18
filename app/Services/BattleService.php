@@ -155,17 +155,22 @@ class BattleService
             'updated_at'     => now()->timestamp,
         ];
 
-        $path = public_path("battle-mirror/{$room->token}.json");
-        
-        // Buat folder jika belum ada (antisipasi pertama kali)
-        if (!is_dir(dirname($path))) {
-            mkdir(dirname($path), 0755, true);
-        }
+        try {
+            $path = public_path("battle-mirror/{$room->token}.json");
+            
+            // Buat folder jika belum ada (antisipasi pertama kali)
+            if (!is_dir(dirname($path))) {
+                @mkdir(dirname($path), 0755, true);
+            }
 
-        // Tulis atomik untuk menghindari JSON terpotong (Race condition / corrupted read by NGINX)
-        $tempPath = $path . '.' . uniqid(mt_rand(), true) . '.tmp';
-        file_put_contents($tempPath, json_encode($mirrorData, JSON_UNESCAPED_UNICODE));
-        rename($tempPath, $path);
+            // Tulis atomik untuk menghindari JSON terpotong (Race condition / corrupted read by NGINX)
+            $tempPath = $path . '.' . uniqid(mt_rand(), true) . '.tmp';
+            if (file_put_contents($tempPath, json_encode($mirrorData, JSON_UNESCAPED_UNICODE))) {
+                rename($tempPath, $path);
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning("Mirror sync failed for {$room->token}: " . $e->getMessage());
+        }
     }
 
     // ── Member Management ────────────────────
@@ -293,16 +298,22 @@ class BattleService
             $scores[$userId]['streak'] = 0;
         }
 
-        // Recalculate ranks
-        $sorted = collect($scores)
-            ->sortByDesc('total_score')
-            ->values();
-
-        foreach ($sorted as $i => $s) {
-            $scores[$s['user_id']]['rank'] = $i + 1;
+        // Recalculate ranks only if necessary (Optimization: array_multisort is faster than collection sort for large arrays)
+        $ids    = array_column($scores, 'user_id');
+        $totals = array_column($scores, 'total_score');
+        array_multisort($totals, SORT_DESC, $scores);
+        
+        foreach ($scores as $i => &$s) {
+            $s['rank'] = $i + 1;
+        }
+        
+        // Restore associative keys for Redis storage efficiency
+        $finalScores = [];
+        foreach ($scores as $s) {
+            $finalScores[$s['user_id']] = $s;
         }
 
-        Cache::put($key, $scores, self::TTL);
+        Cache::put($key, $finalScores, self::TTL);
     }
 
     // ── Answer Management ────────────────────
