@@ -128,7 +128,7 @@
     <div class="fixed inset-0 opacity-60 -z-10" style="background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, #020617 100%) !important;"></div>
 
     {{-- HEADER KECIL --}}
-    <header class="p-6 flex items-center justify-between z-10 glass-panel border-b-0 border-x-0 border-t-0 shadow-lg">
+    <header class="p-4 flex items-center justify-between z-10 glass-panel border-b-0 border-x-0 border-t-0 shadow-lg">
         <div class="flex items-center gap-4">
             <div class="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg transform -rotate-6">
                 <i class="fas fa-fist-raised text-2xl text-white"></i>
@@ -377,13 +377,13 @@
         </h2>
       </div>
 
-      <div class="grid grid-cols-1 gap-6">
+      <div class="grid grid-cols-1 gap-3">
         
         {{-- MODE INDIVIDUAL --}}
         <template x-if="state.mode !== 'group'">
           <template x-for="(s, idx) in leaderboard" :key="s.user_id">
-            <div class="glass-panel p-4 rounded-[2rem] flex items-center gap-6 border-2 transition-all 
-                         duration-1000 ease-in-out relative overflow-hidden backdrop-blur-3xl hover:shadow-[0_0_30px_rgba(99,102,241,0.4)]"
+            <div class="glass-panel p-3 rounded-[1.5rem] flex items-center gap-4 border-2 transition-all 
+                         duration-1000 ease-in-out relative overflow-hidden backdrop-blur-3xl"
                  :class="{
                    'bg-amber-500/15 border-amber-400/30 shadow-[0_0_30px_rgba(251,191,36,0.3)]': idx === 0 && rankChanges[s.user_id] !== 'up',
                    'bg-slate-300/15 border-slate-300/30 shadow-[0_0_30px_rgba(203,213,225,0.3)]': idx === 1 && rankChanges[s.user_id] !== 'up',
@@ -423,7 +423,7 @@
               </div>
 
               {{-- Avatar --}}
-              <div class="w-14 h-14 rounded-full overflow-hidden bg-gradient-to-tr from-indigo-500 to-purple-500 p-0.5 shrink-0 shadow-md">
+              <div class="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-tr from-indigo-500 to-purple-500 p-0.5 shrink-0 shadow-md">
                 <div class="w-full h-full rounded-full overflow-hidden bg-slate-800 border-2 border-slate-900 relative">
                   <template x-if="s.is_avatar_seed && s.avatar_seed">
                     <div class="w-full h-full overflow-hidden [&>svg]:w-full [&>svg]:h-full"
@@ -442,7 +442,7 @@
 
               {{-- Nama --}}
               <div class="flex-1 min-w-0">
-                <p class="font-black text-white text-xl uppercase tracking-tighter drop-shadow-md leading-none" x-text="s.name"></p>
+                <p class="font-black text-white text-lg uppercase tracking-tighter drop-shadow-md leading-none" x-text="s.name"></p>
                 <template x-if="s.group_label">
                   <span class="text-xs px-2 py-0.5 rounded-full bg-white/10 text-gray-300" x-text="s.group_label"></span>
                 </template>
@@ -1107,7 +1107,7 @@
                             colors: ['#ffffff', '#fbbf24']
                         });
                     }
-                }, 250);
+                }, 500);
             }
         }
     }

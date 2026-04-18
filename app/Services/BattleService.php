@@ -299,36 +299,70 @@ class BattleService
         bool $isCorrect,
         int $scoreEarned
     ): void {
-        $key    = $room->cacheKey('scores');
-        $scores = Cache::get($key, []);
+        $key  = $room->cacheKey('scores');
+        $lock = Cache::lock($key . '_lock', 10);
 
-        if (!isset($scores[$userId])) return;
+        try {
+            // Tunggu maksimal 5 detik untuk mendapatkan kunci
+            $lock->block(5);
 
-        if ($isCorrect) {
-            $scores[$userId]['total_score'] += $scoreEarned;
-            $scores[$userId]['correct']++;
-            $scores[$userId]['streak']++;
-        } else {
-            $scores[$userId]['wrong']++;
-            $scores[$userId]['streak'] = 0;
+            $scores = Cache::get($key, []);
+            
+            // PROTEKSI: Jika antrean sedang padat dan Cache::get tiba-tiba kosong 
+            // sedangkan room masih aktif, coba re-hydrate dari members agar data tidak hilang (Wipeout Protection)
+            if (empty($scores)) {
+                $members = $this->getMembers($room);
+                if (!empty($members)) {
+                    foreach ($members as $mId => $m) {
+                        $scores[$mId] = [
+                            'user_id'     => $mId,
+                            'name'        => $m['name'],
+                            'avatar_url'  => $m['avatar_url'],
+                            'is_avatar_seed'=> $m['is_avatar_seed'] ?? false,
+                            'avatar_seed' => $m['avatar_seed'] ?? null,
+                            'group_label' => $m['group_label'],
+                            'total_score' => 0,
+                            'correct'     => 0,
+                            'wrong'       => 0,
+                            'streak'      => 0,
+                            'rank'        => 0,
+                        ];
+                    }
+                }
+            }
+
+            if (!isset($scores[$userId])) return;
+
+            if ($isCorrect) {
+                $scores[$userId]['total_score'] += $scoreEarned;
+                $scores[$userId]['correct']++;
+                $scores[$userId]['streak']++;
+            } else {
+                $scores[$userId]['wrong']++;
+                $scores[$userId]['streak'] = 0;
+            }
+
+            // Recalculate ranks only if necessary (Optimization)
+            $totals = array_column($scores, 'total_score');
+            array_multisort($totals, SORT_DESC, $scores);
+            
+            foreach ($scores as $i => &$s) {
+                $s['rank'] = $i + 1;
+            }
+            
+            // Restore associative keys
+            $finalScores = [];
+            foreach ($scores as $s) {
+                $finalScores[$s['user_id']] = $s;
+            }
+
+            Cache::put($key, $finalScores, self::TTL);
+            
+        } catch (\Exception $e) {
+            \Log::error("Battle Arena Concurrency Error: " . $e->getMessage());
+        } finally {
+            $lock->release();
         }
-
-        // Recalculate ranks only if necessary (Optimization: array_multisort is faster than collection sort for large arrays)
-        $ids    = array_column($scores, 'user_id');
-        $totals = array_column($scores, 'total_score');
-        array_multisort($totals, SORT_DESC, $scores);
-        
-        foreach ($scores as $i => &$s) {
-            $s['rank'] = $i + 1;
-        }
-        
-        // Restore associative keys for Redis storage efficiency
-        $finalScores = [];
-        foreach ($scores as $s) {
-            $finalScores[$s['user_id']] = $s;
-        }
-
-        Cache::put($key, $finalScores, self::TTL);
     }
 
     // ── Answer Management ────────────────────
