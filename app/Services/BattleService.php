@@ -127,14 +127,13 @@ class BattleService
         $isLeaderboard = ($currentState === 'leaderboard');
 
         $scoresToSync = array_values($scores); // Always include scores so frontend doesn't need to hit PHP
+        $membersToSync = [];
         
         if ($isLobby) {
             $membersToSync = array_values($members);
         } elseif ($isQuestion) {
             $membersToSync = [];
-        } elseif ($isDiscussion) {
-            $membersToSync = array_values($members);
-        } elseif ($isLeaderboard) {
+        } elseif ($isDiscussion || $isLeaderboard || $currentState === 'finish') {
             $membersToSync = array_values($members);
         }
 
