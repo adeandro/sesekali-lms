@@ -206,26 +206,20 @@
       {{-- Avatar grid — MAJESTIC GRID --}}
       <div class="flex flex-wrap justify-center gap-6 max-w-7xl mx-auto py-8 px-4 transition-all">
         <template x-for="m in members" :key="m.user_id">
-          <div class="flex flex-col items-center gap-3 animate-popIn group">
-            {{-- Avatar Wrapper dengan Glow --}}
-            <div class="relative">
-                <div class="absolute inset-0 bg-indigo-500 rounded-full blur-3xl opacity-10 group-hover:opacity-40 transition-opacity duration-700"></div>
-                <div class="absolute -inset-1 bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 rounded-full blur opacity-0 group-hover:opacity-60 transition-opacity duration-500"></div>
-                
-                <div class="rounded-full overflow-hidden bg-slate-900 border-2 border-white/20 shadow-2xl relative z-10 transition-all duration-500 group-hover:scale-115 group-hover:border-indigo-400 group-hover:rotate-3 shadow-indigo-500/10"
+          <div class="flex flex-col items-center gap-3 animate-fadeIn group">
+            {{-- Avatar Wrapper --}}
+            <div class="relative will-change-transform">
+                <div class="rounded-full overflow-hidden bg-slate-900 border-2 border-white/20 shadow-lg relative z-10 transition-all duration-500 group-hover:scale-115 group-hover:border-indigo-400 group-hover:rotate-3 shadow-indigo-500/10"
                      :class="{
                         'w-24 h-24': members.length <= 12,
                         'w-20 h-20': members.length > 12 && members.length <= 24,
                         'w-16 h-16': members.length > 24 && members.length <= 48,
                         'w-12 h-12': members.length > 48
                      }">
-                    <template x-if="m.is_avatar_seed && m.avatar_seed">
-                        <div class="w-full h-full [&>svg]:w-full [&>svg]:h-full [&>svg]:block transition-transform duration-500 group-hover:scale-110"
-                             x-html="getAvatarHtml(m)">
+                    <template x-if="m.name">
+                        <div class="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-2xl"
+                             x-text="m.name.charAt(0).toUpperCase()">
                         </div>
-                    </template>
-                    <template x-if="!m.is_avatar_seed && m.avatar_url">
-                        <img :src="m.avatar_url" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
                     </template>
                 </div>
                 {{-- Status Badge (Ready) --}}
@@ -422,20 +416,20 @@
                 </template>
               </div>
 
-              {{-- Avatar --}}
+              {{-- Avatar Smart-Lite --}}
               <div class="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-tr from-indigo-500 to-purple-500 p-0.5 shrink-0 shadow-md">
                 <div class="w-full h-full rounded-full overflow-hidden bg-slate-800 border-2 border-slate-900 relative">
-                  <template x-if="s.is_avatar_seed && s.avatar_seed">
+                  {{-- Hanya render SVG untuk RANK 1-3 --}}
+                  <template x-if="idx <= 2 && s.is_avatar_seed && s.avatar_seed">
                     <div class="w-full h-full overflow-hidden [&>svg]:w-full [&>svg]:h-full"
                          x-html="getAvatarHtml(s)">
                     </div>
                   </template>
-                  <template x-if="!s.is_avatar_seed && s.avatar_url">
-                    <img :src="s.avatar_url" class="w-full h-full object-cover">
-                  </template>
-                  <template x-if="!s.is_avatar_seed && !s.avatar_url">
-                    <div class="w-full h-full bg-slate-700 flex items-center justify-center text-white font-black"
-                         x-text="s.name?.charAt(0)"></div>
+
+                  {{-- Inisial untuk RANK 4+ --}}
+                  <template x-if="idx > 2 || !s.is_avatar_seed">
+                    <div class="w-full h-full bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center text-white font-black text-lg"
+                         x-text="s.name?.charAt(0).toUpperCase()"></div>
                   </template>
                 </div>
               </div>
@@ -1012,9 +1006,11 @@
                 this.state = data.state ?? {};
                 this.count = data.member_count ?? 0;
                 
-                // Persistence: Only update if server sends new data
+                // Persistence: Only update if count changed or state changed (Throttled Rendering)
                 if (data.members && data.members.length > 0) {
-                    this.members = data.members;
+                    if (this.members.length !== data.members.length || data.state?.state !== this.state.state) {
+                        this.members = data.members;
+                    }
                 }
                 
                 if (data.scores && data.scores.length > 0) {

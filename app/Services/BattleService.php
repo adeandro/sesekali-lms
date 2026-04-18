@@ -231,14 +231,6 @@ class BattleService
             Cache::put($key, $members, self::TTL);
         }
 
-        // Juga update scores cache jika sudah ada
-        $scoreKey = $room->cacheKey('scores');
-        $scores   = Cache::get($scoreKey, []);
-        if (isset($scores[$userId])) {
-            $scores[$userId]['group_label'] = $groupLabel;
-            Cache::put($scoreKey, $scores, self::TTL);
-        }
-
         $this->syncStaticMirror($room);
     }
 
@@ -247,33 +239,76 @@ class BattleService
     public function initScores(BattleRoom $room): void
     {
         $members = $this->getMembers($room);
-        $scores  = [];
+        $ttl = self::TTL;
 
         foreach ($members as $userId => $member) {
-            $scores[$userId] = [
-                'user_id'     => $userId,
-                'name'        => $member['name'],
-                'avatar_url'  => $member['avatar_url'],
-                'is_avatar_seed'=> $member['is_avatar_seed'] ?? false,
-                'avatar_seed' => $member['avatar_seed'] ?? null,
-                'group_label' => $member['group_label'],
-                'total_score' => 0,
-                'correct'     => 0,
-                'wrong'       => 0,
-                'streak'      => 0,
-                'rank'        => 0,
-            ];
+            // Inisialisasi kunci individu jika belum ada
+            Cache::add("battle:{$room->token}:score:{$userId}", 0, $ttl);
+            Cache::add("battle:{$room->token}:correct:{$userId}", 0, $ttl);
+            Cache::add("battle:{$room->token}:wrong:{$userId}", 0, $ttl);
+            Cache::add("battle:{$room->token}:streak:{$userId}", 0, $ttl);
         }
 
-        Cache::put($room->cacheKey('scores'),
-            $scores, self::TTL);
+        // Tembak mirror awal
+        $this->syncStaticMirror($room);
     }
 
     public function getScores(BattleRoom $room): array
     {
-        return Cache::get(
-            $room->cacheKey('scores'), []
-        );
+        $members = $this->getMembers($room);
+        $token   = $room->token;
+        
+        if (empty($members)) return [];
+
+        // Siapkan list kunci bulk-read untuk efisiensi Redis MGET
+        $keys = [];
+        foreach ($members as $userId => $m) {
+            $keys[] = "battle:{$token}:score:{$userId}";
+            $keys[] = "battle:{$token}:correct:{$userId}";
+            $keys[] = "battle:{$token}:wrong:{$userId}";
+            $keys[] = "battle:{$token}:streak:{$userId}";
+        }
+
+        // Bulk read via Redis (sangat cepat untuk 100+ keys)
+        $data = Cache::many($keys);
+        
+        $res = [];
+        foreach ($members as $userId => $m) {
+            $score   = $data["battle:{$token}:score:{$userId}"] ?? 0;
+            $correct = $data["battle:{$token}:correct:{$userId}"] ?? 0;
+            $wrong   = $data["battle:{$token}:wrong:{$userId}"] ?? 0;
+            $streak  = $data["battle:{$token}:streak:{$userId}"] ?? 0;
+
+            $res[$userId] = [
+                'user_id'     => $userId,
+                'name'        => $m['name'],
+                'avatar_url'  => $m['avatar_url'],
+                'is_avatar_seed'=> $m['is_avatar_seed'] ?? false,
+                'avatar_seed' => $m['avatar_seed'] ?? null,
+                'group_label' => $m['group_label'],
+                'total_score' => (int)$score,
+                'correct'     => (int)$correct,
+                'wrong'       => (int)$wrong,
+                'streak'      => (int)$streak,
+                'rank'        => 0, 
+            ];
+        }
+
+        // Sorting & Ranking
+        $totals = array_column($res, 'total_score');
+        array_multisort($totals, SORT_DESC, $res);
+
+        foreach ($res as $idx => &$item) {
+            $item['rank'] = $idx + 1;
+        }
+
+        // Restore associative keys
+        $final = [];
+        foreach ($res as $item) {
+            $final[$item['user_id']] = $item;
+        }
+
+        return $final;
     }
 
     public function calculateScore(
@@ -299,69 +334,17 @@ class BattleService
         bool $isCorrect,
         int $scoreEarned
     ): void {
-        $key  = $room->cacheKey('scores');
-        $lock = Cache::lock($key . '_lock', 10);
+        $token = $room->token;
+        $ttl   = self::TTL;
 
-        try {
-            // Tunggu maksimal 5 detik untuk mendapatkan kunci
-            $lock->block(5);
-
-            $scores = Cache::get($key, []);
-            
-            // PROTEKSI: Jika antrean sedang padat dan Cache::get tiba-tiba kosong 
-            // sedangkan room masih aktif, coba re-hydrate dari members agar data tidak hilang (Wipeout Protection)
-            if (empty($scores)) {
-                $members = $this->getMembers($room);
-                if (!empty($members)) {
-                    foreach ($members as $mId => $m) {
-                        $scores[$mId] = [
-                            'user_id'     => $mId,
-                            'name'        => $m['name'],
-                            'avatar_url'  => $m['avatar_url'],
-                            'is_avatar_seed'=> $m['is_avatar_seed'] ?? false,
-                            'avatar_seed' => $m['avatar_seed'] ?? null,
-                            'group_label' => $m['group_label'],
-                            'total_score' => 0,
-                            'correct'     => 0,
-                            'wrong'       => 0,
-                            'streak'      => 0,
-                            'rank'        => 0,
-                        ];
-                    }
-                }
-            }
-
-            if (!isset($scores[$userId])) return;
-
-            if ($isCorrect) {
-                $scores[$userId]['total_score'] += $scoreEarned;
-                $scores[$userId]['correct']++;
-                $scores[$userId]['streak']++;
-            } else {
-                $scores[$userId]['wrong']++;
-                $scores[$userId]['streak'] = 0;
-            }
-
-            // Recalculate ranks only if necessary (Optimization)
-            $totals = array_column($scores, 'total_score');
-            array_multisort($totals, SORT_DESC, $scores);
-            
-            foreach ($scores as $i => &$s) {
-                $s['rank'] = $i + 1;
-            }
-            
-            // Restore associative keys
-            $finalScores = [];
-            foreach ($scores as $s) {
-                $finalScores[$s['user_id']] = $s;
-            }
-
-            Cache::put($key, $finalScores, self::TTL);
-            
-        } catch (\Exception $e) {
-            \Log::error("Battle Arena Concurrency Error: " . $e->getMessage());
-        } finally {
-            $lock->release();
+        // Atomic Updates - Sangat scalable untuk 100+ concurrent requests
+        if ($isCorrect) {
+            Cache::increment("battle:{$token}:score:{$userId}", $scoreEarned);
+            Cache::increment("battle:{$token}:correct:{$userId}");
+            Cache::increment("battle:{$token}:streak:{$userId}");
+        } else {
+            Cache::increment("battle:{$token}:wrong:{$userId}");
+            Cache::put("battle:{$token}:streak:{$userId}", 0, $ttl);
         }
     }
 
