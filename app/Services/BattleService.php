@@ -127,15 +127,7 @@ class BattleService
         $isLeaderboard = ($currentState === 'leaderboard');
 
         $scoresToSync = array_values($scores); // Always include scores so frontend doesn't need to hit PHP
-        $membersToSync = [];
-        
-        if ($isLobby) {
-            $membersToSync = array_values($members);
-        } elseif ($isQuestion) {
-            $membersToSync = [];
-        } elseif ($isDiscussion || $isLeaderboard || $currentState === 'finish') {
-            $membersToSync = array_values($members);
-        }
+        $membersToSync = array_values($members); // Always include members to prevent proyektor grid from clearing
 
         $mirrorData = [
             'room_id'        => $room->id,
@@ -194,6 +186,30 @@ class BattleService
         ];
 
         Cache::put($key, $members, self::TTL);
+
+        // Jika battle sudah dimulai, inisialisasi score peserta baru
+        $state = $this->getState($room);
+        if (($state['state'] ?? 'lobby') !== 'lobby') {
+            $scoreKey = $room->cacheKey('scores');
+            $scores = Cache::get($scoreKey, []);
+            if (!isset($scores[$participant->user_id])) {
+                $scores[$participant->user_id] = [
+                    'user_id'     => $participant->user_id,
+                    'name'        => $participant->user->name,
+                    'avatar_url'  => $participant->user->avatar_url,
+                    'is_avatar_seed'=> $participant->user->is_avatar_seed ?? false,
+                    'avatar_seed' => $participant->user->avatar_seed ?? null,
+                    'group_label' => $participant->group_label,
+                    'total_score' => 0,
+                    'correct'     => 0,
+                    'wrong'       => 0,
+                    'streak'      => 0,
+                    'rank'        => count($scores) + 1,
+                ];
+                Cache::put($scoreKey, $scores, self::TTL);
+            }
+        }
+
         $this->syncStaticMirror($room);
     }
 

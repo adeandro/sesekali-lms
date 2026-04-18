@@ -304,12 +304,16 @@ class ArenaController extends Controller
             $memberId = $members[$userId]['id'] ?? null;
             if ($memberId) {
                 $allAnswers[] = [
+                    'battle_room_id' => $room->id,
                     'battle_participant_id' => $memberId,
                     'question_id' => $questionId,
+                    'q_index' => $qIndex,
                     'chosen_option' => $ans['answer'],
                     'is_correct' => $ans['is_correct'] ? 1 : 0,
-                    'hp_delta' => $ans['score_earned'], // Mapping score -> hp_delta per migration
+                    'score_earned' => $ans['score_earned'],
                     'answered_at' => date('Y-m-d H:i:s', $ans['answered_at']),
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ];
             }
         }
@@ -432,8 +436,6 @@ class ArenaController extends Controller
             if ($room->mode === 'group' && $groupLabel) {
                 $rank = ($groupLabel === $winningGroup) ? 1 : 999;
             }
-
-            if (!$rank) continue;
 
             $user = \App\Models\User::find($userId);
             if (!$user) continue;

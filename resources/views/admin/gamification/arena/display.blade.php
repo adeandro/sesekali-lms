@@ -281,12 +281,12 @@
                     <div class="w-full relative">
                         
                         {{-- Timer Kanan Atas (Absolute) --}}
-                        <div class="absolute -top-10 -right-4 z-20 flex flex-col items-center justify-center w-32 h-32 glass-panel rounded-full border border-indigo-500/30 shadow-[0_0_30px_rgba(99,102,241,0.2)]">
-                            <span class="text-4xl font-black tracking-tighter" :class="remainingTime <= 10 ? 'text-red-400 animate-pulse' : 'text-emerald-400'" x-text="remainingTime"></span>
-                            <span class="text-[10px] text-gray-400 uppercase font-black tracking-widest mt-1">Detik</span>
+                        <div class="fixed top-32 right-8 z-50 flex flex-col items-center justify-center w-28 h-28 glass-panel rounded-full border border-indigo-500/30 shadow-[0_0_40px_rgba(99,102,241,0.3)] animate-pulse">
+                            <span class="text-3xl font-black tracking-tighter" :class="remainingTime <= 10 ? 'text-red-400' : 'text-emerald-400'" x-text="remainingTime"></span>
+                            <span class="text-[8px] text-gray-400 uppercase font-black tracking-widest mt-0.5">Detik</span>
                         </div>
 
-                        <div class="glass-panel p-8 md:p-12 rounded-3xl w-full mb-8 relative z-10 text-center">
+                        <div class="glass-panel p-8 md:p-12 rounded-3xl w-full max-w-7xl mx-auto mb-8 relative z-10 text-center">
                             <div class="prose prose-invert prose-2xl max-w-none text-white font-medium" x-html="question.question_text"></div>
                             
                             <template x-if="question.question_image">
@@ -544,7 +544,7 @@
                 <template x-if="state.mode !== 'group'">
                     <div class="w-24 h-24 rounded-full border-4 border-slate-300/50 mb-3 bg-slate-900 overflow-hidden shadow-2xl">
                         <template x-if="topMembers(3)[1].is_avatar_seed && topMembers(3)[1].avatar_seed">
-                            <div class="w-full h-full" x-html="typeof multiavatar === 'function' ? multiavatar(topMembers(3)[1].avatar_seed) : ''"></div>
+                            <div class="w-full h-full" x-html="getAvatarHtml(topMembers(3)[1])"></div>
                         </template>
                         <template x-if="!topMembers(3)[1].is_avatar_seed && topMembers(3)[1].avatar_url">
                             <img :src="topMembers(3)[1].avatar_url" class="w-full h-full object-cover">
@@ -570,7 +570,7 @@
                 <template x-if="state.mode !== 'group'">
                     <div class="w-32 h-32 rounded-full border-4 border-amber-400 mb-4 bg-slate-900 overflow-hidden shadow-[0_0_50px_rgba(251,191,36,0.3)]">
                         <template x-if="topMembers(3)[0].is_avatar_seed && topMembers(3)[0].avatar_seed">
-                            <div class="w-full h-full" x-html="typeof multiavatar === 'function' ? multiavatar(topMembers(3)[0].avatar_seed) : ''"></div>
+                            <div class="w-full h-full" x-html="getAvatarHtml(topMembers(3)[0])"></div>
                         </template>
                         <template x-if="!topMembers(3)[0].is_avatar_seed && topMembers(3)[0].avatar_url">
                             <img :src="topMembers(3)[0].avatar_url" class="w-full h-full object-cover">
@@ -595,7 +595,7 @@
                 <template x-if="state.mode !== 'group'">
                     <div class="w-20 h-20 rounded-full border-4 border-purple-400/40 mb-3 bg-slate-900 overflow-hidden shadow-xl">
                         <template x-if="topMembers(3)[2].is_avatar_seed && topMembers(3)[2].avatar_seed">
-                            <div class="w-full h-full" x-html="typeof multiavatar === 'function' ? multiavatar(topMembers(3)[2].avatar_seed) : ''"></div>
+                            <div class="w-full h-full" x-html="getAvatarHtml(topMembers(3)[2])"></div>
                         </template>
                         <template x-if="!topMembers(3)[2].is_avatar_seed && topMembers(3)[2].avatar_url">
                             <img :src="topMembers(3)[2].avatar_url" class="w-full h-full object-cover">
@@ -1012,8 +1012,8 @@
                 this.state = data.state ?? {};
                 this.count = data.member_count ?? 0;
                 
-                // Persistence: Only update if server sends new data and members changed
-                if (data.members && (data.members.length !== this.members.length)) {
+                // Persistence: Only update if server sends new data
+                if (data.members && data.members.length > 0) {
                     this.members = data.members;
                 }
                 
@@ -1049,8 +1049,11 @@
                     this.updateGroupLeaderboard(data.group_scores);
                 }
 
-                if (this.state.state === 'finish') {
-                    clearInterval(this.pollInterval);
+                if (data.state.state === 'finish' || this.state.state === 'finish') {
+                    if (this.pollInterval) {
+                        clearInterval(this.pollInterval);
+                        this.pollInterval = null;
+                    }
                     if (!this.confettiFired) {
                         this.confettiFired = true;
                         this.initPodium();
@@ -1078,7 +1081,7 @@
                         return clearInterval(interval);
                     }
                     
-                    const particleCount = 60 * (timeLeft / duration);
+                    const particleCount = 40 * (timeLeft / duration);
                     
                     // Sebar dari kiri ke kanan
                     confetti({
