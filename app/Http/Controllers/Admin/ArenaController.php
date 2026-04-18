@@ -263,7 +263,7 @@ class ArenaController extends Controller
             } elseif ($newState === 'next') {
                 $this->accumulateAnswers($room);
                 $res = $this->battleService->nextQuestion($room);
-                if ($res['state'] === 'preview') {
+                if (in_array($res['state'], ['preview', 'question'])) {
                     $this->cacheQuestionData($room, $res['q_index']);
                 } elseif ($res['state'] === 'finish') {
                     $this->processFinish($room);
@@ -352,7 +352,12 @@ class ArenaController extends Controller
 
     private function processFinish(BattleRoom $room)
     {
-        \Illuminate\Support\Facades\DB::transaction(function() use ($room) {
+        // Ambil ID peserta yang nyata dari database untuk validasi simulasi/bot
+        $realParticipantIds = \App\Models\BattleParticipant::where('battle_room_id', $room->id)
+            ->pluck('id')
+            ->toArray();
+
+        \Illuminate\Support\Facades\DB::transaction(function() use ($room, $realParticipantIds) {
             $room->update([
                 'status' => 'finished',
                 'ended_at' => now(),
@@ -363,25 +368,37 @@ class ArenaController extends Controller
             
             foreach ($scores as $userId => $score) {
                 if (isset($members[$userId])) {
-                    \App\Models\BattleParticipant::where('id', $members[$userId]['id'])->update([
-                        'total_score' => $score['total_score'],
-                        'correct_count' => $score['correct'],
-                        'wrong_count' => $score['wrong'],
-                        'rank' => $score['rank'],
-                        'finished_at' => now(),
-                    ]);
+                    $pId = $members[$userId]['id'];
+                    
+                    // Hanya update database jika peserta nyata (bukan bot simulasi)
+                    if (in_array($pId, $realParticipantIds)) {
+                        \App\Models\BattleParticipant::where('id', $pId)->update([
+                            'total_score' => $score['total_score'],
+                            'correct_count' => $score['correct'],
+                            'wrong_count' => $score['wrong'],
+                            'rank' => $score['rank'],
+                            'finished_at' => now(),
+                        ]);
+                    }
                 }
             }
             
             $allAnswers = \Illuminate\Support\Facades\Cache::get($room->cacheKey('all_answers'), []);
             if (!empty($allAnswers)) {
-                \App\Models\BattleAnswer::insert($allAnswers);
+                // Filter hanya jawaban dari peserta nyata
+                $filteredAnswers = array_filter($allAnswers, function($ans) use ($realParticipantIds) {
+                    return in_array($ans['battle_participant_id'] ?? 0, $realParticipantIds);
+                });
+
+                if (!empty($filteredAnswers)) {
+                    \App\Models\BattleAnswer::insert(array_values($filteredAnswers));
+                }
             }
             
             \Illuminate\Support\Facades\Cache::forget($room->cacheKey('all_answers'));
 
-            // ── BARU: Distribusi Reward ───────────────
-            $this->distributeRewards($room, $scores, $members);
+            // ── BARU: Distribusi Reward (Hanya untuk peserta nyata) ───────────────
+            $this->distributeRewards($room, $scores, $members, $realParticipantIds);
         });
 
         // NOTE: Jangan panggil battleService->cleanup($room) di sini.
@@ -393,7 +410,8 @@ class ArenaController extends Controller
     private function distributeRewards(
         BattleRoom $room,
         array $scores,
-        array $members
+        array $members,
+        array $realParticipantIds = []
     ): void {
         if (empty($scores)) return;
 
@@ -430,6 +448,12 @@ class ArenaController extends Controller
         }
 
         foreach ($scores as $userId => $score) {
+            // PROTEKSI SIMULASI: Jangan beri reward untuk Bot/Simulasi (ID tidak ada di DB)
+            $pId = $members[$userId]['id'] ?? 0;
+            if (!empty($realParticipantIds) && !in_array($pId, $realParticipantIds)) {
+                continue;
+            }
+
             $rank = $score['rank'] ?? 0;
             $groupLabel = $score['group_label'] ?? null;
 

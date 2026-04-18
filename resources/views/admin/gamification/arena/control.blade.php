@@ -160,15 +160,34 @@
                 <template x-if="state.state === 'discussion'">
                     <div class="w-full space-y-4">
                         <i class="fas fa-comments text-5xl text-orange-300 mb-2"></i>
-                        <p class="text-sm text-slate-400">Membahas jawaban benar dan grafik. Jika sudah jelas, lanjut ke Leaderboard Peringkat.</p>
-                        <button @click="setState('leaderboard')" :disabled="isProcessing"
-                                class="w-full py-3 rounded-xl font-black text-sm
-                                       uppercase tracking-widest transition-all
-                                       active:scale-[0.98] disabled:opacity-40
-                                       disabled:cursor-not-allowed
-                                       bg-cyan-600 text-white hover:bg-cyan-700">
-                            <i class="fas fa-trophy mr-2"></i> LIHAT LEADERBOARD
-                        </button>
+                        <p class="text-sm text-slate-400">Membahas jawaban benar dan grafik.</p>
+                        
+                        {{-- Jika Masih ada soal berikutnya --}}
+                        <template x-if="(state.q_index + 1) < state.q_total">
+                            <button @click="setState('leaderboard')" :disabled="isProcessing"
+                                    class="w-full py-3 rounded-xl font-black text-sm
+                                           uppercase tracking-widest transition-all
+                                           active:scale-[0.98] disabled:opacity-40
+                                           disabled:cursor-not-allowed
+                                           bg-cyan-600 text-white hover:bg-cyan-700">
+                                <i class="fas fa-trophy mr-2"></i> LIHAT LEADERBOARD
+                            </button>
+                        </template>
+
+                        {{-- Jika Soal TERAKHIR (Loncati Leaderboard untuk Suspense) --}}
+                        <template x-if="(state.q_index + 1) >= state.q_total">
+                            <button @click="setState('finish')" :disabled="isProcessing"
+                                    class="w-full py-4 rounded-xl font-black text-sm
+                                           uppercase tracking-widest transition-all
+                                           active:scale-[0.98] disabled:opacity-40
+                                           disabled:cursor-not-allowed
+                                           bg-gradient-to-r from-rose-600 to-red-700 
+                                           text-white hover:from-rose-500 hover:to-red-600
+                                           shadow-lg shadow-red-500/20">
+                                <i class="fas fa-trophy mr-2 text-xl mb-1 block"></i>
+                                UMUMKAN PEMENANG (PODIUM)
+                            </button>
+                        </template>
                     </div>
                 </template>
 

@@ -91,7 +91,7 @@ class BattleService
         // Reset jawaban soal ini
         Cache::forget($room->cacheKey('answers'));
 
-        return $this->setState($room, 'preview', [
+        return $this->setState($room, 'question', [
             'q_index' => $current + 1,
         ]);
     }
@@ -101,6 +101,9 @@ class BattleService
         if (!$state) {
             $state = $this->getState($room, false);
         }
+        
+        // Inject total questions to state for frontend logic (last question detection)
+        $state['q_total'] = $room->total_questions;
 
         $members = $this->getMembers($room);
         $scores = $this->getScores($room);
@@ -216,6 +219,34 @@ class BattleService
     public function getMembers(BattleRoom $room): array
     {
         return Cache::get($room->cacheKey('members'), []);
+    }
+
+    /**
+     * Re-fetch all participants from DB and update the cache.
+     * Useful when photos or names are updated mid-battle.
+     */
+    public function refreshMemberCache(BattleRoom $room): void
+    {
+        $participants = $room->participants()->with('user')->get();
+        $key = $room->cacheKey('members');
+        $members = [];
+
+        foreach ($participants as $p) {
+            $members[$p->user_id] = [
+                'id'          => $p->id,
+                'user_id'     => $p->user_id,
+                'name'        => $p->user->name,
+                'initials'    => $p->user->initials,
+                'avatar_url'  => $p->user->avatar_url,
+                'is_avatar_seed'=> $p->user->is_avatar_seed,
+                'avatar_seed' => $p->user->avatar_seed,
+                'group_label' => $p->group_label,
+                'joined_at'   => now()->timestamp,
+            ];
+        }
+
+        Cache::put($key, $members, self::TTL);
+        $this->syncStaticMirror($room);
     }
 
     public function updateMemberGroup(

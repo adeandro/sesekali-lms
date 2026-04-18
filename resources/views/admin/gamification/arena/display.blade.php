@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@multiavatar/multiavatar/multiavatar.min.js"></script>
     <style>
         [x-cloak] { display: none !important; }
         body {
@@ -128,7 +127,7 @@
     <div class="fixed inset-0 opacity-60 -z-10" style="background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, #020617 100%) !important;"></div>
 
     {{-- HEADER KECIL --}}
-    <header class="p-4 flex items-center justify-between z-10 glass-panel border-b-0 border-x-0 border-t-0 shadow-lg">
+    <header class="p-4 flex items-center justify-between z-[100] bg-slate-900/95 border-b border-white/10 shadow-lg sticky top-0">
         <div class="flex items-center gap-4">
             <div class="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg transform -rotate-6">
                 <i class="fas fa-fist-raised text-2xl text-white"></i>
@@ -215,12 +214,8 @@
                         'w-20 h-20': members.length > 12 && members.length <= 24,
                         'w-16 h-16': members.length > 24 && members.length <= 48,
                         'w-12 h-12': members.length > 48
-                     }">
-                    <template x-if="m.name">
-                        <div class="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-2xl"
-                             x-text="m.name.charAt(0).toUpperCase()">
-                        </div>
-                    </template>
+                     }"
+                     x-html="getAvatarHtml(m)">
                 </div>
                 {{-- Status Badge (Ready) --}}
                 <div class="absolute -bottom-1 -right-1 bg-emerald-500 w-8 h-8 rounded-full border-[3px] border-[#020617] flex items-center justify-center z-20 shadow-xl">
@@ -250,55 +245,64 @@
     </div>
   </template>
 
-        {{-- STATE: PREVIEW --}}
+        {{-- STATE: PREVIEW (Optimasi Performa: Tanpa Blur & Shadow Berat) --}}
         <template x-if="state.state === 'preview'">
-            <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-3xl animate-fadeIn">
+            <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950 animate-fadeIn">
                 <div class="text-center">
-                    <div class="w-40 h-40 mx-auto bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-500 rounded-full flex items-center justify-center mb-10 shadow-[0_0_70px_rgba(99,102,241,0.6)] animate-pulse">
+                    <div class="w-40 h-40 mx-auto bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-500 rounded-full flex items-center justify-center mb-10 shadow-[0_0_40px_rgba(99,102,241,0.4)] animate-pulse will-change-[transform,opacity]"
+                         style="transform: translateZ(0);">
                         <i class="fas fa-bolt text-7xl text-white"></i>
                     </div>
-                    <h2 class="text-7xl font-black uppercase tracking-tighter text-white mb-6 drop-shadow-2xl">Bersiaplah!</h2>
+                    <h2 class="text-7xl font-black uppercase tracking-tighter text-white mb-6">Bersiaplah!</h2>
                     <p class="text-3xl font-bold text-indigo-300">Pertanyaan <span class="text-white tabular-nums" x-text="(state.q_index??0)+1"></span> segera dimulai</p>
                     <div class="mt-8 flex justify-center gap-2">
-                        <span class="w-3 h-3 rounded-full bg-indigo-500 animate-bounce" style="animation-delay: 0.1s"></span>
-                        <span class="w-3 h-3 rounded-full bg-purple-500 animate-bounce" style="animation-delay: 0.2s"></span>
-                        <span class="w-3 h-3 rounded-full bg-pink-500 animate-bounce" style="animation-delay: 0.3s"></span>
+                        <span class="w-3 h-3 rounded-full bg-indigo-500 animate-bounce" style="animation-delay: 0.1s; will-change: transform;"></span>
+                        <span class="w-3 h-3 rounded-full bg-purple-500 animate-bounce" style="animation-delay: 0.2s; will-change: transform;"></span>
+                        <span class="w-3 h-3 rounded-full bg-pink-500 animate-bounce" style="animation-delay: 0.3s; will-change: transform;"></span>
                     </div>
                 </div>
             </div>
         </template>
 
-        {{-- STATE: QUESTION --}}
+        {{-- STATE: QUESTION (Optimasi Performa Tinggi) --}}
         <template x-if="state.state === 'question'">
             <div class="w-full max-w-7xl animate-fadeIn flex flex-col items-center">
                 <template x-if="question">
                     <div class="w-full relative">
                         
-                        {{-- Timer Kanan Atas (Absolute) --}}
-                        <div class="fixed top-32 right-8 z-50 flex flex-col items-center justify-center w-28 h-28 glass-panel rounded-full border border-indigo-500/30 shadow-[0_0_40px_rgba(99,102,241,0.3)] animate-pulse">
-                            <span class="text-3xl font-black tracking-tighter" :class="remainingTime <= 10 ? 'text-red-400' : 'text-emerald-400'" x-text="remainingTime"></span>
-                            <span class="text-[8px] text-gray-400 uppercase font-black tracking-widest mt-0.5">Detik</span>
+                        {{-- Timer Kanan Atas (Solid & Statis agar Ringan) --}}
+                        {{-- Timer Kanan Atas (MOVED TO SAFETY) --}}
+                        <div class="fixed top-24 right-8 z-50 flex flex-col items-center justify-center w-28 h-28 bg-slate-900 border-2 border-indigo-500/40 rounded-full shadow-2xl animate-fadeIn">
+                            <span class="text-4xl font-black tabular-nums transition-colors duration-300" 
+                                  :class="remainingTime <= 10 ? 'text-red-500 animate-pulse' : 'text-emerald-400'" 
+                                  x-text="remainingTime"></span>
+                            <span class="text-[10px] text-indigo-300 uppercase font-black tracking-widest mt-0.5 opacity-60">Detik</span>
                         </div>
 
-                        <div class="glass-panel p-8 md:p-12 rounded-3xl w-full max-w-7xl mx-auto mb-8 relative z-10 text-center">
-                            <div class="prose prose-invert prose-2xl max-w-none text-white font-medium" x-html="question.question_text"></div>
+                        <div class="bg-black/80 border border-white/10 p-6 md:p-10 rounded-3xl w-full max-w-7xl mx-auto mb-8 relative z-10 text-center shadow-2xl overflow-hidden">
+                            <div class="prose prose-invert prose-2xl max-w-none text-white font-black leading-tight mb-4" x-html="question.question_text"></div>
                             
                             <template x-if="question.question_image">
-                                <img :src="question.question_image" class="mt-8 max-h-[40vh] mx-auto rounded-2xl border-2 border-white/20 shadow-2xl">
+                                <div class="relative w-full flex justify-center mt-6">
+                                    <img :src="question.question_image" 
+                                         class="max-w-full h-auto max-h-[35vh] rounded-2xl border border-white/10 shadow-2xl object-contain bg-black/20">
+                                </div>
                             </template>
                         </div>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <template x-for="(opt, key) in question.options" :key="key">
                                 <template x-if="opt.text || opt.image">
-                                    <div class="glass-panel rounded-2xl p-6 flex items-center gap-6">
-                                        <div class="w-14 h-14 shrink-0 rounded-xl bg-indigo-500/20 text-indigo-300 font-black text-2xl flex items-center justify-center border border-indigo-500/50 uppercase">
+                                    <div class="bg-slate-900/80 border border-white/10 rounded-2xl p-6 flex items-center gap-6 shadow-md transition-colors hover:border-indigo-500/30">
+                                        <div class="w-14 h-14 shrink-0 rounded-xl bg-indigo-500/10 text-indigo-300 font-black text-2xl flex items-center justify-center border border-white/10 uppercase">
                                             <span x-text="key"></span>
                                         </div>
                                         <div class="text-xl font-medium text-gray-200">
                                             <p x-html="opt.text"></p>
                                             <template x-if="opt.image">
-                                                <img :src="opt.image" class="mt-4 max-h-48 rounded-xl border border-white/10">
+                                                <div class="mt-4 w-full flex justify-start">
+                                                    <img :src="opt.image" class="max-w-full h-auto max-h-48 rounded-xl border border-white/5 object-contain bg-black/10">
+                                                </div>
                                             </template>
                                         </div>
                                     </div>
@@ -321,19 +325,19 @@
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     
                     {{-- Jawaban Benar & Grafik Di Sini --}}
-                    <div class="glass-panel p-8 rounded-3xl flex flex-col justify-center">
-                        <h3 class="text-sm font-black text-gray-400 uppercase tracking-widest mb-6">Statistik Jawaban Siswa</h3>
+                    <div class="bg-slate-900/98 border border-white/10 p-8 rounded-3xl flex flex-col justify-center shadow-2xl">
+                        <h3 class="text-sm font-black text-gray-400 uppercase tracking-widest mb-6 border-b border-white/5 pb-2">Statistik Jawaban Siswa</h3>
                         
-                        <div class="space-y-4">
+                        <div class="space-y-5">
                             <template x-for="(opt, key) in stats" :key="key">
                                 <div class="relative">
-                                    <div class="flex justify-between text-sm font-bold mb-1" :class="question?.correct_answer === key ? 'text-emerald-400' : 'text-gray-300'">
+                                    <div class="flex justify-between text-sm font-black mb-1.5" :class="question?.correct_answer === key ? 'text-emerald-400' : 'text-gray-300'">
                                         <span class="uppercase">Pilihan <span x-text="key"></span> <i x-show="question?.correct_answer === key" class="fas fa-check-circle ml-1"></i></span>
                                         <span x-text="opt.count + ' siswa (' + opt.percent + '%)'"></span>
                                     </div>
-                                    <div class="w-full h-6 bg-slate-800 rounded-full overflow-hidden">
+                                    <div class="w-full h-8 bg-black/40 rounded-xl overflow-hidden border border-white/5">
                                         <div class="h-full transition-all duration-1000 ease-out" 
-                                             :class="question?.correct_answer === key ? 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'bg-indigo-500 opacity-50'"
+                                             :class="question?.correct_answer === key ? 'bg-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.4)]' : 'bg-indigo-600 opacity-40'"
                                              :style="'width: ' + opt.percent + '%'"></div>
                                     </div>
                                 </div>
@@ -342,16 +346,23 @@
                     </div>
                     
                     {{-- Detail Soal --}}
-                    <div class="glass-panel p-8 rounded-3xl" x-show="question">
-                        <div class="prose prose-invert max-w-none text-white" x-html="question?.question_text"></div>
-                        <div class="mt-6 p-4 rounded-xl border-2 border-emerald-500/50 bg-emerald-900/20">
+                    <div class="bg-slate-900/98 border border-white/10 p-8 rounded-3xl shadow-2xl" x-show="question">
+                        <div class="prose prose-invert max-w-none text-white font-bold leading-snug" x-html="question?.question_text"></div>
+                        
+                        <template x-if="question?.question_image">
+                            <div class="mt-4 mb-4 flex justify-center">
+                                <img :src="question.question_image" class="max-w-full h-auto max-h-[30vh] rounded-xl border border-white/10 object-contain shadow-lg">
+                            </div>
+                        </template>
+
+                        <div class="mt-6 p-5 rounded-2xl border-2 border-emerald-500/50 bg-emerald-900/30">
                             <h4 class="text-emerald-400 font-black uppercase tracking-widest text-xs mb-2">Jawaban Benar (<span class="uppercase" x-text="question?.correct_answer"></span>)</h4>
-                            <div class="text-emerald-50 font-medium" x-html="question?.options[question?.correct_answer]?.text || ''"></div>
+                            <div class="text-emerald-50 font-bold text-lg" x-html="question?.options[question?.correct_answer]?.text || ''"></div>
                         </div>
                         <template x-if="question?.explanation">
-                            <div class="mt-6 border-t border-white/10 pt-6">
-                                <h4 class="text-indigo-300 font-black uppercase tracking-widest text-xs mb-2">Pembahasan</h4>
-                                <div class="prose prose-sm prose-invert max-w-none" x-html="question.explanation"></div>
+                            <div class="mt-8 border-t border-white/10 pt-6">
+                                <h4 class="text-indigo-300 font-black uppercase tracking-widest text-xs mb-3">Pembahasan</h4>
+                                <div class="prose prose-sm prose-invert max-w-none leading-relaxed text-gray-300" x-html="question.explanation"></div>
                             </div>
                         </template>
                     </div>
@@ -375,85 +386,76 @@
         
         {{-- MODE INDIVIDUAL --}}
         <template x-if="state.mode !== 'group'">
-          <template x-for="(s, idx) in leaderboard" :key="s.user_id">
-            <div class="glass-panel p-3 rounded-[1.5rem] flex items-center gap-4 border-2 transition-all 
-                         duration-1000 ease-in-out relative overflow-hidden backdrop-blur-3xl"
-                 :class="{
-                   'bg-amber-500/15 border-amber-400/30 shadow-[0_0_30px_rgba(251,191,36,0.3)]': idx === 0 && rankChanges[s.user_id] !== 'up',
-                   'bg-slate-300/15 border-slate-300/30 shadow-[0_0_30px_rgba(203,213,225,0.3)]': idx === 1 && rankChanges[s.user_id] !== 'up',
-                   'bg-orange-700/25 border-orange-500/30 shadow-[0_0_30px_rgba(249,115,22,0.3)]': idx === 2 && rankChanges[s.user_id] !== 'up',
-                   'bg-white/10 border-white/20': idx > 2 && rankChanges[s.user_id] !== 'up',
-                   'bg-indigo-500/30 border-emerald-400 shadow-[0_0_40px_rgba(16,185,129,0.5)] scale-110 z-50': rankChanges[s.user_id] === 'up'
-                 }"
-                 x-transition:enter="transition ease-out duration-500"
-                 x-transition:enter-start="opacity-0 translate-x-12"
-                 x-transition:enter-end="opacity-100 translate-x-0"
-                 :style="'transition-delay: ' + (idx * 60) + 'ms'">
+          <div class="flex flex-col gap-2.5">
+            <template x-for="(s, idx) in leaderboard" :key="s.user_id">
+              <div class="glass-panel p-2 rounded-[1.25rem] flex items-center gap-3 border-b-2 border-r-2 transition-all duration-700 relative"
+                  :class="{
+                    'bg-amber-500/15 border-amber-400/30' : idx === 0 && rankChanges[s.user_id] !== 'up',
+                    'bg-slate-300/15 border-slate-300/30' : idx === 1 && rankChanges[s.user_id] !== 'up',
+                    'bg-orange-700/25 border-orange-500/30': idx === 2 && rankChanges[s.user_id] !== 'up',
+                    'bg-white/5 border-white/10': idx > 2 && rankChanges[s.user_id] !== 'up',
+                    'bg-indigo-500/20 border-emerald-400 scale-[1.03] z-50': rankChanges[s.user_id] === 'up'
+                  }"
+                  x-transition:enter="transition ease-out duration-500"
+                  x-transition:enter-start="opacity-0 translate-x-12"
+                  x-transition:enter-end="opacity-100 translate-x-0"
+                  :style="'transition-delay: ' + (idx * 40) + 'ms'">
 
-              {{-- Rank badge --}}
-              <div class="w-10 text-center font-black text-lg shrink-0"
-                   :class="{
-                     'text-amber-400': idx === 0,
-                     'text-slate-300': idx === 1,
-                     'text-orange-500': idx === 2,
-                     'text-gray-500': idx > 2
-                   }"
-                   x-text="'#' + (idx + 1)"></div>
+                {{-- Rank badge --}}
+                <div class="w-8 text-center font-black text-sm shrink-0"
+                    :class="{
+                      'text-amber-400': idx === 0,
+                      'text-slate-300': idx === 1,
+                      'text-orange-500': idx === 2,
+                      'text-gray-500': idx > 2
+                    }"
+                    x-text="'#' + (idx + 1)"></div>
 
-              {{-- Rank change arrow --}}
-              <div class="w-6 text-center text-base shrink-0">
-                <template x-if="rankChanges[s.user_id] === 'up'">
-                  <span class="text-emerald-400 font-black animate-bounce inline-block">↑</span>
-                </template>
-                <template x-if="rankChanges[s.user_id] === 'down'">
-                  <span class="text-red-400 font-black inline-block">↓</span>
-                </template>
-                <template x-if="rankChanges[s.user_id] === 'same'">
-                  <span class="text-gray-600 inline-block">–</span>
-                </template>
-                <template x-if="rankChanges[s.user_id] === 'new'">
-                  <span class="text-purple-400 font-black inline-block">★</span>
-                </template>
-              </div>
-
-              {{-- Avatar Smart-Lite --}}
-              <div class="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-tr from-indigo-500 to-purple-500 p-0.5 shrink-0 shadow-md">
-                <div class="w-full h-full rounded-full overflow-hidden bg-slate-800 border-2 border-slate-900 relative">
-                  {{-- Hanya render SVG untuk RANK 1-3 --}}
-                  <template x-if="idx <= 2 && s.is_avatar_seed && s.avatar_seed">
-                    <div class="w-full h-full overflow-hidden [&>svg]:w-full [&>svg]:h-full"
-                         x-html="getAvatarHtml(s)">
-                    </div>
+                {{-- Rank change arrow --}}
+                {{-- Rank change indicators --}}
+                <div class="w-10 text-center shrink-0 flex items-center justify-center">
+                  <template x-if="rankChanges[s.user_id] === 'up'">
+                    <span class="text-emerald-400 text-xl font-black animate-bounce inline-block filter drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]">↑</span>
                   </template>
-
-                  {{-- Inisial untuk RANK 4+ --}}
-                  <template x-if="idx > 2 || !s.is_avatar_seed">
-                    <div class="w-full h-full bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center text-white font-black text-lg"
-                         x-text="s.name?.charAt(0).toUpperCase()"></div>
+                  <template x-if="rankChanges[s.user_id] === 'down'">
+                    <span class="text-rose-500 text-xl font-black inline-block filter drop-shadow-[0_0_8px_rgba(244,63,94,0.5)]">↓</span>
+                  </template>
+                  <template x-if="rankChanges[s.user_id] === 'same'">
+                    <span class="text-gray-700 font-bold inline-block">–</span>
+                  </template>
+                  <template x-if="rankChanges[s.user_id] === 'new'">
+                    <span class="text-amber-400 text-2xl font-black inline-block animate-pulse filter drop-shadow-[0_0_10px_rgba(251,191,36,0.8)]">★</span>
                   </template>
                 </div>
-              </div>
 
-              {{-- Nama --}}
-              <div class="flex-1 min-w-0">
-                <p class="font-black text-white text-lg uppercase tracking-tighter drop-shadow-md leading-none" x-text="s.name"></p>
-                <template x-if="s.group_label">
-                  <span class="text-xs px-2 py-0.5 rounded-full bg-white/10 text-gray-300" x-text="s.group_label"></span>
-                </template>
-              </div>
+                {{-- Avatar (Foto Asli > Inisial) --}}
+                <div class="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-tr from-indigo-500/50 to-purple-500/50 p-0.5 shrink-0">
+                  <div class="w-full h-full rounded-full overflow-hidden bg-slate-800 border-[1px] border-slate-900 relative"
+                       x-html="getAvatarHtml(s)">
+                  </div>
+                </div>
 
-              {{-- Skor --}}
-              <div class="shrink-0 relative flex flex-col items-end justify-center">
-                 <div class="px-6 py-2.5 rounded-2xl bg-gradient-to-br from-indigo-500/80 to-violet-700/80 backdrop-blur-xl shadow-[0_0_40px_rgba(124,58,237,0.4)] border-2 border-violet-400/30 min-w-[110px] text-center"
-                      :class="rankChanges[s.user_id] === 'up' ? 'scale-110 shadow-[0_0_60_rgba(16,185,129,0.5)]' : ''">
-                   <p class="text-3xl font-black tabular-nums leading-none drop-shadow-xl"
-                      :class="idx === 0 ? 'text-amber-300' : 'text-white'"
-                      x-text="s.total_score.toLocaleString()"></p>
-                   <p class="text-[10px] text-indigo-100 font-black tracking-[0.2em] leading-tight mt-1 opacity-80 uppercase">PTS</p>
-                 </div>
+                {{-- Nama --}}
+                <div class="flex-1 min-w-0">
+                  <p class="font-black text-white text-base uppercase tracking-tight truncate leading-tight" x-text="s.name"></p>
+                  <template x-if="s.group_label">
+                    <span class="text-[8px] px-1.5 py-0.5 rounded bg-white/5 text-gray-500 font-bold" x-text="s.group_label"></span>
+                  </template>
+                </div>
+
+                {{-- Skor --}}
+                <div class="shrink-0 relative flex flex-col items-end justify-center">
+                   <div class="px-4 py-1.5 rounded-xl bg-indigo-500/10 border border-indigo-400/10 min-w-[85px] text-center"
+                        :class="idx === 0 ? 'bg-amber-400/15 border-amber-400/20' : ''">
+                     <p class="text-xl font-black tabular-nums leading-none"
+                        :class="idx === 0 ? 'text-amber-300' : 'text-white'"
+                        x-text="s.total_score.toLocaleString()"></p>
+                     <p class="text-[8px] text-indigo-300 font-black tracking-widest leading-tight mt-0.5 opacity-40 uppercase">PTS</p>
+                   </div>
+                </div>
               </div>
-            </div>
-          </template>
+            </template>
+          </div>
         </template>
 
         {{-- MODE GRUP --}}
@@ -530,25 +532,18 @@
         {{-- JUARA 2 (Left Back) --}}
         <template x-if="(state.mode === 'group' ? groupScores.length >= 2 : topMembers(3)[1]) && podiumStep >= 4">
           <div class="pedestal pedestal-2" x-transition:enter="transition cubic-bezier(0.34, 1.56, 0.64, 1) duration-1000" x-transition:enter-start="opacity-0 translate-y-32 scale-75" x-transition:enter-end="opacity-100 translate-y-0 scale-100">
-            <div class="medal-float text-6xl mb-6 text-slate-300">🥈</div>
+            <div class="medal-float text-6xl mb-4 text-slate-300">🥈</div>
             
-            {{-- Avatar/Group Name --}}
-            <div class="flex flex-col items-center mb-6">
-                {{-- Individual mode --}}
+            <div class="flex flex-col items-center mb-6 px-4">
                 <template x-if="state.mode !== 'group'">
-                    <div class="w-24 h-24 rounded-full border-4 border-slate-300/50 mb-3 bg-slate-900 overflow-hidden shadow-2xl">
-                        <template x-if="topMembers(3)[1].is_avatar_seed && topMembers(3)[1].avatar_seed">
-                            <div class="w-full h-full" x-html="getAvatarHtml(topMembers(3)[1])"></div>
-                        </template>
-                        <template x-if="!topMembers(3)[1].is_avatar_seed && topMembers(3)[1].avatar_url">
-                            <img :src="topMembers(3)[1].avatar_url" class="w-full h-full object-cover">
-                        </template>
+                    <div class="w-24 h-24 rounded-full border-4 border-slate-300/50 mb-3 bg-slate-800 overflow-hidden shadow-2xl relative"
+                         x-html="getAvatarHtml(topMembers(3)[1])">
                     </div>
                 </template>
-                <h3 class="text-3xl font-black text-white uppercase tracking-tighter text-center line-clamp-2"
+                <h3 class="text-2xl font-black text-white uppercase tracking-tighter text-center line-clamp-2 leading-tight"
                     x-text="state.mode === 'group' ? (groupScores[1].name || groupScores[1].group_label) : topMembers(3)[1].name"></h3>
-                <p class="text-2xl font-black text-slate-300 tabular-nums">
-                    <span x-text="(state.mode === 'group' ? groupScores[1].total_score : scores[topMembers(3)[1].user_id]?.total_score)?.toLocaleString()"></span> PTS
+                <p class="text-xl font-black text-slate-300 mt-1 tabular-nums">
+                    <span x-text="(state.mode === 'group' ? groupScores[1].total_score : scores[topMembers(3)[1].user_id]?.total_score)?.toLocaleString()"></span> <span class="text-xs">PTS</span>
                 </p>
             </div>
           </div>
@@ -557,24 +552,18 @@
         {{-- JUARA 1 (Center Front) --}}
         <template x-if="(state.mode === 'group' ? groupScores.length >= 1 : topMembers(3)[0]) && podiumStep >= 6">
           <div class="pedestal pedestal-1" x-transition:enter="transition cubic-bezier(0.34, 1.56, 0.64, 1) duration-1000" x-transition:enter-start="opacity-0 translate-y-48 scale-50" x-transition:enter-end="opacity-100 translate-y-0 scale-110">
-            <div class="winner-aura" style="--aura-color: rgba(251,191,36,0.4)"></div>
-            <div class="medal-float text-8xl mb-4 text-amber-400 drop-shadow-[0_0_30px_rgba(251,191,36,0.8)]">👑</div>
+            <div class="medal-float text-8xl mb-2 text-amber-400 drop-shadow-[0_0_30px_rgba(251,191,36,0.8)]">👑</div>
             
-            <div class="flex flex-col items-center mb-8">
+            <div class="flex flex-col items-center mb-8 px-4">
                 <template x-if="state.mode !== 'group'">
-                    <div class="w-32 h-32 rounded-full border-4 border-amber-400 mb-4 bg-slate-900 overflow-hidden shadow-[0_0_50px_rgba(251,191,36,0.3)]">
-                        <template x-if="topMembers(3)[0].is_avatar_seed && topMembers(3)[0].avatar_seed">
-                            <div class="w-full h-full" x-html="getAvatarHtml(topMembers(3)[0])"></div>
-                        </template>
-                        <template x-if="!topMembers(3)[0].is_avatar_seed && topMembers(3)[0].avatar_url">
-                            <img :src="topMembers(3)[0].avatar_url" class="w-full h-full object-cover">
-                        </template>
+                    <div class="w-32 h-32 rounded-full border-8 border-amber-400/80 mb-4 bg-slate-800 overflow-hidden shadow-2xl relative ring-4 ring-amber-400/20"
+                         x-html="getAvatarHtml(topMembers(3)[0])">
                     </div>
                 </template>
-                <h3 class="text-5xl font-black text-white uppercase tracking-tighter text-center leading-none"
+                <h3 class="text-4xl font-black text-white uppercase tracking-tighter text-center leading-tight line-clamp-2"
                     x-text="state.mode === 'group' ? (groupScores[0].name || groupScores[0].group_label) : topMembers(3)[0].name"></h3>
-                <p class="text-4xl font-black text-amber-400 tabular-nums mt-1 drop-shadow-md">
-                    <span x-text="(state.mode === 'group' ? groupScores[0].total_score : scores[topMembers(3)[0].user_id]?.total_score)?.toLocaleString()"></span> PTS
+                <p class="text-3xl font-black text-amber-400 tabular-nums mt-1">
+                    <span x-text="(state.mode === 'group' ? groupScores[0].total_score : scores[topMembers(3)[0].user_id]?.total_score)?.toLocaleString()"></span> <span class="text-sm">PTS</span>
                 </p>
             </div>
           </div>
@@ -585,21 +574,16 @@
           <div class="pedestal pedestal-3" x-transition:enter="transition cubic-bezier(0.34, 1.56, 0.64, 1) duration-1000" x-transition:enter-start="opacity-0 translate-y-32 scale-75" x-transition:enter-end="opacity-100 translate-y-0 scale-100">
             <div class="medal-float text-5xl mb-4 text-purple-400">🥉</div>
             
-            <div class="flex flex-col items-center mb-4">
+            <div class="flex flex-col items-center mb-4 px-4">
                 <template x-if="state.mode !== 'group'">
-                    <div class="w-20 h-20 rounded-full border-4 border-purple-400/40 mb-3 bg-slate-900 overflow-hidden shadow-xl">
-                        <template x-if="topMembers(3)[2].is_avatar_seed && topMembers(3)[2].avatar_seed">
-                            <div class="w-full h-full" x-html="getAvatarHtml(topMembers(3)[2])"></div>
-                        </template>
-                        <template x-if="!topMembers(3)[2].is_avatar_seed && topMembers(3)[2].avatar_url">
-                            <img :src="topMembers(3)[2].avatar_url" class="w-full h-full object-cover">
-                        </template>
+                    <div class="w-20 h-20 rounded-full border-4 border-purple-400/40 mb-3 bg-slate-800 overflow-hidden shadow-xl"
+                         x-html="getAvatarHtml(topMembers(3)[2])">
                     </div>
                 </template>
-                <h3 class="text-2xl font-black text-white uppercase tracking-tighter text-center"
+                <h3 class="text-xl font-black text-white uppercase tracking-tighter text-center line-clamp-2"
                     x-text="state.mode === 'group' ? (groupScores[2].name || groupScores[2].group_label) : topMembers(3)[2].name"></h3>
-                <p class="text-xl font-black text-purple-400 tabular-nums">
-                    <span x-text="(state.mode === 'group' ? groupScores[2].total_score : scores[topMembers(3)[2].user_id]?.total_score)?.toLocaleString()"></span> PTS
+                <p class="text-lg font-black text-purple-300 tabular-nums">
+                    <span x-text="(state.mode === 'group' ? groupScores[2].total_score : scores[topMembers(3)[2].user_id]?.total_score)?.toLocaleString()"></span> <span class="text-[10px]">PTS</span>
                 </p>
             </div>
           </div>
@@ -680,16 +664,39 @@
             avatarCache: {},
 
             getAvatarHtml(m) {
-                if (!m.avatar_seed) return '';
-                const cacheKey = 'm_' + m.avatar_seed;
-                if (this.avatarCache[cacheKey]) return this.avatarCache[cacheKey];
+                if (!m) return '';
                 
-                if (typeof multiavatar === 'function') {
-                    const html = multiavatar(m.avatar_seed);
-                    this.avatarCache[cacheKey] = html;
-                    return html;
+                const initials = m.initials || (m.name ? m.name.substring(0, 2).toUpperCase() : '??');
+                const bgColor = this.getAvatarBg(m.user_id || m.id);
+
+                // Priority 1: Real Photo with Robust Fallback
+                if (m.avatar_url && !m.is_avatar_seed) {
+                    return `<img src="${m.avatar_url}" 
+                                 class="w-full h-full object-cover rounded-full" 
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <div class="w-full h-full flex items-center justify-center text-white font-black" 
+                                 style="display: none; background: ${bgColor}">
+                                <span>${initials}</span>
+                            </div>`;
                 }
-                return '';
+
+                // Priority 2: Standard Initials
+                return `<div class="w-full h-full flex items-center justify-center text-white font-black" 
+                             style="background: ${bgColor}">
+                            <span>${initials}</span>
+                        </div>`;
+            },
+
+            getAvatarBg(id) {
+                const colors = [
+                    'linear-gradient(135deg, #6366f1 0%, #4338ca 100%)',
+                    'linear-gradient(135deg, #ec4899 0%, #be185d 100%)',
+                    'linear-gradient(135deg, #f59e0b 0%, #b45309 100%)',
+                    'linear-gradient(135deg, #10b981 0%, #047857 100%)',
+                    'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                    'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)'
+                ];
+                return colors[id % colors.length];
             },
             
             leaderboard: [],
@@ -761,26 +768,50 @@
                 if (this.isAnimating) return;
 
                 const sorted = [...newScores].sort((a, b) => b.total_score - a.total_score);
+                const listLimit = 5; // User requested Top 5 only
+                const newTop = sorted.slice(0, listLimit);
 
-                const hasChanges = sorted.some(s => {
+                // Detect changes
+                const hasChanges = newTop.some(s => {
                     const prev = this.leaderboard.find(x => x.user_id === s.user_id);
-                    return prev && prev.total_score !== s.total_score;
+                    return !prev || prev.total_score !== s.total_score;
                 });
 
                 if (!this.leaderboard || this.leaderboard.length === 0) {
-                    this.leaderboard = sorted.slice(0, 5);
+                    this.leaderboard = newTop;
                     this.isAnimating = false;
                     return;
                 }
 
                 if (!hasChanges) {
-                    this.leaderboard = sorted.slice(0, 5);
+                    this.leaderboard = newTop;
                     return;
                 }
 
                 this.isAnimating = true;
 
-                // FASE 1: Data Prep
+                // FASE 1: Rank Change Detection
+                const oldRanks = {};
+                this.leaderboard.forEach((s, idx) => oldRanks[s.user_id] = idx);
+
+                const newRanks = {};
+                newTop.forEach((s, idx) => newRanks[s.user_id] = idx);
+
+                const currentRankChanges = {};
+                newTop.forEach((s, idx) => {
+                    if (oldRanks[s.user_id] === undefined) {
+                        currentRankChanges[s.user_id] = 'new';
+                    } else if (idx < oldRanks[s.user_id]) {
+                        currentRankChanges[s.user_id] = 'up';
+                    } else if (idx > oldRanks[s.user_id]) {
+                        currentRankChanges[s.user_id] = 'down';
+                    } else {
+                        currentRankChanges[s.user_id] = 'same';
+                    }
+                });
+                this.rankChanges = currentRankChanges;
+
+                // FASE 2: Data Prep for Animation
                 const oldScores = {};
                 this.leaderboard.forEach(s => {
                     oldScores[s.user_id] = s.total_score;
@@ -788,16 +819,16 @@
 
                 let currentLeaderboard = [...this.leaderboard];
                 
-                // Tambahkan entry baru
-                sorted.slice(0, 5).forEach(s => {
+                // Tambahkan entry baru ke list temp agar bisa di-animate
+                newTop.forEach(s => {
                     if (!currentLeaderboard.find(x => x.user_id === s.user_id)) {
                         currentLeaderboard.push({ ...s, total_score: 0 });
                         oldScores[s.user_id] = 0;
                     }
                 });
 
-                // FASE 2: Count-Up (1.5s)
-                const duration = 1500;
+                // FASE 3: Count-Up (1.5s)
+                const duration = 1200;
                 const fps = 30;
                 const steps = Math.floor(duration / (1000 / fps));
                 let step = 0;
@@ -807,7 +838,6 @@
                     const progress = step / steps;
                     const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
 
-                    // Update total_score pada masing-masing user_id di posisi yg sama
                     this.leaderboard = currentLeaderboard.map(s => {
                         const sNew = sorted.find(x => x.user_id === s.user_id);
                         const targetScore = sNew ? sNew.total_score : 0;
@@ -818,7 +848,7 @@
                     });
 
                     if (step >= steps) {
-                        this.leaderboard = sorted.slice(0, 5);
+                        this.leaderboard = newTop;
                         clearInterval(countUpInterval);
                         this.isAnimating = false;
                     }
