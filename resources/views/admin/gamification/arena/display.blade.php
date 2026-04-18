@@ -24,9 +24,10 @@
         }
         .glass-panel {
             background: rgba(15, 23, 42, 0.85) !important;
-            backdrop-filter: blur(32px) !important;
-            border: 1px solid rgba(255, 255, 255, 0.15) !important;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8) !important;
+            backdrop-filter: blur(16px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6) !important;
+            transform: translateZ(0); /* Force GPU */
         }
         .timer-ring {
             transform: rotate(-90deg);
@@ -62,6 +63,8 @@
             border: 2px solid rgba(255,255,255,0.1);
             transition: all 1s ease-out;
             box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            will-change: transform, opacity;
+            transform: translateZ(0);
         }
         .pedestal-1 { 
             height: 320px; 
@@ -218,7 +221,7 @@
                      }">
                     <template x-if="m.is_avatar_seed && m.avatar_seed">
                         <div class="w-full h-full [&>svg]:w-full [&>svg]:h-full [&>svg]:block transition-transform duration-500 group-hover:scale-110"
-                             x-html="typeof multiavatar === 'function' ? multiavatar(m.avatar_seed) : ''">
+                             x-html="getAvatarHtml(m)">
                         </div>
                     </template>
                     <template x-if="!m.is_avatar_seed && m.avatar_url">
@@ -424,7 +427,7 @@
                 <div class="w-full h-full rounded-full overflow-hidden bg-slate-800 border-2 border-slate-900 relative">
                   <template x-if="s.is_avatar_seed && s.avatar_seed">
                     <div class="w-full h-full overflow-hidden [&>svg]:w-full [&>svg]:h-full"
-                         x-html="typeof multiavatar === 'function' ? multiavatar(s.avatar_seed) : ''">
+                         x-html="getAvatarHtml(s)">
                     </div>
                   </template>
                   <template x-if="!s.is_avatar_seed && s.avatar_url">
@@ -680,6 +683,20 @@
             timerInterval: null,
             pollInterval: null,
             confettiFired: false,
+            avatarCache: {},
+
+            getAvatarHtml(m) {
+                if (!m.avatar_seed) return '';
+                const cacheKey = 'm_' + m.avatar_seed;
+                if (this.avatarCache[cacheKey]) return this.avatarCache[cacheKey];
+                
+                if (typeof multiavatar === 'function') {
+                    const html = multiavatar(m.avatar_seed);
+                    this.avatarCache[cacheKey] = html;
+                    return html;
+                }
+                return '';
+            },
             
             leaderboard: [],
             prevRanks: {},
@@ -995,8 +1012,8 @@
                 this.state = data.state ?? {};
                 this.count = data.member_count ?? 0;
                 
-                // Persistence: Only update if server sends new data
-                if (data.members && data.members.length > 0) {
+                // Persistence: Only update if server sends new data and members changed
+                if (data.members && (data.members.length !== this.members.length)) {
                     this.members = data.members;
                 }
                 
