@@ -261,7 +261,7 @@ class ArenaController extends Controller
             } elseif ($newState === 'leaderboard') {
                 $this->battleService->setState($room, 'leaderboard');
             } elseif ($newState === 'next') {
-                $this->accumulateAnswers($room);
+                // accumulateAnswers() removed — processFinish reads atomic keys directly
                 $res = $this->battleService->nextQuestion($room);
                 if (in_array($res['state'], ['preview', 'question'])) {
                     $this->cacheQuestionData($room, $res['q_index']);
@@ -270,7 +270,6 @@ class ArenaController extends Controller
                 }
             } elseif ($newState === 'finish') {
                 if ($currentState !== 'finish') {
-                    $this->accumulateAnswers($room);
                     $this->battleService->setState($room, 'finish');
                     $this->processFinish($room);
                 }
@@ -288,38 +287,6 @@ class ArenaController extends Controller
         }
     }
 
-    private function accumulateAnswers(BattleRoom $room)
-    {
-        $state = $this->battleService->getState($room);
-        $qIndex = $state['q_index'] ?? 0;
-        $questionId = $room->question_ids[$qIndex] ?? null;
-        
-        $currentAnswers = $this->battleService->getAnswers($room);
-        $members = $this->battleService->getMembers($room);
-        
-        $accumulatedKey = $room->cacheKey('all_answers');
-        $allAnswers = \Illuminate\Support\Facades\Cache::get($accumulatedKey, []);
-        
-        foreach ($currentAnswers as $userId => $ans) {
-            $memberId = $members[$userId]['id'] ?? null;
-            if ($memberId) {
-                $allAnswers[] = [
-                    'battle_room_id' => $room->id,
-                    'battle_participant_id' => $memberId,
-                    'question_id' => $questionId,
-                    'q_index' => $qIndex,
-                    'chosen_option' => $ans['answer'],
-                    'is_correct' => $ans['is_correct'] ? 1 : 0,
-                    'score_earned' => $ans['score_earned'],
-                    'answered_at' => date('Y-m-d H:i:s', $ans['answered_at']),
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ];
-            }
-        }
-        
-        \Illuminate\Support\Facades\Cache::put($accumulatedKey, $allAnswers, BattleService::TTL);
-    }
 
     private function cacheQuestionData(BattleRoom $room, int $qIndex)
     {
@@ -383,19 +350,39 @@ class ArenaController extends Controller
                 }
             }
             
-            $allAnswers = \Illuminate\Support\Facades\Cache::get($room->cacheKey('all_answers'), []);
-            if (!empty($allAnswers)) {
-                // Filter hanya jawaban dari peserta nyata
-                $filteredAnswers = array_filter($allAnswers, function($ans) use ($realParticipantIds) {
-                    return in_array($ans['battle_participant_id'] ?? 0, $realParticipantIds);
-                });
-
-                if (!empty($filteredAnswers)) {
-                    \App\Models\BattleAnswer::insert(array_values($filteredAnswers));
+            // Aggregasi jawaban dari Cache Atomic per soal
+            $totalQuestions = $room->total_questions;
+            $aggregatedAnswers = [];
+            
+            for ($q = 0; $q < $totalQuestions; $q++) {
+                $qAnswers = $this->battleService->getAnswers($room, $q);
+                $qData = \Illuminate\Support\Facades\Cache::get("battle:{$room->token}:q:{$q}");
+                
+                foreach ($qAnswers as $userId => $ans) {
+                    $pId = $members[$userId]['id'] ?? null;
+                    if ($pId && in_array($pId, $realParticipantIds)) {
+                        $aggregatedAnswers[] = [
+                            'battle_room_id'        => $room->id,
+                            'battle_participant_id' => $pId,
+                            'question_id'           => $qData['id'] ?? 0,
+                            'q_index'               => $q,
+                            'chosen_option'         => $ans['answer'],
+                            'is_correct'            => $ans['is_correct'],
+                            'score_earned'          => $ans['score_earned'],
+                            'answered_at'           => isset($ans['answered_at']) 
+                                                       ? \Carbon\Carbon::createFromTimestamp($ans['answered_at']) 
+                                                       : now(),
+                            'created_at'            => now(),
+                            'updated_at'            => now(),
+                        ];
+                    }
                 }
             }
-            
-            \Illuminate\Support\Facades\Cache::forget($room->cacheKey('all_answers'));
+
+            if (!empty($aggregatedAnswers)) {
+                // Bulk insert answers
+                \App\Models\BattleAnswer::insert($aggregatedAnswers);
+            }
 
             // ── BARU: Distribusi Reward (Hanya untuk peserta nyata) ───────────────
             $this->distributeRewards($room, $scores, $members, $realParticipantIds);

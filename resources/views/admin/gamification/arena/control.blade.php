@@ -365,6 +365,7 @@ function arenaControl(token) {
         token: token,
         state: {},
         members: [],
+        membersMap: {}, // Store metadata like name, avatar
         scores: [],
         question: null,
         count: 0,
@@ -421,29 +422,28 @@ function arenaControl(token) {
             this.isLocked = data.is_locked;
             this.showQuestionOnDevice = data.show_on_device !== undefined ? data.show_on_device : data.show_question_on_device;
 
-            // Updated persistence logic for bandwidth saving (Pruning)
-            if (data.scores && data.scores.length > 0) {
-                let s_map = {};
-                data.scores.forEach(s => s_map[s.user_id] = s);
-                this.scores = s_map;
-                
-                // Re-sort members if scores updated
-                if (this.members && this.members.length > 0) {
-                    this.members.sort((a,b) => {
-                        let rA = this.scores[a.user_id]?.rank || 999;
-                        let rB = this.scores[b.user_id]?.rank || 999;
-                        return rA - rB;
-                    });
+            // Update metadata map & stable member list ONLY if count changed
+            if (data.members && data.members.length > 0) {
+                if (data.members.length !== this.members.length) {
+                    let mmap = {};
+                    data.members.forEach(m => mmap[m.user_id] = m);
+                    this.membersMap = mmap;
+                    
+                    // Fixed order: Alphabetical (Stable & fast rendering)
+                    this.members = [...data.members].sort((a,b) => a.name.localeCompare(b.name));
                 }
             }
 
-            if (data.members && data.members.length > 0) {
-                const s_map = this.scores || {};
-                this.members = data.members.sort((a,b) => {
-                    let rA = s_map[a.user_id]?.rank || 999;
-                    let rB = s_map[b.user_id]?.rank || 999;
-                    return rA - rB;
-                });
+            // Always update current scores for real-time display
+            if (data.scores) {
+                let s_map = {};
+                // If it's an array (typical from mirror), convert to map
+                if (Array.isArray(data.scores)) {
+                    data.scores.forEach(s => s_map[s.user_id] = s);
+                } else {
+                    s_map = data.scores;
+                }
+                this.scores = s_map;
             }
 
             const newQIndex = data.state?.q_index ?? 0;

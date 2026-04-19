@@ -88,9 +88,6 @@ class BattleService
             ]);
         }
 
-        // Reset jawaban soal ini
-        Cache::forget($room->cacheKey('answers'));
-
         return $this->setState($room, 'question', [
             'q_index' => $current + 1,
         ]);
@@ -106,7 +103,7 @@ class BattleService
         $state['q_total'] = $room->total_questions;
 
         $members = $this->getMembers($room);
-        $scores = $this->getScores($room);
+        $scores  = $this->getScores($room, false); // PRUNED: Gunakan metadata dari membersMap di frontend
         $groupScores = ($room->mode === 'group') ? $this->getGroupScores($room) : [];
         
         $qIndex = $state['q_index'] ?? 0;
@@ -213,6 +210,8 @@ class BattleService
             }
         }
 
+        // Invalidasi lobby status cache agar member baru terlihat segera
+        Cache::forget("battle:{$room->token}:lobby_status_resp");
         $this->syncStaticMirror($room);
     }
 
@@ -246,6 +245,7 @@ class BattleService
         }
 
         Cache::put($key, $members, self::TTL);
+        Cache::forget("battle:{$room->token}:lobby_status_resp");
         $this->syncStaticMirror($room);
     }
 
@@ -262,6 +262,7 @@ class BattleService
             Cache::put($key, $members, self::TTL);
         }
 
+        Cache::forget("battle:{$room->token}:lobby_status_resp");
         $this->syncStaticMirror($room);
     }
 
@@ -284,13 +285,23 @@ class BattleService
         $this->syncStaticMirror($room);
     }
 
-    public function getScores(BattleRoom $room): array
+    public function getScores(BattleRoom $room, bool $includeMetadata = true): array
     {
         $members = $this->getMembers($room);
         $token   = $room->token;
         
         if (empty($members)) return [];
 
+        // ── Snapshot Cache (1 detik) ────────────────────────────────────────
+        // Mengurangi Redis MGET dari 25x/detik menjadi 1x/detik saat 50 siswa
+        // polling serentak. Cache diinvalidasi otomatis saat ada submit jawaban.
+        $snapshotKey = "battle:{$token}:scores_snapshot";
+        $cached = Cache::get($snapshotKey);
+        if ($cached !== null) {
+            return $cached;
+        }
+        // ────────────────────────────────────────────────────────────────────
+ 
         // Siapkan list kunci bulk-read untuk efisiensi Redis MGET
         $keys = [];
         foreach ($members as $userId => $m) {
@@ -299,7 +310,7 @@ class BattleService
             $keys[] = "battle:{$token}:wrong:{$userId}";
             $keys[] = "battle:{$token}:streak:{$userId}";
         }
-
+ 
         // Bulk read via Redis (sangat cepat untuk 100+ keys)
         $data = Cache::many($keys);
         
@@ -309,36 +320,43 @@ class BattleService
             $correct = $data["battle:{$token}:correct:{$userId}"] ?? 0;
             $wrong   = $data["battle:{$token}:wrong:{$userId}"] ?? 0;
             $streak  = $data["battle:{$token}:streak:{$userId}"] ?? 0;
-
+ 
             $res[$userId] = [
                 'user_id'     => $userId,
-                'name'        => $m['name'],
-                'avatar_url'  => $m['avatar_url'],
-                'is_avatar_seed'=> $m['is_avatar_seed'] ?? false,
-                'avatar_seed' => $m['avatar_seed'] ?? null,
-                'group_label' => $m['group_label'],
                 'total_score' => (int)$score,
                 'correct'     => (int)$correct,
                 'wrong'       => (int)$wrong,
                 'streak'      => (int)$streak,
                 'rank'        => 0, 
             ];
-        }
 
+            // Hanya sertakan metadata jika diminta (Optimasi Bandwidth Mirror)
+            if ($includeMetadata) {
+                $res[$userId]['name'] = $m['name'];
+                $res[$userId]['avatar_url'] = $m['avatar_url'];
+                $res[$userId]['is_avatar_seed'] = $m['is_avatar_seed'] ?? false;
+                $res[$userId]['avatar_seed'] = $m['avatar_seed'] ?? null;
+                $res[$userId]['group_label'] = $m['group_label'];
+            }
+        }
+ 
         // Sorting & Ranking
         $totals = array_column($res, 'total_score');
         array_multisort($totals, SORT_DESC, $res);
-
+ 
         foreach ($res as $idx => &$item) {
             $item['rank'] = $idx + 1;
         }
-
+ 
         // Restore associative keys
         $final = [];
         foreach ($res as $item) {
             $final[$item['user_id']] = $item;
         }
 
+        // Simpan snapshot 1 detik
+        Cache::put($snapshotKey, $final, 1);
+ 
         return $final;
     }
 
@@ -377,6 +395,9 @@ class BattleService
             Cache::increment("battle:{$token}:wrong:{$userId}");
             Cache::put("battle:{$token}:streak:{$userId}", 0, $ttl);
         }
+
+        // Invalidasi snapshot scores agar request berikutnya membaca data segar
+        Cache::forget("battle:{$token}:scores_snapshot");
     }
 
     // ── Answer Management ────────────────────
@@ -388,32 +409,62 @@ class BattleService
         bool $isCorrect,
         int $scoreEarned
     ): void {
-        $key     = $room->cacheKey('answers');
-        $answers = Cache::get($key, []);
-
-        $answers[$userId] = [
+        $token = $room->token;
+        $state = $this->getState($room);
+        $qIndex = $state['q_index'] ?? 0;
+        
+        // Simpan jawaban individu per Soal (Atomic & Race-Condition Safe)
+        $ansKey = "battle:{$token}:ans:{$qIndex}:{$userId}";
+        $ansData = [
+            'user_id'      => $userId,
             'answer'       => $answer === 'none' ? null : $answer,
             'is_correct'   => $isCorrect,
             'score_earned' => $scoreEarned,
             'answered_at'  => now()->timestamp,
+            'q_index'      => $qIndex
         ];
-
-        Cache::put($key, $answers, self::TTL);
+        
+        Cache::put($ansKey, $ansData, self::TTL);
     }
 
-    public function getAnswers(BattleRoom $room): array
+    public function getAnswers(BattleRoom $room, $qIndex = null): array
     {
-        return Cache::get(
-            $room->cacheKey('answers'), []
-        );
+        $members = $this->getMembers($room);
+        $token = $room->token;
+        
+        if (empty($members)) return [];
+
+        if ($qIndex === null) {
+            $state = $this->getState($room);
+            $qIndex = $state['q_index'] ?? 0;
+        }
+
+        $keys = [];
+        foreach ($members as $userId => $m) {
+            $keys[] = "battle:{$token}:ans:{$qIndex}:{$userId}";
+        }
+
+        $data = Cache::many($keys);
+        
+        $results = [];
+        foreach ($data as $key => $val) {
+            if ($val) {
+                $results[$val['user_id']] = $val;
+            }
+        }
+
+        return $results;
     }
 
     public function hasAnswered(
         BattleRoom $room,
         int $userId
     ): bool {
-        $answers = $this->getAnswers($room);
-        return isset($answers[$userId]);
+        $token = $room->token;
+        $qIndex = $this->getState($room)['q_index'] ?? 0;
+        $ansKey = "battle:{$token}:ans:{$qIndex}:{$userId}";
+        
+        return Cache::has($ansKey);
     }
 
     public function getAnswerStats(

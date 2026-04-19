@@ -431,15 +431,15 @@
                 {{-- Avatar (Foto Asli > Inisial) --}}
                 <div class="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-tr from-indigo-500/50 to-purple-500/50 p-0.5 shrink-0">
                   <div class="w-full h-full rounded-full overflow-hidden bg-slate-800 border-[1px] border-slate-900 relative"
-                       x-html="getAvatarHtml(s)">
+                       x-html="getAvatarHtml(membersMap[s.user_id])">
                   </div>
                 </div>
 
                 {{-- Nama --}}
                 <div class="flex-1 min-w-0">
-                  <p class="font-black text-white text-base uppercase tracking-tight truncate leading-tight" x-text="s.name"></p>
-                  <template x-if="s.group_label">
-                    <span class="text-[8px] px-1.5 py-0.5 rounded bg-white/5 text-gray-500 font-bold" x-text="s.group_label"></span>
+                  <p class="font-black text-white text-base uppercase tracking-tight truncate leading-tight" x-text="membersMap[s.user_id]?.name"></p>
+                  <template x-if="membersMap[s.user_id]?.group_label">
+                    <span class="text-[8px] px-1.5 py-0.5 rounded bg-white/5 text-gray-500 font-bold" x-text="membersMap[s.user_id]?.group_label"></span>
                   </template>
                 </div>
 
@@ -537,11 +537,11 @@
             <div class="flex flex-col items-center mb-6 px-4">
                 <template x-if="state.mode !== 'group'">
                     <div class="w-24 h-24 rounded-full border-4 border-slate-300/50 mb-3 bg-slate-800 overflow-hidden shadow-2xl relative"
-                         x-html="getAvatarHtml(topMembers(3)[1])">
+                         x-html="getAvatarHtml(membersMap[topMembers(3)[1]?.user_id])">
                     </div>
                 </template>
                 <h3 class="text-2xl font-black text-white uppercase tracking-tighter text-center line-clamp-2 leading-tight"
-                    x-text="state.mode === 'group' ? (groupScores[1].name || groupScores[1].group_label) : topMembers(3)[1].name"></h3>
+                    x-text="state.mode === 'group' ? (groupScores[1].name || groupScores[1].group_label) : membersMap[topMembers(3)[1]?.user_id]?.name"></h3>
                 <p class="text-xl font-black text-slate-300 mt-1 tabular-nums">
                     <span x-text="(state.mode === 'group' ? groupScores[1].total_score : scores[topMembers(3)[1].user_id]?.total_score)?.toLocaleString()"></span> <span class="text-xs">PTS</span>
                 </p>
@@ -557,11 +557,11 @@
             <div class="flex flex-col items-center mb-8 px-4">
                 <template x-if="state.mode !== 'group'">
                     <div class="w-32 h-32 rounded-full border-8 border-amber-400/80 mb-4 bg-slate-800 overflow-hidden shadow-2xl relative ring-4 ring-amber-400/20"
-                         x-html="getAvatarHtml(topMembers(3)[0])">
+                         x-html="getAvatarHtml(membersMap[topMembers(3)[0]?.user_id])">
                     </div>
                 </template>
                 <h3 class="text-4xl font-black text-white uppercase tracking-tighter text-center leading-tight line-clamp-2"
-                    x-text="state.mode === 'group' ? (groupScores[0].name || groupScores[0].group_label) : topMembers(3)[0].name"></h3>
+                    x-text="state.mode === 'group' ? (groupScores[0].name || groupScores[0].group_label) : membersMap[topMembers(3)[0]?.user_id]?.name"></h3>
                 <p class="text-3xl font-black text-amber-400 tabular-nums mt-1">
                     <span x-text="(state.mode === 'group' ? groupScores[0].total_score : scores[topMembers(3)[0].user_id]?.total_score)?.toLocaleString()"></span> <span class="text-sm">PTS</span>
                 </p>
@@ -577,11 +577,11 @@
             <div class="flex flex-col items-center mb-4 px-4">
                 <template x-if="state.mode !== 'group'">
                     <div class="w-20 h-20 rounded-full border-4 border-purple-400/40 mb-3 bg-slate-800 overflow-hidden shadow-xl"
-                         x-html="getAvatarHtml(topMembers(3)[2])">
+                         x-html="getAvatarHtml(membersMap[topMembers(3)[2]?.user_id])">
                     </div>
                 </template>
                 <h3 class="text-xl font-black text-white uppercase tracking-tighter text-center line-clamp-2"
-                    x-text="state.mode === 'group' ? (groupScores[2].name || groupScores[2].group_label) : topMembers(3)[2].name"></h3>
+                    x-text="state.mode === 'group' ? (groupScores[2].name || groupScores[2].group_label) : membersMap[topMembers(3)[2]?.user_id]?.name"></h3>
                 <p class="text-lg font-black text-purple-300 tabular-nums">
                     <span x-text="(state.mode === 'group' ? groupScores[2].total_score : scores[topMembers(3)[2].user_id]?.total_score)?.toLocaleString()"></span> <span class="text-[10px]">PTS</span>
                 </p>
@@ -652,6 +652,7 @@
                 q_total: {{ $room->total_questions }}
             },
             members: [],
+            membersMap: {}, // Metadata mapper (Name, Avatar, etc)
             scores: {},
             groupScores: [],
             prevGroupScores: {},
@@ -1038,6 +1039,11 @@
                 
                 // Persistence: Only update if count changed or state changed (Throttled Rendering)
                 if (data.members && data.members.length > 0) {
+                    // Update metadata map every time members list is available
+                    let mmap = {};
+                    data.members.forEach(m => mmap[m.user_id] = m);
+                    this.membersMap = mmap;
+
                     if (this.members.length !== data.members.length || data.state?.state !== this.state.state) {
                         this.members = data.members;
                     }

@@ -176,15 +176,29 @@ class ArenaController extends Controller
 
     public function lobbyStatus(BattleRoom $room)
     {
+        // ── Response Cache 2 detik (per room) ────────────────────────────────────
+        // Dengan 50 siswa polling tiap 3 detik = ~17 req/s menjadi 1 komputasi
+        // per 2 detik. Sisa request dilayani langsung dari Redis.
+        $cacheKey = "battle:{$room->token}:lobby_status_resp";
+        $cached   = \Illuminate\Support\Facades\Cache::get($cacheKey);
+        if ($cached !== null) {
+            return response()->json($cached)->header('X-Cache', 'HIT');
+        }
+        // ─────────────────────────────────────────────────────────────────────
+
         $state   = $this->battleService->getState($room);
         $members = $this->battleService->getMembers($room);
 
-        return response()->json([
-            'state'   => $state['state'],
-            'count'   => count($members),
-            'members' => array_values($members),
+        $data = [
+            'state'     => $state['state'],
+            'count'     => count($members),
+            'members'   => array_values($members),
             'is_locked' => (bool)$room->is_locked,
-        ]);
+        ];
+
+        \Illuminate\Support\Facades\Cache::put($cacheKey, $data, 2); // TTL 2 detik
+
+        return response()->json($data)->header('X-Cache', 'MISS');
     }
 
     public function battle(BattleRoom $room)
@@ -392,7 +406,7 @@ class ArenaController extends Controller
             $scoreEarned
         );
 
-        // ── Ambil skor terbaru untuk response ──
+        // ── Ambil skor terbaru untuk response (re-read karena sudah di-update) ──
         $updatedScores = $this->battleService->getScores($room);
         $myScore       = $updatedScores[$userId] ?? null;
 
