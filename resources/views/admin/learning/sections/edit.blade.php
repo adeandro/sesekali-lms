@@ -207,6 +207,7 @@
                         [{ 'header': [1, 2, 3, false] }],
                         ['bold', 'italic', 'underline', 'strike'],
                         [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                        [{ 'indent': '-1'}, { 'indent': '+1' }],
                         [{ 'script': 'sub'}, { 'script': 'super' }],
                         [{ 'color': [] }, { 'background': [] }],
                         [{ 'align': [] }],
@@ -297,5 +298,33 @@
     .ql-container.ql-snow { border: none; font-size: 1rem; }
     .ql-editor { padding: 2rem; min-height: 350px; }
     .ql-editor img { max-width: 100%; border-radius: 1rem; margin: 1rem 0; }
+
+    /* List & Indentation Styles in Editor */
+    .ql-editor ol,
+    .ql-editor ul {
+        padding-left: 1.5em;
+    }
+    .ql-editor ol > li,
+    .ql-editor ul > li {
+        padding-left: 0.5em;
+    }
+    .ql-editor ol li:not(.ql-direction-rtl),
+    .ql-editor ul li:not(.ql-direction-rtl) {
+        padding-left: 1em;
+    }
+    /* Indent levels (Quill uses ql-indent-1 through ql-indent-8) */
+    .ql-editor .ql-indent-1:not(.ql-direction-rtl) { padding-left: 3em; }
+    .ql-editor .ql-indent-2:not(.ql-direction-rtl) { padding-left: 6em; }
+    .ql-editor .ql-indent-3:not(.ql-direction-rtl) { padding-left: 9em; }
+    .ql-editor .ql-indent-4:not(.ql-direction-rtl) { padding-left: 12em; }
+    .ql-editor .ql-indent-5:not(.ql-direction-rtl) { padding-left: 15em; }
+    .ql-editor .ql-indent-6:not(.ql-direction-rtl) { padding-left: 18em; }
+    .ql-editor .ql-indent-7:not(.ql-direction-rtl) { padding-left: 21em; }
+    .ql-editor .ql-indent-8:not(.ql-direction-rtl) { padding-left: 24em; }
+    /* Ordered list counter styles per indent level */
+    .ql-editor li.ql-indent-1 { counter-reset: list-1; }
+    .ql-editor li.ql-indent-1:before { counter-increment: list-1; content: counter(list-1, lower-alpha) '. '; }
+    .ql-editor li.ql-indent-2:before { counter-increment: list-2; content: counter(list-2, lower-roman) '. '; }
+    .ql-editor li.ql-indent-3:before { counter-increment: list-3; content: counter(list-3, decimal) '. '; }
 </style>
 @endsection

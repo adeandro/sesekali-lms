@@ -22,6 +22,93 @@
         to { transform: translateX(0); opacity: 1; }
     }
     .animate-slide-in { animation: slideIn 0.4s ease-out forwards; }
+
+    /* =============================================
+       Quill Content Rendering (Student E-Learning)
+       =============================================
+       Diperlukan karena Quill menyimpan HTML dengan
+       class & atribut khusus yang butuh CSS untuk
+       ditampilkan sebagai list / indentasi.
+    */
+    .quill-content ol,
+    .quill-content ul {
+        padding-left: 1.5em;
+        margin: 0.5em 0;
+    }
+    .quill-content li {
+        padding-left: 0.5em;
+        margin: 0.25em 0;
+    }
+
+    /* Ordered list — Quill v2 pakai <li data-list="ordered"> */
+    .quill-content ol > li,
+    .quill-content li[data-list="ordered"] {
+        list-style-type: decimal;
+    }
+    /* Bullet list */
+    .quill-content ul > li,
+    .quill-content li[data-list="bullet"] {
+        list-style-type: disc;
+    }
+
+    /* Indent levels — class ql-indent-1 s/d ql-indent-8 */
+    .quill-content .ql-indent-1:not(.ql-direction-rtl) { padding-left: 3em; }
+    .quill-content .ql-indent-2:not(.ql-direction-rtl) { padding-left: 6em; }
+    .quill-content .ql-indent-3:not(.ql-direction-rtl) { padding-left: 9em; }
+    .quill-content .ql-indent-4:not(.ql-direction-rtl) { padding-left: 12em; }
+    .quill-content .ql-indent-5:not(.ql-direction-rtl) { padding-left: 15em; }
+    .quill-content .ql-indent-6:not(.ql-direction-rtl) { padding-left: 18em; }
+    .quill-content .ql-indent-7:not(.ql-direction-rtl) { padding-left: 21em; }
+    .quill-content .ql-indent-8:not(.ql-direction-rtl) { padding-left: 24em; }
+
+    /* Ordered list counter per indent level (a, i, 1, ...) */
+    .quill-content ol { counter-reset: list-0; }
+    .quill-content ol > li:before {
+        counter-increment: list-0;
+        content: counter(list-0) ". ";
+    }
+    .quill-content li.ql-indent-1 { counter-reset: list-1; }
+    .quill-content li.ql-indent-1:before { counter-increment: list-1; content: counter(list-1, lower-alpha) ". "; }
+    .quill-content li.ql-indent-2:before { counter-increment: list-2; content: counter(list-2, lower-roman) ". "; }
+    .quill-content li.ql-indent-3:before { counter-increment: list-3; content: counter(list-3, decimal) ". "; }
+    .quill-content li.ql-indent-4:before { counter-increment: list-4; content: counter(list-4, lower-alpha) ". "; }
+
+    /* Quill text align */
+    .quill-content .ql-align-center { text-align: center; }
+    .quill-content .ql-align-right  { text-align: right; }
+    .quill-content .ql-align-justify { text-align: justify; }
+
+    /* Gambar dari Quill */
+    .quill-content img { max-width: 100%; border-radius: 0.75rem; margin: 1rem 0; }
+
+    /* Blockquote */
+    .quill-content blockquote {
+        border-left: 4px solid rgba(251,191,36,0.5);
+        padding-left: 1em;
+        margin: 1em 0;
+        color: rgba(255,255,255,0.6);
+        font-style: italic;
+    }
+
+    /* Inline code */
+    .quill-content code {
+        background: rgba(255,255,255,0.08);
+        padding: 0.1em 0.4em;
+        border-radius: 0.3em;
+        font-size: 0.9em;
+        color: #fbbf24;
+    }
+
+    /* Code block */
+    .quill-content pre {
+        background: rgba(0,0,0,0.4);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 0.75rem;
+        padding: 1em 1.5em;
+        overflow-x: auto;
+        font-size: 0.9em;
+        line-height: 1.6;
+    }
 </style>
 @endpush
 
