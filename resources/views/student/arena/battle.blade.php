@@ -541,7 +541,8 @@ function studentBattle(token) {
         isSubmitting:   false,
         timerInterval:  null,
         pollInterval:   null,
-        lastStateStr:   '',     // format: {state}-{q_index}
+        lastStateStr:   '',     // format: {state}-{q_index}-{updated_at}
+        lastQIndex:     -1,     // -1 agar soal pertama (index 0) selalu trigger reset
         isLocked:       false,
         serverDrift:    0,
 
@@ -601,14 +602,24 @@ function studentBattle(token) {
                 });
 
                 if (!resMirror.ok) {
-                    // Fallback ke PHP HANYA jika mirror benar-benar hilang (404)
-                    if (resMirror.status === 404) {
+                    // Fallback ke PHP jika mirror hilang atau error server
+                    if (resMirror.status === 404 || resMirror.status >= 500) {
                         await this.syncWithServer();
                     }
                     return;
                 }
 
-                const mirror = await resMirror.json();
+                let mirror;
+                try {
+                    mirror = await resMirror.json();
+                } catch (parseErr) {
+                    // Mirror JSON corrupt (sedang ditulis ulang) — fallback ke PHP
+                    await this.syncWithServer();
+                    return;
+                }
+                
+                // Validasi struktur mirror minimal
+                if (!mirror || !mirror.state) return;
                 
                 // Sync Drift (Authoritative via HTTP Header) - HANYA HITUNG SEKALI
                 if (this.serverDrift === 0) {
@@ -619,6 +630,15 @@ function studentBattle(token) {
                 }
 
                 const newStateStr = `${mirror.state?.state}-${mirror.state?.q_index}-${mirror.updated_at}`;
+                const newQIndex   = mirror.state?.q_index ?? 0;
+
+                // ── Reset lokal LEBIH DULU sebelum membaca answered_users ──
+                // Ini mencegah hasAnswered dari soal lama menimpa reset soal baru
+                if (newQIndex !== this.lastQIndex) {
+                    this.lastQIndex   = newQIndex;
+                    this.hasAnswered  = false;
+                    this.answerResult = null;
+                }
 
                 // Update global state dari mirror (sangat ringan)
                 this.state = mirror.state || {};
@@ -637,10 +657,11 @@ function studentBattle(token) {
                     const myGroup = mirror.group_scores.find(g => g.group_label === this.myScore.group_label);
                     if (myGroup) this.groupScore = myGroup.total_score;
                 }
-                if (mirror.answered_users && mirror.answered_users.includes(myUserId)) {
+                // answered_users hanya di-cek jika QIndex SAMA (bukan soal yang baru di-reset)
+                if (mirror.answered_users && mirror.answered_users.includes(myUserId) && newQIndex === this.lastQIndex) {
                     this.hasAnswered = true;
                 }
-                if (mirror.answers && mirror.answers[myUserId]) {
+                if (mirror.answers && mirror.answers[myUserId] && newQIndex === this.lastQIndex) {
                     this.answerResult = {
                         chosen: mirror.answers[myUserId].answer,
                         is_correct: mirror.answers[myUserId].is_correct,
@@ -651,14 +672,6 @@ function studentBattle(token) {
                 // 2. Cek apakah status berubah?
                 if (newStateStr !== this.lastStateStr) {
                     this.lastStateStr = newStateStr;
-                    
-                    // Reset local state jika soal berubah
-                    const newQIndex = mirror.state?.q_index ?? 0;
-                    if (newQIndex !== this.lastQIndex) {
-                        this.lastQIndex   = newQIndex;
-                        this.hasAnswered  = false;
-                        this.answerResult = null;
-                    }
 
                     // No need to hit PHP anymore! Data is completely loaded from Mirror.
                     this.startAdaptivePolling(); // Sesuaikan kecepatan polling
@@ -670,14 +683,33 @@ function studentBattle(token) {
 
         async syncWithServer() {
             try {
-                // Ambil data pribadi (skor, rank, hasAnswered) via PHP
+                // Fallback lengkap via PHP (state + soal + skor pribadi)
                 const res = await fetch(`/student/arena/${this.token}/battle/data`, {
                     headers: { 'Accept': 'application/json' }
                 });
+                if (!res.ok) return;
                 const data = await res.json();
 
-                this.myScore = data.my_score;
-                this.groupScore = data.group_score;
+                // Update state dan soal dari PHP
+                if (data.state) {
+                    const newQIndex = data.state.q_index ?? 0;
+                    // Reset hasAnswered jika soal berganti
+                    if (newQIndex !== this.lastQIndex) {
+                        this.lastQIndex   = newQIndex;
+                        this.hasAnswered  = false;
+                        this.answerResult = null;
+                    }
+                    this.state = data.state;
+                }
+                if (data.question !== undefined) {
+                    this.question = data.question;
+                }
+                if (data.show_question_on_device !== undefined) {
+                    this.showQuestion = Boolean(data.show_question_on_device);
+                }
+
+                if (data.my_score) this.myScore = data.my_score;
+                if (data.group_score !== undefined) this.groupScore = data.group_score;
                 
                 if (data.has_answered) {
                     this.hasAnswered = true;

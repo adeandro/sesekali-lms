@@ -288,33 +288,36 @@ class ArenaController extends Controller
     }
 
 
-    private function cacheQuestionData(BattleRoom $room, int $qIndex)
+    private function cacheQuestionData(BattleRoom $room, int $qIndex): ?array
     {
         $key = "battle:{$room->token}:q:{$qIndex}";
-        
-        return \Illuminate\Support\Facades\Cache::remember($key, BattleService::TTL, function () use ($room, $qIndex) {
-            $questionId = $room->question_ids[$qIndex] ?? null;
-            if (!$questionId) return null;
-            
-            $q = \App\Models\Question::find($questionId);
-            if (!$q) return null;
-            
-            return [
-                'id' => $q->id,
-                'question_text' => $q->question_text,
-                'question_image' => $q->question_image ? asset('storage/'.$q->question_image) : null,
-                'options' => [
-                    'a' => ['text' => $q->option_a, 'image' => $q->option_a_image ? asset('storage/'.$q->option_a_image) : null],
-                    'b' => ['text' => $q->option_b, 'image' => $q->option_b_image ? asset('storage/'.$q->option_b_image) : null],
-                    'c' => ['text' => $q->option_c, 'image' => $q->option_c_image ? asset('storage/'.$q->option_c_image) : null],
-                    'd' => ['text' => $q->option_d, 'image' => $q->option_d_image ? asset('storage/'.$q->option_d_image) : null],
-                    'e' => ['text' => $q->option_e, 'image' => $q->option_e_image ? asset('storage/'.$q->option_e_image) : null],
-                ],
-                'correct_answer' => $q->correct_answer,
-                'explanation' => $q->explanation,
-                'duration' => $room->duration_per_question,
-            ];
-        });
+
+        $questionId = $room->question_ids[$qIndex] ?? null;
+        if (!$questionId) return null;
+
+        $q = \App\Models\Question::find($questionId);
+        if (!$q) return null;
+
+        $data = [
+            'id'             => $q->id,
+            'question_text'  => $q->question_text,
+            'question_image' => $q->question_image ? asset('storage/'.$q->question_image) : null,
+            'options'        => [
+                'a' => ['text' => $q->option_a, 'image' => $q->option_a_image ? asset('storage/'.$q->option_a_image) : null],
+                'b' => ['text' => $q->option_b, 'image' => $q->option_b_image ? asset('storage/'.$q->option_b_image) : null],
+                'c' => ['text' => $q->option_c, 'image' => $q->option_c_image ? asset('storage/'.$q->option_c_image) : null],
+                'd' => ['text' => $q->option_d, 'image' => $q->option_d_image ? asset('storage/'.$q->option_d_image) : null],
+                'e' => ['text' => $q->option_e, 'image' => $q->option_e_image ? asset('storage/'.$q->option_e_image) : null],
+            ],
+            'correct_answer' => $q->correct_answer,
+            'explanation'    => $q->explanation,
+            'duration'       => $room->duration_per_question,
+        ];
+
+        // Selalu overwrite (Cache::remember hanya isi jika kosong — bug untuk soal berikutnya)
+        \Illuminate\Support\Facades\Cache::put($key, $data, BattleService::TTL);
+
+        return $data;
     }
 
     private function processFinish(BattleRoom $room)

@@ -119,10 +119,11 @@ class ExamEngineService
             }
 
             $creationData = [
-                'attempt_id'   => $attempt->id,
-                'question_id'  => $question->id,
-                'created_at'   => $now,
-                'updated_at'   => $now,
+                'attempt_id'          => $attempt->id,
+                'question_id'         => $question->id,
+                'correct_answer_text' => null,
+                'created_at'          => $now,
+                'updated_at'          => $now,
             ];
 
             if ($question->question_type === 'multiple_choice') {
