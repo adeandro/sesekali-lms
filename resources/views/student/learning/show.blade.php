@@ -26,52 +26,107 @@
     /* =============================================
        Quill Content Rendering (Student E-Learning)
        =============================================
-       Diperlukan karena Quill menyimpan HTML dengan
-       class & atribut khusus yang butuh CSS untuk
-       ditampilkan sebagai list / indentasi.
+       Penting: gunakan CSS counter SAJA, matikan
+       list-style bawaan browser agar tidak double.
     */
+
+    /* --- Reset dasar list --- */
     .quill-content ol,
     .quill-content ul {
-        padding-left: 1.5em;
+        list-style: none;   /* matikan default browser agar tidak double */
+        padding-left: 0;
         margin: 0.5em 0;
     }
     .quill-content li {
-        padding-left: 0.5em;
-        margin: 0.25em 0;
+        margin: 0.3em 0;
     }
 
-    /* Ordered list — Quill v2 pakai <li data-list="ordered"> */
-    .quill-content ol > li,
-    .quill-content li[data-list="ordered"] {
-        list-style-type: decimal;
-    }
-    /* Bullet list */
-    .quill-content ul > li,
-    .quill-content li[data-list="bullet"] {
-        list-style-type: disc;
+    /* --- Inisialisasi counter di elemen ol --- */
+    .quill-content ol {
+        counter-reset: list-0 list-1 list-2 list-3 list-4;
     }
 
-    /* Indent levels — class ql-indent-1 s/d ql-indent-8 */
-    .quill-content .ql-indent-1:not(.ql-direction-rtl) { padding-left: 3em; }
-    .quill-content .ql-indent-2:not(.ql-direction-rtl) { padding-left: 6em; }
-    .quill-content .ql-indent-3:not(.ql-direction-rtl) { padding-left: 9em; }
-    .quill-content .ql-indent-4:not(.ql-direction-rtl) { padding-left: 12em; }
-    .quill-content .ql-indent-5:not(.ql-direction-rtl) { padding-left: 15em; }
-    .quill-content .ql-indent-6:not(.ql-direction-rtl) { padding-left: 18em; }
-    .quill-content .ql-indent-7:not(.ql-direction-rtl) { padding-left: 21em; }
-    .quill-content .ql-indent-8:not(.ql-direction-rtl) { padding-left: 24em; }
-
-    /* Ordered list counter per indent level (a, i, 1, ...) */
-    .quill-content ol { counter-reset: list-0; }
-    .quill-content ol > li:before {
+    /* ====================================================
+       LEVEL 0 — decimal (1, 2, 3, ...)
+       Item tanpa kelas ql-indent-*
+    ==================================================== */
+    .quill-content ol > li:not([class*="ql-indent"]) {
         counter-increment: list-0;
-        content: counter(list-0) ". ";
+        /* Reset semua sub-counter ketika item level-0 baru muncul */
+        counter-reset: list-1 list-2 list-3 list-4;
+        padding-left: 2em;
+        position: relative;
     }
-    .quill-content li.ql-indent-1 { counter-reset: list-1; }
-    .quill-content li.ql-indent-1:before { counter-increment: list-1; content: counter(list-1, lower-alpha) ". "; }
-    .quill-content li.ql-indent-2:before { counter-increment: list-2; content: counter(list-2, lower-roman) ". "; }
-    .quill-content li.ql-indent-3:before { counter-increment: list-3; content: counter(list-3, decimal) ". "; }
-    .quill-content li.ql-indent-4:before { counter-increment: list-4; content: counter(list-4, lower-alpha) ". "; }
+    .quill-content ol > li:not([class*="ql-indent"])::before {
+        content: counter(list-0) ". ";
+        position: absolute;
+        left: 0;
+        font-weight: 600;
+    }
+
+    /* ====================================================
+       LEVEL 1 — lower-alpha (a, b, c, ...)
+    ==================================================== */
+    .quill-content ol > li.ql-indent-1 {
+        counter-increment: list-1;
+        counter-reset: list-2 list-3 list-4;
+        padding-left: 5em;
+        position: relative;
+    }
+    .quill-content ol > li.ql-indent-1::before {
+        content: counter(list-1, lower-alpha) ". ";
+        position: absolute;
+        left: 3em;
+        font-weight: 600;
+    }
+
+    /* ====================================================
+       LEVEL 2 — lower-roman (i, ii, iii, ...)
+    ==================================================== */
+    .quill-content ol > li.ql-indent-2 {
+        counter-increment: list-2;
+        counter-reset: list-3 list-4;
+        padding-left: 8em;
+        position: relative;
+    }
+    .quill-content ol > li.ql-indent-2::before {
+        content: counter(list-2, lower-roman) ". ";
+        position: absolute;
+        left: 6em;
+        font-weight: 600;
+    }
+
+    /* ====================================================
+       LEVEL 3 — decimal kembali (1, 2, 3, ...)
+    ==================================================== */
+    .quill-content ol > li.ql-indent-3 {
+        counter-increment: list-3;
+        padding-left: 11em;
+        position: relative;
+    }
+    .quill-content ol > li.ql-indent-3::before {
+        content: counter(list-3) ". ";
+        position: absolute;
+        left: 9em;
+        font-weight: 600;
+    }
+
+    /* ====================================================
+       Bullet list (ul) — disc, circle, square per level
+    ==================================================== */
+    .quill-content ul > li:not([class*="ql-indent"]) {
+        padding-left: 2em;
+        position: relative;
+    }
+    .quill-content ul > li:not([class*="ql-indent"])::before {
+        content: "•";
+        position: absolute;
+        left: 0.75em;
+    }
+    .quill-content ul > li.ql-indent-1 { padding-left: 5em; position: relative; }
+    .quill-content ul > li.ql-indent-1::before { content: "◦"; position: absolute; left: 3.75em; }
+    .quill-content ul > li.ql-indent-2 { padding-left: 8em; position: relative; }
+    .quill-content ul > li.ql-indent-2::before { content: "▪"; position: absolute; left: 6.75em; }
 
     /* Quill text align */
     .quill-content .ql-align-center { text-align: center; }
