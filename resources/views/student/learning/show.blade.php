@@ -26,89 +26,69 @@
     /* =============================================
        Quill Content Rendering (Student E-Learning)
        =============================================
-       Penting: gunakan CSS counter SAJA, matikan
-       list-style bawaan browser agar tidak double.
+       Numbering ditangani oleh JavaScript (renderQuillListNumbers)
+       yang set atribut data-num pada setiap <li>.
+       CSS hanya mengatur tampilan via attr(data-num).
     */
 
     /* --- Reset dasar list --- */
     .quill-content ol,
     .quill-content ul {
-        list-style: none;   /* matikan default browser agar tidak double */
+        list-style: none;
         padding-left: 0;
         margin: 0.5em 0;
     }
     .quill-content li {
         margin: 0.3em 0;
-    }
-
-    /* --- Inisialisasi counter di elemen ol --- */
-    .quill-content ol {
-        counter-reset: list-0 list-1 list-2 list-3 list-4;
+        position: relative;
     }
 
     /* ====================================================
-       LEVEL 0 — decimal (1, 2, 3, ...)
-       Item tanpa kelas ql-indent-*
+       ORDERED LIST — semua level via attr(data-num)
+       JS meng-assign data-num="1." / "a." / "i." dsb.
     ==================================================== */
     .quill-content ol > li:not([class*="ql-indent"]) {
-        counter-increment: list-0;
-        /* Reset semua sub-counter ketika item level-0 baru muncul */
-        counter-reset: list-1 list-2 list-3 list-4;
-        padding-left: 2em;
-        position: relative;
+        padding-left: 2.2em;
     }
     .quill-content ol > li:not([class*="ql-indent"])::before {
-        content: counter(list-0) ". ";
+        content: attr(data-num);
         position: absolute;
         left: 0;
         font-weight: 600;
+        min-width: 1.8em;
     }
 
-    /* ====================================================
-       LEVEL 1 — lower-alpha (a, b, c, ...)
-    ==================================================== */
     .quill-content ol > li.ql-indent-1 {
-        counter-increment: list-1;
-        counter-reset: list-2 list-3 list-4;
         padding-left: 5em;
-        position: relative;
     }
     .quill-content ol > li.ql-indent-1::before {
-        content: counter(list-1, lower-alpha) ". ";
+        content: attr(data-num);
         position: absolute;
         left: 3em;
         font-weight: 600;
+        min-width: 1.8em;
     }
 
-    /* ====================================================
-       LEVEL 2 — lower-roman (i, ii, iii, ...)
-    ==================================================== */
     .quill-content ol > li.ql-indent-2 {
-        counter-increment: list-2;
-        counter-reset: list-3 list-4;
         padding-left: 8em;
-        position: relative;
     }
     .quill-content ol > li.ql-indent-2::before {
-        content: counter(list-2, lower-roman) ". ";
+        content: attr(data-num);
         position: absolute;
         left: 6em;
         font-weight: 600;
+        min-width: 2em;
     }
 
-    /* ====================================================
-       LEVEL 3 — decimal kembali (1, 2, 3, ...)
-    ==================================================== */
     .quill-content ol > li.ql-indent-3 {
-        counter-increment: list-3;
         padding-left: 11em;
-        position: relative;
     }
     .quill-content ol > li.ql-indent-3::before {
-        content: counter(list-3) ". ";
+        content: attr(data-num);
         position: absolute;
         left: 9em;
         font-weight: 600;
+        min-width: 2em;
     }
 
     /* ====================================================
@@ -116,17 +96,18 @@
     ==================================================== */
     .quill-content ul > li:not([class*="ql-indent"]) {
         padding-left: 2em;
-        position: relative;
     }
     .quill-content ul > li:not([class*="ql-indent"])::before {
         content: "•";
         position: absolute;
         left: 0.75em;
     }
-    .quill-content ul > li.ql-indent-1 { padding-left: 5em; position: relative; }
+    .quill-content ul > li.ql-indent-1 { padding-left: 5em; }
     .quill-content ul > li.ql-indent-1::before { content: "◦"; position: absolute; left: 3.75em; }
-    .quill-content ul > li.ql-indent-2 { padding-left: 8em; position: relative; }
+    .quill-content ul > li.ql-indent-2 { padding-left: 8em; }
     .quill-content ul > li.ql-indent-2::before { content: "▪"; position: absolute; left: 6.75em; }
+
+
 
     /* Quill text align */
     .quill-content .ql-align-center { text-align: center; }
@@ -469,4 +450,76 @@
         </div>
     </main>
 </div>
+
+<script>
+/**
+ * Quill List Re-Numbering
+ * =======================
+ * Masalah: Quill membuat <ol> baru yang terpisah setiap kali ada Enter (paragraf)
+ * antara list items. Akibatnya CSS counter-reset pada <ol> mereset urutan
+ * sehingga: a. a. a. (seharusnya a. b. c.)
+ *
+ * Solusi: JavaScript scan semua li dalam .quill-content secara berurutan,
+ * track counter global, dan assign data-num attribute untuk ditampilkan via CSS.
+ */
+function renderQuillListNumbers() {
+    // Konversi angka ke huruf (1=a, 2=b, dst.)
+    function toAlpha(n) {
+        return String.fromCharCode(96 + ((n - 1) % 26) + 1);
+    }
+    // Konversi angka ke romawi kecil
+    function toRoman(n) {
+        const vals = [1000,900,500,400,100,90,50,40,10,9,5,4,1];
+        const syms = ['m','cm','d','cd','c','xc','l','xl','x','ix','v','iv','i'];
+        let r = '';
+        for (let i = 0; i < vals.length; i++) {
+            while (n >= vals[i]) { r += syms[i]; n -= vals[i]; }
+        }
+        return r;
+    }
+    // Format counter sesuai level
+    function formatCounter(n, level) {
+        switch (level % 4) {
+            case 0: return n + '.';        // 1, 2, 3
+            case 1: return toAlpha(n) + '.'; // a, b, c
+            case 2: return toRoman(n) + '.'; // i, ii, iii
+            case 3: return n + '.';        // 1, 2, 3
+        }
+    }
+
+    document.querySelectorAll('.quill-content').forEach(content => {
+        // Kumpulkan semua li dari semua ol dalam content ini, secara DOM order
+        const allLis = Array.from(content.querySelectorAll('ol li'));
+        
+        if (allLis.length === 0) return;
+
+        // Counters per level: { 0: n, 1: n, 2: n, ... }
+        const counters = {};
+        let prevLevel = -1;
+
+        allLis.forEach(li => {
+            // Deteksi level dari class ql-indent-N
+            const indentClass = [...li.classList].find(c => /^ql-indent-\d+$/.test(c));
+            const level = indentClass ? parseInt(indentClass.replace('ql-indent-', '')) : 0;
+
+            // Jika naik level (indent berkurang), reset semua sub-counters di bawahnya
+            if (level < prevLevel) {
+                for (let l = level + 1; l <= prevLevel; l++) {
+                    counters[l] = 0;
+                }
+            }
+
+            // Increment counter untuk level ini
+            counters[level] = (counters[level] || 0) + 1;
+            prevLevel = level;
+
+            // Set data attribute — CSS akan baca via attr(data-num)
+            li.setAttribute('data-num', formatCounter(counters[level], level));
+        });
+    });
+}
+
+// Jalankan saat DOM ready
+document.addEventListener('DOMContentLoaded', renderQuillListNumbers);
+</script>
 @endsection

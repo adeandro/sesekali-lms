@@ -68,6 +68,30 @@
         </div>
     </div>
 
+    {{-- Toast Notification --}}
+    @if(session('success'))
+    <div id="toast-success" class="flex items-center gap-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl px-6 py-4 shadow-sm animate-fadeIn">
+        <div class="w-8 h-8 rounded-xl bg-emerald-500 flex items-center justify-center text-white shrink-0">
+            <i class="fas fa-check text-xs"></i>
+        </div>
+        <p class="text-[11px] font-black uppercase tracking-widest">{{ session('success') }}</p>
+        <button onclick="document.getElementById('toast-success').remove()" class="ml-auto text-emerald-400 hover:text-emerald-600 transition-colors">
+            <i class="fas fa-times text-xs"></i>
+        </button>
+    </div>
+    @endif
+    @if(session('error'))
+    <div id="toast-error" class="flex items-center gap-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl px-6 py-4 shadow-sm">
+        <div class="w-8 h-8 rounded-xl bg-rose-500 flex items-center justify-center text-white shrink-0">
+            <i class="fas fa-exclamation text-xs"></i>
+        </div>
+        <p class="text-[11px] font-black uppercase tracking-widest">{{ session('error') }}</p>
+        <button onclick="document.getElementById('toast-error').remove()" class="ml-auto text-rose-400 hover:text-rose-600 transition-colors">
+            <i class="fas fa-times text-xs"></i>
+        </button>
+    </div>
+    @endif
+
     <form action="{{ route('admin.learning.sections.update', $section) }}" method="POST" enctype="multipart/form-data" id="sectionForm" class="space-y-8">
         @csrf
         @method('PUT')

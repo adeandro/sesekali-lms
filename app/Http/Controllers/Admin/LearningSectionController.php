@@ -88,7 +88,7 @@ class LearningSectionController extends Controller
 
         $section->update($validated);
 
-        return redirect()->route('admin.learning.materials.show', $section->learning_material_id)
+        return redirect()->route('admin.learning.sections.edit', $section)
             ->with('success', 'Bab materi berhasil diperbarui.');
     }
 
