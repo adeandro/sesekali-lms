@@ -60,40 +60,44 @@ body.exam-active .flex.flex-col.flex-1.overflow-hidden {
 }
 
 /* ═══════════════════════════════════════════════════════
-   TYPING ARENA (Monkeytype Style)
+   TYPING ARENA (Natural Tight Kerning & Spacing)
    ═══════════════════════════════════════════════════════ */
 .typing-box {
-    font-family: 'JetBrains Mono', 'Courier New', Courier, monospace;
-    font-size: 1.6rem;
-    line-height: 2.8rem;
-    letter-spacing: 0.02em;
+    font-family: 'JetBrains Mono', 'Fira Code', Consolas, Monaco, monospace;
+    font-size: 1.65rem;
+    line-height: 3rem;
+    letter-spacing: 0;
     color: #94a3b8;
     user-select: none;
     cursor: text;
-    max-height: 8.6rem;
+    max-height: 9rem;
     overflow: hidden;
     position: relative;
     outline: none;
     transition: all 0.2s ease;
 }
 
-/* Word styling */
+/* Word styling — inline-flex to guarantee zero inter-character whitespace gap */
 .typing-box .word {
-    display: inline-block;
-    margin-right: 0.6em;
-    padding: 0 2px;
+    display: inline-flex;
+    margin-right: 0.7em;
+    padding: 0 1px;
     border-radius: 4px;
-    transition: background-color 0.1s ease, color 0.1s ease;
+    vertical-align: middle;
+    letter-spacing: 0;
 }
 
 .typing-box .word.current {
     color: #334155;
 }
 
-/* Character styling */
+/* Character styling — strict zero extra spacing */
 .typing-box .char {
     position: relative;
-    display: inline;
+    display: inline-block;
+    padding: 0;
+    margin: 0;
+    letter-spacing: 0;
     transition: color 0.08s ease;
 }
 
@@ -103,7 +107,7 @@ body.exam-active .flex.flex-col.flex-1.overflow-hidden {
 
 .typing-box .char.wrong {
     color: #ef4444; /* Rose 500 */
-    background-color: rgba(239, 68, 68, 0.15);
+    background-color: rgba(239, 68, 68, 0.12);
     border-radius: 2px;
 }
 
@@ -116,9 +120,9 @@ body.exam-active .flex.flex-col.flex-1.overflow-hidden {
 .typing-box .char.caret::before {
     content: '';
     position: absolute;
-    left: 0;
-    top: 15%;
-    height: 70%;
+    left: -1px;
+    top: 10%;
+    height: 80%;
     width: 2.5px;
     background: var(--brand-primary, #4f46e5);
     border-radius: 2px;
@@ -128,9 +132,9 @@ body.exam-active .flex.flex-col.flex-1.overflow-hidden {
 .typing-box .char.caret-after::after {
     content: '';
     position: absolute;
-    right: -2px;
-    top: 15%;
-    height: 70%;
+    right: -1px;
+    top: 10%;
+    height: 80%;
     width: 2.5px;
     background: var(--brand-primary, #4f46e5);
     border-radius: 2px;
@@ -283,16 +287,10 @@ body.exam-active .flex.flex-col.flex-1.overflow-hidden {
       Pelanggaran: <span id="violCount">0</span>/3
     </div>
 
-    {{-- Words Arena --}}
+    {{-- Words Arena (No whitespace between char tags) --}}
     @php $words = explode(' ', $attempt->words_generated); @endphp
     <div id="wordsContainer" class="typing-box">
-      @foreach($words as $i => $word)
-        <span class="word{{ $i === 0 ? ' current' : '' }}" data-word-idx="{{ $i }}">
-          @foreach(str_split($word) as $ci => $char)
-            <span class="char{{ ($i === 0 && $ci === 0) ? ' caret' : '' }}" data-char-idx="{{ $ci }}">{{ $char }}</span>
-          @endforeach
-        </span>
-      @endforeach
+      @foreach($words as $i => $word)<span class="word{{ $i === 0 ? ' current' : '' }}" data-word-idx="{{ $i }}">@foreach(str_split($word) as $ci => $char)<span class="char{{ ($i === 0 && $ci === 0) ? ' caret' : '' }}" data-char-idx="{{ $ci }}">{{ $char }}</span>@endforeach</span>@endforeach
     </div>
 
     {{-- Lost focus warning overlay --}}
@@ -639,7 +637,6 @@ document.addEventListener('DOMContentLoaded', () => {
       timeLeft--;
       timerEl.textContent = fmt(timeLeft);
 
-      // Progress bar percentage
       const pct = (timeLeft / DURATION) * 100;
       timeProgressBar.style.width = pct + '%';
 
@@ -655,11 +652,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }, 1000);
 
-    // Live WPM & Accuracy updater
     statsInterval = setInterval(() => {
       const elapsedMinutes = (Date.now() - startTime) / 60000;
       if (elapsedMinutes > 0) {
-        // Standard formula: (all chars / 5) / minutes
         const grossWpm = Math.round((totalCharsTyped + currentTyped.length) / 5 / elapsedMinutes);
         liveWpmEl.textContent = Math.max(0, grossWpm);
 
@@ -682,7 +677,6 @@ document.addEventListener('DOMContentLoaded', () => {
     clearInterval(timerInterval);
     clearInterval(statsInterval);
 
-    // Commit any in-flight typed word
     if (currentTyped.length > 0 && currentWordIdx < totalWords) {
       typedWords[currentWordIdx] = currentTyped;
     }
