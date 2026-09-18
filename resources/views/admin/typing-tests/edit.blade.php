@@ -33,15 +33,42 @@
                           style="--tw-ring-color: var(--brand-primary)">{{ old('description', $test->description) }}</textarea>
             </div>
 
-            {{-- Token --}}
-            <div class="mb-5">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Token Akses</label>
-                <input type="text" name="token" value="{{ old('token', $test->token) }}"
-                       placeholder="Kosongkan jika tidak memerlukan token"
-                       class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:border-transparent"
-                       style="--tw-ring-color: var(--brand-primary)">
-                <p class="text-xs text-gray-400 mt-1">Jika diisi, siswa wajib memasukkan token ini sebelum memulai tes.</p>
+            {{-- Token Akses --}}
+            <div class="flex items-center justify-between py-4 border-b border-gray-100 mb-3">
+                <div>
+                    <p class="text-sm font-bold text-gray-700">Gunakan Token Akses</p>
+                    <p class="text-xs text-gray-400 mt-0.5">
+                        Siswa wajib input kode token sebelum mulai.
+                        Token di-generate otomatis oleh sistem.
+                    </p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="hidden" name="use_token" value="0">
+                    <input type="checkbox"
+                           name="use_token"
+                           id="use_token"
+                           value="1"
+                           {{ old('use_token', $test->use_token ?? false) ? 'checked' : '' }}
+                           class="w-5 h-5 rounded accent-[var(--brand-primary)]">
+                </div>
             </div>
+
+            {{-- Info token yang sudah ada --}}
+            @if($test->use_token && $test->token)
+            <div class="bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-3 flex items-center justify-between mb-5">
+                <div>
+                    <p class="text-xs font-bold text-indigo-600 uppercase tracking-widest">Token Aktif</p>
+                    <p class="font-mono font-black text-xl text-indigo-900 tracking-widest mt-1">{{ $test->token }}</p>
+                </div>
+                <button type="button"
+                        onclick="navigator.clipboard.writeText('{{ $test->token }}')"
+                        class="text-indigo-400 hover:text-indigo-600">
+                    <i class="fas fa-copy text-lg"></i>
+                </button>
+            </div>
+            @else
+            <div class="mb-5"></div>
+            @endif
 
             {{-- Durasi + Target WPM --}}
             <div class="grid grid-cols-2 gap-4 mb-5">
@@ -90,15 +117,38 @@
                 </p>
             </div>
 
-            {{-- Tampilkan hasil --}}
-            <div class="mb-5 flex items-center gap-3">
-                <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" name="show_result" value="1" class="sr-only peer"
-                           {{ (old('show_result') !== null ? old('show_result') : $test->show_result) ? 'checked' : '' }}>
-                    <div class="w-10 h-6 bg-gray-200 peer-checked:bg-emerald-500 rounded-full transition-colors peer-focus:ring-2 peer-focus:ring-emerald-300"></div>
-                    <div class="absolute left-0.5 top-0.5 bg-white w-5 h-5 rounded-full shadow transition-transform peer-checked:translate-x-4"></div>
-                </label>
-                <span class="text-sm font-medium text-gray-700">Tampilkan hasil (WPM, akurasi, nilai) ke siswa setelah selesai</span>
+            {{-- Visibilitas WPM & Akurasi --}}
+            <div class="flex items-center justify-between py-3 border-b border-gray-100">
+                <div>
+                    <p class="text-sm font-bold text-gray-700">Tampilkan WPM & Akurasi ke Siswa</p>
+                    <p class="text-xs text-gray-400 mt-0.5">Siswa dapat melihat kecepatan dan akurasi mengetiknya</p>
+                </div>
+                <div>
+                    <input type="hidden" name="show_wpm_accuracy" value="0">
+                    <input type="checkbox"
+                           name="show_wpm_accuracy"
+                           id="show_wpm_accuracy"
+                           value="1"
+                           {{ old('show_wpm_accuracy', $test->show_wpm_accuracy ?? true) ? 'checked' : '' }}
+                           class="w-5 h-5 rounded accent-[var(--brand-primary)]">
+                </div>
+            </div>
+
+            {{-- Visibilitas Nilai --}}
+            <div class="flex items-center justify-between py-3 mb-5">
+                <div>
+                    <p class="text-sm font-bold text-gray-700">Tampilkan Nilai Akhir ke Siswa</p>
+                    <p class="text-xs text-gray-400 mt-0.5">Nonaktifkan jika nilai bersifat rahasia</p>
+                </div>
+                <div>
+                    <input type="hidden" name="show_score" value="0">
+                    <input type="checkbox"
+                           name="show_score"
+                           id="show_score"
+                           value="1"
+                           {{ old('show_score', $test->show_score ?? true) ? 'checked' : '' }}
+                           class="w-5 h-5 rounded accent-[var(--brand-primary)]">
+                </div>
             </div>
 
             {{-- Jadwal --}}

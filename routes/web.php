@@ -711,6 +711,8 @@ Route::middleware('auth')->group(function () {
             Route::delete('{test}', [\App\Http\Controllers\Admin\TypingTestController::class, 'destroy'])->name('destroy');
             Route::get('{test}/results', [\App\Http\Controllers\Admin\TypingTestController::class, 'results'])->name('results');
             Route::get('{test}/export', [\App\Http\Controllers\Admin\TypingTestController::class, 'export'])->name('export');
+            Route::post('{test}/toggle-status', [\App\Http\Controllers\Admin\TypingTestController::class, 'toggleStatus'])->name('toggle-status');
+            Route::delete('{test}/attempts/{attempt}/reset', [\App\Http\Controllers\Admin\TypingTestController::class, 'resetAttempt'])->name('attempts.reset');
         });
 
     // ── Typing Test (Student) ──────────────────────────────────────────────
@@ -721,6 +723,7 @@ Route::middleware('auth')->group(function () {
             Route::get('{test}', [\App\Http\Controllers\Student\TypingTestController::class, 'show'])->name('show');
             Route::post('{test}/submit', [\App\Http\Controllers\Student\TypingTestController::class, 'submit'])->name('submit');
             Route::get('{test}/result', [\App\Http\Controllers\Student\TypingTestController::class, 'result'])->name('result');
+            Route::post('{test}/validate-token', [\App\Http\Controllers\Student\TypingTestController::class, 'validateToken'])->name('validate-token');
         });
 
 }); // end auth middleware group

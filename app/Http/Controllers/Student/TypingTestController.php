@@ -23,6 +23,14 @@ class TypingTestController extends Controller
             abort(403, 'Tes ini tidak tersedia untuk kelas Anda.');
         }
 
+        // Cek token jika diperlukan
+        if ($test->use_token) {
+            $inputToken = session('typing_token_' . $test->id);
+            if (!$inputToken || $inputToken !== $test->token) {
+                return view('student.typing-tests.token', compact('test'));
+            }
+        }
+
         // Cek apakah sudah ada attempt completed
         $existingAttempt = TypingAttempt::where('typing_test_id', $test->id)
             ->where('student_id', $student->id)
@@ -52,6 +60,22 @@ class TypingTestController extends Controller
         $attempt = $existingAttempt;
 
         return view('student.typing-tests.show', compact('test', 'attempt'));
+    }
+
+    public function validateToken(Request $request, TypingTest $test)
+    {
+        $request->validate([
+            'token' => 'required|string',
+        ]);
+
+        if (strtoupper($request->token) !== $test->token) {
+            return back()->withErrors([
+                'token' => 'Token tidak valid.'
+            ])->withInput();
+        }
+
+        session(['typing_token_' . $test->id => $test->token]);
+        return redirect()->route('student.typing-tests.show', $test);
     }
 
     public function submit(Request $request, TypingTest $test)
@@ -89,16 +113,17 @@ class TypingTestController extends Controller
             'completed_at' => now(),
         ]));
 
-        $response = ['success' => true, 'show_result' => $test->show_result];
-        if ($test->show_result) {
-            $response['result'] = [
+        return response()->json([
+            'success'           => true,
+            'show_wpm_accuracy' => $test->show_wpm_accuracy,
+            'show_score'        => $test->show_score,
+            'result'            => [
                 'wpm'         => $result['wpm'],
                 'accuracy'    => $result['accuracy'],
                 'final_score' => $result['final_score'],
-            ];
-        }
-
-        return response()->json($response);
+            ],
+            'redirect' => route('student.typing-tests.result', $test),
+        ]);
     }
 
     public function result(TypingTest $test)
@@ -114,6 +139,11 @@ class TypingTestController extends Controller
             return redirect()->route('student.typing-tests.show', $test);
         }
 
-        return view('student.typing-tests.result', compact('test', 'attempt'));
+        return view('student.typing-tests.result', [
+            'test'              => $test,
+            'attempt'           => $attempt,
+            'show_wpm_accuracy' => $test->show_wpm_accuracy,
+            'show_score'        => $test->show_score,
+        ]);
     }
 }

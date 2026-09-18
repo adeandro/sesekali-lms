@@ -39,6 +39,7 @@
                             <th class="px-6 py-4 text-left">Judul</th>
                             <th class="px-6 py-4 text-left">Durasi</th>
                             <th class="px-6 py-4 text-left">Target WPM</th>
+                            <th class="px-6 py-4 text-left">Token</th>
                             <th class="px-6 py-4 text-left">Peserta</th>
                             <th class="px-6 py-4 text-left">Status</th>
                             <th class="px-6 py-4 text-left">Dibuat</th>
@@ -50,23 +51,44 @@
                         <tr class="hover:bg-gray-50 transition">
                             <td class="px-6 py-4">
                                 <div class="font-medium text-gray-800">{{ $test->title }}</div>
-                                @if($test->token)
-                                    <span class="text-xs text-gray-400"><i class="fas fa-key mr-1"></i>Butuh token</span>
-                                @endif
                             </td>
                             <td class="px-6 py-4 text-gray-600">{{ $test->duration_seconds }} detik</td>
                             <td class="px-6 py-4 text-gray-600">{{ $test->target_wpm }} WPM</td>
+                            <td class="px-6 py-4">
+                                @if($test->use_token && $test->token)
+                                  <span class="font-mono font-black text-sm
+                                               tracking-widest text-indigo-600
+                                               bg-indigo-50 px-2 py-1 rounded-lg">
+                                    {{ $test->token }}
+                                  </span>
+                                  <button onclick="navigator.clipboard.writeText('{{ $test->token }}').then(()=>this.innerHTML='<i class=\'fas fa-check\'></i>')"
+                                          class="ml-1 text-xs text-gray-400 hover:text-gray-600 transition">
+                                    <i class="fas fa-copy"></i>
+                                  </button>
+                                @else
+                                  <span class="text-xs text-gray-400">—</span>
+                                @endif
+                            </td>
                             <td class="px-6 py-4">
                                 <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
                                     <i class="fas fa-users"></i> {{ $test->attempts_count }}
                                 </span>
                             </td>
                             <td class="px-6 py-4">
-                                @if($test->status === 'published')
-                                    <span class="px-2 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">Published</span>
-                                @else
-                                    <span class="px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">Draft</span>
-                                @endif
+                                <form method="POST"
+                                      action="{{ route('admin.typing-tests.toggle-status', $test) }}"
+                                      class="inline">
+                                    @csrf
+                                    <button type="submit"
+                                            class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none {{ $test->status === 'published' ? 'bg-emerald-500' : 'bg-gray-200' }}"
+                                            title="{{ $test->status === 'published' ? 'Published — klik untuk Draft' : 'Draft — klik untuk Publish' }}">
+                                        <span class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform {{ $test->status === 'published' ? 'translate-x-6' : 'translate-x-1' }}">
+                                        </span>
+                                    </button>
+                                    <span class="ml-2 text-xs font-bold {{ $test->status === 'published' ? 'text-emerald-600' : 'text-gray-400' }}">
+                                        {{ $test->status === 'published' ? 'Published' : 'Draft' }}
+                                    </span>
+                                </form>
                             </td>
                             <td class="px-6 py-4 text-gray-500">{{ $test->created_at->format('d/m/Y') }}</td>
                             <td class="px-6 py-4">

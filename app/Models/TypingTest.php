@@ -5,23 +5,27 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Str;
 
 class TypingTest extends Model
 {
     use SoftDeletes;
 
     protected $fillable = [
-        'title', 'description', 'token', 'duration_seconds',
+        'title', 'description', 'use_token', 'token', 'duration_seconds',
         'target_wpm', 'weight_accuracy', 'weight_speed',
-        'word_category', 'word_count', 'show_result', 'status',
+        'show_wpm_accuracy', 'show_score',
+        'word_category', 'word_count', 'status',
         'class_restriction', 'starts_at', 'ends_at', 'created_by',
     ];
 
     protected $casts = [
-        'class_restriction' => 'array',
-        'show_result'       => 'boolean',
-        'starts_at'         => 'datetime',
-        'ends_at'           => 'datetime',
+        'class_restriction'  => 'array',
+        'show_wpm_accuracy'  => 'boolean',
+        'show_score'         => 'boolean',
+        'use_token'          => 'boolean',
+        'starts_at'          => 'datetime',
+        'ends_at'            => 'datetime',
     ];
 
     // Relations
@@ -59,5 +63,11 @@ class TypingTest extends Model
             return true;
         }
         return in_array($student->class_id, $this->class_restriction);
+    }
+
+    // Generate token unik 6 karakter
+    public function generateToken(): string
+    {
+        return strtoupper(Str::random(6));
     }
 }

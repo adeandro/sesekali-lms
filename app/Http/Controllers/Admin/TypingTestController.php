@@ -6,6 +6,7 @@ use App\Models\ClassRoom;
 use App\Models\TypingTest;
 use App\Models\TypingAttempt;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
@@ -31,12 +32,13 @@ class TypingTestController extends Controller
         $data = $request->validate([
             'title'               => 'required|string|max:191',
             'description'         => 'nullable|string',
-            'token'               => 'nullable|string|max:50',
             'duration_seconds'    => 'required|integer|min:10|max:600',
             'target_wpm'          => 'required|integer|min:1|max:300',
             'weight_accuracy'     => 'required|integer|min:0|max:100',
             'weight_speed'        => 'required|integer|min:0|max:100',
-            'show_result'         => 'boolean',
+            'show_wpm_accuracy'   => 'boolean',
+            'show_score'          => 'boolean',
+            'use_token'           => 'boolean',
             'status'              => 'required|in:draft,published',
             'starts_at'           => 'nullable|date',
             'ends_at'             => 'nullable|date|after_or_equal:starts_at',
@@ -48,11 +50,23 @@ class TypingTestController extends Controller
             return back()->withErrors(['weight_accuracy' => 'Total bobot akurasi dan kecepatan harus 100%.'])->withInput();
         }
 
-        $data['created_by']  = auth()->id();
-        $data['show_result'] = $request->boolean('show_result');
-        $data['word_count']  = 200;
+        $data['show_wpm_accuracy'] = $request->boolean('show_wpm_accuracy');
+        $data['show_score']        = $request->boolean('show_score');
+        $data['use_token']         = $request->boolean('use_token');
+        $data['word_count']        = 200;
 
-        TypingTest::create($data);
+        // Auto-generate token jika use_token aktif
+        $token = null;
+        if ($request->boolean('use_token')) {
+            do {
+                $token = strtoupper(Str::random(6));
+            } while (TypingTest::where('token', $token)->exists());
+        }
+
+        TypingTest::create(array_merge($data, [
+            'token'      => $token,
+            'created_by' => auth()->id(),
+        ]));
 
         return redirect()->route('admin.typing-tests.index')
             ->with('success', 'Tes mengetik berhasil dibuat.');
@@ -69,12 +83,13 @@ class TypingTestController extends Controller
         $data = $request->validate([
             'title'               => 'required|string|max:191',
             'description'         => 'nullable|string',
-            'token'               => 'nullable|string|max:50',
             'duration_seconds'    => 'required|integer|min:10|max:600',
             'target_wpm'          => 'required|integer|min:1|max:300',
             'weight_accuracy'     => 'required|integer|min:0|max:100',
             'weight_speed'        => 'required|integer|min:0|max:100',
-            'show_result'         => 'boolean',
+            'show_wpm_accuracy'   => 'boolean',
+            'show_score'          => 'boolean',
+            'use_token'           => 'boolean',
             'status'              => 'required|in:draft,published',
             'starts_at'           => 'nullable|date',
             'ends_at'             => 'nullable|date|after_or_equal:starts_at',
@@ -86,7 +101,19 @@ class TypingTestController extends Controller
             return back()->withErrors(['weight_accuracy' => 'Total bobot akurasi dan kecepatan harus 100%.'])->withInput();
         }
 
-        $data['show_result'] = $request->boolean('show_result');
+        $data['show_wpm_accuracy'] = $request->boolean('show_wpm_accuracy');
+        $data['show_score']        = $request->boolean('show_score');
+        $data['use_token']         = $request->boolean('use_token');
+
+        // Token logic
+        if ($request->boolean('use_token') && !$test->token) {
+            do {
+                $data['token'] = strtoupper(Str::random(6));
+            } while (TypingTest::where('token', $data['token'])->where('id', '!=', $test->id)->exists());
+        } elseif (!$request->boolean('use_token')) {
+            $data['token'] = null;
+        }
+        // Jika use_token aktif dan token sudah ada, biarkan token lama
 
         $test->update($data);
 
@@ -102,6 +129,14 @@ class TypingTestController extends Controller
             ->with('success', 'Tes mengetik berhasil dihapus.');
     }
 
+    public function toggleStatus(TypingTest $test)
+    {
+        $newStatus = $test->status === 'published' ? 'draft' : 'published';
+        $test->update(['status' => $newStatus]);
+
+        return back()->with('success', 'Status diubah ke ' . ucfirst($newStatus));
+    }
+
     public function results(TypingTest $test)
     {
         $attempts = TypingAttempt::with('student.classroom')
@@ -111,6 +146,17 @@ class TypingTestController extends Controller
             ->get();
 
         return view('admin.typing-tests.results', compact('test', 'attempts'));
+    }
+
+    public function resetAttempt(TypingTest $test, TypingAttempt $attempt)
+    {
+        abort_if($attempt->typing_test_id !== $test->id, 403);
+
+        $studentName = $attempt->student->name ?? 'Siswa';
+        $attempt->delete();
+
+        return back()->with('success',
+            'Attempt siswa ' . $studentName . ' berhasil direset. Siswa dapat mengerjakan ulang.');
     }
 
     public function export(TypingTest $test)
@@ -125,14 +171,12 @@ class TypingTestController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Hasil Tes Mengetik');
 
-        // Header row
         $headers = ['No', 'Nama Siswa', 'NIS', 'Kelas', 'WPM', 'Akurasi (%)', 'Nilai Akhir', 'Waktu Selesai'];
         foreach ($headers as $col => $header) {
             $sheet->setCellValueByColumnAndRow($col + 1, 1, $header);
             $sheet->getStyleByColumnAndRow($col + 1, 1)->getFont()->setBold(true);
         }
 
-        // Data rows
         foreach ($attempts as $i => $attempt) {
             $row = $i + 2;
             $sheet->setCellValueByColumnAndRow(1, $row, $i + 1);
@@ -145,7 +189,6 @@ class TypingTestController extends Controller
             $sheet->setCellValueByColumnAndRow(8, $row, $attempt->completed_at?->format('d/m/Y H:i') ?? '-');
         }
 
-        // Auto-size columns
         for ($col = 1; $col <= 8; $col++) {
             $sheet->getColumnDimensionByColumn($col)->setAutoSize(true);
         }

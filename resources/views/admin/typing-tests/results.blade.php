@@ -12,10 +12,23 @@
                 <h1 class="text-2xl font-bold" style="color: var(--brand-primary)">
                     <i class="fas fa-chart-bar mr-2"></i>Hasil Tes: {{ $test->title }}
                 </h1>
-                <p class="text-sm text-gray-500 mt-0.5">
-                    Durasi: {{ $test->duration_seconds }} detik &nbsp;|&nbsp;
-                    Target WPM: {{ $test->target_wpm }} &nbsp;|&nbsp;
-                    {{ $attempts->count() }} peserta selesai
+                <p class="text-sm text-gray-500 mt-0.5 flex flex-wrap items-center gap-3">
+                    <span>Durasi: {{ $test->duration_seconds }} detik</span>
+                    <span>|</span>
+                    <span>Target WPM: {{ $test->target_wpm }}</span>
+                    <span>|</span>
+                    <span>{{ $attempts->count() }} peserta selesai</span>
+                    @if($test->use_token)
+                    <span>|</span>
+                    <span class="flex items-center gap-1.5">
+                        <span class="text-xs text-gray-500">Token:</span>
+                        <span class="font-mono font-black text-indigo-600 tracking-widest bg-indigo-50 px-2 py-0.5 rounded-lg">{{ $test->token }}</span>
+                        <button onclick="navigator.clipboard.writeText('{{ $test->token }}')"
+                                class="text-gray-400 hover:text-gray-600 text-xs">
+                            <i class="fas fa-copy"></i> Salin
+                        </button>
+                    </span>
+                    @endif
                 </p>
             </div>
         </div>
@@ -45,6 +58,7 @@
                             <th class="px-6 py-4 text-right">Akurasi</th>
                             <th class="px-6 py-4 text-right">Nilai</th>
                             <th class="px-6 py-4 text-left">Waktu Selesai</th>
+                            <th class="px-6 py-4 text-left">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-50">
@@ -67,6 +81,19 @@
                             </td>
                             <td class="px-6 py-4 text-gray-500 text-xs">
                                 {{ $attempt->completed_at?->format('d/m/Y H:i') ?? '-' }}
+                            </td>
+                            <td class="px-6 py-4">
+                                <form method="POST"
+                                      action="{{ route('admin.typing-tests.attempts.reset', [$test, $attempt]) }}"
+                                      class="inline"
+                                      onsubmit="return confirm('Reset attempt {{ addslashes($attempt->student->name) }}?\nSiswa akan bisa mengerjakan ulang dari awal.')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit"
+                                            class="text-xs font-bold text-rose-500 hover:text-rose-700 transition flex items-center gap-1">
+                                        <i class="fas fa-redo-alt"></i> Reset
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                         @endforeach
