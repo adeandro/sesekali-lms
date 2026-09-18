@@ -212,7 +212,7 @@
             @php
                 $activeAccordion = null;
                 if (request()->routeIs('communication.*')) $activeAccordion = 'komunikasi';
-                elseif (request()->is('admin/questions*') || request()->is('admin/exams*') || request()->is('admin/results*') || request()->is('admin/tokens*') || request()->is('admin/monitor-exams*')) $activeAccordion = 'cbt';
+                elseif (request()->is('admin/questions*') || request()->is('admin/exams*') || request()->is('admin/results*') || request()->is('admin/tokens*') || request()->is('admin/monitor-exams*') || request()->is('admin/typing-tests*')) $activeAccordion = 'cbt';
                 elseif (request()->is('superadmin/teachers*') || request()->is('admin/students*') || request()->is('admin/subjects*') || request()->is('admin/classes*') || request()->is('admin/grade-weights*') || request()->is('admin/manual-grades*')) $activeAccordion = 'akademik';
                 elseif (request()->routeIs('admin.extracurriculars.*')) $activeAccordion = 'ekskul';
                 elseif (request()->routeIs('dashboard.principal') || request()->is('admin/reports*')) $activeAccordion = 'monitoring';
@@ -271,7 +271,7 @@
                 <div class="pt-1">
                     <button @click="activeAccordion = (activeAccordion === 'cbt' ? null : 'cbt')" 
                             class="w-full nav-item justify-between 
-                                   {{ (request()->routeIs('admin.questions.*') || request()->routeIs('admin.exams.*') || request()->routeIs('admin.results.*') || request()->routeIs('admin.tokens.*') || request()->routeIs('admin.monitor-exams.*')) ? 'bg-gray-50' : '' }}">
+                                   {{ (request()->routeIs('admin.questions.*') || request()->routeIs('admin.exams.*') || request()->routeIs('admin.results.*') || request()->routeIs('admin.tokens.*') || request()->routeIs('admin.monitor-exams.*') || request()->routeIs('admin.typing-tests.*')) ? 'bg-gray-50' : '' }}">
                         <div class="flex items-center">
                             <i class="fas fa-laptop-code w-5 text-lg mr-3"></i>
                             <span class="font-bold text-[11px] uppercase tracking-widest">CBT & Ujian</span>
@@ -301,6 +301,14 @@
                            class="nav-item py-2 text-sm {{ request()->routeIs('admin.monitor-exams.*') ? 'menu-item-active' : '' }}">
                             <i class="fas fa-video w-4 mr-2"></i><span>Pantau Ujian</span>
                         </a>
+                        {{-- Tes Mengetik --}}
+                        @if(in_array(Auth::user()->role, ['teacher','superadmin']))
+                        <a href="{{ route('admin.typing-tests.index') }}"
+                           class="nav-item py-2 text-sm {{ request()->routeIs('admin.typing-tests.*') ? 'menu-item-active' : '' }}">
+                            <i class="fas fa-keyboard w-4 mr-2"></i>
+                            <span>Tes Mengetik</span>
+                        </a>
+                        @endif
                     </div>
                 </div>
                 @endif

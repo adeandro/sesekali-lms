@@ -698,4 +698,29 @@ Route::middleware('auth')->group(function () {
         Route::post('{material}/complete', [\App\Http\Controllers\Student\LearningController::class, 'complete'])->name('complete');
     });
 
+    // ── Typing Test (Admin: teacher & superadmin) ──────────────────────────
+    Route::middleware('role:superadmin,teacher')
+        ->prefix('admin/typing-tests')
+        ->name('admin.typing-tests.')
+        ->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\TypingTestController::class, 'index'])->name('index');
+            Route::get('create', [\App\Http\Controllers\Admin\TypingTestController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\Admin\TypingTestController::class, 'store'])->name('store');
+            Route::get('{test}/edit', [\App\Http\Controllers\Admin\TypingTestController::class, 'edit'])->name('edit');
+            Route::put('{test}', [\App\Http\Controllers\Admin\TypingTestController::class, 'update'])->name('update');
+            Route::delete('{test}', [\App\Http\Controllers\Admin\TypingTestController::class, 'destroy'])->name('destroy');
+            Route::get('{test}/results', [\App\Http\Controllers\Admin\TypingTestController::class, 'results'])->name('results');
+            Route::get('{test}/export', [\App\Http\Controllers\Admin\TypingTestController::class, 'export'])->name('export');
+        });
+
+    // ── Typing Test (Student) ──────────────────────────────────────────────
+    Route::middleware('role:student')
+        ->prefix('student/typing-tests')
+        ->name('student.typing-tests.')
+        ->group(function () {
+            Route::get('{test}', [\App\Http\Controllers\Student\TypingTestController::class, 'show'])->name('show');
+            Route::post('{test}/submit', [\App\Http\Controllers\Student\TypingTestController::class, 'submit'])->name('submit');
+            Route::get('{test}/result', [\App\Http\Controllers\Student\TypingTestController::class, 'result'])->name('result');
+        });
+
 }); // end auth middleware group

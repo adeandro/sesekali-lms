@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Schema;
 use App\Models\Announcement;
 use App\Models\Message;
 use App\Models\Setting;
+use App\Models\TypingTest;
 use App\Models\User;
 use App\Policies\AnnouncementPolicy;
 use App\Policies\MessagePolicy;
@@ -74,6 +75,22 @@ class AppServiceProvider extends ServiceProvider
                         ->first();
                 }
                 $view->with('activeTheme', $activeTheme);
+            }
+        });
+
+        // View Composer: inject $typingTests ke halaman exam index siswa
+        View::composer('student.exams.index', function ($view) {
+            if (auth()->check() && auth()->user()->role === 'student') {
+                $student = auth()->user();
+                $typingTests = TypingTest::available()
+                    ->with(['attempts' => function ($q) use ($student) {
+                        $q->where('student_id', $student->id);
+                    }])
+                    ->get()
+                    ->filter(fn($t) => $t->isAvailableFor($student));
+                $view->with('typingTests', $typingTests);
+            } else {
+                $view->with('typingTests', collect());
             }
         });
     }
