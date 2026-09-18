@@ -219,8 +219,9 @@
                         </div>
                     </div>
 
-                    @if($typingAttempt && $typingAttempt->status === 'completed' && $typingTest->show_result)
-                    <div class="bg-gray-50 rounded-xl p-3 mt-1 grid grid-cols-3 gap-2 text-center">
+                    @if($typingAttempt && $typingAttempt->status === 'completed' && ($typingTest->show_wpm_accuracy || $typingTest->show_score))
+                    <div class="bg-gray-50 rounded-xl p-3 mt-1 grid grid-cols-{{ ($typingTest->show_wpm_accuracy && $typingTest->show_score) ? '3' : ($typingTest->show_wpm_accuracy ? '2' : '1') }} gap-2 text-center">
+                        @if($typingTest->show_wpm_accuracy)
                         <div>
                             <div class="font-bold text-sm" style="color: var(--brand-primary)">{{ number_format($typingAttempt->wpm, 1) }}</div>
                             <div class="text-xs text-gray-400">WPM</div>
@@ -229,10 +230,13 @@
                             <div class="font-bold text-sm text-blue-600">{{ number_format($typingAttempt->accuracy, 1) }}%</div>
                             <div class="text-xs text-gray-400">Akurasi</div>
                         </div>
+                        @endif
+                        @if($typingTest->show_score)
                         <div>
                             <div class="font-bold text-sm text-emerald-600">{{ number_format($typingAttempt->final_score, 1) }}</div>
                             <div class="text-xs text-gray-400">Nilai</div>
                         </div>
+                        @endif
                     </div>
                     @endif
                 </div>

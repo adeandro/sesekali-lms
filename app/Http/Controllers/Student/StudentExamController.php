@@ -8,6 +8,7 @@ use App\Models\Exam;
 use App\Models\ExamAttempt;
 use App\Models\ExamViolation;
 use App\Models\ExamSession;
+use App\Models\TypingTest;
 use App\Services\ExamEngineService;
 use Illuminate\Http\Request;
 
@@ -28,7 +29,17 @@ class StudentExamController extends Controller
             ->get()  // Get collection first
             ->keyBy('exam_id');  // Then keyBy on the collection
 
-        return view('student.exams.index', compact('exams', 'attempts'));
+        $typingTests = TypingTest::available()
+            ->with(['attempts' => function ($q) use ($student) {
+                $q->where('student_id', $student->id);
+            }])
+            ->latest()
+            ->get()
+            ->filter(function ($test) use ($student) {
+                return $test->isAvailableFor($student);
+            });
+
+        return view('student.exams.index', compact('exams', 'attempts', 'typingTests'));
     }
 
     public function start(Exam $exam)
