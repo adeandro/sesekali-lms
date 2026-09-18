@@ -1,27 +1,39 @@
 @extends('layouts.app')
 
 @push('styles')
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
 <style>
 /* ═══════════════════════════════════════════════════════
-   EXAM MODE — hide sidebar & topnav via JS-triggered class
+   EXAM ACTIVE: Full Screen Immersion
    ═══════════════════════════════════════════════════════ */
 body.exam-active #sidebar,
-body.exam-active #sidebarOverlay {
-    display: none !important;
-}
+body.exam-active #sidebarOverlay,
 body.exam-active .flex.flex-col.flex-1.overflow-hidden > nav {
     display: none !important;
 }
+
+body.exam-active {
+    background: #f8fafc !important;
+}
+
 body.exam-active .flex.flex-col.flex-1.overflow-hidden {
     max-width: 100% !important;
+    height: 100vh !important;
+    overflow-y: auto !important;
 }
-body.exam-active #exam-page-content {
-    padding: 2rem 3rem !important;
-    max-width: 1000px !important;
+
+#typingArenaWrapper {
+    min-height: calc(100vh - 4rem);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 /* ═══════════════════════════════════════════════════════
-   READY MODAL STYLING (Solid & Clean, No overlap)
+   READY MODAL
    ═══════════════════════════════════════════════════════ */
 #readyModal {
     position: fixed;
@@ -31,232 +43,311 @@ body.exam-active #exam-page-content {
     align-items: center;
     justify-content: center;
     background: rgba(15, 23, 42, 0.75);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 .modal-card {
     background: #ffffff !important;
     border-radius: 2rem;
-    padding: 2.25rem;
+    padding: 2.5rem;
     max-width: 440px;
-    width: 90%;
-    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.4);
+    width: 92%;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
     position: relative;
     z-index: 100000;
     text-align: center;
 }
 
 /* ═══════════════════════════════════════════════════════
-   WORDS DISPLAY — clean, no whitespace artifacts
+   TYPING ARENA (Monkeytype Style)
    ═══════════════════════════════════════════════════════ */
-#wordsDisplay {
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 1.35rem;
-    line-height: 2.6rem;
-    color: #9ca3af;
+.typing-box {
+    font-family: 'JetBrains Mono', 'Courier New', Courier, monospace;
+    font-size: 1.6rem;
+    line-height: 2.8rem;
+    letter-spacing: 0.02em;
+    color: #94a3b8;
     user-select: none;
     cursor: text;
-    max-height: 8rem;
+    max-height: 8.6rem;
     overflow: hidden;
     position: relative;
+    outline: none;
+    transition: all 0.2s ease;
 }
 
-/* Word spans */
-#wordsDisplay .w {
+/* Word styling */
+.typing-box .word {
     display: inline-block;
-    margin-right: 0.5em;
-    border-radius: 4px;
+    margin-right: 0.6em;
     padding: 0 2px;
-    transition: background 0.08s, color 0.08s;
-    letter-spacing: 0.01em;
+    border-radius: 4px;
+    transition: background-color 0.1s ease, color 0.1s ease;
 }
-#wordsDisplay .w.current {
-    outline: 2px solid var(--brand-primary);
-    background: var(--brand-glow, rgba(79,70,229,0.08));
-    color: #374151;
-}
-#wordsDisplay .w.ok  { color: #22c55e; }
-#wordsDisplay .w.err { color: #ef4444; }
 
-/* Karakter per huruf */
-#wordsDisplay .ch     { display: inline; }
-#wordsDisplay .ch.ok  { color: #22c55e; }
-#wordsDisplay .ch.err { color: #ef4444; }
-#wordsDisplay .ch.cur {
-    border-bottom: 3px solid var(--brand-primary);
-    animation: blink 1s step-end infinite;
+.typing-box .word.current {
+    color: #334155;
 }
-@keyframes blink { 50% { opacity: 0; } }
 
-/* Gradient fade bottom */
-#wordsDisplay::after {
+/* Character styling */
+.typing-box .char {
+    position: relative;
+    display: inline;
+    transition: color 0.08s ease;
+}
+
+.typing-box .char.correct {
+    color: #10b981; /* Emerald 500 */
+}
+
+.typing-box .char.wrong {
+    color: #ef4444; /* Rose 500 */
+    background-color: rgba(239, 68, 68, 0.15);
+    border-radius: 2px;
+}
+
+.typing-box .char.extra {
+    color: #dc2626;
+    opacity: 0.75;
+}
+
+/* Caret / Cursor */
+.typing-box .char.caret::before {
     content: '';
     position: absolute;
-    bottom: 0; left: 0; right: 0;
-    height: 2.4rem;
-    background: linear-gradient(to bottom, transparent, #ffffff);
-    pointer-events: none;
+    left: 0;
+    top: 15%;
+    height: 70%;
+    width: 2.5px;
+    background: var(--brand-primary, #4f46e5);
+    border-radius: 2px;
+    animation: caretBlink 1s infinite;
 }
 
-/* ═══════════════════════════════════════════════════════
-   INPUT FIELD
-   ═══════════════════════════════════════════════════════ */
-#typingInput {
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 1.15rem;
-    letter-spacing: 0.02em;
-    caret-color: var(--brand-primary);
+.typing-box .char.caret-after::after {
+    content: '';
+    position: absolute;
+    right: -2px;
+    top: 15%;
+    height: 70%;
+    width: 2.5px;
+    background: var(--brand-primary, #4f46e5);
+    border-radius: 2px;
+    animation: caretBlink 1s infinite;
 }
-#typingInput:focus {
-    outline: none;
-    border-color: var(--brand-primary) !important;
-    box-shadow: 0 0 0 3px var(--brand-glow, rgba(79,70,229,0.15));
+
+@keyframes caretBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+/* Blur overlay when arena lost focus */
+#blurWarning {
+    position: absolute;
+    inset: 0;
+    background: rgba(248, 250, 252, 0.85);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 1.5rem;
+    z-index: 20;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+#blurWarning.active {
+    opacity: 1;
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+/* Hidden input buffer */
+#keyBuffer {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    left: -9999px;
+    top: -9999px;
 }
 </style>
 @endpush
 
 @section('content')
-<div id="exam-page-content" class="max-w-3xl mx-auto px-4 py-6">
+<div id="typingArenaWrapper" class="max-w-4xl mx-auto px-4 py-8">
 
   {{-- ════════════════════════════════════
-       READY MODAL — Solid Opaque Overlay
+       READY MODAL
        ════════════════════════════════════ --}}
   <div id="readyModal">
     <div class="modal-card">
-
       {{-- Icon --}}
-      <div style="width: 4rem; height: 4rem; border-radius: 1.25rem; margin: 0 auto 1.25rem auto; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; background: var(--brand-glow, rgba(79,70,229,0.12)); color: var(--brand-primary);">
+      <div style="width: 4.5rem; height: 4.5rem; border-radius: 1.5rem; margin: 0 auto 1.25rem auto; display: flex; align-items: center; justify-content: center; font-size: 2rem; background: var(--brand-glow, rgba(79,70,229,0.12)); color: var(--brand-primary, #4f46e5); box-shadow: 0 8px 16px -4px var(--brand-glow, rgba(79,70,229,0.25));">
         <i class="fas fa-keyboard"></i>
       </div>
 
-      {{-- Judul & Info --}}
-      <h2 style="font-size: 1.25rem; font-weight: 900; color: #111827; margin: 0 0 0.5rem 0; line-height: 1.3;">
+      <h2 style="font-size: 1.35rem; font-weight: 900; color: #0f172a; margin: 0 0 0.4rem 0;">
         {{ $test->title }}
       </h2>
       
-      <div style="display: flex; align-items: center; justify-content: center; gap: 0.75rem; font-size: 0.875rem; color: #6b7280; margin-bottom: 1.25rem;">
-        <span><i class="fas fa-clock" style="margin-right: 0.35rem; color: #9ca3af;"></i>{{ $test->duration_seconds }} detik</span>
-        <span style="color: #d1d5db;">|</span>
-        <span><i class="fas fa-tachometer-alt" style="margin-right: 0.35rem; color: #9ca3af;"></i>Target {{ $test->target_wpm }} WPM</span>
+      <div style="display: flex; align-items: center; justify-content: center; gap: 0.85rem; font-size: 0.875rem; color: #64748b; margin-bottom: 1.5rem; font-weight: 600;">
+        <span><i class="fas fa-clock" style="margin-right: 0.4rem; color: var(--brand-primary, #4f46e5);"></i>{{ $test->duration_seconds }} Detik</span>
+        <span style="color: #cbd5e1;">•</span>
+        <span><i class="fas fa-bolt" style="margin-right: 0.4rem; color: #f59e0b;"></i>Target {{ $test->target_wpm }} WPM</span>
       </div>
 
-      {{-- Peraturan Box --}}
-      <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 1rem; padding: 1rem; text-align: left; font-size: 0.8125rem; color: #92400e; margin-bottom: 1.5rem;">
-        <p style="font-weight: 900; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: #b45309; margin: 0 0 0.6rem 0;">
-          PERHATIAN SEBELUM MULAI
+      {{-- Rules Box --}}
+      <div style="background: #fffbeb; border: 1px solid #fef3c7; border-radius: 1.25rem; padding: 1.15rem; text-align: left; font-size: 0.8125rem; color: #92400e; margin-bottom: 1.75rem;">
+        <p style="font-weight: 900; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: #b45309; margin: 0 0 0.65rem 0; display: flex; align-items: center; gap: 0.4rem;">
+          <i class="fas fa-shield-alt"></i> Petunjuk & Tata Tertib
         </p>
-        <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+        <div style="display: flex; flex-direction: column; gap: 0.45rem; line-height: 1.45;">
           <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
-            <span style="flex-shrink: 0;">⌨️</span>
-            <span>Timer mulai saat kamu mengetik karakter pertama</span>
+            <span>⏱️</span>
+            <span>Timer otomatis berjalan saat kamu menekan tombol pertama.</span>
           </div>
           <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
-            <span style="flex-shrink: 0;">🖥️</span>
-            <span>Mode layar penuh akan aktif — sidebar disembunyikan</span>
+            <span>🖥️</span>
+            <span>Ujian wajib berjalan dalam <strong>Layar Penuh (Fullscreen)</strong>.</span>
           </div>
           <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
-            <span style="flex-shrink: 0;">⚠️</span>
-            <span>Keluar layar penuh = pelanggaran (maks. 3×)</span>
-          </div>
-          <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
-            <span style="flex-shrink: 0;">🚫</span>
-            <span>Tidak bisa kembali setelah tes dimulai</span>
+            <span>⚠️</span>
+            <span>Keluar fullscreen dihitung <strong>pelanggaran</strong> (maks. 3×).</span>
           </div>
         </div>
       </div>
 
-      {{-- Tombol Siap --}}
+      {{-- Start Button --}}
       <button id="btnReady"
-              style="width: 100%; padding: 0.95rem 1rem; border-radius: 0.875rem; font-weight: 900; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.08em; color: #ffffff; background: linear-gradient(135deg, var(--brand-primary), var(--brand-dark, var(--brand-primary))); border: none; cursor: pointer; box-shadow: 0 10px 20px -5px rgba(0,0,0,0.2); transition: all 0.2s;"
-              onmouseover="this.style.opacity='0.92'"
-              onmouseout="this.style.opacity='1'">
-        <i class="fas fa-play" style="margin-right: 0.5rem;"></i>SAYA SIAP — MULAI TES
+              style="width: 100%; padding: 1rem 1.5rem; border-radius: 1rem; font-weight: 900; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.08em; color: #ffffff; background: linear-gradient(135deg, var(--brand-primary, #4f46e5), var(--brand-dark, #3730a3)); border: none; cursor: pointer; box-shadow: 0 12px 24px -6px rgba(79, 70, 229, 0.4); transition: transform 0.15s ease, box-shadow 0.15s ease;"
+              onmouseover="this.style.transform='translateY(-1px)'"
+              onmouseout="this.style.transform='translateY(0)'">
+        <i class="fas fa-play" style="margin-right: 0.6rem;"></i>Mulai Tes Sekarang
       </button>
     </div>
   </div>
 
   {{-- ════════════════════════════════════
-       HEADER: Judul + Timer + Violation
+       TOP HUD: Title, Live Stats, Timer
        ════════════════════════════════════ --}}
-  <div class="flex items-center justify-between mb-6">
+  <div class="flex items-end justify-between mb-6">
     <div>
-      <h1 class="text-xl font-black text-gray-800 tracking-tight">{{ $test->title }}</h1>
-      <p class="text-sm text-gray-400 mt-0.5">Durasi: {{ $test->duration_seconds }}s &nbsp;|&nbsp; Target: {{ $test->target_wpm }} WPM</p>
+      <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 mb-2">
+        <i class="fas fa-keyboard text-xs"></i> Tes Mengetik
+      </span>
+      <h1 class="text-2xl font-black text-slate-800 tracking-tight">{{ $test->title }}</h1>
     </div>
 
-    <div class="flex items-center gap-4">
-      {{-- Violation badge --}}
-      <div id="violBadge"
-           class="hidden items-center gap-1.5 bg-rose-50 border border-rose-200 text-rose-600
-                  rounded-xl px-3 py-1.5 text-xs font-black">
-        <i class="fas fa-exclamation-triangle"></i>
-        Pelanggaran: <span id="violCount">0</span>/3
+    {{-- Live HUD Stats --}}
+    <div class="flex items-center gap-4 sm:gap-6">
+      {{-- Live WPM --}}
+      <div class="text-center">
+        <div class="text-2xl sm:text-3xl font-black font-mono tracking-tight text-slate-700" id="liveWpm">0</div>
+        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">WPM</div>
       </div>
 
+      {{-- Live Accuracy --}}
+      <div class="text-center">
+        <div class="text-2xl sm:text-3xl font-black font-mono tracking-tight text-emerald-600" id="liveAcc">100%</div>
+        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Akurasi</div>
+      </div>
+
+      {{-- Divider --}}
+      <div class="h-8 w-px bg-slate-200"></div>
+
       {{-- Timer --}}
-      <div class="text-right">
+      <div class="text-center min-w-[70px]">
         <div id="timerEl"
-             class="text-4xl font-mono font-black tabular-nums leading-none"
-             style="color:var(--brand-primary)">
+             class="text-3xl sm:text-4xl font-black font-mono tabular-nums leading-none"
+             style="color: var(--brand-primary, #4f46e5)">
           {{ gmdate('i:s', $test->duration_seconds) }}
         </div>
-        <p class="text-xs text-gray-400 mt-0.5">Sisa Waktu</p>
+        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-1">Sisa Waktu</div>
       </div>
     </div>
   </div>
 
   {{-- ════════════════════════════════════
-       ARENA CARD
+       MAIN TYPING CARD
        ════════════════════════════════════ --}}
-  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-5"
+  <div class="relative bg-white rounded-3xl p-8 sm:p-10 shadow-xl border border-slate-100 transition-all duration-300"
        id="arenaCard"
-       onclick="if(!isSubmitting) document.getElementById('typingInput').focus()">
+       onclick="focusArena()">
 
-    {{-- Words Display --}}
+    {{-- Violation Alert Badge (if any) --}}
+    <div id="violBadge"
+         class="hidden absolute top-4 right-6 items-center gap-1.5 bg-rose-50 border border-rose-200 text-rose-600 rounded-full px-3 py-1 text-xs font-bold animate-pulse">
+      <i class="fas fa-exclamation-triangle"></i>
+      Pelanggaran: <span id="violCount">0</span>/3
+    </div>
+
+    {{-- Words Arena --}}
     @php $words = explode(' ', $attempt->words_generated); @endphp
-    <div id="wordsDisplay">
+    <div id="wordsContainer" class="typing-box">
       @foreach($words as $i => $word)
-        <span class="w{{ $i === 0 ? ' current' : '' }}"
-              data-i="{{ $i }}"
-              data-w="{{ $word }}">{{ $word }}</span>
+        <span class="word{{ $i === 0 ? ' current' : '' }}" data-word-idx="{{ $i }}">
+          @foreach(str_split($word) as $ci => $char)
+            <span class="char{{ ($i === 0 && $ci === 0) ? ' caret' : '' }}" data-char-idx="{{ $ci }}">{{ $char }}</span>
+          @endforeach
+        </span>
       @endforeach
     </div>
 
-    {{-- Input --}}
-    <input
-      type="text"
-      id="typingInput"
-      class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-gray-800 bg-gray-50 transition-colors"
-      placeholder="Mulai mengetik di sini..."
-      autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-      disabled
-    >
+    {{-- Lost focus warning overlay --}}
+    <div id="blurWarning" onclick="focusArena()">
+      <div class="text-center p-6 bg-white/95 rounded-2xl shadow-lg border border-slate-200">
+        <i class="fas fa-mouse-pointer text-indigo-600 text-2xl mb-2 animate-bounce"></i>
+        <p class="font-bold text-slate-800 text-base">Klik di sini untuk melanjutkan mengetik</p>
+        <p class="text-xs text-slate-400 mt-0.5">Fokus area mengetik terlepas</p>
+      </div>
+    </div>
+
+    {{-- Hidden input stream --}}
+    <input type="text" id="keyBuffer" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
   </div>
 
-  {{-- Status Bar --}}
-  <div class="mt-3 flex items-center justify-between text-sm px-1">
-    <span class="text-gray-500">
-      Kata: <span id="wordCountEl" class="font-bold text-gray-700">0</span>
-    </span>
-    <span id="statusEl" class="text-xs text-gray-400 italic">Timer belum berjalan</span>
+  {{-- ════════════════════════════════════
+       BOTTOM BAR: Progress & Key Hints
+       ════════════════════════════════════ --}}
+  <div class="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400 px-2">
+    <div class="flex items-center gap-4">
+      <span class="flex items-center gap-1.5">
+        <kbd class="px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-600 font-mono font-semibold">Spasi</kbd>
+        Kata berikutnya
+      </span>
+      <span class="flex items-center gap-1.5">
+        <kbd class="px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-600 font-mono font-semibold">Backspace</kbd>
+        Hapus huruf
+      </span>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <span>Progres:</span>
+      <span id="wordProgress" class="font-mono font-bold text-slate-700">0 / {{ count($words) }} Kata</span>
+    </div>
   </div>
 
-  {{-- Progress bar --}}
-  <div class="mt-2 h-1 bg-gray-100 rounded-full overflow-hidden">
-    <div id="progressBar"
-         class="h-full rounded-full transition-all duration-500"
-         style="width:0%; background:var(--brand-primary)"></div>
+  {{-- Progress Bar --}}
+  <div class="mt-3 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+    <div id="timeProgressBar"
+         class="h-full rounded-full transition-all duration-300 ease-linear"
+         style="width: 100%; background: linear-gradient(90deg, var(--brand-primary, #4f46e5), #06b6d4);"></div>
   </div>
 
-  {{-- Loading Overlay --}}
+  {{-- ════════════════════════════════════
+       SUBMIT LOADING OVERLAY
+       ════════════════════════════════════ --}}
   <div id="loadingOverlay"
-       class="hidden fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-    <div class="bg-white rounded-2xl p-8 text-center shadow-2xl">
-      <div class="w-12 h-12 border-4 rounded-full animate-spin mx-auto mb-4"
-           style="border-color:var(--brand-primary); border-top-color:transparent"></div>
-      <p class="font-bold text-gray-800">Menyimpan hasil tes...</p>
-      <p class="text-sm text-gray-500 mt-1">Mohon tunggu</p>
+       class="hidden fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl p-8 max-w-xs w-full text-center shadow-2xl space-y-4">
+      <div class="w-14 h-14 border-4 rounded-full animate-spin mx-auto"
+           style="border-color: var(--brand-primary, #4f46e5); border-top-color: transparent"></div>
+      <div>
+        <h3 class="font-black text-slate-800 text-lg">Menghitung Hasil...</h3>
+        <p class="text-xs text-slate-400 mt-1">Menyimpan kecepatan & akurasi kamu</p>
+      </div>
     </div>
   </div>
 
@@ -265,329 +356,341 @@ body.exam-active #exam-page-content {
 
 @push('scripts')
 <script>
-/* ═══════════════════════════════════════════════
-   Typing Test Engine — v3.1 (Clean & Solid Modal)
-   ═══════════════════════════════════════════════ */
 window.isSubmitting = false;
 
 document.addEventListener('DOMContentLoaded', () => {
 
-  /* ── Config ───────────────────────────────── */
+  /* ── Configuration ────────────────────────── */
   const DURATION       = {{ $test->duration_seconds }};
   const CSRF           = '{{ csrf_token() }}';
   const SUBMIT_URL     = '{{ route("student.typing-tests.submit", $test) }}';
   const MAX_VIOLATIONS = 3;
-  const TOTAL_WORDS    = {{ count($words) }};
+
+  /* ── Words Data ───────────────────────────── */
+  const wordElements = [...document.querySelectorAll('#wordsContainer .word')];
+  const totalWords   = wordElements.length;
 
   /* ── State ────────────────────────────────── */
-  let timeLeft       = DURATION;
-  let timerInterval  = null;
-  let timerStarted   = false;
-  let violations     = 0;
-  let currentWordIdx = 0;
-  let typedWords     = [];
+  let timeLeft        = DURATION;
+  let timerInterval   = null;
+  let statsInterval   = null;
+  let timerStarted    = false;
+  let startTime       = null;
+  let currentWordIdx  = 0;
+  let currentCharIdx  = 0;
+  let typedWords      = [];
+  let currentTyped    = '';
+  let violations      = 0;
+  let totalCharsTyped = 0;
+  let totalCorrectChars = 0;
 
-  /* ── DOM ──────────────────────────────────── */
-  const readyModal  = document.getElementById('readyModal');
-  const btnReady    = document.getElementById('btnReady');
-  const input       = document.getElementById('typingInput');
-  const timerEl     = document.getElementById('timerEl');
-  const violBadge   = document.getElementById('violBadge');
-  const violCountEl = document.getElementById('violCount');
-  const wordCountEl = document.getElementById('wordCountEl');
-  const statusEl    = document.getElementById('statusEl');
-  const loadingEl   = document.getElementById('loadingOverlay');
-  const progressBar = document.getElementById('progressBar');
-  const wordEls     = [...document.querySelectorAll('#wordsDisplay .w')];
+  /* ── DOM Elements ─────────────────────────── */
+  const readyModal      = document.getElementById('readyModal');
+  const btnReady        = document.getElementById('btnReady');
+  const keyBuffer       = document.getElementById('keyBuffer');
+  const wordsContainer  = document.getElementById('wordsContainer');
+  const blurWarning     = document.getElementById('blurWarning');
+  const timerEl         = document.getElementById('timerEl');
+  const liveWpmEl       = document.getElementById('liveWpm');
+  const liveAccEl       = document.getElementById('liveAcc');
+  const wordProgressEl  = document.getElementById('wordProgress');
+  const timeProgressBar = document.getElementById('timeProgressBar');
+  const violBadge       = document.getElementById('violBadge');
+  const violCountEl     = document.getElementById('violCount');
+  const loadingOverlay  = document.getElementById('loadingOverlay');
 
   /* ─────────────────────────────────────────── */
-  /* FULLSCREEN + SIDEBAR CONTROL                */
+  /* FULLSCREEN & FOCUS                          */
   /* ─────────────────────────────────────────── */
-
   function enterExamMode() {
-    /* 1. Hide sidebar & topnav via CSS class */
     document.body.classList.add('exam-active');
-
-    /* 2. Request browser fullscreen */
     const el = document.documentElement;
-    const fn = el.requestFullscreen
-             || el.webkitRequestFullscreen
-             || el.mozRequestFullScreen
-             || el.msRequestFullscreen;
+    const fn = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
     if (fn) fn.call(el).catch(() => {});
   }
 
-  function exitExamMode() {
-    document.body.classList.remove('exam-active');
-  }
-
-  /* Detect keluar fullscreen */
   function isFullscreen() {
-    return !!(
-      document.fullscreenElement ||
-      document.webkitFullscreenElement ||
-      document.mozFullScreenElement ||
-      document.msFullscreenElement
-    );
+    return !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
   }
 
-  ['fullscreenchange','webkitfullscreenchange',
-   'mozfullscreenchange','MSFullscreenChange'].forEach(evt => {
+  ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(evt => {
     document.addEventListener(evt, () => {
       if (window.isSubmitting || !timerStarted) return;
-      if (!isFullscreen()) handleViolation();
+      if (!isFullscreen()) triggerViolation();
     });
   });
 
-  /* ─────────────────────────────────────────── */
-  /* VIOLATION                                   */
-  /* ─────────────────────────────────────────── */
+  window.focusArena = function() {
+    if (window.isSubmitting) return;
+    keyBuffer.focus();
+    blurWarning.classList.remove('active');
+  };
 
-  function handleViolation() {
+  keyBuffer.addEventListener('blur', () => {
+    if (timerStarted && !window.isSubmitting) {
+      blurWarning.classList.add('active');
+    }
+  });
+
+  btnReady.addEventListener('click', () => {
+    readyModal.style.display = 'none';
+    enterExamMode();
+    focusArena();
+    updateCaretPosition();
+  });
+
+  /* ─────────────────────────────────────────── */
+  /* VIOLATIONS                                  */
+  /* ─────────────────────────────────────────── */
+  function triggerViolation() {
     violations++;
     violCountEl.textContent = violations;
     violBadge.classList.remove('hidden');
-    violBadge.classList.add('flex');
+    violBadge.classList.add('inline-flex');
 
     if (violations >= MAX_VIOLATIONS) {
-      showViolAlert(true);
+      showViolModal(true);
     } else {
-      showViolAlert(false);
+      showViolModal(false);
     }
   }
 
-  function showViolAlert(isFinal) {
-    document.getElementById('violAlert')?.remove();
-
+  function showViolModal(isFinal) {
+    document.getElementById('violPopup')?.remove();
     const div = document.createElement('div');
-    div.id = 'violAlert';
-    Object.assign(div.style, {
-      position: 'fixed', inset: '0', zIndex: '999999',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(6px)',
-    });
+    div.id = 'violPopup';
+    div.style.cssText = 'position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;background:rgba(15,23,42,0.85);backdrop-filter:blur(8px);';
 
     if (isFinal) {
       div.innerHTML = `
-        <div style="background:#ffffff;border-radius:1.75rem;padding:2.25rem;max-width:380px;width:90%;text-align:center;box-shadow:0 25px 60px rgba(0,0,0,0.4);">
-          <div style="font-size:3rem;margin-bottom:0.75rem;">⛔</div>
-          <p style="font-weight:900;font-size:1.2rem;color:#111827;margin-bottom:0.4rem;">Batas Pelanggaran Tercapai!</p>
-          <p style="color:#6b7280;font-size:0.875rem;">Tes dikumpulkan otomatis dalam <span id="countdown">3</span> detik...</p>
-          <div style="margin-top:1.5rem;height:4px;background:#f3f4f6;border-radius:2px;overflow:hidden;">
-            <div id="ctBar" style="height:100%;width:100%;background:#ef4444;transition:width 3s linear;"></div>
-          </div>
+        <div style="background:#fff;border-radius:2rem;padding:2.5rem;max-width:380px;width:92%;text-align:center;box-shadow:0 25px 60px rgba(0,0,0,0.5);">
+          <div style="font-size:3.5rem;margin-bottom:0.75rem;">⛔</div>
+          <h3 style="font-weight:900;font-size:1.25rem;color:#0f172a;margin:0 0 0.5rem 0;">Batas Pelanggaran Tercapai!</h3>
+          <p style="color:#64748b;font-size:0.875rem;margin:0 0 1.5rem 0;">Ujian selesai dan hasil akan dikirim otomatis...</p>
         </div>`;
       document.body.appendChild(div);
-      requestAnimationFrame(() => {
-        const ctBar = document.getElementById('ctBar');
-        if (ctBar) ctBar.style.width = '0%';
-      });
-      let c = 3;
-      const ct = setInterval(() => {
-        c--;
-        const el = document.getElementById('countdown');
-        if (el) el.textContent = c;
-        if (c <= 0) { clearInterval(ct); submitTest(); }
-      }, 1000);
+      setTimeout(() => submitTest(), 2000);
     } else {
       div.innerHTML = `
-        <div style="background:#ffffff;border-radius:1.75rem;padding:2.25rem;max-width:380px;width:90%;text-align:center;box-shadow:0 25px 60px rgba(0,0,0,0.4);">
-          <div style="font-size:3rem;margin-bottom:0.75rem;">⚠️</div>
-          <p style="font-weight:900;font-size:1.2rem;color:#111827;margin-bottom:0.4rem;">
-            Pelanggaran ${violations}/${MAX_VIOLATIONS}!
+        <div style="background:#fff;border-radius:2rem;padding:2.5rem;max-width:380px;width:92%;text-align:center;box-shadow:0 25px 60px rgba(0,0,0,0.5);">
+          <div style="font-size:3.5rem;margin-bottom:0.75rem;">⚠️</div>
+          <h3 style="font-weight:900;font-size:1.25rem;color:#0f172a;margin:0 0 0.4rem 0;">Pelanggaran (${violations}/${MAX_VIOLATIONS})</h3>
+          <p style="color:#64748b;font-size:0.875rem;margin:0 0 1.5rem 0;line-height:1.4;">
+            Kamu keluar dari layar penuh.<br>Toleransi tersisa: <strong>${MAX_VIOLATIONS - violations} kali</strong>.
           </p>
-          <p style="color:#6b7280;font-size:0.875rem;margin-bottom:1.5rem;line-height:1.4;">
-            Kamu keluar dari layar penuh.<br>Sisa toleransi: <strong>${MAX_VIOLATIONS - violations}</strong> pelanggaran.
-          </p>
-          <button id="btnReenter"
-                  style="width:100%;padding:0.9rem;border-radius:0.875rem;font-weight:900;font-size:0.85rem;
-                         text-transform:uppercase;letter-spacing:0.08em;color:#ffffff;
-                         background:var(--brand-primary);border:none;cursor:pointer;box-shadow:0 10px 20px -5px rgba(0,0,0,0.2);">
+          <button id="btnReturnFs"
+                  style="width:100%;padding:1rem;border-radius:1rem;font-weight:900;font-size:0.875rem;text-transform:uppercase;letter-spacing:0.08em;color:#fff;background:var(--brand-primary,#4f46e5);border:none;cursor:pointer;box-shadow:0 10px 20px -5px rgba(79,70,229,0.4);">
             <i class="fas fa-expand" style="margin-right:0.5rem;"></i>Kembali ke Layar Penuh
           </button>
         </div>`;
       document.body.appendChild(div);
-      document.getElementById('btnReenter').onclick = () => {
+      document.getElementById('btnReturnFs').onclick = () => {
         div.remove();
         enterExamMode();
-        input.focus();
+        focusArena();
       };
     }
   }
 
   /* ─────────────────────────────────────────── */
-  /* READY BUTTON                                */
+  /* TYPING LOGIC (Character-by-character)       */
   /* ─────────────────────────────────────────── */
+  function updateCaretPosition() {
+    // Remove existing carets
+    document.querySelectorAll('.typing-box .char').forEach(ch => {
+      ch.classList.remove('caret', 'caret-after');
+    });
 
-  btnReady.addEventListener('click', () => {
-    readyModal.style.display = 'none';
-    enterExamMode();
-    input.disabled = false;
-    input.focus();
-    activateWord(0);
-  });
+    const activeWordEl = wordElements[currentWordIdx];
+    if (!activeWordEl) return;
 
-  /* ─────────────────────────────────────────── */
-  /* WORD RENDERING                              */
-  /* ─────────────────────────────────────────── */
+    const charEls = activeWordEl.querySelectorAll('.char');
+    if (currentCharIdx < charEls.length) {
+      charEls[currentCharIdx].classList.add('caret');
+    } else if (charEls.length > 0) {
+      charEls[charEls.length - 1].classList.add('caret-after');
+    }
 
-  function activateWord(idx) {
-    const el = wordEls[idx];
-    if (!el) return;
-
-    const word = el.dataset.w;
-
-    /* Render per-char spans */
-    el.innerHTML = [...word].map((ch, i) =>
-      `<span class="ch${i === 0 ? ' cur' : ''}" data-i="${i}">${ch}</span>`
-    ).join('');
-
-    el.classList.add('current');
-    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
-
-  function commitWord(idx, typed) {
-    const el = wordEls[idx];
-    if (!el) return;
-    const target = el.dataset.w;
-
-    el.classList.remove('current');
-
-    if (typed === target) {
-      el.textContent = target;
-      el.classList.add('ok');
+    // Auto-scroll 3-line box
+    const currentTop = activeWordEl.offsetTop;
+    const containerTop = wordsContainer.offsetTop;
+    if (currentTop - containerTop > 45) {
+      wordsContainer.scrollTop = (currentTop - containerTop) - 40;
     } else {
-      const maxLen = Math.max(typed.length, target.length);
-      el.innerHTML = [...Array(maxLen)].map((_, i) => {
-        const tCh = target[i] ?? '';
-        const uCh = typed[i];
-        if (!tCh) return '';
-        const cls = (uCh === undefined) ? 'err' : (uCh === tCh ? 'ok' : 'err');
-        return `<span class="ch ${cls}">${tCh}</span>`;
-      }).join('');
-      el.classList.add('err');
+      wordsContainer.scrollTop = 0;
     }
   }
 
-  function updateCharHighlight(current) {
-    const el = wordEls[currentWordIdx];
-    if (!el) return;
-    const target = el.dataset.w;
-    const chars  = el.querySelectorAll('.ch');
+  function renderCurrentWord() {
+    const wordEl = wordElements[currentWordIdx];
+    if (!wordEl) return;
 
-    chars.forEach((ch, i) => {
-      ch.classList.remove('ok', 'err', 'cur');
-      if (i < current.length) {
-        ch.classList.add(current[i] === target[i] ? 'ok' : 'err');
-      } else if (i === current.length) {
-        ch.classList.add('cur');
+    const targetWord = wordEl.innerText.trim();
+    const charEls = wordEl.querySelectorAll('.char');
+
+    charEls.forEach((ch, idx) => {
+      ch.classList.remove('correct', 'wrong');
+      if (idx < currentTyped.length) {
+        if (currentTyped[idx] === targetWord[idx]) {
+          ch.classList.add('correct');
+        } else {
+          ch.classList.add('wrong');
+        }
       }
     });
+
+    // Remove extra chars if deleted
+    const extraEls = wordEl.querySelectorAll('.char.extra');
+    extraEls.forEach(el => el.remove());
+
+    // Add extra chars if typed beyond target
+    if (currentTyped.length > targetWord.length) {
+      for (let i = targetWord.length; i < currentTyped.length; i++) {
+        const extraSpan = document.createElement('span');
+        extraSpan.className = 'char wrong extra';
+        extraSpan.textContent = currentTyped[i];
+        wordEl.appendChild(extraSpan);
+      }
+    }
+
+    updateCaretPosition();
+  }
+
+  function commitWord() {
+    const wordEl = wordElements[currentWordIdx];
+    if (!wordEl) return;
+
+    typedWords[currentWordIdx] = currentTyped;
+    wordEl.classList.remove('current');
+
+    // Count stats
+    const targetWord = wordEl.innerText.trim();
+    totalCharsTyped += currentTyped.length + 1; // +1 space
+    for (let i = 0; i < Math.min(currentTyped.length, targetWord.length); i++) {
+      if (currentTyped[i] === targetWord[i]) totalCorrectChars++;
+    }
+    if (currentTyped === targetWord) totalCorrectChars++; // correct space
+
+    currentWordIdx++;
+    currentCharIdx = 0;
+    currentTyped = '';
+    keyBuffer.value = '';
+
+    wordProgressEl.textContent = `${currentWordIdx} / ${totalWords} Kata`;
+
+    if (currentWordIdx >= totalWords) {
+      submitTest();
+    } else {
+      wordElements[currentWordIdx].classList.add('current');
+      updateCaretPosition();
+    }
   }
 
   /* ─────────────────────────────────────────── */
-  /* TIMER                                       */
+  /* KEYBOARD INPUT INTERCEPTOR                  */
   /* ─────────────────────────────────────────── */
+  window.addEventListener('keydown', (e) => {
+    if (window.isSubmitting || readyModal.style.display !== 'none') return;
 
+    // Start timer on first printable keypress
+    if (!timerStarted && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      startTimer();
+    }
+
+    if (e.key === ' ') {
+      e.preventDefault();
+      if (currentTyped.length > 0) {
+        commitWord();
+      }
+      return;
+    }
+
+    if (e.key === 'Backspace') {
+      e.preventDefault();
+      if (currentTyped.length > 0) {
+        currentTyped = currentTyped.slice(0, -1);
+        currentCharIdx = currentTyped.length;
+        renderCurrentWord();
+      }
+      return;
+    }
+
+    if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      e.preventDefault();
+      currentTyped += e.key;
+      currentCharIdx = currentTyped.length;
+      renderCurrentWord();
+    }
+  });
+
+  /* ─────────────────────────────────────────── */
+  /* LIVE TIMER & STATS HUD                     */
+  /* ─────────────────────────────────────────── */
   function fmt(s) {
-    return String(Math.floor(s / 60)).padStart(2, '0') +
-           ':' + String(s % 60).padStart(2, '0');
+    return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
   }
 
   function startTimer() {
     if (timerStarted) return;
     timerStarted = true;
-    statusEl.innerHTML =
-      '<span style="color:#16a34a;font-weight:700;">' +
-      '<i class="fas fa-circle" style="font-size:.6rem;animation:pulse 1s infinite;margin-right:.3rem;"></i>' +
-      'Sedang berlangsung</span>';
+    startTime = Date.now();
 
     timerInterval = setInterval(() => {
       timeLeft--;
       timerEl.textContent = fmt(timeLeft);
 
+      // Progress bar percentage
+      const pct = (timeLeft / DURATION) * 100;
+      timeProgressBar.style.width = pct + '%';
+
       if (timeLeft <= 10) {
         timerEl.style.color = '#ef4444';
-        timerEl.style.animation = 'pulse .5s infinite';
+        timeProgressBar.style.background = '#ef4444';
       }
-
-      progressBar.style.width = ((timeLeft / DURATION) * 100) + '%';
 
       if (timeLeft <= 0) {
         clearInterval(timerInterval);
+        clearInterval(statsInterval);
         submitTest();
       }
     }, 1000);
+
+    // Live WPM & Accuracy updater
+    statsInterval = setInterval(() => {
+      const elapsedMinutes = (Date.now() - startTime) / 60000;
+      if (elapsedMinutes > 0) {
+        // Standard formula: (all chars / 5) / minutes
+        const grossWpm = Math.round((totalCharsTyped + currentTyped.length) / 5 / elapsedMinutes);
+        liveWpmEl.textContent = Math.max(0, grossWpm);
+
+        const allChars = totalCharsTyped + currentTyped.length;
+        if (allChars > 0) {
+          const acc = Math.round((totalCorrectChars / allChars) * 100);
+          liveAccEl.textContent = Math.min(100, Math.max(0, acc)) + '%';
+        }
+      }
+    }, 500);
   }
 
   /* ─────────────────────────────────────────── */
-  /* INPUT HANDLER                               */
+  /* SUBMIT TEST                                 */
   /* ─────────────────────────────────────────── */
-
-  input.addEventListener('keydown', e => {
-    if (window.isSubmitting) { e.preventDefault(); return; }
-
-    if (!timerStarted && e.key.length === 1) startTimer();
-
-    if (e.key === ' ') {
-      e.preventDefault();
-      const typed = input.value.trim();
-      if (!typed) return;
-
-      typedWords[currentWordIdx] = typed;
-      commitWord(currentWordIdx, typed);
-      currentWordIdx++;
-      wordCountEl.textContent = currentWordIdx;
-      input.value = '';
-
-      progressBar.style.width = ((currentWordIdx / TOTAL_WORDS) * 100) + '%';
-
-      if (currentWordIdx >= wordEls.length) {
-        submitTest();
-      } else {
-        activateWord(currentWordIdx);
-      }
-    }
-
-    if (e.key === 'Backspace' && input.value === '') {
-      e.preventDefault();
-    }
-  });
-
-  input.addEventListener('input', () => {
-    if (!window.isSubmitting) updateCharHighlight(input.value);
-  });
-
-  ['paste','drop','copy','cut'].forEach(evt =>
-    input.addEventListener(evt, e => e.preventDefault())
-  );
-
-  /* ─────────────────────────────────────────── */
-  /* SUBMIT                                      */
-  /* ─────────────────────────────────────────── */
-
   async function submitTest() {
     if (window.isSubmitting) return;
     window.isSubmitting = true;
 
     clearInterval(timerInterval);
-    input.disabled = true;
+    clearInterval(statsInterval);
 
-    const lastWord = input.value.trim();
-    if (lastWord && currentWordIdx < wordEls.length) {
-      typedWords[currentWordIdx] = lastWord;
+    // Commit any in-flight typed word
+    if (currentTyped.length > 0 && currentWordIdx < totalWords) {
+      typedWords[currentWordIdx] = currentTyped;
     }
 
-    timerEl.textContent = 'Selesai!';
-    timerEl.style.color = '#22c55e';
-    statusEl.innerHTML  = '<span style="color:#2563eb;font-weight:700;"><i class="fas fa-check-circle" style="margin-right:.3rem;"></i>Menyimpan...</span>';
-    loadingEl.classList.remove('hidden');
-    loadingEl.classList.add('flex');
-
-    exitExamMode();
+    loadingOverlay.classList.remove('hidden');
 
     try {
-      const res  = await fetch(SUBMIT_URL, {
+      const res = await fetch(SUBMIT_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -596,19 +699,18 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         body: JSON.stringify({ words_typed: typedWords.join(' ') }),
       });
+
       const data = await res.json();
       if (data.success) {
         window.location.href = data.redirect;
       } else {
-        loadingEl.classList.add('hidden');
-        loadingEl.classList.remove('flex');
-        alert('Gagal menyimpan hasil. Silakan hubungi pengawas.');
+        loadingOverlay.classList.add('hidden');
+        alert('Gagal menyimpan hasil ujian: ' + (data.message || 'Silakan hubungi pengawas.'));
       }
     } catch (err) {
-      loadingEl.classList.add('hidden');
-      loadingEl.classList.remove('flex');
+      loadingOverlay.classList.add('hidden');
       console.error(err);
-      alert('Terjadi kesalahan jaringan. Silakan hubungi pengawas.');
+      alert('Terjadi kesalahan jaringan saat mengirim hasil ujian.');
     }
   }
 
