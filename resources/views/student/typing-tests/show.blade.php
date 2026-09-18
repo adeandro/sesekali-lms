@@ -77,43 +77,46 @@ body.exam-active .flex.flex-col.flex-1.overflow-hidden {
     transition: all 0.2s ease;
 }
 
-/* Word styling — inline-flex to guarantee zero inter-character whitespace gap */
+/* Word styling */
 .typing-box .word {
-    display: inline-flex;
+    display: inline-block;
     margin-right: 0.7em;
-    padding: 0 1px;
+    padding: 0;
     border-radius: 4px;
     vertical-align: middle;
     letter-spacing: 0;
+    white-space: nowrap;
 }
 
 .typing-box .word.current {
     color: #334155;
 }
 
-/* Character styling — strict zero extra spacing */
+/* Character styling — strict zero gap between chars */
 .typing-box .char {
     position: relative;
-    display: inline-block;
+    display: inline;
     padding: 0;
     margin: 0;
     letter-spacing: 0;
-    transition: color 0.08s ease;
+    transition: color 0.05s ease, background-color 0.05s ease;
 }
 
 .typing-box .char.correct {
     color: #10b981; /* Emerald 500 */
+    background: transparent;
 }
 
 .typing-box .char.wrong {
     color: #ef4444; /* Rose 500 */
-    background-color: rgba(239, 68, 68, 0.12);
+    background-color: rgba(239, 68, 68, 0.15);
     border-radius: 2px;
 }
 
 .typing-box .char.extra {
     color: #dc2626;
-    opacity: 0.75;
+    background-color: rgba(220, 38, 38, 0.2);
+    border-radius: 2px;
 }
 
 /* Caret / Cursor */
@@ -287,10 +290,10 @@ body.exam-active .flex.flex-col.flex-1.overflow-hidden {
       Pelanggaran: <span id="violCount">0</span>/3
     </div>
 
-    {{-- Words Arena (No whitespace between char tags) --}}
+    {{-- Words Arena (Strict single line per word with zero whitespace gaps) --}}
     @php $words = explode(' ', $attempt->words_generated); @endphp
     <div id="wordsContainer" class="typing-box">
-      @foreach($words as $i => $word)<span class="word{{ $i === 0 ? ' current' : '' }}" data-word-idx="{{ $i }}">@foreach(str_split($word) as $ci => $char)<span class="char{{ ($i === 0 && $ci === 0) ? ' caret' : '' }}" data-char-idx="{{ $ci }}">{{ $char }}</span>@endforeach</span>@endforeach
+      @foreach($words as $i => $word)<span class="word{{ $i === 0 ? ' current' : '' }}" data-word-idx="{{ $i }}" data-word="{{ $word }}">@foreach(str_split($word) as $ci => $char)<span class="char{{ ($i === 0 && $ci === 0) ? ' caret' : '' }}" data-char-idx="{{ $ci }}">{{ $char }}</span>@endforeach</span>@endforeach
     </div>
 
     {{-- Lost focus warning overlay --}}
@@ -363,10 +366,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const CSRF           = '{{ csrf_token() }}';
   const SUBMIT_URL     = '{{ route("student.typing-tests.submit", $test) }}';
   const MAX_VIOLATIONS = 3;
-
-  /* ── Words Data ───────────────────────────── */
-  const wordElements = [...document.querySelectorAll('#wordsContainer .word')];
-  const totalWords   = wordElements.length;
+  const WORDS_ARRAY    = @json($words);
+  const TOTAL_WORDS    = WORDS_ARRAY.length;
 
   /* ── State ────────────────────────────────── */
   let timeLeft        = DURATION;
@@ -375,7 +376,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let timerStarted    = false;
   let startTime       = null;
   let currentWordIdx  = 0;
-  let currentCharIdx  = 0;
   let typedWords      = [];
   let currentTyped    = '';
   let violations      = 0;
@@ -396,6 +396,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const violBadge       = document.getElementById('violBadge');
   const violCountEl     = document.getElementById('violCount');
   const loadingOverlay  = document.getElementById('loadingOverlay');
+  const wordElements    = [...document.querySelectorAll('#wordsContainer .word')];
 
   /* ─────────────────────────────────────────── */
   /* FULLSCREEN & FOCUS                          */
@@ -491,10 +492,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /* ─────────────────────────────────────────── */
-  /* TYPING LOGIC (Character-by-character)       */
+  /* TYPING LOGIC (Clean string matching)        */
   /* ─────────────────────────────────────────── */
   function updateCaretPosition() {
-    // Remove existing carets
+    // Clear all existing carets
     document.querySelectorAll('.typing-box .char').forEach(ch => {
       ch.classList.remove('caret', 'caret-after');
     });
@@ -502,14 +503,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const activeWordEl = wordElements[currentWordIdx];
     if (!activeWordEl) return;
 
-    const charEls = activeWordEl.querySelectorAll('.char');
+    const charEls = activeWordEl.querySelectorAll('.char:not(.extra)');
+    const currentCharIdx = currentTyped.length;
+
     if (currentCharIdx < charEls.length) {
       charEls[currentCharIdx].classList.add('caret');
-    } else if (charEls.length > 0) {
-      charEls[charEls.length - 1].classList.add('caret-after');
+    } else {
+      const allChars = activeWordEl.querySelectorAll('.char');
+      if (allChars.length > 0) {
+        allChars[allChars.length - 1].classList.add('caret-after');
+      }
     }
 
-    // Auto-scroll 3-line box
+    // Smooth auto-scroll container
     const currentTop = activeWordEl.offsetTop;
     const containerTop = wordsContainer.offsetTop;
     if (currentTop - containerTop > 45) {
@@ -523,8 +529,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const wordEl = wordElements[currentWordIdx];
     if (!wordEl) return;
 
-    const targetWord = wordEl.innerText.trim();
-    const charEls = wordEl.querySelectorAll('.char');
+    // TARGET WORD from the pure JavaScript array (no DOM string whitespace issues)
+    const targetWord = WORDS_ARRAY[currentWordIdx] || '';
+    const charEls = wordEl.querySelectorAll('.char:not(.extra)');
 
     charEls.forEach((ch, idx) => {
       ch.classList.remove('correct', 'wrong');
@@ -537,11 +544,11 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    // Remove extra chars if deleted
+    // Remove old extra chars
     const extraEls = wordEl.querySelectorAll('.char.extra');
     extraEls.forEach(el => el.remove());
 
-    // Add extra chars if typed beyond target
+    // Add extra chars if typed past word length
     if (currentTyped.length > targetWord.length) {
       for (let i = targetWord.length; i < currentTyped.length; i++) {
         const extraSpan = document.createElement('span');
@@ -558,25 +565,40 @@ document.addEventListener('DOMContentLoaded', () => {
     const wordEl = wordElements[currentWordIdx];
     if (!wordEl) return;
 
+    const targetWord = WORDS_ARRAY[currentWordIdx] || '';
     typedWords[currentWordIdx] = currentTyped;
     wordEl.classList.remove('current');
 
-    // Count stats
-    const targetWord = wordEl.innerText.trim();
-    totalCharsTyped += currentTyped.length + 1; // +1 space
+    // Finalize highlights on the committed word
+    const charEls = wordEl.querySelectorAll('.char:not(.extra)');
+    charEls.forEach((ch, idx) => {
+      ch.classList.remove('correct', 'wrong');
+      if (idx < currentTyped.length) {
+        if (currentTyped[idx] === targetWord[idx]) {
+          ch.classList.add('correct');
+        } else {
+          ch.classList.add('wrong');
+        }
+      } else {
+        // Untyped missing characters in an incomplete word
+        ch.classList.add('wrong');
+      }
+    });
+
+    // Count stats for HUD
+    totalCharsTyped += currentTyped.length + 1; // +1 for space
     for (let i = 0; i < Math.min(currentTyped.length, targetWord.length); i++) {
       if (currentTyped[i] === targetWord[i]) totalCorrectChars++;
     }
     if (currentTyped === targetWord) totalCorrectChars++; // correct space
 
     currentWordIdx++;
-    currentCharIdx = 0;
     currentTyped = '';
     keyBuffer.value = '';
 
-    wordProgressEl.textContent = `${currentWordIdx} / ${totalWords} Kata`;
+    wordProgressEl.textContent = `${currentWordIdx} / ${TOTAL_WORDS} Kata`;
 
-    if (currentWordIdx >= totalWords) {
+    if (currentWordIdx >= TOTAL_WORDS) {
       submitTest();
     } else {
       wordElements[currentWordIdx].classList.add('current');
@@ -607,7 +629,6 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       if (currentTyped.length > 0) {
         currentTyped = currentTyped.slice(0, -1);
-        currentCharIdx = currentTyped.length;
         renderCurrentWord();
       }
       return;
@@ -616,7 +637,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
       e.preventDefault();
       currentTyped += e.key;
-      currentCharIdx = currentTyped.length;
       renderCurrentWord();
     }
   });
@@ -652,15 +672,23 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }, 1000);
 
+    // Live WPM & Accuracy updater
     statsInterval = setInterval(() => {
       const elapsedMinutes = (Date.now() - startTime) / 60000;
       if (elapsedMinutes > 0) {
         const grossWpm = Math.round((totalCharsTyped + currentTyped.length) / 5 / elapsedMinutes);
         liveWpmEl.textContent = Math.max(0, grossWpm);
 
-        const allChars = totalCharsTyped + currentTyped.length;
-        if (allChars > 0) {
-          const acc = Math.round((totalCorrectChars / allChars) * 100);
+        let liveCorrect = totalCorrectChars;
+        const currentTarget = WORDS_ARRAY[currentWordIdx] || '';
+        for (let i = 0; i < currentTyped.length; i++) {
+          if (i < currentTarget.length && currentTyped[i] === currentTarget[i]) {
+            liveCorrect++;
+          }
+        }
+        const liveTotal = totalCharsTyped + currentTyped.length;
+        if (liveTotal > 0) {
+          const acc = Math.round((liveCorrect / liveTotal) * 100);
           liveAccEl.textContent = Math.min(100, Math.max(0, acc)) + '%';
         }
       }
@@ -677,7 +705,7 @@ document.addEventListener('DOMContentLoaded', () => {
     clearInterval(timerInterval);
     clearInterval(statsInterval);
 
-    if (currentTyped.length > 0 && currentWordIdx < totalWords) {
+    if (currentTyped.length > 0 && currentWordIdx < TOTAL_WORDS) {
       typedWords[currentWordIdx] = currentTyped;
     }
 
