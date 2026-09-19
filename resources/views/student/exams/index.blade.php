@@ -177,18 +177,29 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             @foreach($typingTests as $typingTest)
             @php
-                $typingAttempt = $typingTest->attempts->where('student_id', auth()->id())->first();
+                $studentAttempts   = $typingTest->attempts->where('student_id', auth()->id());
+                $completedAttempts = $studentAttempts->where('status', 'completed');
+                $bestAttempt       = $completedAttempts->sortByDesc(fn($att) => ((float)$att->final_score * 1000) + (float)($att->wpm ?? 0))->first();
+                $maxAttempts       = $typingTest->max_attempts ?? 2;
+                $canRetry          = $completedAttempts->count() < $maxAttempts;
             @endphp
             <div class="group relative flex flex-col rounded-[2.5rem] border-l-4 bg-white shadow-lg overflow-hidden transition-all duration-300 hover:-translate-y-1"
                  style="border-color: var(--brand-primary); box-shadow: 0 8px 30px -4px var(--brand-glow, rgba(99,102,241,0.2))">
 
                 {{-- Status Badge --}}
                 <div class="absolute top-4 right-4">
-                    @if($typingAttempt && $typingAttempt->status === 'completed')
-                        <span class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
-                            <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
-                            Selesai
-                        </span>
+                    @if($completedAttempts->isNotEmpty())
+                        @if($canRetry)
+                            <span class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
+                                <span class="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>
+                                Percobaan {{ $completedAttempts->count() }}/{{ $maxAttempts }}
+                            </span>
+                        @else
+                            <span class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
+                                <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
+                                Selesai
+                            </span>
+                        @endif
                     @else
                         <span class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
                             <span class="w-1.5 h-1.5 bg-blue-500 rounded-full animate-ping"></span>
@@ -219,22 +230,22 @@
                         </div>
                     </div>
 
-                    @if($typingAttempt && $typingAttempt->status === 'completed' && ($typingTest->show_wpm_accuracy || $typingTest->show_score))
+                    @if($bestAttempt && ($typingTest->show_wpm_accuracy || $typingTest->show_score))
                     <div class="bg-gray-50 rounded-xl p-3 mt-1 grid grid-cols-{{ ($typingTest->show_wpm_accuracy && $typingTest->show_score) ? '3' : ($typingTest->show_wpm_accuracy ? '2' : '1') }} gap-2 text-center">
                         @if($typingTest->show_wpm_accuracy)
                         <div>
-                            <div class="font-bold text-sm" style="color: var(--brand-primary)">{{ number_format($typingAttempt->wpm, 1) }}</div>
-                            <div class="text-xs text-gray-400">WPM</div>
+                            <div class="font-bold text-sm" style="color: var(--brand-primary)">{{ number_format($bestAttempt->wpm, 1) }}</div>
+                            <div class="text-xs text-gray-400">WPM {{ $completedAttempts->count() > 1 ? '(Terbaik)' : '' }}</div>
                         </div>
                         <div>
-                            <div class="font-bold text-sm text-blue-600">{{ number_format($typingAttempt->accuracy, 1) }}%</div>
+                            <div class="font-bold text-sm text-blue-600">{{ number_format($bestAttempt->accuracy, 1) }}%</div>
                             <div class="text-xs text-gray-400">Akurasi</div>
                         </div>
                         @endif
                         @if($typingTest->show_score)
                         <div>
-                            <div class="font-bold text-sm text-emerald-600">{{ number_format($typingAttempt->final_score, 1) }}</div>
-                            <div class="text-xs text-gray-400">Nilai</div>
+                            <div class="font-bold text-sm text-emerald-600">{{ number_format($bestAttempt->final_score, 1) }}</div>
+                            <div class="text-xs text-gray-400">Nilai Akhir</div>
                         </div>
                         @endif
                     </div>
@@ -243,14 +254,23 @@
 
                 {{-- CTA Button --}}
                 <div class="px-7 pb-6">
-                    @if($typingAttempt && $typingAttempt->status === 'completed')
-                        <a href="{{ route('student.typing-tests.result', $typingTest) }}"
-                           class="block w-full text-center py-3 rounded-2xl text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition">
-                            <i class="fas fa-chart-bar mr-2"></i>Lihat Hasil
-                        </a>
+                    @if($completedAttempts->isNotEmpty())
+                        <div class="flex gap-2">
+                            <a href="{{ route('student.typing-tests.result', $typingTest) }}"
+                               class="flex-1 text-center py-2.5 rounded-2xl text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition">
+                                <i class="fas fa-chart-bar mr-1"></i>Lihat Hasil
+                            </a>
+                            @if($canRetry)
+                            <a href="{{ route('student.typing-tests.show', $typingTest) }}"
+                               class="flex-1 text-center py-2.5 rounded-2xl text-xs font-semibold text-white transition hover:opacity-90 shadow-sm"
+                               style="background: var(--brand-primary)">
+                                <i class="fas fa-redo-alt mr-1"></i>Coba Lagi
+                            </a>
+                            @endif
+                        </div>
                     @else
                         <a href="{{ route('student.typing-tests.show', $typingTest) }}"
-                           class="block w-full text-center py-3 rounded-2xl text-sm font-semibold text-white transition hover:opacity-90"
+                           class="block w-full text-center py-3 rounded-2xl text-sm font-semibold text-white transition hover:opacity-90 shadow-md"
                            style="background: var(--brand-primary)">
                             <i class="fas fa-play mr-2"></i>Mulai Tes Mengetik
                         </a>

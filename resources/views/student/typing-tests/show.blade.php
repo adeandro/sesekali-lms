@@ -265,7 +265,12 @@ body.exam-active .flex.flex-col.flex-1.overflow-hidden {
             <i class="fas fa-keyboard"></i>
           </div>
           <div>
-            <span class="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md mb-0.5">Uji Kesiapan Keyboard</span>
+            <div class="flex items-center gap-2 mb-0.5">
+              <span class="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">Uji Kesiapan Keyboard</span>
+              <span class="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-amber-700 bg-amber-50 border border-amber-200/60 px-2 py-0.5 rounded-md">
+                <i class="fas fa-redo-alt text-[9px]"></i> Kesempatan {{ $attempt->attempt_number ?? 1 }}/{{ $test->max_attempts ?? 2 }}
+              </span>
+            </div>
             <h2 style="font-size: 1.15rem; font-weight: 900; color: #0f172a; margin: 0; line-height: 1.2;">
               {{ $test->title }}
             </h2>
@@ -402,6 +407,9 @@ body.exam-active .flex.flex-col.flex-1.overflow-hidden {
       <div class="flex items-center gap-2 mb-2">
         <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700">
           <i class="fas fa-keyboard text-xs"></i> Tes Mengetik
+        </span>
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+          <i class="fas fa-redo-alt text-[10px]"></i> Kesempatan ke-{{ $attempt->attempt_number ?? 1 }} dari {{ $test->max_attempts ?? 2 }}
         </span>
         {{-- Caps Lock HUD Badge --}}
         <span id="capsLockBadge"

@@ -70,15 +70,15 @@
             <div class="mb-5"></div>
             @endif
 
-            {{-- Durasi + Target WPM --}}
-            <div class="grid grid-cols-2 gap-4 mb-5">
+            {{-- Durasi + Target WPM + Kesempatan Tes --}}
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Durasi (detik) <span class="text-red-500">*</span></label>
                     <input type="number" name="duration_seconds" value="{{ old('duration_seconds', $test->duration_seconds) }}"
                            min="10" max="600"
                            class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:border-transparent"
                            style="--tw-ring-color: var(--brand-primary)" required>
-                    <p class="text-xs text-gray-400 mt-1">Contoh: 15, 30, 60, 120 detik</p>
+                    <p class="text-xs text-gray-400 mt-1">Contoh: 15, 30, 60, 120s</p>
                     @error('duration_seconds') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
                 <div>
@@ -87,8 +87,17 @@
                            min="1" max="300"
                            class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:border-transparent"
                            style="--tw-ring-color: var(--brand-primary)" required>
-                    <p class="text-xs text-gray-400 mt-1">Siswa mencapai WPM ini = nilai kecepatan penuh</p>
+                    <p class="text-xs text-gray-400 mt-1">Target kecepatan penuh</p>
                     @error('target_wpm') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Kesempatan Tes <span class="text-red-500">*</span></label>
+                    <input type="number" name="max_attempts" value="{{ old('max_attempts', $test->max_attempts ?? 2) }}"
+                           min="1" max="10"
+                           class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:border-transparent"
+                           style="--tw-ring-color: var(--brand-primary)" required>
+                    <p class="text-xs text-gray-400 mt-1">Nilai terbaik otomatis diambil</p>
+                    @error('max_attempts') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
             </div>
 

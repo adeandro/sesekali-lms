@@ -31,33 +31,35 @@ class TypingTestController extends Controller
             }
         }
 
-        // Cek apakah sudah ada attempt completed
-        $existingAttempt = TypingAttempt::where('typing_test_id', $test->id)
+        // Cek attempt siswa
+        $attempts = TypingAttempt::where('typing_test_id', $test->id)
             ->where('student_id', $student->id)
-            ->first();
+            ->orderBy('attempt_number')
+            ->get();
 
-        if ($existingAttempt && $existingAttempt->status === 'completed') {
-            return redirect()->route('student.typing-tests.result', $test)
-                ->with('info', 'Anda sudah menyelesaikan tes ini.');
-        }
+        $inProgressAttempt = $attempts->firstWhere('status', 'in_progress');
+        $completedAttempts = $attempts->where('status', 'completed');
+        $maxAttempts       = $test->max_attempts ?? 2;
 
-        // Buat atau ambil attempt in_progress
-        if (!$existingAttempt) {
-            // Generate kata
+        if ($inProgressAttempt) {
+            $attempt = $inProgressAttempt;
+        } elseif ($completedAttempts->count() < $maxAttempts) {
+            $nextAttemptNumber = $completedAttempts->count() + 1;
             $words = TypingTestService::generateWords($test->word_count);
             $wordsGenerated = implode(' ', $words);
 
-            $existingAttempt = TypingAttempt::create([
+            $attempt = TypingAttempt::create([
                 'typing_test_id'  => $test->id,
                 'student_id'      => $student->id,
+                'attempt_number'  => $nextAttemptNumber,
                 'words_generated' => $wordsGenerated,
                 'status'          => 'in_progress',
                 'started_at'      => now(),
             ]);
+        } else {
+            return redirect()->route('student.typing-tests.result', $test)
+                ->with('info', 'Anda sudah menggunakan semua kesempatan tes ini.');
         }
-        // Jika in_progress, gunakan words_generated yang sudah tersimpan (konsistensi)
-
-        $attempt = $existingAttempt;
 
         return view('student.typing-tests.show', compact('test', 'attempt'));
     }
@@ -117,6 +119,8 @@ class TypingTestController extends Controller
             'success'           => true,
             'show_wpm_accuracy' => $test->show_wpm_accuracy,
             'show_score'        => $test->show_score,
+            'attempt_number'    => $attempt->attempt_number,
+            'max_attempts'      => $test->max_attempts ?? 2,
             'result'            => [
                 'wpm'         => $result['wpm'],
                 'accuracy'    => $result['accuracy'],
@@ -130,18 +134,32 @@ class TypingTestController extends Controller
     {
         $student = auth()->user();
 
-        $attempt = TypingAttempt::where('typing_test_id', $test->id)
+        $attempts = TypingAttempt::where('typing_test_id', $test->id)
             ->where('student_id', $student->id)
             ->where('status', 'completed')
-            ->first();
+            ->orderBy('attempt_number')
+            ->get();
 
-        if (!$attempt) {
+        if ($attempts->isEmpty()) {
             return redirect()->route('student.typing-tests.show', $test);
         }
 
+        $bestAttempt = $attempts->sortByDesc(function ($att) {
+            return ((float)$att->final_score * 1000) + (float)($att->wpm ?? 0);
+        })->first();
+
+        $latestAttempt = $attempts->last();
+        $maxAttempts   = $test->max_attempts ?? 2;
+        $canRetry      = $attempts->count() < $maxAttempts;
+
         return view('student.typing-tests.result', [
             'test'              => $test,
-            'attempt'           => $attempt,
+            'attempts'          => $attempts,
+            'attempt'           => $bestAttempt,
+            'bestAttempt'       => $bestAttempt,
+            'latestAttempt'     => $latestAttempt,
+            'canRetry'          => $canRetry,
+            'maxAttempts'       => $maxAttempts,
             'show_wpm_accuracy' => $test->show_wpm_accuracy,
             'show_score'        => $test->show_score,
         ]);

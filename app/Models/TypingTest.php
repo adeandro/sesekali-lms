@@ -15,7 +15,7 @@ class TypingTest extends Model
         'title', 'description', 'use_token', 'token', 'duration_seconds',
         'target_wpm', 'weight_accuracy', 'weight_speed',
         'show_wpm_accuracy', 'show_score',
-        'word_category', 'word_count', 'status',
+        'word_category', 'word_count', 'max_attempts', 'status',
         'class_restriction', 'starts_at', 'ends_at', 'created_by',
     ];
 
@@ -24,6 +24,7 @@ class TypingTest extends Model
         'show_wpm_accuracy'  => 'boolean',
         'show_score'         => 'boolean',
         'use_token'          => 'boolean',
+        'max_attempts'       => 'integer',
         'starts_at'          => 'datetime',
         'ends_at'            => 'datetime',
     ];
@@ -32,6 +33,17 @@ class TypingTest extends Model
     public function attempts(): HasMany
     {
         return $this->hasMany(TypingAttempt::class);
+    }
+
+    public function getBestAttemptFor(int|string $studentId): ?TypingAttempt
+    {
+        return $this->attempts
+            ->where('student_id', $studentId)
+            ->where('status', 'completed')
+            ->sortByDesc(function ($att) {
+                return ((float)$att->final_score * 1000) + (float)($att->wpm ?? 0);
+            })
+            ->first();
     }
 
     public function creator(): BelongsTo

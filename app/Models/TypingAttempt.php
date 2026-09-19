@@ -7,15 +7,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class TypingAttempt extends Model
 {
     protected $fillable = [
-        'typing_test_id', 'student_id', 'words_generated', 'words_typed',
+        'typing_test_id', 'student_id', 'attempt_number', 'words_generated', 'words_typed',
         'characters_correct', 'characters_wrong', 'characters_total',
         'words_correct', 'wpm', 'accuracy', 'final_score',
         'status', 'started_at', 'completed_at',
     ];
 
     protected $casts = [
-        'started_at'    => 'datetime',
-        'completed_at'  => 'datetime',
+        'attempt_number' => 'integer',
+        'started_at'     => 'datetime',
+        'completed_at'   => 'datetime',
     ];
 
     public function test(): BelongsTo

@@ -54,9 +54,10 @@
                             <th class="px-6 py-4 text-left">Nama</th>
                             <th class="px-6 py-4 text-left">NIS</th>
                             <th class="px-6 py-4 text-left">Kelas</th>
+                            <th class="px-6 py-4 text-center">Percobaan Terbaik</th>
                             <th class="px-6 py-4 text-right">WPM</th>
                             <th class="px-6 py-4 text-right">Akurasi</th>
-                            <th class="px-6 py-4 text-right">Nilai</th>
+                            <th class="px-6 py-4 text-right">Nilai Akhir</th>
                             <th class="px-6 py-4 text-left">Waktu Selesai</th>
                             <th class="px-6 py-4 text-left">Aksi</th>
                         </tr>
@@ -68,6 +69,13 @@
                             <td class="px-6 py-4 font-medium text-gray-800">{{ $attempt->student->name }}</td>
                             <td class="px-6 py-4 text-gray-600">{{ $attempt->student->nis ?? '-' }}</td>
                             <td class="px-6 py-4 text-gray-600">{{ $attempt->student->classroom->name ?? '-' }}</td>
+                            <td class="px-6 py-4 text-center">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700">
+                                    <i class="fas fa-trophy text-[10px] text-amber-500"></i>
+                                    Ke-{{ $attempt->attempt_number }}
+                                    <span class="text-indigo-400 font-normal">({{ $attempt->attempts_count }}/{{ $test->max_attempts ?? 2 }})</span>
+                                </span>
+                            </td>
                             <td class="px-6 py-4 text-right font-mono font-semibold text-blue-700">{{ number_format($attempt->wpm, 2) }}</td>
                             <td class="px-6 py-4 text-right">
                                 <span class="font-semibold {{ $attempt->accuracy >= 90 ? 'text-emerald-600' : ($attempt->accuracy >= 70 ? 'text-amber-600' : 'text-red-600') }}">
