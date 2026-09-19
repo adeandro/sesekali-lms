@@ -33,7 +33,7 @@ body.exam-active .flex.flex-col.flex-1.overflow-hidden {
 }
 
 /* ═══════════════════════════════════════════════════════
-   READY MODAL
+   READY MODAL WITH KEYBOARD TESTER
    ═══════════════════════════════════════════════════════ */
 #readyModal {
     position: fixed;
@@ -42,21 +42,88 @@ body.exam-active .flex.flex-col.flex-1.overflow-hidden {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(15, 23, 42, 0.75);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: rgba(15, 23, 42, 0.82);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    overflow-y: auto;
+    padding: 1.5rem;
 }
 
 .modal-card {
     background: #ffffff !important;
-    border-radius: 2rem;
-    padding: 2.5rem;
-    max-width: 440px;
-    width: 92%;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+    border-radius: 2.25rem;
+    padding: 2rem 2.25rem;
+    max-width: 820px;
+    width: 100%;
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.45);
     position: relative;
     z-index: 100000;
     text-align: center;
+}
+
+/* ═══════════════════════════════════════════════════════
+   VIRTUAL KEYBOARD STYLING (key-test.ru style)
+   ═══════════════════════════════════════════════════════ */
+.keyboard-tester-wrap {
+    background: #0f172a;
+    border-radius: 1.5rem;
+    padding: 1.15rem 0.85rem;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.6), 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: 1px solid #1e293b;
+    margin: 1.1rem 0;
+}
+
+.kb-row {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    margin-bottom: 4px;
+}
+.kb-row:last-child {
+    margin-bottom: 0;
+}
+
+.kb-key {
+    background: #1e293b;
+    color: #94a3b8;
+    border: 1px solid #334155;
+    border-radius: 7px;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 0.75rem;
+    font-weight: 600;
+    height: 36px;
+    min-width: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 0 #0f172a;
+    padding: 0 5px;
+    text-transform: uppercase;
+}
+
+/* Key size variations */
+.kb-key.w-wide-1 { min-width: 54px; font-size: 0.7rem; }
+.kb-key.w-wide-2 { min-width: 64px; font-size: 0.7rem; }
+.kb-key.w-wide-3 { min-width: 78px; font-size: 0.7rem; }
+.kb-key.w-space  { flex-grow: 1; max-width: 300px; }
+
+/* Tested key state (Teal/Emerald Glow) */
+.kb-key.tested {
+    background: #10b981 !important;
+    border-color: #059669 !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.45), 0 2px 0 #047857 !important;
+}
+
+/* Currently pressed active state */
+.kb-key.pressed {
+    transform: translateY(2px);
+    box-shadow: 0 0 0 transparent !important;
+    background: #06b6d4 !important;
+    color: #ffffff !important;
+    border-color: #0891b2 !important;
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -186,49 +253,140 @@ body.exam-active .flex.flex-col.flex-1.overflow-hidden {
 <div id="typingArenaWrapper" class="max-w-4xl mx-auto px-4 py-8">
 
   {{-- ════════════════════════════════════
-       READY MODAL
+       READY MODAL WITH KEYBOARD TESTER
        ════════════════════════════════════ --}}
   <div id="readyModal">
     <div class="modal-card">
-      {{-- Icon --}}
-      <div style="width: 4.5rem; height: 4.5rem; border-radius: 1.5rem; margin: 0 auto 1.25rem auto; display: flex; align-items: center; justify-content: center; font-size: 2rem; background: var(--brand-glow, rgba(79,70,229,0.12)); color: var(--brand-primary, #4f46e5); box-shadow: 0 8px 16px -4px var(--brand-glow, rgba(79,70,229,0.25));">
-        <i class="fas fa-keyboard"></i>
-      </div>
-
-      <h2 style="font-size: 1.35rem; font-weight: 900; color: #0f172a; margin: 0 0 0.4rem 0;">
-        {{ $test->title }}
-      </h2>
       
-      <div style="display: flex; align-items: center; justify-content: center; gap: 0.85rem; font-size: 0.875rem; color: #64748b; margin-bottom: 1.5rem; font-weight: 600;">
-        <span><i class="fas fa-clock" style="margin-right: 0.4rem; color: var(--brand-primary, #4f46e5);"></i>{{ $test->duration_seconds }} Detik</span>
-        <span style="color: #cbd5e1;">•</span>
-        <span><i class="fas fa-bolt" style="margin-right: 0.4rem; color: #f59e0b;"></i>Target {{ $test->target_wpm }} WPM</span>
-      </div>
-
-      {{-- Rules Box --}}
-      <div style="background: #fffbeb; border: 1px solid #fef3c7; border-radius: 1.25rem; padding: 1.15rem; text-align: left; font-size: 0.8125rem; color: #92400e; margin-bottom: 1.75rem;">
-        <p style="font-weight: 900; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: #b45309; margin: 0 0 0.65rem 0; display: flex; align-items: center; gap: 0.4rem;">
-          <i class="fas fa-shield-alt"></i> Petunjuk & Tata Tertib
-        </p>
-        <div style="display: flex; flex-direction: column; gap: 0.45rem; line-height: 1.45;">
-          <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
-            <span>⏱️</span>
-            <span>Timer otomatis berjalan saat kamu menekan tombol pertama.</span>
+      {{-- Header Info --}}
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-3 text-left">
+          <div style="width: 3rem; height: 3rem; border-radius: 1rem; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; background: var(--brand-glow, rgba(79,70,229,0.12)); color: var(--brand-primary, #4f46e5); flex-shrink: 0;">
+            <i class="fas fa-keyboard"></i>
           </div>
-          <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
-            <span>🖥️</span>
-            <span>Ujian wajib berjalan dalam <strong>Layar Penuh (Fullscreen)</strong>.</span>
-          </div>
-          <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
-            <span>⚠️</span>
-            <span>Keluar fullscreen dihitung <strong>pelanggaran</strong> (maks. 3×).</span>
+          <div>
+            <span class="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md mb-0.5">Uji Kesiapan Keyboard</span>
+            <h2 style="font-size: 1.15rem; font-weight: 900; color: #0f172a; margin: 0; line-height: 1.2;">
+              {{ $test->title }}
+            </h2>
           </div>
         </div>
+
+        <div class="flex items-center gap-3 text-xs text-slate-500 font-semibold bg-slate-50 px-3.5 py-1.5 rounded-xl border border-slate-100">
+          <span><i class="fas fa-clock mr-1 text-indigo-600"></i>{{ $test->duration_seconds }}s</span>
+          <span class="text-slate-300">•</span>
+          <span><i class="fas fa-bolt mr-1 text-amber-500"></i>Target {{ $test->target_wpm }} WPM</span>
+        </div>
+      </div>
+
+      {{-- Instructions & Status Badge --}}
+      <div class="mt-3 flex items-center justify-between text-left text-xs">
+        <p class="text-slate-500">
+          <i class="fas fa-info-circle text-indigo-500 mr-1"></i>
+          Tekan tombol keyboard fisik kamu untuk memastikan tombol merespons dengan baik:
+        </p>
+        <span id="kbTestedCount" class="font-mono font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-lg">
+          0 Tombol Teruji
+        </span>
+      </div>
+
+      {{-- ════ VIRTUAL KEYBOARD (Key-Test Style) ════ --}}
+      <div class="keyboard-tester-wrap">
+        {{-- Row 1 --}}
+        <div class="kb-row">
+          <div class="kb-key" data-code="Backquote">` ~</div>
+          <div class="kb-key" data-code="Digit1">1</div>
+          <div class="kb-key" data-code="Digit2">2</div>
+          <div class="kb-key" data-code="Digit3">3</div>
+          <div class="kb-key" data-code="Digit4">4</div>
+          <div class="kb-key" data-code="Digit5">5</div>
+          <div class="kb-key" data-code="Digit6">6</div>
+          <div class="kb-key" data-code="Digit7">7</div>
+          <div class="kb-key" data-code="Digit8">8</div>
+          <div class="kb-key" data-code="Digit9">9</div>
+          <div class="kb-key" data-code="Digit0">0</div>
+          <div class="kb-key" data-code="Minus">- _</div>
+          <div class="kb-key" data-code="Equal">= +</div>
+          <div class="kb-key w-wide-2" data-code="Backspace">⌫ Back</div>
+        </div>
+
+        {{-- Row 2 --}}
+        <div class="kb-row">
+          <div class="kb-key w-wide-1" data-code="Tab">Tab</div>
+          <div class="kb-key" data-code="KeyQ">Q</div>
+          <div class="kb-key" data-code="KeyW">W</div>
+          <div class="kb-key" data-code="KeyE">E</div>
+          <div class="kb-key" data-code="KeyR">R</div>
+          <div class="kb-key" data-code="KeyT">T</div>
+          <div class="kb-key" data-code="KeyY">Y</div>
+          <div class="kb-key" data-code="KeyU">U</div>
+          <div class="kb-key" data-code="KeyI">I</div>
+          <div class="kb-key" data-code="KeyO">O</div>
+          <div class="kb-key" data-code="KeyP">P</div>
+          <div class="kb-key" data-code="BracketLeft">[ {</div>
+          <div class="kb-key" data-code="BracketRight">] }</div>
+          <div class="kb-key" data-code="Backslash">\ |</div>
+        </div>
+
+        {{-- Row 3 --}}
+        <div class="kb-row">
+          <div class="kb-key w-wide-2" data-code="CapsLock">Caps</div>
+          <div class="kb-key" data-code="KeyA">A</div>
+          <div class="kb-key" data-code="KeyS">S</div>
+          <div class="kb-key" data-code="KeyD">D</div>
+          <div class="kb-key" data-code="KeyF">F</div>
+          <div class="kb-key" data-code="KeyG">G</div>
+          <div class="kb-key" data-code="KeyH">H</div>
+          <div class="kb-key" data-code="KeyJ">J</div>
+          <div class="kb-key" data-code="KeyK">K</div>
+          <div class="kb-key" data-code="KeyL">L</div>
+          <div class="kb-key" data-code="Semicolon">; :</div>
+          <div class="kb-key" data-code="Quote">' "</div>
+          <div class="kb-key w-wide-2" data-code="Enter">↵ Enter</div>
+        </div>
+
+        {{-- Row 4 --}}
+        <div class="kb-row">
+          <div class="kb-key w-wide-3" data-code="ShiftLeft">⇧ Shift</div>
+          <div class="kb-key" data-code="KeyZ">Z</div>
+          <div class="kb-key" data-code="KeyX">X</div>
+          <div class="kb-key" data-code="KeyC">C</div>
+          <div class="kb-key" data-code="KeyV">V</div>
+          <div class="kb-key" data-code="KeyB">B</div>
+          <div class="kb-key" data-code="KeyN">N</div>
+          <div class="kb-key" data-code="KeyM">M</div>
+          <div class="kb-key" data-code="Comma">, &lt;</div>
+          <div class="kb-key" data-code="Period">. &gt;</div>
+          <div class="kb-key" data-code="Slash">/ ?</div>
+          <div class="kb-key w-wide-3" data-code="ShiftRight">⇧ Shift</div>
+        </div>
+
+        {{-- Row 5 --}}
+        <div class="kb-row">
+          <div class="kb-key w-wide-1" data-code="ControlLeft">Ctrl</div>
+          <div class="kb-key" data-code="MetaLeft">Win</div>
+          <div class="kb-key" data-code="AltLeft">Alt</div>
+          <div class="kb-key w-space" data-code="Space">Space</div>
+          <div class="kb-key" data-code="AltRight">Alt</div>
+          <div class="kb-key" data-code="ContextMenu">☰</div>
+          <div class="kb-key w-wide-1" data-code="ControlRight">Ctrl</div>
+        </div>
+      </div>
+
+      {{-- Rules Notice --}}
+      <div class="bg-amber-50 border border-amber-200/80 rounded-xl p-2.5 text-left text-xs text-amber-800 mb-3 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span>🖥️</span>
+          <span>Saat klik mulai, mode <strong>Layar Penuh (Fullscreen)</strong> akan aktif otomatis. Keluar layar penuh dihitung pelanggaran (maks. 3×).</span>
+        </div>
+        <button type="button" id="btnResetKb" class="text-xs text-amber-600 hover:text-amber-800 font-bold underline ml-2 flex-shrink-0">
+          Reset Tes
+        </button>
       </div>
 
       {{-- Start Button --}}
       <button id="btnReady"
-              style="width: 100%; padding: 1rem 1.5rem; border-radius: 1rem; font-weight: 900; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.08em; color: #ffffff; background: linear-gradient(135deg, var(--brand-primary, #4f46e5), var(--brand-dark, #3730a3)); border: none; cursor: pointer; box-shadow: 0 12px 24px -6px rgba(79, 70, 229, 0.4); transition: transform 0.15s ease, box-shadow 0.15s ease;"
+              style="width: 100%; padding: 0.9rem 1.5rem; border-radius: 0.875rem; font-weight: 900; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.08em; color: #ffffff; background: linear-gradient(135deg, var(--brand-primary, #4f46e5), var(--brand-dark, #3730a3)); border: none; cursor: pointer; box-shadow: 0 10px 20px -5px rgba(79, 70, 229, 0.4); transition: transform 0.15s ease, box-shadow 0.15s ease;"
               onmouseover="this.style.transform='translateY(-1px)'"
               onmouseout="this.style.transform='translateY(0)'">
         <i class="fas fa-play" style="margin-right: 0.6rem;"></i>Mulai Tes Sekarang
@@ -381,10 +539,13 @@ document.addEventListener('DOMContentLoaded', () => {
   let violations      = 0;
   let totalCharsTyped = 0;
   let totalCorrectChars = 0;
+  let testedKeysSet   = new Set();
 
   /* ── DOM Elements ─────────────────────────── */
   const readyModal      = document.getElementById('readyModal');
   const btnReady        = document.getElementById('btnReady');
+  const btnResetKb      = document.getElementById('btnResetKb');
+  const kbTestedCount   = document.getElementById('kbTestedCount');
   const keyBuffer       = document.getElementById('keyBuffer');
   const wordsContainer  = document.getElementById('wordsContainer');
   const blurWarning     = document.getElementById('blurWarning');
@@ -397,6 +558,48 @@ document.addEventListener('DOMContentLoaded', () => {
   const violCountEl     = document.getElementById('violCount');
   const loadingOverlay  = document.getElementById('loadingOverlay');
   const wordElements    = [...document.querySelectorAll('#wordsContainer .word')];
+  const kbKeyElements   = document.querySelectorAll('.kb-key');
+
+  /* ─────────────────────────────────────────── */
+  /* KEYBOARD TESTER IN READY MODAL              */
+  /* ─────────────────────────────────────────── */
+  function handleKeyboardTester(e) {
+    if (readyModal.style.display === 'none') return;
+
+    // Prevent default browser shortcuts while testing keyboard (e.g. Tab, Space scroll, Backspace history, Quick search /)
+    if (['Tab', 'Space', 'Backspace', 'Slash', 'Quote', 'AltLeft', 'AltRight'].includes(e.code)) {
+      e.preventDefault();
+    }
+
+    const code = e.code;
+    const targetKey = document.querySelector(`.kb-key[data-code="${code}"]`);
+
+    if (targetKey) {
+      targetKey.classList.add('tested', 'pressed');
+      testedKeysSet.add(code);
+      kbTestedCount.textContent = `${testedKeysSet.size} Tombol Teruji`;
+    }
+  }
+
+  function handleKeyboardTesterKeyUp(e) {
+    if (readyModal.style.display === 'none') return;
+    const code = e.code;
+    const targetKey = document.querySelector(`.kb-key[data-code="${code}"]`);
+    if (targetKey) {
+      targetKey.classList.remove('pressed');
+    }
+  }
+
+  window.addEventListener('keydown', handleKeyboardTester);
+  window.addEventListener('keyup', handleKeyboardTesterKeyUp);
+
+  if (btnResetKb) {
+    btnResetKb.addEventListener('click', () => {
+      testedKeysSet.clear();
+      kbKeyElements.forEach(k => k.classList.remove('tested', 'pressed'));
+      kbTestedCount.textContent = '0 Tombol Teruji';
+    });
+  }
 
   /* ─────────────────────────────────────────── */
   /* FULLSCREEN & FOCUS                          */
