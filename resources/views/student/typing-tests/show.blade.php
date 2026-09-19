@@ -399,9 +399,16 @@ body.exam-active .flex.flex-col.flex-1.overflow-hidden {
        ════════════════════════════════════ --}}
   <div class="flex items-end justify-between mb-6">
     <div>
-      <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 mb-2">
-        <i class="fas fa-keyboard text-xs"></i> Tes Mengetik
-      </span>
+      <div class="flex items-center gap-2 mb-2">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700">
+          <i class="fas fa-keyboard text-xs"></i> Tes Mengetik
+        </span>
+        {{-- Caps Lock HUD Badge --}}
+        <span id="capsLockBadge"
+             class="hidden items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-500 text-white shadow-md shadow-amber-500/30 animate-pulse">
+          <i class="fas fa-arrow-up"></i> CAPS LOCK AKTIF
+        </span>
+      </div>
       <h1 class="text-2xl font-black text-slate-800 tracking-tight">{{ $test->title }}</h1>
     </div>
 
@@ -440,6 +447,13 @@ body.exam-active .flex.flex-col.flex-1.overflow-hidden {
   <div class="relative bg-white rounded-3xl p-8 sm:p-10 shadow-xl border border-slate-100 transition-all duration-300"
        id="arenaCard"
        onclick="focusArena()">
+
+    {{-- Caps Lock Floating Alert Banner --}}
+    <div id="capsLockBanner"
+         class="hidden absolute top-4 left-1/2 -translate-x-1/2 items-center gap-2 bg-amber-500 text-white px-4 py-1.5 rounded-full text-xs font-black shadow-lg shadow-amber-500/30 z-30 animate-bounce">
+      <i class="fas fa-lock text-xs"></i>
+      <span>CAPS LOCK AKTIF — Matikan tombol Caps Lock!</span>
+    </div>
 
     {{-- Violation Alert Badge (if any) --}}
     <div id="violBadge"
@@ -810,9 +824,35 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /* ─────────────────────────────────────────── */
+  /* CAPS LOCK STATE DETECTOR                   */
+  /* ─────────────────────────────────────────── */
+  function checkCapsLock(e) {
+    if (e && typeof e.getModifierState === 'function') {
+      const isCaps = e.getModifierState('CapsLock');
+      const badge  = document.getElementById('capsLockBadge');
+      const banner = document.getElementById('capsLockBanner');
+      if (isCaps) {
+        badge?.classList.remove('hidden');
+        badge?.classList.add('inline-flex');
+        banner?.classList.remove('hidden');
+        banner?.classList.add('inline-flex');
+      } else {
+        badge?.classList.add('hidden');
+        badge?.classList.remove('inline-flex');
+        banner?.classList.add('hidden');
+        banner?.classList.remove('inline-flex');
+      }
+    }
+  }
+
+  window.addEventListener('keyup', checkCapsLock);
+
+  /* ─────────────────────────────────────────── */
   /* KEYBOARD INPUT INTERCEPTOR                  */
   /* ─────────────────────────────────────────── */
   window.addEventListener('keydown', (e) => {
+    checkCapsLock(e);
+
     if (window.isSubmitting || readyModal.style.display !== 'none') return;
 
     // Start timer on first printable keypress
@@ -834,6 +874,11 @@ document.addEventListener('DOMContentLoaded', () => {
         currentTyped = currentTyped.slice(0, -1);
         renderCurrentWord();
       }
+      return;
+    }
+
+    if (e.key === ' ') {
+      e.preventDefault();
       return;
     }
 
