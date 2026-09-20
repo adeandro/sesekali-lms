@@ -282,4 +282,28 @@
     </div>
     @endif
 
+    {{-- Project Assignments Banner / Quick Access --}}
+    <div class="bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 rounded-[2.5rem] p-8 text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
+        <div class="relative z-10 space-y-2">
+            <span class="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full text-[10px] font-black uppercase tracking-widest text-indigo-200 border border-white/10">
+                <i class="fas fa-cubes text-amber-400"></i> Portofolio Digital
+            </span>
+            <h3 class="text-2xl font-black tracking-tight">Galeri Tugas & Project Siswa</h3>
+            <p class="text-indigo-200 text-sm max-w-xl">
+                Unggah hasil karya pemrograman web dan tugas project interaktifmu. Tampilkan kreativitasmu di galeri publik sekolah!
+            </p>
+        </div>
+        <div class="relative z-10 flex-shrink-0 flex flex-wrap items-center gap-3">
+            <a href="{{ route('student.projects.index') }}"
+               class="px-6 py-3.5 bg-white text-indigo-950 font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg hover:bg-indigo-50 transition duration-300 flex items-center gap-2">
+                <i class="fas fa-folder-open text-indigo-600"></i> Buka Tugas Project
+            </a>
+            <a href="{{ route('gallery.index') }}" target="_blank"
+               class="px-5 py-3.5 bg-white/10 text-white font-bold text-xs rounded-2xl hover:bg-white/20 transition border border-white/20 flex items-center gap-2">
+                <i class="fas fa-external-link-alt text-xs"></i> Galeri Publik
+            </a>
+        </div>
+        <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-white/5 rounded-full blur-2xl pointer-events-none"></div>
+    </div>
+</div>
 @endsection

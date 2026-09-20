@@ -212,13 +212,13 @@
             @php
                 $activeAccordion = null;
                 if (request()->routeIs('communication.*')) $activeAccordion = 'komunikasi';
-                elseif (request()->is('admin/questions*') || request()->is('admin/exams*') || request()->is('admin/results*') || request()->is('admin/tokens*') || request()->is('admin/monitor-exams*') || request()->is('admin/typing-tests*')) $activeAccordion = 'cbt';
+                elseif (request()->is('admin/questions*') || request()->is('admin/exams*') || request()->is('admin/results*') || request()->is('admin/tokens*') || request()->is('admin/monitor-exams*') || request()->is('admin/typing-tests*') || request()->is('admin/project-assignments*')) $activeAccordion = 'cbt';
                 elseif (request()->is('superadmin/teachers*') || request()->is('admin/students*') || request()->is('admin/subjects*') || request()->is('admin/classes*') || request()->is('admin/grade-weights*') || request()->is('admin/manual-grades*')) $activeAccordion = 'akademik';
                 elseif (request()->routeIs('admin.extracurriculars.*')) $activeAccordion = 'ekskul';
                 elseif (request()->routeIs('dashboard.principal') || request()->is('admin/reports*')) $activeAccordion = 'monitoring';
                 elseif (request()->is('admin/report-data*') || request()->is('admin/dudi*')) $activeAccordion = 'raport';
                 elseif (request()->is('admin/letters*')) $activeAccordion = 'surat';
-                elseif (request()->is('student/exams*') || request()->is('student/results*')) $activeAccordion = 'student_akademik';
+                elseif (request()->is('student/exams*') || request()->is('student/results*') || request()->is('student/projects*')) $activeAccordion = 'student_akademik';
                 elseif (request()->is('student/leaderboard*') || request()->is('student/arena*')) $activeAccordion = 'student_gamifikasi';
                 elseif (request()->is('admin/gamification*')) $activeAccordion = 'gamification';
             @endphp
@@ -271,7 +271,7 @@
                 <div class="pt-1">
                     <button @click="activeAccordion = (activeAccordion === 'cbt' ? null : 'cbt')" 
                             class="w-full nav-item justify-between 
-                                   {{ (request()->routeIs('admin.questions.*') || request()->routeIs('admin.exams.*') || request()->routeIs('admin.results.*') || request()->routeIs('admin.tokens.*') || request()->routeIs('admin.monitor-exams.*') || request()->routeIs('admin.typing-tests.*')) ? 'bg-gray-50' : '' }}">
+                                   {{ (request()->routeIs('admin.questions.*') || request()->routeIs('admin.exams.*') || request()->routeIs('admin.results.*') || request()->routeIs('admin.tokens.*') || request()->routeIs('admin.monitor-exams.*') || request()->routeIs('admin.typing-tests.*') || request()->routeIs('admin.project-assignments.*')) ? 'bg-gray-50' : '' }}">
                         <div class="flex items-center">
                             <i class="fas fa-laptop-code w-5 text-lg mr-3"></i>
                             <span class="font-bold text-[11px] uppercase tracking-widest">CBT & Ujian</span>
@@ -309,6 +309,12 @@
                             <span>Tes Mengetik</span>
                         </a>
                         @endif
+                        {{-- Galeri Tugas --}}
+                        <a href="{{ route('admin.project-assignments.index') }}"
+                           class="nav-item py-2 text-sm {{ request()->routeIs('admin.project-assignments.*') ? 'menu-item-active' : '' }}">
+                            <i class="fas fa-folder-open w-4 mr-2"></i>
+                            <span>Galeri Tugas</span>
+                        </a>
                     </div>
                 </div>
                 @endif
@@ -506,7 +512,7 @@
                 <div class="pt-1">
                     <button @click="activeAccordion = (activeAccordion === 'student_akademik' ? null : 'student_akademik')" 
                             class="w-full nav-item justify-between 
-                                   {{ (request()->routeIs('student.exams.*') || request()->routeIs('student.results*')) ? 'bg-gray-50' : '' }}">
+                                   {{ (request()->routeIs('student.exams.*') || request()->routeIs('student.results*') || request()->routeIs('student.projects.*')) ? 'bg-gray-50' : '' }}">
                         <div class="flex items-center">
                             <i class="fas fa-user-graduate w-5 text-lg mr-3"></i>
                             <span class="font-bold text-[11px] uppercase tracking-widest">Akademik</span>
@@ -523,6 +529,10 @@
                         <a href="{{ route('student.results') }}" 
                            class="nav-item py-2 text-sm {{ request()->routeIs('student.results*') ? 'menu-item-active' : '' }}">
                             <i class="fas fa-chart-line w-4 mr-2"></i><span>Hasil Saya</span>
+                        </a>
+                        <a href="{{ route('student.projects.index') }}" 
+                           class="nav-item py-2 text-sm {{ request()->routeIs('student.projects.*') ? 'menu-item-active' : '' }}">
+                            <i class="fas fa-code w-4 mr-2"></i><span>Tugas Project</span>
                         </a>
                         <a href="{{ route('self-service.sk.form') }}" 
                            class="nav-item py-2 text-sm {{ request()->routeIs('self-service.sk.*') ? 'menu-item-active' : '' }}">

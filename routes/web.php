@@ -42,6 +42,9 @@ use App\Http\Controllers\Admin\LetterController;
 use App\Http\Controllers\Tu\TuDashboardController;
 use App\Http\Controllers\Admin\GradeLockController;
 use App\Http\Controllers\InformationController;
+use App\Http\Controllers\GalleryController;
+use App\Http\Controllers\Admin\ProjectAssignmentController;
+use App\Http\Controllers\Student\ProjectSubmissionController;
 
 // Public routes
 Route::get('/', function () {
@@ -726,4 +729,44 @@ Route::middleware('auth')->group(function () {
             Route::post('{test}/validate-token', [\App\Http\Controllers\Student\TypingTestController::class, 'validateToken'])->name('validate-token');
         });
 
+    // ── Project Assignment Admin ──────────────────────────────────────────
+    Route::middleware('role:superadmin,teacher')
+        ->prefix('admin/project-assignments')
+        ->name('admin.project-assignments.')
+        ->group(function () {
+            Route::get('/', [ProjectAssignmentController::class, 'index'])->name('index');
+            Route::get('create', [ProjectAssignmentController::class, 'create'])->name('create');
+            Route::post('/', [ProjectAssignmentController::class, 'store'])->name('store');
+            Route::get('{assignment}/edit', [ProjectAssignmentController::class, 'edit'])->name('edit');
+            Route::put('{assignment}', [ProjectAssignmentController::class, 'update'])->name('update');
+            Route::delete('{assignment}', [ProjectAssignmentController::class, 'destroy'])->name('destroy');
+            Route::get('{assignment}/submissions', [ProjectAssignmentController::class, 'submissions'])->name('submissions');
+            Route::post('{assignment}/toggle', [ProjectAssignmentController::class, 'toggleActive'])->name('toggle');
+        });
+
+    // ── Project Submission Siswa ──────────────────────────────────────────
+    Route::middleware('role:student')
+        ->prefix('student/projects')
+        ->name('student.projects.')
+        ->group(function () {
+            Route::get('/', [ProjectSubmissionController::class, 'index'])->name('index');
+            Route::get('{assignment}', [ProjectSubmissionController::class, 'show'])->name('show');
+            Route::post('{assignment}/upload', [ProjectSubmissionController::class, 'upload'])->name('upload');
+            Route::get('{assignment}/preview', [ProjectSubmissionController::class, 'previewConfirm'])->name('preview');
+            Route::post('{assignment}/confirm', [ProjectSubmissionController::class, 'confirmUpload'])->name('confirm');
+            Route::post('{assignment}/cancel', [ProjectSubmissionController::class, 'cancelUpload'])->name('cancel');
+        });
+
 }); // end auth middleware group
+
+// ── Project Gallery PUBLIK (Tanpa Auth) ──────────────────────────────────
+Route::prefix('gallery')
+    ->name('gallery.')
+    ->group(function () {
+        Route::get('/', [GalleryController::class, 'index'])->name('index');
+        Route::get('{assignment}', [GalleryController::class, 'show'])->name('show');
+        Route::get('{assignment}/{studentId}/{slot}/{filePath?}', [GalleryController::class, 'serveFile'])
+            ->name('serve')
+            ->where('filePath', '.*');
+    });
+

@@ -27,3 +27,6 @@ Schedule::call(function () {
         now()->subMonth()->endOfMonth()
     );
 })->monthlyOn(1, '00:01');
+
+// Pembersihan temporary upload galeri project setiap jam
+Schedule::command('gallery:clean-tmp')->hourly();
