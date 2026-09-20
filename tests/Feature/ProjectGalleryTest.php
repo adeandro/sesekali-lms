@@ -494,4 +494,111 @@ class ProjectGalleryTest extends TestCase
             'id' => $submissionA->id,
         ]);
     }
+
+    public function test_admin_can_download_archive_zip_of_all_submissions(): void
+    {
+        $admin = $this->createUser(['role' => 'superadmin']);
+        $student1 = $this->createUser(['name' => 'Budi Santoso', 'nis' => '12345', 'role' => 'student']);
+        $student2 = $this->createUser(['name' => 'Dewi Lestari', 'nis' => '12346', 'role' => 'student']);
+
+        $assignment = ProjectAssignment::create([
+            'title'            => 'Assignment Archive Test ' . uniqid(),
+            'max_file_size_mb' => 10,
+            'max_slots'        => 1,
+            'is_active'        => true,
+            'created_by'       => $admin->id,
+        ]);
+
+        // Student 1 project
+        $dir1 = storage_path("app/projects/{$assignment->id}/{$student1->id}/1");
+        File::makeDirectory($dir1, 0755, true, true);
+        file_put_contents("{$dir1}/index.html", '<h1>Project Budi</h1>');
+        file_put_contents("{$dir1}/script.js", 'console.log("budi");');
+
+        ProjectSubmission::create([
+            'assignment_id'     => $assignment->id,
+            'student_id'        => $student1->id,
+            'slot_number'       => 1,
+            'title'             => 'Portfolio Budi',
+            'original_filename' => 'budi.zip',
+            'storage_path'      => "projects/{$assignment->id}/{$student1->id}/1/",
+            'file_size_bytes'   => 500,
+            'uploaded_at'       => now(),
+        ]);
+
+        // Student 2 project
+        $dir2 = storage_path("app/projects/{$assignment->id}/{$student2->id}/1");
+        File::makeDirectory($dir2, 0755, true, true);
+        file_put_contents("{$dir2}/index.html", '<h1>Project Dewi</h1>');
+
+        ProjectSubmission::create([
+            'assignment_id'     => $assignment->id,
+            'student_id'        => $student2->id,
+            'slot_number'       => 1,
+            'title'             => 'Portfolio Dewi',
+            'original_filename' => 'dewi.zip',
+            'storage_path'      => "projects/{$assignment->id}/{$student2->id}/1/",
+            'file_size_bytes'   => 400,
+            'uploaded_at'       => now(),
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('admin.project-assignments.archive', $assignment));
+        $response->assertStatus(200);
+        $this->assertStringContainsString('application/zip', $response->headers->get('Content-Type') ?? '');
+        $this->assertStringContainsString('.zip', $response->headers->get('Content-Disposition') ?? '');
+    }
+
+    public function test_admin_cannot_archive_when_no_submissions(): void
+    {
+        $admin = $this->createUser(['role' => 'superadmin']);
+        $assignment = ProjectAssignment::create([
+            'title'            => 'Assignment Kosong ' . uniqid(),
+            'max_file_size_mb' => 10,
+            'max_slots'        => 1,
+            'is_active'        => true,
+            'created_by'       => $admin->id,
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('admin.project-assignments.archive', $assignment));
+        $response->assertRedirect();
+        $response->assertSessionHas('error');
+    }
+
+    public function test_admin_can_clear_all_submissions(): void
+    {
+        $admin = $this->createUser(['role' => 'superadmin']);
+        $student = $this->createUser(['name' => 'Siswa Test Clear', 'role' => 'student']);
+
+        $assignment = ProjectAssignment::create([
+            'title'            => 'Assignment Clear All ' . uniqid(),
+            'max_file_size_mb' => 10,
+            'max_slots'        => 1,
+            'is_active'        => true,
+            'created_by'       => $admin->id,
+        ]);
+
+        $dir = storage_path("app/projects/{$assignment->id}/{$student->id}/1");
+        File::makeDirectory($dir, 0755, true, true);
+        file_put_contents("{$dir}/index.html", '<h1>Project Mau Dibersihkan</h1>');
+
+        $submission = ProjectSubmission::create([
+            'assignment_id'     => $assignment->id,
+            'student_id'        => $student->id,
+            'slot_number'       => 1,
+            'title'             => 'Karya Siswa Clear',
+            'original_filename' => 'clear.zip',
+            'storage_path'      => "projects/{$assignment->id}/{$student->id}/1/",
+            'file_size_bytes'   => 600,
+            'uploaded_at'       => now(),
+        ]);
+
+        $response = $this->actingAs($admin)->delete(route('admin.project-assignments.submissions.clear-all', $assignment));
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseMissing('project_submissions', [
+            'assignment_id' => $assignment->id,
+        ]);
+        $this->assertDirectoryDoesNotExist(storage_path("app/projects/{$assignment->id}"));
+    }
 }

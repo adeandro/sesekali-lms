@@ -26,11 +26,34 @@
             </div>
         </div>
 
-        <a href="{{ route('gallery.show', $assignment) }}" target="_blank"
-           class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-white text-xs font-semibold shadow-md transition hover:opacity-90"
-           style="background: var(--brand-primary)">
-            <i class="fas fa-external-link-alt"></i> Buka Galeri Publik
-        </a>
+        <div class="flex flex-wrap items-center gap-2.5">
+            @if($submissions->isNotEmpty())
+                <a href="{{ route('admin.project-assignments.archive', $assignment) }}"
+                   class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-white text-xs font-semibold shadow-md transition hover:opacity-90 bg-emerald-600 hover:bg-emerald-700"
+                   title="Download seluruh project siswa dalam satu file ZIP">
+                    <i class="fas fa-file-archive"></i> Arsipkan & Unduh ZIP ({{ $submissions->count() }})
+                </a>
+
+                <form action="{{ route('admin.project-assignments.submissions.clear-all', $assignment) }}"
+                      method="POST"
+                      onsubmit="return confirm('PERINGATAN BERSIHKAN STORAGE:\n\nApakah Anda yakin ingin MENGHAPUS SEMUA ({{ $submissions->count() }}) karya tugas siswa pada assignment ini dari server?\n\nPastikan Anda sudah mengunduh file arsip ZIP ke komputer Anda sebelum melanjutkan.');"
+                      class="inline-block">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit"
+                            class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition"
+                            title="Hapus semua file submission dari server untuk mengosongkan storage">
+                        <i class="fas fa-broom"></i> Bersihkan Server
+                    </button>
+                </form>
+            @endif
+
+            <a href="{{ route('gallery.show', $assignment) }}" target="_blank"
+               class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-white text-xs font-semibold shadow-md transition hover:opacity-90"
+               style="background: var(--brand-primary)">
+                <i class="fas fa-external-link-alt"></i> Galeri Publik
+            </a>
+        </div>
     </div>
 
     @if(session('success'))

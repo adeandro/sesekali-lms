@@ -237,5 +237,88 @@ class ProjectGalleryService
 
         return (bool) $submission->delete();
     }
+
+    /**
+     * Create a backup archive ZIP of all student submissions for an assignment.
+     */
+    public function createArchiveZip(ProjectAssignment $assignment): ?string
+    {
+        $submissions = $assignment->submissions()
+            ->with('student.classroom')
+            ->orderBy('slot_number')
+            ->get();
+
+        if ($submissions->isEmpty()) {
+            return null;
+        }
+
+        $tmpDir = storage_path('app/tmp');
+        if (!File::isDirectory($tmpDir)) {
+            File::makeDirectory($tmpDir, 0755, true);
+        }
+
+        $zipFilename = 'arsip_' . $assignment->slug . '_' . date('Ymd_His') . '_' . uniqid() . '.zip';
+        $zipPath = $tmpDir . '/' . $zipFilename;
+
+        $zip = new \ZipArchive();
+        if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            return null;
+        }
+
+        foreach ($submissions as $submission) {
+            $student = $submission->student;
+            $className = $student?->classroom?->name ?? 'Tanpa_Kelas';
+            $nis = $student?->nis ?? 'NoNIS';
+            $studentName = $student?->name ?? 'Siswa';
+            $slot = $submission->slot_number;
+
+            // Sanitize folder name for ZIP entry
+            $rawFolderName = "{$className}_{$nis}_{$studentName}_Slot{$slot}";
+            $safeFolderName = preg_replace('/[\\\\\/:\*\?"<>\|]/', '_', $rawFolderName);
+            $safeFolderName = trim(preg_replace('/\s+/', ' ', $safeFolderName));
+
+            $submissionPath = storage_path('app/' . rtrim($submission->storage_path, '/'));
+
+            if (File::isDirectory($submissionPath)) {
+                $zip->addEmptyDir($safeFolderName);
+
+                $files = new \RecursiveIteratorIterator(
+                    new \RecursiveDirectoryIterator($submissionPath, \RecursiveDirectoryIterator::SKIP_DOTS),
+                    \RecursiveIteratorIterator::SELF_FIRST
+                );
+
+                foreach ($files as $file) {
+                    $filePathname = $file->getPathname();
+                    $rel = substr($filePathname, strlen($submissionPath) + 1);
+                    $rel = str_replace('\\', '/', $rel);
+                    $zipEntry = $safeFolderName . '/' . $rel;
+
+                    if ($file->isDir()) {
+                        $zip->addEmptyDir($zipEntry);
+                    } elseif ($file->isFile()) {
+                        $zip->addFile($filePathname, $zipEntry);
+                    }
+                }
+            }
+        }
+
+        $zip->close();
+
+        return file_exists($zipPath) ? $zipPath : null;
+    }
+
+    /**
+     * Clear all submissions for an assignment, deleting physical storage files and DB records.
+     */
+    public function clearAllSubmissions(ProjectAssignment $assignment): int
+    {
+        $assignmentDir = storage_path("app/projects/{$assignment->id}");
+        if (File::isDirectory($assignmentDir)) {
+            File::deleteDirectory($assignmentDir);
+        }
+
+        return (int) $assignment->submissions()->delete();
+    }
 }
+
 

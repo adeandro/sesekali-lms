@@ -9,6 +9,7 @@ use App\Models\ProjectSubmission;
 use App\Models\Subject;
 use App\Services\ProjectGalleryService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class ProjectAssignmentController extends Controller
 {
@@ -85,12 +86,13 @@ class ProjectAssignmentController extends Controller
             ->with('success', 'Assignment project berhasil diperbarui.');
     }
 
-    public function destroy(ProjectAssignment $assignment)
+    public function destroy(ProjectAssignment $assignment, ProjectGalleryService $galleryService)
     {
+        $galleryService->clearAllSubmissions($assignment);
         $assignment->delete();
 
         return redirect()->route('admin.project-assignments.index')
-            ->with('success', 'Assignment project berhasil dihapus.');
+            ->with('success', 'Assignment project dan seluruh filenya berhasil dihapus.');
     }
 
     public function submissions(ProjectAssignment $assignment)
@@ -129,5 +131,31 @@ class ProjectAssignmentController extends Controller
 
         return back()->with('success', "Karya tugas milik {$studentName} (Slot #{$slotNumber}) berhasil dihapus dari server.");
     }
+
+    public function archive(
+        ProjectAssignment $assignment,
+        ProjectGalleryService $galleryService
+    ) {
+        $zipPath = $galleryService->createArchiveZip($assignment);
+
+        if (!$zipPath || !file_exists($zipPath)) {
+            return back()->with('error', 'Belum ada karya tugas siswa yang dapat diarsipkan.');
+        }
+
+        $cleanTitle = Str::slug($assignment->title) ?: 'projek';
+        $downloadName = "arsip_{$cleanTitle}_" . date('Ymd_His') . '.zip';
+
+        return response()->download($zipPath, $downloadName)->deleteFileAfterSend(true);
+    }
+
+    public function clearAllSubmissions(
+        ProjectAssignment $assignment,
+        ProjectGalleryService $galleryService
+    ) {
+        $count = $galleryService->clearAllSubmissions($assignment);
+
+        return back()->with('success', "Seluruh ({$count}) karya tugas siswa pada assignment ini berhasil dibersihkan dari server.");
+    }
 }
+
 

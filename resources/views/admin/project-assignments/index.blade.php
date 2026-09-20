@@ -112,6 +112,13 @@
                                        title="Lihat Submissions">
                                         <i class="fas fa-list-check"></i>
                                     </a>
+                                    @if($assignment->submissions_count > 0)
+                                    <a href="{{ route('admin.project-assignments.archive', $assignment) }}"
+                                       class="p-2 text-emerald-600 hover:bg-emerald-50 rounded-xl transition"
+                                       title="Arsipkan & Unduh ZIP ({{ $assignment->submissions_count }} Karya)">
+                                        <i class="fas fa-file-archive"></i>
+                                    </a>
+                                    @endif
                                     <a href="{{ route('admin.project-assignments.edit', $assignment) }}"
                                        class="p-2 text-amber-600 hover:bg-amber-50 rounded-xl transition"
                                        title="Edit Assignment">

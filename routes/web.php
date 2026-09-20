@@ -741,6 +741,8 @@ Route::middleware('auth')->group(function () {
             Route::put('{assignment}', [ProjectAssignmentController::class, 'update'])->name('update');
             Route::delete('{assignment}', [ProjectAssignmentController::class, 'destroy'])->name('destroy');
             Route::get('{assignment}/submissions', [ProjectAssignmentController::class, 'submissions'])->name('submissions');
+            Route::get('{assignment}/archive', [ProjectAssignmentController::class, 'archive'])->name('archive');
+            Route::delete('{assignment}/submissions/clear-all', [ProjectAssignmentController::class, 'clearAllSubmissions'])->name('submissions.clear-all');
             Route::delete('{assignment}/submissions/{submission}', [ProjectAssignmentController::class, 'destroySubmission'])->name('submissions.destroy');
             Route::post('{assignment}/toggle', [ProjectAssignmentController::class, 'toggleActive'])->name('toggle');
         });
