@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ClassRoom;
 use App\Models\ProjectAssignment;
+use App\Models\ProjectSubmission;
 use App\Models\Subject;
+use App\Services\ProjectGalleryService;
 use Illuminate\Http\Request;
 
 class ProjectAssignmentController extends Controller
@@ -110,4 +112,22 @@ class ProjectAssignmentController extends Controller
         $statusText = $assignment->is_active ? 'diaktifkan' : 'dinonaktifkan';
         return back()->with('success', "Assignment berhasil {$statusText}.");
     }
+
+    public function destroySubmission(
+        ProjectAssignment $assignment,
+        ProjectSubmission $submission,
+        ProjectGalleryService $galleryService
+    ) {
+        if ($submission->assignment_id !== $assignment->id) {
+            abort(404, 'Tugas project tidak ditemukan pada assignment ini.');
+        }
+
+        $studentName = $submission->student->name ?? 'Siswa';
+        $slotNumber = $submission->slot_number;
+
+        $galleryService->deleteSubmission($submission);
+
+        return back()->with('success', "Karya tugas milik {$studentName} (Slot #{$slotNumber}) berhasil dihapus dari server.");
+    }
 }
+

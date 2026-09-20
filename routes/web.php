@@ -741,6 +741,7 @@ Route::middleware('auth')->group(function () {
             Route::put('{assignment}', [ProjectAssignmentController::class, 'update'])->name('update');
             Route::delete('{assignment}', [ProjectAssignmentController::class, 'destroy'])->name('destroy');
             Route::get('{assignment}/submissions', [ProjectAssignmentController::class, 'submissions'])->name('submissions');
+            Route::delete('{assignment}/submissions/{submission}', [ProjectAssignmentController::class, 'destroySubmission'])->name('submissions.destroy');
             Route::post('{assignment}/toggle', [ProjectAssignmentController::class, 'toggleActive'])->name('toggle');
         });
 
@@ -755,6 +756,7 @@ Route::middleware('auth')->group(function () {
             Route::get('{assignment}/preview', [ProjectSubmissionController::class, 'previewConfirm'])->name('preview');
             Route::post('{assignment}/confirm', [ProjectSubmissionController::class, 'confirmUpload'])->name('confirm');
             Route::post('{assignment}/cancel', [ProjectSubmissionController::class, 'cancelUpload'])->name('cancel');
+            Route::delete('{assignment}/submissions/{submission}', [ProjectSubmissionController::class, 'destroy'])->name('destroy');
         });
 
 }); // end auth middleware group

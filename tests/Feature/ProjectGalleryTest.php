@@ -379,4 +379,119 @@ class ProjectGalleryTest extends TestCase
         $response = $this->actingAs($studentB)->get(route('student.projects.show', $assignment));
         $response->assertStatus(403);
     }
+
+    public function test_admin_can_delete_student_submission(): void
+    {
+        $admin = $this->createUser(['role' => 'superadmin']);
+        $student = $this->createUser(['name' => 'Budi Testing', 'role' => 'student']);
+
+        $assignment = ProjectAssignment::create([
+            'title'            => 'Assignment Delete Test ' . uniqid(),
+            'max_file_size_mb' => 10,
+            'max_slots'        => 1,
+            'is_active'        => true,
+            'created_by'       => $admin->id,
+        ]);
+
+        $storageDir = storage_path("app/projects/{$assignment->id}/{$student->id}/1");
+        File::makeDirectory($storageDir, 0755, true, true);
+        file_put_contents("{$storageDir}/index.html", '<h1>Salah Upload</h1>');
+
+        $submission = ProjectSubmission::create([
+            'assignment_id'     => $assignment->id,
+            'student_id'        => $student->id,
+            'slot_number'       => 1,
+            'title'             => 'Salah Upload File',
+            'original_filename' => 'salah.zip',
+            'storage_path'      => "projects/{$assignment->id}/{$student->id}/1/",
+            'file_size_bytes'   => 500,
+            'uploaded_at'       => now(),
+        ]);
+
+        $this->assertFileExists("{$storageDir}/index.html");
+
+        $response = $this->actingAs($admin)->delete(route('admin.project-assignments.submissions.destroy', [$assignment, $submission]));
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        // Database record must be deleted
+        $this->assertDatabaseMissing('project_submissions', [
+            'id' => $submission->id,
+        ]);
+
+        // Physical folder must be deleted
+        $this->assertDirectoryDoesNotExist($storageDir);
+    }
+
+    public function test_student_can_delete_own_submission(): void
+    {
+        $teacher = $this->createUser(['role' => 'teacher']);
+        $student = $this->createUser(['role' => 'student']);
+
+        $assignment = ProjectAssignment::create([
+            'title'            => 'Tugas Siswa ' . uniqid(),
+            'max_file_size_mb' => 10,
+            'max_slots'        => 1,
+            'is_active'        => true,
+            'created_by'       => $teacher->id,
+        ]);
+
+        $storageDir = storage_path("app/projects/{$assignment->id}/{$student->id}/1");
+        File::makeDirectory($storageDir, 0755, true, true);
+        file_put_contents("{$storageDir}/index.html", '<h1>File Lama</h1>');
+
+        $submission = ProjectSubmission::create([
+            'assignment_id'     => $assignment->id,
+            'student_id'        => $student->id,
+            'slot_number'       => 1,
+            'title'             => 'File Lama Mau Dihapus',
+            'original_filename' => 'lama.zip',
+            'storage_path'      => "projects/{$assignment->id}/{$student->id}/1/",
+            'file_size_bytes'   => 500,
+            'uploaded_at'       => now(),
+        ]);
+
+        $response = $this->actingAs($student)->delete(route('student.projects.destroy', [$assignment, $submission]));
+        $response->assertRedirect(route('student.projects.show', $assignment));
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseMissing('project_submissions', [
+            'id' => $submission->id,
+        ]);
+        $this->assertDirectoryDoesNotExist($storageDir);
+    }
+
+    public function test_student_cannot_delete_other_student_submission(): void
+    {
+        $teacher = $this->createUser(['role' => 'teacher']);
+        $studentA = $this->createUser(['role' => 'student']);
+        $studentB = $this->createUser(['role' => 'student']);
+
+        $assignment = ProjectAssignment::create([
+            'title'            => 'Tugas Bersama ' . uniqid(),
+            'max_file_size_mb' => 10,
+            'max_slots'        => 1,
+            'is_active'        => true,
+            'created_by'       => $teacher->id,
+        ]);
+
+        $submissionA = ProjectSubmission::create([
+            'assignment_id'     => $assignment->id,
+            'student_id'        => $studentA->id,
+            'slot_number'       => 1,
+            'title'             => 'Tugas Milik A',
+            'original_filename' => 'tugas_a.zip',
+            'storage_path'      => "projects/{$assignment->id}/{$studentA->id}/1/",
+            'file_size_bytes'   => 500,
+            'uploaded_at'       => now(),
+        ]);
+
+        // Student B tries to delete student A's submission
+        $response = $this->actingAs($studentB)->delete(route('student.projects.destroy', [$assignment, $submissionA]));
+        $response->assertStatus(403);
+
+        $this->assertDatabaseHas('project_submissions', [
+            'id' => $submissionA->id,
+        ]);
+    }
 }

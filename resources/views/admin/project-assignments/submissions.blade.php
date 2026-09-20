@@ -33,6 +33,20 @@
         </a>
     </div>
 
+    @if(session('success'))
+        <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm px-5 py-3.5 rounded-2xl flex items-center gap-3 shadow-xs">
+            <i class="fas fa-check-circle text-emerald-500 text-lg"></i>
+            <span class="font-semibold">{{ session('success') }}</span>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="bg-rose-50 border border-rose-200 text-rose-800 text-sm px-5 py-3.5 rounded-2xl flex items-center gap-3 shadow-xs">
+            <i class="fas fa-exclamation-circle text-rose-500 text-lg"></i>
+            <span class="font-semibold">{{ session('error') }}</span>
+        </div>
+    @endif
+
     {{-- Submissions Table --}}
     <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
         @if($submissions->isEmpty())
@@ -107,11 +121,26 @@
                                 {{ $submission->uploaded_at?->format('d/m/Y H:i') ?? '-' }}
                             </td>
                             <td class="px-6 py-4 text-right">
-                                <a href="{{ $submission->getIndexUrl() }}" target="_blank"
-                                   class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white shadow-xs hover:opacity-90 transition"
-                                   style="background: var(--brand-primary)">
-                                    <i class="fas fa-play text-[10px]"></i> Lihat Project
-                                </a>
+                                <div class="inline-flex items-center gap-2 justify-end">
+                                    <a href="{{ $submission->getIndexUrl() }}" target="_blank"
+                                       class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white shadow-xs hover:opacity-90 transition"
+                                       style="background: var(--brand-primary)" title="Buka web project">
+                                        <i class="fas fa-play text-[10px]"></i> Lihat
+                                    </a>
+
+                                    <form action="{{ route('admin.project-assignments.submissions.destroy', [$assignment, $submission]) }}"
+                                          method="POST"
+                                          onsubmit="return confirm('Apakah Anda yakin ingin menghapus tugas milik {{ addslashes($submission->student->name ?? 'siswa ini') }} (Slot #{{ $submission->slot_number }})?\n\nFile di server akan dihapus dan slot akan bersih kembali.');"
+                                          class="inline-block">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit"
+                                                class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 border border-rose-200/80 transition"
+                                                title="Hapus Pengumpulan Tugas Siswa">
+                                            <i class="fas fa-trash-alt text-[10px]"></i> Hapus
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                         @endforeach

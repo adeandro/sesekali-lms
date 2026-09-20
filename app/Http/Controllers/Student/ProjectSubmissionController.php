@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
 use App\Models\ProjectAssignment;
+use App\Models\ProjectSubmission;
 use App\Services\ProjectGalleryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
@@ -137,4 +138,23 @@ class ProjectSubmissionController extends Controller
         return redirect()->route('student.projects.show', $assignment)
             ->with('info', 'Unggahan project dibatalkan.');
     }
+
+    public function destroy(
+        ProjectAssignment $assignment,
+        ProjectSubmission $submission,
+        ProjectGalleryService $galleryService
+    ) {
+        $student = auth()->user();
+
+        if ($submission->student_id !== $student->id || $submission->assignment_id !== $assignment->id) {
+            abort(403, 'Anda tidak memiliki akses untuk menghapus tugas ini.');
+        }
+
+        $slotNumber = $submission->slot_number;
+        $galleryService->deleteSubmission($submission);
+
+        return redirect()->route('student.projects.show', $assignment)
+            ->with('success', "Tugas project pada Slot #{$slotNumber} berhasil dihapus.");
+    }
 }
+

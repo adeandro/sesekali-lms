@@ -85,7 +85,7 @@
                 </div>
 
                 @if($sub)
-                    <div class="flex items-center gap-2">
+                    <div class="flex flex-wrap items-center gap-2">
                         <a href="{{ $sub->getIndexUrl() }}" target="_blank"
                            class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-md transition hover:opacity-90"
                            style="background: var(--brand-primary)">
@@ -96,6 +96,18 @@
                             <i class="fas fa-redo-alt text-[10px]"></i>
                             <span x-text="openUpload ? 'Tutup Form' : 'Ganti File'"></span>
                         </button>
+                        <form action="{{ route('student.projects.destroy', [$assignment, $sub]) }}"
+                              method="POST"
+                              onsubmit="return confirm('Apakah Anda yakin ingin menghapus tugas di Slot #{{ $slot }} ini?\n\nFile project Anda akan dihapus dari server dan galeri publik.');"
+                              class="inline-block">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit"
+                                    class="inline-flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 border border-rose-200/80 transition"
+                                    title="Hapus tugas di slot ini">
+                                <i class="fas fa-trash-alt text-[10px]"></i> Hapus Tugas
+                            </button>
+                        </form>
                     </div>
                 @endif
             </div>

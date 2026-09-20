@@ -224,4 +224,18 @@ class ProjectGalleryService
 
         return response()->file($realPath, $headers);
     }
+
+    /**
+     * Delete a project submission and completely remove its extracted files from storage.
+     */
+    public function deleteSubmission(ProjectSubmission $submission): bool
+    {
+        $dirPath = storage_path('app/' . rtrim($submission->storage_path, '/'));
+        if (File::isDirectory($dirPath)) {
+            File::deleteDirectory($dirPath);
+        }
+
+        return (bool) $submission->delete();
+    }
 }
+
