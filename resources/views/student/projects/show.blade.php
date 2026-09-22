@@ -159,7 +159,7 @@
                       action="{{ route('student.projects.upload', $assignment) }}"
                       enctype="multipart/form-data"
                       @submit.prevent="submitForm($event)"
-                      class="space-y-4">
+                      class="space-y-4 no-loading">
                     @csrf
                     <input type="hidden" name="slot_number" value="{{ $slot }}">
 
@@ -302,6 +302,14 @@ function uploadSlotHandler(config) {
         },
 
         submitForm(event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+
+            const loadingElem = document.getElementById('loading-overlay');
+            if (loadingElem) loadingElem.style.display = 'none';
+
             const form = event.target;
             const fileInput = form.querySelector('input[name="project_file"]');
             if (!fileInput || !fileInput.files || !fileInput.files[0]) {
@@ -397,11 +405,15 @@ function uploadSlotHandler(config) {
 
             xhr.onerror = () => {
                 this.isUploading = false;
+                const loadingElem = document.getElementById('loading-overlay');
+                if (loadingElem) loadingElem.style.display = 'none';
                 this.errorMessage = 'Koneksi ke server terputus saat upload. Silakan periksa jaringan internet Anda dan coba lagi.';
             };
 
             xhr.ontimeout = () => {
                 this.isUploading = false;
+                const loadingElem = document.getElementById('loading-overlay');
+                if (loadingElem) loadingElem.style.display = 'none';
                 this.errorMessage = 'Waktu koneksi habis saat upload. Silakan coba kembali.';
             };
 
