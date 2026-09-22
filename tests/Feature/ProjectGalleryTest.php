@@ -214,6 +214,42 @@ class ProjectGalleryTest extends TestCase
         @unlink($zipPath);
     }
 
+    public function test_student_upload_ajax_returns_json_with_redirect_url(): void
+    {
+        $teacher = $this->createUser(['role' => 'teacher']);
+        $student = $this->createUser(['name' => 'Budi Ajax', 'role' => 'student']);
+
+        $assignment = ProjectAssignment::create([
+            'title'            => 'Karya Ajax ' . uniqid(),
+            'max_file_size_mb' => 10,
+            'max_slots'        => 1,
+            'is_active'        => true,
+            'created_by'       => $teacher->id,
+        ]);
+
+        $zipPath = $this->createZip([
+            'index.html' => '<h1>Halo Ajax</h1>',
+        ]);
+        $uploadedFile = new UploadedFile($zipPath, 'ajax_project.zip', 'application/zip', null, true);
+
+        $response = $this->actingAs($student)
+            ->withHeaders(['Accept' => 'application/json', 'X-Requested-With' => 'XMLHttpRequest'])
+            ->post(route('student.projects.upload', $assignment), [
+                'title'        => 'Website Ajax Budi',
+                'slot_number'  => 1,
+                'project_file' => $uploadedFile,
+            ]);
+
+        $response->assertOk();
+        $response->assertJson([
+            'success'  => true,
+            'redirect' => route('student.projects.preview', $assignment),
+        ]);
+        $this->assertTrue(session()->has('upload_preview'));
+
+        @unlink($zipPath);
+    }
+
     public function test_public_gallery_view_and_secure_file_serving(): void
     {
         $teacher = $this->createUser(['role' => 'teacher']);

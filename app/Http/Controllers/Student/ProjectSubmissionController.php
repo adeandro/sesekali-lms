@@ -56,9 +56,14 @@ class ProjectSubmissionController extends Controller
         $contentLength = (int) $request->server('CONTENT_LENGTH', 0);
         if ($contentLength > 0 && empty($request->all()) && empty($request->allFiles())) {
             $postMax = ini_get('post_max_size');
-            return back()->withInput()->withErrors([
-                'project_file' => "Ukuran file yang diunggah melebihi batas 'post_max_size' server hosting ({$postMax}). Silakan naikkan batas post_max_size di cPanel PHP Selector atau unggah file yang lebih kecil.",
-            ]);
+            $msg = "Ukuran file yang diunggah melebihi batas 'post_max_size' server hosting ({$postMax}). Silakan naikkan batas post_max_size di cPanel PHP Selector atau unggah file yang lebih kecil.";
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'message' => $msg,
+                    'errors'  => ['project_file' => [$msg]],
+                ], 422);
+            }
+            return back()->withInput()->withErrors(['project_file' => $msg]);
         }
 
         // 2. Cek jika file gagal di level PHP (misal upload_max_filesize di cPanel terlalu kecil atau disk penuh)
@@ -77,6 +82,13 @@ class ProjectSubmissionController extends Controller
                     UPLOAD_ERR_EXTENSION => "Unggahan file dihentikan oleh ekstensi PHP di server hosting.",
                     default => "File gagal diunggah ke server hosting (PHP Upload Error code: {$error}).",
                 };
+
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'message' => $message,
+                        'errors'  => ['project_file' => [$message]],
+                    ], 422);
+                }
 
                 return back()->withInput()->withErrors(['project_file' => $message]);
             }
@@ -112,6 +124,13 @@ class ProjectSubmissionController extends Controller
             'size'          => $request->file('project_file')->getSize(),
             'assignment_id' => $assignment->id,
         ]]);
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success'  => true,
+                'redirect' => route('student.projects.preview', $assignment),
+            ]);
+        }
 
         return redirect()->route('student.projects.preview', $assignment);
     }

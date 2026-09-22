@@ -68,7 +68,11 @@
         @php
             $sub = $submissions->get($slot);
         @endphp
-        <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 sm:p-7 overflow-hidden" x-data="{ openUpload: {{ $sub ? 'false' : 'true' }} }">
+        <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 sm:p-7 overflow-hidden"
+             x-data="uploadSlotHandler({
+                openUpload: {{ $sub ? 'false' : 'true' }},
+                maxMb: {{ (int) $assignment->max_file_size_mb }}
+             })">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-gray-100">
                 <div class="flex items-center gap-2.5">
                     <span class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-700 font-black text-sm flex items-center justify-center">
@@ -151,17 +155,35 @@
                 </div>
                 @endif
 
-                <form method="POST" action="{{ route('student.projects.upload', $assignment) }}" enctype="multipart/form-data" class="space-y-4">
+                <form method="POST"
+                      action="{{ route('student.projects.upload', $assignment) }}"
+                      enctype="multipart/form-data"
+                      @submit.prevent="submitForm($event)"
+                      class="space-y-4">
                     @csrf
                     <input type="hidden" name="slot_number" value="{{ $slot }}">
+
+                    <!-- Alert Error AJAX -->
+                    <div x-show="errorMessage" x-cloak x-transition
+                         class="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-3">
+                        <i class="fas fa-exclamation-triangle text-rose-500 mt-0.5 text-base shrink-0"></i>
+                        <div class="flex-1 leading-relaxed">
+                            <strong class="font-bold block mb-0.5">Gagal Mengunggah Proyek:</strong>
+                            <span x-text="errorMessage"></span>
+                        </div>
+                        <button type="button" @click="errorMessage = ''" class="text-rose-400 hover:text-rose-600 transition">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
 
                     <div>
                         <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
                             Judul Project <span class="text-rose-500">*</span>
                         </label>
-                        <input type="text" name="title" value="{{ old('slot_number') == $slot ? old('title') : ($sub->title ?? '') }}"
+                        <input type="text" name="title" :disabled="isUploading"
+                               value="{{ old('slot_number') == $slot ? old('title') : ($sub->title ?? '') }}"
                                placeholder="Contoh: Web Animasi CSS - Profil Sekolah"
-                               class="w-full border border-gray-200 rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:border-transparent"
+                               class="w-full border border-gray-200 rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400"
                                style="--tw-ring-color: var(--brand-primary)" required>
                     </div>
 
@@ -169,24 +191,80 @@
                         <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
                             File Archive Project (.ZIP) <span class="text-rose-500">*</span>
                         </label>
-                        <input type="file" name="project_file" accept=".zip,.rar"
-                               onchange="validateFileSize(this, {{ (int) $assignment->max_file_size_mb }})"
-                               class="w-full text-xs text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer border border-gray-200 rounded-2xl p-2" required>
+                        <input type="file" name="project_file" accept=".zip,.rar" :disabled="isUploading"
+                               @change="onFileChosen($event)"
+                               class="w-full text-xs text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer border border-gray-200 rounded-2xl p-2 disabled:opacity-50 disabled:cursor-not-allowed" required>
                         <p class="text-[11px] text-gray-400 mt-1.5">
                             <i class="fas fa-check-circle text-emerald-500 mr-1"></i>
                             Maksimal ukuran: <strong>{{ $assignment->max_file_size_mb }} MB</strong>. File ZIP <strong>wajib</strong> memiliki file <code class="bg-gray-100 px-1 py-0.5 rounded text-indigo-700 font-mono font-bold">index.html</code> di dalamnya.
                         </p>
                     </div>
 
+                    <!-- Progress Bar Interaktif -->
+                    <div x-show="isUploading" x-cloak x-transition
+                         class="p-4 rounded-2xl bg-gradient-to-br from-indigo-50/70 via-purple-50/40 to-blue-50/70 border border-indigo-100 shadow-sm space-y-3">
+                        <div class="flex items-center justify-between text-xs">
+                            <div class="flex items-center gap-2 font-bold text-gray-800">
+                                <template x-if="progress < 100">
+                                    <i class="fas fa-cloud-upload-alt text-indigo-600 text-sm animate-bounce"></i>
+                                </template>
+                                <template x-if="progress >= 100">
+                                    <i class="fas fa-cog fa-spin text-purple-600 text-sm"></i>
+                                </template>
+                                <span x-text="statusText"></span>
+                            </div>
+                            <span class="font-mono font-extrabold text-xs px-2.5 py-0.5 rounded-full bg-white text-indigo-700 border border-indigo-100 shadow-xs"
+                                  x-text="progress + '%'"></span>
+                        </div>
+
+                        <!-- Progress Bar Track -->
+                        <div class="w-full bg-gray-200/80 rounded-full h-3 p-0.5 overflow-hidden shadow-inner">
+                            <div class="h-full rounded-full transition-all duration-150 relative overflow-hidden"
+                                 :style="'width: ' + progress + '%; background: linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899);'">
+                                <div class="absolute inset-0 bg-white/25 animate-pulse"></div>
+                            </div>
+                        </div>
+
+                        <!-- Detail Meta / Ukuran Data -->
+                        <div class="flex items-center justify-between text-[11px] text-gray-500 font-medium pt-0.5">
+                            <span class="flex items-center gap-1.5">
+                                <i class="fas fa-file-archive text-indigo-400"></i>
+                                <span x-text="loadedText"></span>
+                            </span>
+                            <span class="text-gray-400 italic">
+                                <template x-if="progress < 100">
+                                    <span>Mohon tunggu, jangan tutup halaman ini...</span>
+                                </template>
+                                <template x-if="progress >= 100">
+                                    <span class="text-indigo-600 font-bold flex items-center gap-1">
+                                        <i class="fas fa-circle-notch fa-spin text-[10px]"></i> Sedang memproses di server...
+                                    </span>
+                                </template>
+                            </span>
+                        </div>
+                    </div>
+
                     <div class="pt-2 flex items-center gap-3">
                         <button type="submit"
-                                class="inline-flex items-center gap-2 px-6 py-2.5 rounded-2xl text-white text-xs font-bold shadow-md transition hover:opacity-90"
+                                :disabled="isUploading"
+                                class="inline-flex items-center gap-2 px-6 py-2.5 rounded-2xl text-white text-xs font-bold shadow-md transition hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
                                 style="background: var(--brand-primary)">
-                            <i class="fas fa-eye"></i> Upload & Pratinjau
+                            <template x-if="!isUploading">
+                                <span class="flex items-center gap-2">
+                                    <i class="fas fa-eye"></i> Upload & Pratinjau
+                                </span>
+                            </template>
+                            <template x-if="isUploading">
+                                <span class="flex items-center gap-2">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                    <span x-text="progress < 100 ? 'Mengunggah (' + progress + '%)' : 'Memproses...'"></span>
+                                </span>
+                            </template>
                         </button>
                         @if($sub)
                         <button type="button" @click="openUpload = false"
-                                class="px-4 py-2.5 rounded-2xl text-xs font-semibold text-gray-500 hover:bg-gray-100 transition">
+                                :disabled="isUploading"
+                                class="px-4 py-2.5 rounded-2xl text-xs font-semibold text-gray-500 hover:bg-gray-100 transition disabled:opacity-40">
                             Batal
                         </button>
                         @endif
@@ -199,16 +277,137 @@
 </div>
 
 <script>
-function validateFileSize(input, maxMb) {
-    if (input.files && input.files[0]) {
-        const file = input.files[0];
-        const maxBytes = maxMb * 1024 * 1024;
-        if (file.size > maxBytes) {
-            const actualMb = (file.size / (1024 * 1024)).toFixed(2);
-            alert('Ukuran file (' + actualMb + ' MB) melebihi batas maksimal tugas (' + maxMb + ' MB).\n\nSilakan kompres ulang atau pilih file yang lebih kecil.');
-            input.value = '';
+function uploadSlotHandler(config) {
+    return {
+        openUpload: config.openUpload,
+        maxMb: config.maxMb,
+        isUploading: false,
+        progress: 0,
+        statusText: '',
+        loadedText: '',
+        errorMessage: '',
+
+        onFileChosen(event) {
+            const input = event.target;
+            this.errorMessage = '';
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const maxBytes = this.maxMb * 1024 * 1024;
+                if (file.size > maxBytes) {
+                    const actualMb = (file.size / (1024 * 1024)).toFixed(2);
+                    alert('Ukuran file (' + actualMb + ' MB) melebihi batas maksimal tugas (' + this.maxMb + ' MB).\n\nSilakan kompres ulang atau pilih file yang lebih kecil.');
+                    input.value = '';
+                }
+            }
+        },
+
+        submitForm(event) {
+            const form = event.target;
+            const fileInput = form.querySelector('input[name="project_file"]');
+            if (!fileInput || !fileInput.files || !fileInput.files[0]) {
+                this.errorMessage = 'Silakan pilih file archive project (.ZIP) terlebih dahulu.';
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const maxBytes = this.maxMb * 1024 * 1024;
+            if (file.size > maxBytes) {
+                const actualMb = (file.size / (1024 * 1024)).toFixed(2);
+                this.errorMessage = 'Ukuran file (' + actualMb + ' MB) melebihi batas maksimal tugas (' + this.maxMb + ' MB).';
+                return;
+            }
+
+            const titleInput = form.querySelector('input[name="title"]');
+            if (!titleInput || !titleInput.value.trim()) {
+                this.errorMessage = 'Judul project wajib diisi.';
+                return;
+            }
+
+            this.isUploading = true;
+            this.progress = 0;
+            this.errorMessage = '';
+            this.statusText = 'Memulai proses upload...';
+            this.loadedText = '0 MB / ' + (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+
+            const formData = new FormData(form);
+            const xhr = new XMLHttpRequest();
+
+            xhr.open('POST', form.action, true);
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            xhr.setRequestHeader('Accept', 'application/json');
+
+            const token = form.querySelector('input[name="_token"]')?.value;
+            if (token) {
+                xhr.setRequestHeader('X-CSRF-TOKEN', token);
+            }
+
+            xhr.upload.onprogress = (e) => {
+                if (e.lengthComputable) {
+                    const percent = Math.min(Math.round((e.loaded / e.total) * 100), 100);
+                    this.progress = percent;
+                    const loadedMb = (e.loaded / (1024 * 1024)).toFixed(2);
+                    const totalMb = (e.total / (1024 * 1024)).toFixed(2);
+                    this.loadedText = loadedMb + ' MB / ' + totalMb + ' MB';
+
+                    if (percent < 100) {
+                        this.statusText = 'Mengunggah file (' + percent + '%)...';
+                    } else {
+                        this.statusText = 'File 100% terunggah! Mengekstrak & memvalidasi struktur proyek di server...';
+                    }
+                }
+            };
+
+            xhr.onload = () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        if (response.redirect) {
+                            this.progress = 100;
+                            this.statusText = 'Validasi berhasil! Mengalihkan ke halaman pratinjau...';
+                            window.location.href = response.redirect;
+                            return;
+                        }
+                    } catch (err) {
+                        window.location.reload();
+                        return;
+                    }
+                    window.location.reload();
+                } else {
+                    this.isUploading = false;
+                    let msg = 'Terjadi kesalahan saat mengunggah (' + xhr.status + ').';
+                    try {
+                        const res = JSON.parse(xhr.responseText);
+                        if (res.errors && res.errors.project_file) {
+                            msg = Array.isArray(res.errors.project_file) ? res.errors.project_file[0] : res.errors.project_file;
+                        } else if (res.errors && res.errors.title) {
+                            msg = Array.isArray(res.errors.title) ? res.errors.title[0] : res.errors.title;
+                        } else if (res.message) {
+                            msg = res.message;
+                        }
+                    } catch (e) {
+                        if (xhr.status === 413) {
+                            msg = 'Ukuran file terlalu besar untuk server hosting (HTTP 413 Payload Too Large). Periksa konfigurasi post_max_size di cPanel.';
+                        } else if (xhr.status === 504 || xhr.status === 408) {
+                            msg = 'Waktu upload habis (Gateway Timeout). Koneksi internet lambat atau file terlalu besar.';
+                        }
+                    }
+                    this.errorMessage = msg;
+                }
+            };
+
+            xhr.onerror = () => {
+                this.isUploading = false;
+                this.errorMessage = 'Koneksi ke server terputus saat upload. Silakan periksa jaringan internet Anda dan coba lagi.';
+            };
+
+            xhr.ontimeout = () => {
+                this.isUploading = false;
+                this.errorMessage = 'Waktu koneksi habis saat upload. Silakan coba kembali.';
+            };
+
+            xhr.send(formData);
         }
-    }
+    };
 }
 </script>
 @endsection
