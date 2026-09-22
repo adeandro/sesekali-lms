@@ -38,6 +38,12 @@ class ProjectGalleryService
         File::makeDirectory($tmpPath, 0755, true);
 
         if ($extension === 'zip') {
+            if (!class_exists('ZipArchive')) {
+                File::deleteDirectory($tmpPath);
+                throw ValidationException::withMessages([
+                    'project_file' => 'Ekstensi PHP ZipArchive belum aktif di server hosting ini. Silakan aktifkan ekstensi "zip" di menu PHP Extensions pada cPanel hosting Anda.',
+                ]);
+            }
             $zip = new \ZipArchive();
             $opened = $zip->open($file->getPathname());
             if ($opened !== true) {

@@ -52,10 +52,45 @@ class ProjectSubmissionController extends Controller
             abort(403, 'Tugas project ini tidak tersedia untuk kelas Anda.');
         }
 
+        // 1. Cek jika ukuran data POST melebihi post_max_size server (PHP mengosongkan request body)
+        $contentLength = (int) $request->server('CONTENT_LENGTH', 0);
+        if ($contentLength > 0 && empty($request->all()) && empty($request->allFiles())) {
+            $postMax = ini_get('post_max_size');
+            return back()->withInput()->withErrors([
+                'project_file' => "Ukuran file yang diunggah melebihi batas 'post_max_size' server hosting ({$postMax}). Silakan naikkan batas post_max_size di cPanel PHP Selector atau unggah file yang lebih kecil.",
+            ]);
+        }
+
+        // 2. Cek jika file gagal di level PHP (misal upload_max_filesize di cPanel terlalu kecil atau disk penuh)
+        if ($request->hasFile('project_file')) {
+            $uploaded = $request->file('project_file');
+            if (!$uploaded->isValid()) {
+                $error = $uploaded->getError();
+                $serverUploadMax = ini_get('upload_max_filesize');
+
+                $message = match ($error) {
+                    UPLOAD_ERR_INI_SIZE => "File gagal diunggah: Ukuran file melebihi batas upload server hosting (upload_max_filesize saat ini: {$serverUploadMax}, batas tugas: {$assignment->max_file_size_mb} MB). Silakan ubah konfigurasi 'upload_max_filesize' dan 'post_max_size' di cPanel (menu Select PHP Version / MultiPHP INI Editor) minimal ke {$assignment->max_file_size_mb}M, atau perkecil ukuran file ZIP Anda.",
+                    UPLOAD_ERR_FORM_SIZE => "File melebihi batas ukuran form HTML.",
+                    UPLOAD_ERR_PARTIAL => "File hanya terunggah sebagian (koneksi internet sempat terputus saat upload). Silakan coba unggah kembali.",
+                    UPLOAD_ERR_NO_TMP_DIR => "Server hosting kehilangan folder temporary (upload_tmp_dir). Silakan hubungi admin hosting.",
+                    UPLOAD_ERR_CANT_WRITE => "Server hosting gagal menulis file ke disk (disk hosting penuh atau masalah permission folder /tmp).",
+                    UPLOAD_ERR_EXTENSION => "Unggahan file dihentikan oleh ekstensi PHP di server hosting.",
+                    default => "File gagal diunggah ke server hosting (PHP Upload Error code: {$error}).",
+                };
+
+                return back()->withInput()->withErrors(['project_file' => $message]);
+            }
+        }
+
         $request->validate([
             'slot_number'  => 'required|integer|min:1|max:' . $assignment->max_slots,
             'title'        => 'required|string|max:191',
             'project_file' => 'required|file|max:' . ($assignment->max_file_size_mb * 1024),
+        ], [
+            'project_file.uploaded' => "File gagal diunggah ke server hosting. Ukuran file kemungkinan melebihi batas 'upload_max_filesize' (" . ini_get('upload_max_filesize') . ") di PHP hosting. Silakan sesuaikan batas upload di cPanel PHP Selector.",
+            'project_file.max'      => "Ukuran file tidak boleh lebih dari {$assignment->max_file_size_mb} MB.",
+            'project_file.required' => "File archive project (.zip) wajib dipilih.",
+            'title.required'        => "Judul project wajib diisi.",
         ]);
 
         // Clean previous tmp upload in session if any

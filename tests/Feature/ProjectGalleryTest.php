@@ -498,8 +498,8 @@ class ProjectGalleryTest extends TestCase
     public function test_admin_can_download_archive_zip_of_all_submissions(): void
     {
         $admin = $this->createUser(['role' => 'superadmin']);
-        $student1 = $this->createUser(['name' => 'Budi Santoso', 'nis' => '12345', 'role' => 'student']);
-        $student2 = $this->createUser(['name' => 'Dewi Lestari', 'nis' => '12346', 'role' => 'student']);
+        $student1 = $this->createUser(['name' => 'Budi Santoso', 'nis' => 'TEST_' . uniqid(), 'role' => 'student']);
+        $student2 = $this->createUser(['name' => 'Dewi Lestari', 'nis' => 'TEST_' . uniqid(), 'role' => 'student']);
 
         $assignment = ProjectAssignment::create([
             'title'            => 'Assignment Archive Test ' . uniqid(),

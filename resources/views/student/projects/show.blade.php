@@ -170,6 +170,7 @@
                             File Archive Project (.ZIP) <span class="text-rose-500">*</span>
                         </label>
                         <input type="file" name="project_file" accept=".zip,.rar"
+                               onchange="validateFileSize(this, {{ (int) $assignment->max_file_size_mb }})"
                                class="w-full text-xs text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer border border-gray-200 rounded-2xl p-2" required>
                         <p class="text-[11px] text-gray-400 mt-1.5">
                             <i class="fas fa-check-circle text-emerald-500 mr-1"></i>
@@ -196,4 +197,18 @@
         @endfor
     </div>
 </div>
+
+<script>
+function validateFileSize(input, maxMb) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        const maxBytes = maxMb * 1024 * 1024;
+        if (file.size > maxBytes) {
+            const actualMb = (file.size / (1024 * 1024)).toFixed(2);
+            alert('Ukuran file (' + actualMb + ' MB) melebihi batas maksimal tugas (' + maxMb + ' MB).\n\nSilakan kompres ulang atau pilih file yang lebih kecil.');
+            input.value = '';
+        }
+    }
+}
+</script>
 @endsection
