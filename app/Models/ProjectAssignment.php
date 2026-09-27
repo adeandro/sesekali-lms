@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\AssignmentType;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -15,9 +16,11 @@ class ProjectAssignment extends Model
     protected $fillable = [
         'title',
         'slug',
+        'assignment_type',
         'description',
         'subject_id',
         'max_file_size_mb',
+        'allowed_extensions',
         'max_slots',
         'class_restriction',
         'is_active',
@@ -27,12 +30,14 @@ class ProjectAssignment extends Model
     ];
 
     protected $casts = [
-        'class_restriction' => 'array',
-        'is_active'         => 'boolean',
-        'max_file_size_mb'  => 'integer',
-        'max_slots'         => 'integer',
-        'starts_at'         => 'datetime',
-        'ends_at'           => 'datetime',
+        'assignment_type'    => AssignmentType::class,
+        'allowed_extensions' => 'array',
+        'class_restriction'  => 'array',
+        'is_active'          => 'boolean',
+        'max_file_size_mb'   => 'integer',
+        'max_slots'          => 'integer',
+        'starts_at'          => 'datetime',
+        'ends_at'            => 'datetime',
     ];
 
     protected static function boot()
@@ -90,6 +95,23 @@ class ProjectAssignment extends Model
     }
 
     // Helpers
+    public function getEffectiveExtensions(): array
+    {
+        if ($this->assignment_type === AssignmentType::General
+            && !empty($this->allowed_extensions)) {
+            return $this->allowed_extensions;
+        }
+        return $this->assignment_type->allowedExtensions();
+    }
+
+    public function getAcceptAttribute(): string
+    {
+        return implode(',',
+            array_map(fn($ext) => '.' . $ext,
+                $this->getEffectiveExtensions())
+        );
+    }
+
     public function isAvailableFor(User $student): bool
     {
         if (!$this->is_active) {

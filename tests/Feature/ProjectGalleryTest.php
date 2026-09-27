@@ -71,6 +71,7 @@ class ProjectGalleryTest extends TestCase
 
         $response = $this->actingAs($admin)->post(route('admin.project-assignments.store'), [
             'title'             => $title,
+            'assignment_type'   => 'web',
             'description'       => 'Buat portofolio pribadi responsif',
             'subject_id'        => $subject->id,
             'max_file_size_mb'  => 15,
@@ -636,5 +637,129 @@ class ProjectGalleryTest extends TestCase
             'assignment_id' => $assignment->id,
         ]);
         $this->assertDirectoryDoesNotExist(storage_path("app/projects/{$assignment->id}"));
+    }
+
+    public function test_student_can_upload_document_assignment_directly_without_preview(): void
+    {
+        $teacher = $this->createUser(['role' => 'teacher']);
+        $student = $this->createUser(['name' => 'Siswa Doc', 'role' => 'student']);
+
+        $assignment = ProjectAssignment::create([
+            'title'            => 'Tugas Makalah ' . uniqid(),
+            'assignment_type'  => 'document',
+            'max_file_size_mb' => 25,
+            'max_slots'        => 1,
+            'is_active'        => true,
+            'created_by'       => $teacher->id,
+        ]);
+
+        $pdfFile = UploadedFile::fake()->create('laporan.pdf', 500, 'application/pdf');
+
+        $response = $this->actingAs($student)->post(route('student.projects.upload', $assignment), [
+            'title'        => 'Makalah Jaringan Komputer',
+            'slot_number'  => 1,
+            'project_file' => $pdfFile,
+        ]);
+
+        $response->assertRedirect(route('student.projects.show', $assignment));
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('project_submissions', [
+            'assignment_id'     => $assignment->id,
+            'student_id'        => $student->id,
+            'slot_number'       => 1,
+            'title'             => 'Makalah Jaringan Komputer',
+            'original_filename' => 'laporan.pdf',
+        ]);
+
+        // Verify stored file
+        $storedFile = storage_path("app/projects/{$assignment->id}/{$student->id}/1/file.pdf");
+        $this->assertFileExists($storedFile);
+
+        // Serve PDF
+        $serveResponse = $this->get(route('gallery.serve', [
+            $assignment->slug,
+            $student->id,
+            1,
+            'file.pdf',
+        ]));
+        $serveResponse->assertStatus(200);
+        $this->assertStringContainsString('application/pdf', $serveResponse->headers->get('Content-Type'));
+        $this->assertEquals('inline', $serveResponse->headers->get('Content-Disposition'));
+    }
+
+    public function test_student_can_upload_image_assignment_and_view_gallery(): void
+    {
+        $teacher = $this->createUser(['role' => 'teacher']);
+        $student = $this->createUser(['name' => 'Siswa Desain', 'role' => 'student']);
+
+        $assignment = ProjectAssignment::create([
+            'title'            => 'Tugas Poster ' . uniqid(),
+            'assignment_type'  => 'image',
+            'max_file_size_mb' => 5,
+            'max_slots'        => 1,
+            'is_active'        => true,
+            'created_by'       => $teacher->id,
+        ]);
+
+        $imgFile = UploadedFile::fake()->image('poster.png', 600, 800);
+
+        $response = $this->actingAs($student)->post(route('student.projects.upload', $assignment), [
+            'title'        => 'Poster Hari Guru',
+            'slot_number'  => 1,
+            'project_file' => $imgFile,
+        ]);
+
+        $response->assertRedirect(route('student.projects.show', $assignment));
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('project_submissions', [
+            'assignment_id' => $assignment->id,
+            'has_images'    => 1,
+        ]);
+
+        $galleryResponse = $this->get(route('gallery.show', $assignment));
+        $galleryResponse->assertStatus(200);
+        $galleryResponse->assertSee('Poster Hari Guru');
+        $galleryResponse->assertSee('Lihat Gambar');
+    }
+
+    public function test_student_upload_general_assignment_with_allowed_extensions(): void
+    {
+        $teacher = $this->createUser(['role' => 'teacher']);
+        $student = $this->createUser(['name' => 'Siswa Audio', 'role' => 'student']);
+
+        $assignment = ProjectAssignment::create([
+            'title'              => 'Tugas Rekaman Suara ' . uniqid(),
+            'assignment_type'    => 'general',
+            'allowed_extensions' => ['mp3', 'wav'],
+            'max_file_size_mb'   => 20,
+            'max_slots'          => 1,
+            'is_active'          => true,
+            'created_by'         => $teacher->id,
+        ]);
+
+        // 1. Disallowed extension (e.g. .pdf) should be rejected
+        $disallowedFile = UploadedFile::fake()->create('dokumen.pdf', 100, 'application/pdf');
+        $failResponse = $this->actingAs($student)->post(route('student.projects.upload', $assignment), [
+            'title'        => 'Rekaman Salah Format',
+            'slot_number'  => 1,
+            'project_file' => $disallowedFile,
+        ]);
+        $failResponse->assertSessionHasErrors('project_file');
+
+        // 2. Allowed extension (.mp3) should succeed
+        $allowedFile = UploadedFile::fake()->create('podcast.mp3', 200, 'audio/mpeg');
+        $successResponse = $this->actingAs($student)->post(route('student.projects.upload', $assignment), [
+            'title'        => 'Podcast Bahasa Indonesia',
+            'slot_number'  => 1,
+            'project_file' => $allowedFile,
+        ]);
+        $successResponse->assertRedirect(route('student.projects.show', $assignment));
+        $this->assertDatabaseHas('project_submissions', [
+            'assignment_id'     => $assignment->id,
+            'title'             => 'Podcast Bahasa Indonesia',
+            'original_filename' => 'podcast.mp3',
+        ]);
     }
 }

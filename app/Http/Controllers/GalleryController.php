@@ -46,8 +46,8 @@ class GalleryController extends Controller
         ProjectAssignment $assignment,
         int $studentId,
         int $slotNumber,
-        string $filePath,
-        ProjectGalleryService $galleryService
+        ?string $filePath = '',
+        ?ProjectGalleryService $galleryService = null
     ) {
         $submission = ProjectSubmission::where([
             'assignment_id' => $assignment->id,
@@ -55,6 +55,7 @@ class GalleryController extends Controller
             'slot_number'   => $slotNumber,
         ])->firstOrFail();
 
-        return $galleryService->serveFile($submission, $filePath);
+        $galleryService = $galleryService ?? app(ProjectGalleryService::class);
+        return $galleryService->serveFile($submission, $filePath ?? '');
     }
 }

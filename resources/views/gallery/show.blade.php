@@ -72,8 +72,10 @@
                 <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
                     <div class="max-w-3xl">
                         <div class="flex flex-wrap items-center gap-2 mb-3">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
-                                <i class="fas fa-laptop-code mr-1.5 text-indigo-500"></i> Project Showcase
+                            @php $type = $assignment->assignment_type ?? \App\Enums\AssignmentType::Web; @endphp
+                            <span class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-bold
+                                         bg-{{ $type->badgeColor() }}-50 text-{{ $type->badgeColor() }}-700 border border-{{ $type->badgeColor() }}-200">
+                                <i class="fas {{ $type->icon() }}"></i> {{ $type->label() }}
                             </span>
                             @if($assignment->subject)
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700">
@@ -129,6 +131,7 @@
                     <p class="text-xs text-slate-400 mt-1">Belum ada siswa yang mengumpulkan tugas untuk assignment ini. Silakan cek kembali nanti!</p>
                 </div>
             @else
+                @php $service = app(\App\Services\ProjectGalleryService::class); @endphp
                 <div id="submissionsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     @foreach($submissions as $submission)
                     @php
@@ -138,6 +141,14 @@
                             $words = explode(' ', trim($student->name));
                             $initials = strtoupper(substr($words[0], 0, 1) . (isset($words[1]) ? substr($words[1], 0, 1) : ''));
                         }
+                        $mainFile = $service->getMainFilename($submission);
+                        $serveUrl = route('gallery.serve', [
+                            $assignment->slug,
+                            $submission->student_id,
+                            $submission->slot_number,
+                            $mainFile
+                        ]);
+                        $assignType = $assignment->assignment_type ?? \App\Enums\AssignmentType::Web;
                     @endphp
                     <div class="submission-card group bg-white rounded-3xl border border-slate-200/80 p-5 flex flex-col justify-between hover:border-indigo-400 hover:shadow-xl hover:-translate-y-1 transition duration-300"
                          data-student-name="{{ strtolower($student->name ?? '') }}"
@@ -157,20 +168,30 @@
                                     <p class="text-[11px] font-bold text-slate-400 truncate">
                                         {{ $student->classroom->name ?? 'Kelas -' }}
                                         @if($assignment->max_slots > 1)
-                                            <span class="inline-block ml-1 px-1.5 py-0.2 bg-slate-100 text-slate-600 rounded text-[10px]">Slot {{ $submission->slot_number }}</span>
+                                             <span class="inline-block ml-1 px-1.5 py-0.2 bg-slate-100 text-slate-600 rounded text-[10px]">Slot {{ $submission->slot_number }}</span>
                                         @endif
                                     </p>
                                 </div>
                             </div>
 
                             {{-- Project Title --}}
-                            <div class="mb-4">
+                            <div class="mb-3">
                                 <h5 class="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition leading-snug line-clamp-2" title="{{ $submission->title }}">
                                     {{ $submission->title }}
                                 </h5>
                             </div>
 
-                            {{-- Tech Badges --}}
+                            {{-- Thumbnail Preview untuk tipe image --}}
+                            @if($assignType->value === 'image')
+                                <div class="mt-1 mb-4 rounded-2xl overflow-hidden bg-slate-100 h-36 border border-slate-100 group/img relative">
+                                    <img src="{{ $serveUrl }}"
+                                         alt="{{ $submission->title }}"
+                                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                </div>
+                            @endif
+
+                            {{-- Tech Badges untuk tipe web --}}
+                            @if($assignType->value === 'web')
                             <div class="flex flex-wrap gap-1.5 mb-4">
                                 @if($submission->has_css)
                                     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-blue-50 text-blue-600 border border-blue-100">
@@ -198,19 +219,47 @@
                                     </span>
                                 @endif
                             </div>
+                            @endif
                         </div>
 
                         {{-- Card Footer --}}
                         <div class="pt-4 border-t border-slate-100 flex items-center justify-between gap-2">
-                            <span class="text-[11px] font-semibold text-slate-400">
-                                <i class="fas fa-file-archive mr-1"></i> {{ $submission->fileSizeFormatted() }}
+                            <span class="text-[11px] font-semibold text-slate-400 truncate" title="{{ $submission->original_filename }}">
+                                <i class="fas fa-file mr-1"></i> {{ $submission->fileSizeFormatted() }}
                             </span>
 
-                            <a href="{{ $submission->getIndexUrl() }}" target="_blank" rel="noopener noreferrer"
-                               class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white shadow-sm transition hover:opacity-90 flex-shrink-0"
-                               style="background: var(--brand-primary)">
-                                Lihat Project <i class="fas fa-external-link-alt text-[10px]"></i>
-                            </a>
+                            @if($assignType->value === 'web')
+                                <a href="{{ $serveUrl }}" target="_blank" rel="noopener noreferrer"
+                                   class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white shadow-sm transition hover:opacity-90 flex-shrink-0"
+                                   style="background: var(--brand-primary)">
+                                    Lihat Project <i class="fas fa-external-link-alt text-[10px]"></i>
+                                </a>
+                            @elseif($assignType->value === 'document')
+                                @php $ext = strtolower(pathinfo($mainFile, PATHINFO_EXTENSION)); @endphp
+                                @if($ext === 'pdf')
+                                    <a href="{{ $serveUrl }}" target="_blank" rel="noopener noreferrer"
+                                       class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white shadow-sm transition hover:opacity-90 flex-shrink-0"
+                                       style="background: var(--brand-primary)">
+                                        <i class="fas fa-file-pdf"></i> Lihat Dokumen
+                                    </a>
+                                @else
+                                    <a href="{{ $serveUrl }}"
+                                       class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white shadow-sm transition hover:opacity-90 flex-shrink-0 bg-slate-700 hover:bg-slate-800">
+                                        <i class="fas fa-download"></i> Download ({{ strtoupper($ext) }})
+                                    </a>
+                                @endif
+                            @elseif($assignType->value === 'image')
+                                <a href="{{ $serveUrl }}" target="_blank" rel="noopener noreferrer"
+                                   class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white shadow-sm transition hover:opacity-90 flex-shrink-0"
+                                   style="background: var(--brand-primary)">
+                                    <i class="fas fa-image"></i> Lihat Gambar
+                                </a>
+                            @else
+                                <a href="{{ $serveUrl }}"
+                                   class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white shadow-sm transition hover:opacity-90 flex-shrink-0 bg-slate-700 hover:bg-slate-800">
+                                    <i class="fas fa-download"></i> Download
+                                </a>
+                            @endif
                         </div>
                     </div>
                     @endforeach

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Student;
 
+use App\Enums\AssignmentType;
 use App\Http\Controllers\Controller;
 use App\Models\ProjectAssignment;
 use App\Models\ProjectSubmission;
@@ -74,7 +75,7 @@ class ProjectSubmissionController extends Controller
                 $serverUploadMax = ini_get('upload_max_filesize');
 
                 $message = match ($error) {
-                    UPLOAD_ERR_INI_SIZE => "File gagal diunggah: Ukuran file melebihi batas upload server hosting (upload_max_filesize saat ini: {$serverUploadMax}, batas tugas: {$assignment->max_file_size_mb} MB). Silakan ubah konfigurasi 'upload_max_filesize' dan 'post_max_size' di cPanel (menu Select PHP Version / MultiPHP INI Editor) minimal ke {$assignment->max_file_size_mb}M, atau perkecil ukuran file ZIP Anda.",
+                    UPLOAD_ERR_INI_SIZE => "File gagal diunggah: Ukuran file melebihi batas upload server hosting (upload_max_filesize saat ini: {$serverUploadMax}, batas tugas: {$assignment->max_file_size_mb} MB). Silakan ubah konfigurasi 'upload_max_filesize' dan 'post_max_size' di cPanel (menu Select PHP Version / MultiPHP INI Editor) minimal ke {$assignment->max_file_size_mb}M, atau perkecil ukuran file Anda.",
                     UPLOAD_ERR_FORM_SIZE => "File melebihi batas ukuran form HTML.",
                     UPLOAD_ERR_PARTIAL => "File hanya terunggah sebagian (koneksi internet sempat terputus saat upload). Silakan coba unggah kembali.",
                     UPLOAD_ERR_NO_TMP_DIR => "Server hosting kehilangan folder temporary (upload_tmp_dir). Silakan hubungi admin hosting.",
@@ -101,38 +102,65 @@ class ProjectSubmissionController extends Controller
         ], [
             'project_file.uploaded' => "File gagal diunggah ke server hosting. Ukuran file kemungkinan melebihi batas 'upload_max_filesize' (" . ini_get('upload_max_filesize') . ") di PHP hosting. Silakan sesuaikan batas upload di cPanel PHP Selector.",
             'project_file.max'      => "Ukuran file tidak boleh lebih dari {$assignment->max_file_size_mb} MB.",
-            'project_file.required' => "File archive project (.zip) wajib dipilih.",
+            'project_file.required' => "File project wajib dipilih.",
             'title.required'        => "Judul project wajib diisi.",
         ]);
 
-        // Clean previous tmp upload in session if any
-        if ($oldPreview = session('upload_preview')) {
-            if (!empty($oldPreview['tmp_path']) && File::isDirectory($oldPreview['tmp_path'])) {
-                File::deleteDirectory($oldPreview['tmp_path']);
+        $type = $assignment->assignment_type ?? AssignmentType::Web;
+
+        if ($type === AssignmentType::Web) {
+            // Clean previous tmp upload in session if any
+            if ($oldPreview = session('upload_preview')) {
+                if (!empty($oldPreview['tmp_path']) && File::isDirectory($oldPreview['tmp_path'])) {
+                    File::deleteDirectory($oldPreview['tmp_path']);
+                }
+                session()->forget('upload_preview');
             }
-            session()->forget('upload_preview');
+
+            $result = $galleryService->validateAndExtractWeb($request->file('project_file'), $assignment);
+
+            session(['upload_preview' => [
+                'tmp_path'      => $result['tmp_path'],
+                'meta'          => $result['meta'],
+                'title'         => $request->title,
+                'slot'          => (int) $request->slot_number,
+                'filename'      => $request->file('project_file')->getClientOriginalName(),
+                'size'          => $request->file('project_file')->getSize(),
+                'assignment_id' => $assignment->id,
+            ]]);
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success'  => true,
+                    'redirect' => route('student.projects.preview', $assignment),
+                ]);
+            }
+
+            return redirect()->route('student.projects.preview', $assignment);
+        } else {
+            // Tipe non-web: langsung simpan tanpa alur preview konfirmasi
+            $submission = $galleryService->validateAndStore(
+                $request->file('project_file'),
+                $assignment,
+                $student,
+                (int) $request->slot_number,
+                $request->title
+            );
+
+            $successMsg = 'Tugas "' . $submission->title . '" berhasil diunggah!';
+            session()->flash('success', $successMsg);
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success'  => true,
+                    'message'  => $successMsg,
+                    'redirect' => route('student.projects.show', $assignment),
+                ]);
+            }
+
+            return redirect()->route('student.projects.show', $assignment)
+                ->with('success', $successMsg);
         }
-
-        $result = $galleryService->validateAndExtract($request->file('project_file'), $assignment);
-
-        session(['upload_preview' => [
-            'tmp_path'      => $result['tmp_path'],
-            'meta'          => $result['meta'],
-            'title'         => $request->title,
-            'slot'          => (int) $request->slot_number,
-            'filename'      => $request->file('project_file')->getClientOriginalName(),
-            'size'          => $request->file('project_file')->getSize(),
-            'assignment_id' => $assignment->id,
-        ]]);
-
-        if ($request->expectsJson() || $request->ajax()) {
-            return response()->json([
-                'success'  => true,
-                'redirect' => route('student.projects.preview', $assignment),
-            ]);
-        }
-
-        return redirect()->route('student.projects.preview', $assignment);
     }
 
     public function previewConfirm(ProjectAssignment $assignment)

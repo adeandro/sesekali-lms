@@ -27,17 +27,19 @@ class ProjectAssignmentController extends Controller
     {
         $subjects = Subject::orderBy('name')->get();
         $classes  = ClassRoom::orderBy('name')->get();
+        $types    = \App\Enums\AssignmentType::cases();
 
-        return view('admin.project-assignments.create', compact('subjects', 'classes'));
+        return view('admin.project-assignments.create', compact('subjects', 'classes', 'types'));
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
             'title'               => 'required|string|max:191',
+            'assignment_type'     => 'required|in:web,document,image,general',
             'description'         => 'nullable|string',
             'subject_id'          => 'nullable|exists:subjects,id',
-            'max_file_size_mb'    => 'required|integer|min:1|max:100',
+            'max_file_size_mb'    => 'nullable|integer|min:1|max:500',
             'max_slots'           => 'required|integer|min:1|max:10',
             'class_restriction'   => 'nullable|array',
             'class_restriction.*' => 'exists:classes,id',
@@ -45,6 +47,19 @@ class ProjectAssignmentController extends Controller
             'starts_at'           => 'nullable|date',
             'ends_at'             => 'nullable|date|after_or_equal:starts_at',
         ]);
+
+        $type = \App\Enums\AssignmentType::from($data['assignment_type']);
+        $data['max_file_size_mb'] = !empty($data['max_file_size_mb']) ? (int) $data['max_file_size_mb'] : $type->defaultMaxMb();
+
+        if ($type === \App\Enums\AssignmentType::General && !empty($request->allowed_extensions_raw)) {
+            $data['allowed_extensions'] = array_values(array_filter(
+                array_map(fn($ext) => strtolower(ltrim(trim($ext), '.')),
+                    explode(',', $request->allowed_extensions_raw)
+                )
+            ));
+        } else {
+            $data['allowed_extensions'] = null;
+        }
 
         $data['is_active']  = $request->boolean('is_active', true);
         $data['created_by'] = auth()->id();
@@ -59,17 +74,19 @@ class ProjectAssignmentController extends Controller
     {
         $subjects = Subject::orderBy('name')->get();
         $classes  = ClassRoom::orderBy('name')->get();
+        $types    = \App\Enums\AssignmentType::cases();
 
-        return view('admin.project-assignments.edit', compact('assignment', 'subjects', 'classes'));
+        return view('admin.project-assignments.edit', compact('assignment', 'subjects', 'classes', 'types'));
     }
 
     public function update(Request $request, ProjectAssignment $assignment)
     {
         $data = $request->validate([
             'title'               => 'required|string|max:191',
+            'assignment_type'     => 'required|in:web,document,image,general',
             'description'         => 'nullable|string',
             'subject_id'          => 'nullable|exists:subjects,id',
-            'max_file_size_mb'    => 'required|integer|min:1|max:100',
+            'max_file_size_mb'    => 'nullable|integer|min:1|max:500',
             'max_slots'           => 'required|integer|min:1|max:10',
             'class_restriction'   => 'nullable|array',
             'class_restriction.*' => 'exists:classes,id',
@@ -77,6 +94,19 @@ class ProjectAssignmentController extends Controller
             'starts_at'           => 'nullable|date',
             'ends_at'             => 'nullable|date|after_or_equal:starts_at',
         ]);
+
+        $type = \App\Enums\AssignmentType::from($data['assignment_type']);
+        $data['max_file_size_mb'] = !empty($data['max_file_size_mb']) ? (int) $data['max_file_size_mb'] : $type->defaultMaxMb();
+
+        if ($type === \App\Enums\AssignmentType::General && !empty($request->allowed_extensions_raw)) {
+            $data['allowed_extensions'] = array_values(array_filter(
+                array_map(fn($ext) => strtolower(ltrim(trim($ext), '.')),
+                    explode(',', $request->allowed_extensions_raw)
+                )
+            ));
+        } else {
+            $data['allowed_extensions'] = null;
+        }
 
         $data['is_active'] = $request->boolean('is_active', true);
 

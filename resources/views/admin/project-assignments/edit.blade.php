@@ -17,10 +17,80 @@
         </a>
     </div>
 
-    <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 sm:p-8">
+    <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 sm:p-8"
+         x-data="{ selectedType: '{{ old('assignment_type', $assignment->assignment_type->value ?? 'web') }}', defaults: { web: 10, document: 25, image: 5, general: 20 } }">
         <form method="POST" action="{{ route('admin.project-assignments.update', $assignment) }}" class="space-y-6">
             @csrf
             @method('PUT')
+
+            {{-- Tipe Assignment --}}
+            <div>
+                <label class="block text-xs font-bold text-gray-600 mb-2 uppercase tracking-wider">
+                    Tipe Assignment <span class="text-rose-500">*</span>
+                </label>
+                <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    @foreach($types as $type)
+                    <label class="cursor-pointer" @click="selectedType = '{{ $type->value }}'">
+                        <input type="radio"
+                               name="assignment_type"
+                               value="{{ $type->value }}"
+                               x-model="selectedType"
+                               class="sr-only">
+                        <div class="p-4 rounded-2xl border-2 text-center transition-all h-full flex flex-col items-center justify-center"
+                             :class="selectedType === '{{ $type->value }}'
+                               ? 'border-[var(--brand-primary)] bg-indigo-50/40 shadow-xs'
+                               : 'border-gray-200 hover:border-gray-300 bg-white'">
+                            <i class="fas {{ $type->icon() }} text-xl mb-2"
+                               :class="selectedType === '{{ $type->value }}'
+                                   ? 'text-[var(--brand-primary)]'
+                                   : 'text-gray-400'"></i>
+                            <p class="text-xs font-black text-gray-700">
+                                {{ $type->label() }}
+                            </p>
+                            <p class="text-[10px] text-gray-400 mt-1">
+                                @switch($type->value)
+                                    @case('web')
+                                        ZIP/RAR + index.html
+                                        @break
+                                    @case('document')
+                                        PDF, DOCX, PPTX, XLSX
+                                        @break
+                                    @case('image')
+                                        JPG, PNG, GIF, SVG
+                                        @break
+                                    @case('general')
+                                        File bebas
+                                        @break
+                                @endswitch
+                            </p>
+                        </div>
+                    </label>
+                    @endforeach
+
+                    {{-- Field allowed_extensions untuk tipe general --}}
+                    <div x-show="selectedType === 'general'"
+                         x-cloak
+                         x-transition
+                         class="col-span-2 sm:col-span-4 mt-2 p-4 rounded-2xl bg-amber-50/60 border border-amber-200/80">
+                        <label class="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wider">
+                            Ekstensi yang Diizinkan
+                            <span class="text-gray-400 font-normal normal-case">
+                                (pisahkan dengan koma, tanpa tanda titik)
+                            </span>
+                        </label>
+                        <input type="text"
+                               name="allowed_extensions_raw"
+                               placeholder="contoh: mp3, wav, pdf, txt, blend"
+                               value="{{ old('allowed_extensions_raw', isset($assignment) ? implode(', ', $assignment->allowed_extensions ?? []) : '') }}"
+                               class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2"
+                               style="--tw-ring-color: var(--brand-primary)">
+                        <p class="text-[10px] text-gray-400 mt-1">
+                            Kosongkan jika ingin mengizinkan seluruh format file bebas.
+                        </p>
+                    </div>
+                </div>
+                @error('assignment_type') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
+            </div>
 
             {{-- Judul Assignment --}}
             <div>
@@ -62,13 +132,16 @@
 
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-1">
-                        Maks. Ukuran File (MB) <span class="text-rose-500">*</span>
+                        Batas Ukuran File (MB)
                     </label>
                     <input type="number" name="max_file_size_mb" value="{{ old('max_file_size_mb', $assignment->max_file_size_mb) }}"
-                           min="1" max="100"
+                           :placeholder="'Default: ' + (defaults[selectedType] || 10) + ' MB'"
+                           min="1" max="500"
                            class="w-full border border-gray-200 rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:border-transparent"
-                           style="--tw-ring-color: var(--brand-primary)" required>
-                    <p class="text-[11px] text-gray-400 mt-1">Batas ukuran file zip (1-100 MB)</p>
+                           style="--tw-ring-color: var(--brand-primary)">
+                    <p class="text-[11px] text-gray-400 mt-1"
+                       x-text="'Default untuk tipe ini: ' + (defaults[selectedType] || 10) + ' MB. Kosongkan untuk pakai default.'">
+                    </p>
                     @error('max_file_size_mb') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
 
@@ -80,7 +153,7 @@
                            min="1" max="10"
                            class="w-full border border-gray-200 rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:border-transparent"
                            style="--tw-ring-color: var(--brand-primary)" required>
-                    <p class="text-[11px] text-gray-400 mt-1">1 = 1 project, 2+ = multi project</p>
+                    <p class="text-[11px] text-gray-400 mt-1">1 = 1 file/projek, 2+ = multi submission</p>
                     @error('max_slots') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
             </div>

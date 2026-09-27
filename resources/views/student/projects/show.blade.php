@@ -9,7 +9,15 @@
                 <i class="fas fa-arrow-left"></i>
             </a>
             <div>
-                <h1 class="text-2xl font-bold text-gray-900 leading-snug">{{ $assignment->title }}</h1>
+                <div class="flex items-center gap-2.5 flex-wrap">
+                    <h1 class="text-2xl font-bold text-gray-900 leading-snug">{{ $assignment->title }}</h1>
+                    @php $assignType = $assignment->assignment_type ?? \App\Enums\AssignmentType::Web; @endphp
+                    <span class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-black
+                                 bg-{{ $assignType->badgeColor() }}-50 text-{{ $assignType->badgeColor() }}-700 border border-{{ $assignType->badgeColor() }}-200">
+                        <i class="fas {{ $assignType->icon() }}"></i>
+                        {{ $assignType->label() }}
+                    </span>
+                </div>
                 <p class="text-xs text-gray-500 mt-1 flex flex-wrap items-center gap-2">
                     @if($assignment->subject)
                         <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-blue-50 text-blue-700">
@@ -19,7 +27,7 @@
                     @endif
                     <span>Maks. {{ $assignment->max_file_size_mb }} MB per file</span>
                     <span>•</span>
-                    <span>Total {{ $assignment->max_slots }} Slot Project</span>
+                    <span>Total {{ $assignment->max_slots }} Slot Tugas</span>
                 </p>
             </div>
         </div>
@@ -67,11 +75,13 @@
         @for($slot = 1; $slot <= $assignment->max_slots; $slot++)
         @php
             $sub = $submissions->get($slot);
+            $service = app(\App\Services\ProjectGalleryService::class);
         @endphp
         <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 sm:p-7 overflow-hidden"
              x-data="uploadSlotHandler({
                 openUpload: {{ $sub ? 'false' : 'true' }},
-                maxMb: {{ (int) $assignment->max_file_size_mb }}
+                maxMb: {{ (int) $assignment->max_file_size_mb }},
+                isWeb: {{ $assignType->value === 'web' ? 'true' : 'false' }}
              })">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-gray-100">
                 <div class="flex items-center gap-2.5">
@@ -80,21 +90,58 @@
                     </span>
                     <div>
                         <h3 class="text-base font-bold text-gray-800">
-                            Slot Project ke-{{ $slot }}
+                            Slot Tugas ke-{{ $slot }}
                         </h3>
                         <p class="text-xs text-gray-400">
-                            {{ $sub ? 'Sudah mengumpulkan tugas' : 'Belum ada project yang dikumpulkan' }}
+                            {{ $sub ? 'Sudah mengumpulkan tugas' : 'Belum ada file tugas yang dikumpulkan' }}
                         </p>
                     </div>
                 </div>
 
                 @if($sub)
+                    @php
+                        $mainFile = $service->getMainFilename($sub);
+                        $serveUrl = route('gallery.serve', [
+                            $assignment->slug,
+                            $sub->student_id,
+                            $sub->slot_number,
+                            $mainFile
+                        ]);
+                    @endphp
                     <div class="flex flex-wrap items-center gap-2">
-                        <a href="{{ $sub->getIndexUrl() }}" target="_blank"
-                           class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-md transition hover:opacity-90"
-                           style="background: var(--brand-primary)">
-                            <i class="fas fa-play text-[10px]"></i> Buka Web Project
-                        </a>
+                        @if($assignType->value === 'web')
+                            <a href="{{ route('gallery.serve', [$assignment->slug, $sub->student_id, $sub->slot_number, 'index.html']) }}" target="_blank"
+                               class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-md transition hover:opacity-90"
+                               style="background: var(--brand-primary)">
+                                <i class="fas fa-play text-[10px]"></i> Buka Web Project
+                            </a>
+                        @elseif($assignType->value === 'document')
+                            @php $ext = strtolower(pathinfo($mainFile, PATHINFO_EXTENSION)); @endphp
+                            @if($ext === 'pdf')
+                                <a href="{{ $serveUrl }}" target="_blank"
+                                   class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-md transition hover:opacity-90"
+                                   style="background: var(--brand-primary)">
+                                    <i class="fas fa-file-pdf text-[10px]"></i> Preview PDF
+                                </a>
+                            @else
+                                <a href="{{ $serveUrl }}"
+                                   class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-md transition hover:opacity-90 bg-slate-700 hover:bg-slate-800">
+                                    <i class="fas fa-download text-[10px]"></i> Download ({{ strtoupper($ext) }})
+                                </a>
+                            @endif
+                        @elseif($assignType->value === 'image')
+                            <a href="{{ $serveUrl }}" target="_blank"
+                               class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-md transition hover:opacity-90"
+                               style="background: var(--brand-primary)">
+                                <i class="fas fa-image text-[10px]"></i> Lihat Gambar
+                            </a>
+                        @else
+                            <a href="{{ $serveUrl }}"
+                               class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-md transition hover:opacity-90 bg-slate-700 hover:bg-slate-800">
+                                <i class="fas fa-download text-[10px]"></i> Download
+                            </a>
+                        @endif
+
                         <button type="button" @click="openUpload = !openUpload"
                                 class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition">
                             <i class="fas fa-redo-alt text-[10px]"></i>
@@ -120,7 +167,7 @@
             @if($sub)
             <div class="mt-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Judul Project Siswa</span>
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Judul Karya / Tugas</span>
                     <h4 class="text-base font-bold text-gray-900 mt-0.5">{{ $sub->title }}</h4>
                     <p class="text-xs text-gray-500 font-mono mt-1">
                         File: {{ $sub->original_filename }} ({{ $sub->fileSizeFormatted() }}) • Diunggah: {{ $sub->uploaded_at?->format('d/m/Y H:i') }}
@@ -151,7 +198,7 @@
                 @if($sub)
                 <div class="mb-4 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-center gap-2">
                     <i class="fas fa-exclamation-circle text-amber-600"></i>
-                    <span><strong>Perhatian:</strong> Mengunggah file baru akan menggantikan dan menghapus seluruh file project lama di slot ini.</span>
+                    <span><strong>Perhatian:</strong> Mengunggah file baru akan menggantikan dan menghapus seluruh file tugas lama di slot ini.</span>
                 </div>
                 @endif
 
@@ -178,25 +225,29 @@
 
                     <div>
                         <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                            Judul Project <span class="text-rose-500">*</span>
+                            Judul Karya / Tugas <span class="text-rose-500">*</span>
                         </label>
                         <input type="text" name="title" :disabled="isUploading"
                                value="{{ old('slot_number') == $slot ? old('title') : ($sub->title ?? '') }}"
-                               placeholder="Contoh: Web Animasi CSS - Profil Sekolah"
+                               placeholder="Contoh: Web Portofolio / Laporan Makalah"
                                class="w-full border border-gray-200 rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400"
                                style="--tw-ring-color: var(--brand-primary)" required>
                     </div>
 
                     <div>
                         <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                            File Archive Project (.ZIP) <span class="text-rose-500">*</span>
+                            File Tugas ({{ $assignType->label() }}) <span class="text-rose-500">*</span>
                         </label>
-                        <input type="file" name="project_file" accept=".zip,.rar" :disabled="isUploading"
+                        <input type="file" name="project_file" accept="{{ $assignment->accept }}" :disabled="isUploading"
                                @change="onFileChosen($event)"
                                class="w-full text-xs text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer border border-gray-200 rounded-2xl p-2 disabled:opacity-50 disabled:cursor-not-allowed" required>
                         <p class="text-[11px] text-gray-400 mt-1.5">
                             <i class="fas fa-check-circle text-emerald-500 mr-1"></i>
-                            Maksimal ukuran: <strong>{{ $assignment->max_file_size_mb }} MB</strong>. File ZIP <strong>wajib</strong> memiliki file <code class="bg-gray-100 px-1 py-0.5 rounded text-indigo-700 font-mono font-bold">index.html</code> di dalamnya.
+                            Format: <strong>{{ implode(', ', array_map(fn($e) => '.' . $e, $assignment->getEffectiveExtensions())) ?: 'Semua Format' }}</strong>
+                            • Maks. <strong>{{ $assignment->max_file_size_mb }} MB</strong>
+                            @if($assignType->value === 'web')
+                                • Wajib ada file <code class="bg-gray-100 px-1 py-0.5 rounded text-indigo-700 font-mono font-bold">index.html</code> di dalam ZIP
+                            @endif
                         </p>
                     </div>
 
@@ -251,7 +302,8 @@
                                 style="background: var(--brand-primary)">
                             <template x-if="!isUploading">
                                 <span class="flex items-center gap-2">
-                                    <i class="fas fa-eye"></i> Upload & Pratinjau
+                                    <i :class="isWeb ? 'fas fa-eye' : 'fas fa-cloud-upload-alt'"></i>
+                                    <span x-text="isWeb ? 'Upload & Pratinjau' : 'Upload Tugas'"></span>
                                 </span>
                             </template>
                             <template x-if="isUploading">
@@ -281,6 +333,7 @@ function uploadSlotHandler(config) {
     return {
         openUpload: config.openUpload,
         maxMb: config.maxMb,
+        isWeb: config.isWeb,
         isUploading: false,
         progress: 0,
         statusText: '',
@@ -313,7 +366,7 @@ function uploadSlotHandler(config) {
             const form = event.target;
             const fileInput = form.querySelector('input[name="project_file"]');
             if (!fileInput || !fileInput.files || !fileInput.files[0]) {
-                this.errorMessage = 'Silakan pilih file archive project (.ZIP) terlebih dahulu.';
+                this.errorMessage = 'Silakan pilih file tugas terlebih dahulu.';
                 return;
             }
 
@@ -360,7 +413,9 @@ function uploadSlotHandler(config) {
                     if (percent < 100) {
                         this.statusText = 'Mengunggah file (' + percent + '%)...';
                     } else {
-                        this.statusText = 'File 100% terunggah! Mengekstrak & memvalidasi struktur proyek di server...';
+                        this.statusText = this.isWeb
+                            ? 'File 100% terunggah! Mengekstrak & memvalidasi struktur proyek di server...'
+                            : 'File 100% terunggah! Menyimpan file di server...';
                     }
                 }
             };
@@ -371,7 +426,7 @@ function uploadSlotHandler(config) {
                         const response = JSON.parse(xhr.responseText);
                         if (response.redirect) {
                             this.progress = 100;
-                            this.statusText = 'Validasi berhasil! Mengalihkan ke halaman pratinjau...';
+                            this.statusText = 'Berhasil! Mengalihkan...';
                             window.location.href = response.redirect;
                             return;
                         }

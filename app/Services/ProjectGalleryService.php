@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\AssignmentType;
 use App\Models\ProjectAssignment;
 use App\Models\ProjectSubmission;
 use App\Models\User;
@@ -13,12 +14,150 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 class ProjectGalleryService
 {
     /**
-     * Validate uploaded zip/rar file, extract to temporary directory,
+     * Unified entry point to validate and store submissions for all assignment types.
+     *
+     * @throws ValidationException
+     */
+    public function validateAndStore(
+        UploadedFile $file,
+        ProjectAssignment $assignment,
+        User $student,
+        int $slotNumber,
+        string $projectTitle
+    ): ProjectSubmission {
+        $type = $assignment->assignment_type ?? AssignmentType::Web;
+        $maxBytes = $assignment->max_file_size_mb * 1024 * 1024;
+
+        // 1. Validasi ukuran
+        if ($file->getSize() > $maxBytes) {
+            throw ValidationException::withMessages([
+                'project_file' => 'Ukuran file melebihi batas ' . $assignment->max_file_size_mb . ' MB',
+            ]);
+        }
+
+        // 2. Validasi ekstensi
+        $ext = strtolower($file->getClientOriginalExtension());
+        $allowed = $assignment->getEffectiveExtensions();
+        if (!empty($allowed) && !in_array($ext, $allowed)) {
+            throw ValidationException::withMessages([
+                'project_file' => 'Format file tidak diizinkan. Format yang diterima: ' . implode(', ', $allowed),
+            ]);
+        }
+
+        // 3. Handle per tipe
+        return match($type) {
+            AssignmentType::Web =>
+                $this->handleWebUpload(
+                    $file, $assignment, $student,
+                    $slotNumber, $projectTitle
+                ),
+            AssignmentType::Document,
+            AssignmentType::Image,
+            AssignmentType::General =>
+                $this->handleSingleFileUpload(
+                    $file, $assignment, $student,
+                    $slotNumber, $projectTitle, $ext
+                ),
+        };
+    }
+
+    /**
+     * Handle web archive upload (ZIP/RAR extraction & indexing).
+     */
+    private function handleWebUpload(
+        UploadedFile $file,
+        ProjectAssignment $assignment,
+        User $student,
+        int $slotNumber,
+        string $projectTitle
+    ): ProjectSubmission {
+        $result = $this->validateAndExtractWeb($file, $assignment);
+
+        return $this->storeSubmission(
+            $result['tmp_path'],
+            $assignment,
+            $student,
+            $slotNumber,
+            $projectTitle,
+            $file->getClientOriginalName(),
+            $file->getSize(),
+            $result['meta']
+        );
+    }
+
+    /**
+     * Handle single file upload for Document, Image, and General types.
+     */
+    private function handleSingleFileUpload(
+        UploadedFile $file,
+        ProjectAssignment $assignment,
+        User $student,
+        int $slotNumber,
+        string $projectTitle,
+        string $ext
+    ): ProjectSubmission {
+        // 1. Tentukan path tujuan
+        $relPath = 'projects/' . $assignment->id . '/' . $student->id . '/' . $slotNumber . '/';
+        $destDir = storage_path('app/' . $relPath);
+
+        // 2. Hapus folder lama jika ada (TOTAL)
+        if (File::isDirectory($destDir)) {
+            File::deleteDirectory($destDir);
+        }
+
+        // 3. Buat folder tujuan
+        File::makeDirectory($destDir, 0755, true);
+
+        // 4. Simpan file dengan nama 'file.{ext}'
+        $filename = 'file.' . $ext;
+        $file->move($destDir, $filename);
+
+        // 5. Generate metadata
+        $type = $assignment->assignment_type;
+        $fileSize = file_exists($destDir . $filename) ? filesize($destDir . $filename) : $file->getSize();
+        $meta = [
+            'has_css'    => false,
+            'has_js'     => false,
+            'has_images' => $type === AssignmentType::Image,
+            'has_audio'  => false,
+            'has_video'  => false,
+            'file_ext'   => $ext,
+            'file_list'  => [[
+                'name' => $filename,
+                'size' => $fileSize,
+                'ext'  => $ext,
+            ]],
+        ];
+
+        // 6. Upsert ke DB
+        return ProjectSubmission::updateOrCreate(
+            [
+                'assignment_id' => $assignment->id,
+                'student_id'    => $student->id,
+                'slot_number'   => $slotNumber,
+            ],
+            [
+                'title'             => $projectTitle,
+                'original_filename' => $file->getClientOriginalName(),
+                'storage_path'      => $relPath,
+                'file_size_bytes'   => $fileSize,
+                'has_css'           => false,
+                'has_js'            => false,
+                'has_images'        => $meta['has_images'],
+                'has_audio'         => false,
+                'has_video'         => false,
+                'uploaded_at'       => now(),
+            ]
+        );
+    }
+
+    /**
+     * Validate uploaded web project archive file, extract to temporary directory,
      * check for index.html, and scan metadata.
      *
      * @throws ValidationException
      */
-    public function validateAndExtract(UploadedFile $file, ProjectAssignment $assignment): array
+    public function validateAndExtractWeb(UploadedFile $file, ProjectAssignment $assignment): array
     {
         $extension = strtolower($file->getClientOriginalExtension());
         if (!in_array($extension, ['zip', 'rar'])) {
@@ -174,14 +313,18 @@ class ProjectGalleryService
     /**
      * Serve project files safely with path traversal protection and secure headers.
      */
-    public function serveFile(ProjectSubmission $submission, string $filePath = 'index.html'): BinaryFileResponse
+    public function serveFile(ProjectSubmission $submission, string $filePath = ''): BinaryFileResponse
     {
+        if (empty($filePath)) {
+            $filePath = $this->getMainFilename($submission);
+        }
+
         $filePath = ltrim($filePath, '/');
         $filePath = preg_replace('/\.\.+/', '', $filePath);
         $filePath = preg_replace('/[^a-zA-Z0-9\/_\-\.]/', '', $filePath);
 
         if (empty($filePath)) {
-            $filePath = 'index.html';
+            $filePath = $this->getMainFilename($submission);
         }
 
         $baseDir = storage_path('app/' . rtrim($submission->storage_path, '/') . '/');
@@ -190,7 +333,11 @@ class ProjectGalleryService
         $realBase = realpath($baseDir);
         $realPath = realpath($fullPath);
 
-        if (!$realPath || !$realBase || !str_starts_with($realPath, $realBase) || !file_exists($realPath) || is_dir($realPath)) {
+        if (!$realPath || !$realBase || !str_starts_with($realPath, $realBase)) {
+            abort(404, 'File tidak ditemukan.');
+        }
+
+        if (!file_exists($realPath) || is_dir($realPath)) {
             abort(404, 'File tidak ditemukan.');
         }
 
@@ -201,6 +348,7 @@ class ProjectGalleryService
             'css'   => 'text/css; charset=UTF-8',
             'js'    => 'application/javascript; charset=UTF-8',
             'json'  => 'application/json',
+            'pdf'   => 'application/pdf',
             'png'   => 'image/png',
             'jpg'   => 'image/jpeg',
             'jpeg'  => 'image/jpeg',
@@ -214,21 +362,60 @@ class ProjectGalleryService
             'mp4'   => 'video/mp4',
             'webm'  => 'video/webm',
             'ogv'   => 'video/ogg',
-            'woff'  => 'font/woff',
-            'woff2' => 'font/woff2',
-            'ttf'   => 'font/ttf',
-            'otf'   => 'font/otf',
+            'docx'  => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'doc'   => 'application/msword',
+            'pptx'  => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'ppt'   => 'application/vnd.ms-powerpoint',
+            'xlsx'  => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'xls'   => 'application/vnd.ms-excel',
+            'zip'   => 'application/zip',
+            'rar'   => 'application/x-rar-compressed',
         ];
 
         $mime = $mimeTypes[$ext] ?? (mime_content_type($realPath) ?: 'application/octet-stream');
 
-        $headers = [
-            'Content-Type'            => $mime,
-            'X-Frame-Options'         => 'SAMEORIGIN',
-            'Content-Security-Policy' => "default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data:; img-src 'self' data: https:; media-src 'self' data: https:; font-src 'self' data: https:;",
-        ];
+        $type = $submission->assignment->assignment_type ?? AssignmentType::Web;
+
+        $headers = ['Content-Type' => $mime];
+
+        if ($type === AssignmentType::Web) {
+            $headers['X-Frame-Options'] = 'SAMEORIGIN';
+            $headers['Content-Security-Policy'] = "default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data:; img-src 'self' data: https:; media-src 'self' data: https:; font-src 'self' data: https:;";
+        } elseif ($type === AssignmentType::Document) {
+            if ($ext === 'pdf') {
+                $headers['Content-Disposition'] = 'inline';
+            } else {
+                $headers['Content-Disposition'] = 'attachment; filename="' . $submission->original_filename . '"';
+            }
+        } elseif ($type === AssignmentType::Image) {
+            $headers['Content-Disposition'] = 'inline';
+        } else {
+            // General
+            $headers['Content-Disposition'] = 'attachment; filename="' . $submission->original_filename . '"';
+        }
 
         return response()->file($realPath, $headers);
+    }
+
+    /**
+     * Get the main filename to serve for a submission.
+     */
+    public function getMainFilename(ProjectSubmission $submission): string
+    {
+        $type = $submission->assignment->assignment_type ?? AssignmentType::Web;
+
+        if ($type === AssignmentType::Web) {
+            return 'index.html';
+        }
+
+        $dir = storage_path('app/' . rtrim($submission->storage_path, '/') . '/');
+        $files = glob($dir . 'file.*');
+
+        if (!empty($files)) {
+            return basename($files[0]);
+        }
+
+        return 'file';
     }
 
     /**
@@ -326,5 +513,3 @@ class ProjectGalleryService
         return (int) $assignment->submissions()->delete();
     }
 }
-
-
