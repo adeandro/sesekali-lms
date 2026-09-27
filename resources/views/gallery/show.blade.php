@@ -175,11 +175,24 @@
                             </div>
 
                             {{-- Project Title --}}
-                            <div class="mb-3">
+                            <div class="mb-2">
                                 <h5 class="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition leading-snug line-clamp-2" title="{{ $submission->title }}">
                                     {{ $submission->title }}
                                 </h5>
                             </div>
+
+                            {{-- Waktu Upload / Update --}}
+                            @php
+                                $uploadTime = $submission->uploaded_at ?? $submission->updated_at ?? $submission->created_at;
+                            @endphp
+                            @if($uploadTime)
+                                <div class="flex items-center gap-1.5 text-[11px] font-medium text-slate-400 mb-3" title="Waktu diunggah/diperbarui: {{ $uploadTime->format('d/m/Y H:i:s') }}">
+                                    <i class="far fa-clock text-[10px] text-slate-400"></i>
+                                    <span>{{ $uploadTime->translatedFormat('d M Y, H:i') }}</span>
+                                    <span class="text-slate-300">•</span>
+                                    <span class="text-slate-500 font-semibold">{{ $uploadTime->diffForHumans() }}</span>
+                                </div>
+                            @endif
 
                             {{-- Thumbnail Preview untuk tipe image --}}
                             @if($assignType->value === 'image')
