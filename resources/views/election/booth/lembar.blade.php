@@ -27,7 +27,7 @@
          }">
         <div class="hidden sm:block text-right">
             <div class="font-bold text-white">{{ $voter->student_name }}</div>
-            <div class="text-slate-400">NIS: {{ $voter->nis }} &bull; {{ $voter->class_name ?? '-' }}</div>
+            <div class="text-slate-400">{{ $voter->class_name === 'GURU & STAF' ? 'ID' : 'NIS' }}: {{ $voter->nis }} &bull; {{ $voter->class_name ?? '-' }}</div>
         </div>
         <div class="px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 font-mono font-bold flex items-center gap-1.5 shadow">
             <span>⏱️</span>

@@ -33,21 +33,22 @@
 
 ### Langkah 3: Generate Data Pemilih (DPT)
 1. Pada halaman detail periode, klik tombol **👥 Generate / Sinkron Pemilih**.
-2. Sistem akan menyalin snapshot seluruh siswa aktif dari kelas yang dipilih.
-3. Periksa jumlah siswa pada tabel ringkasan pemilih per kelas.
+2. Sistem akan menyalin snapshot seluruh siswa aktif dari kelas yang dipilih, serta seluruh dewan guru dan tenaga kependidikan (staf TU) aktif ke dalam kelompok khusus **GURU & STAF**.
+3. Periksa jumlah pemilih pada tabel ringkasan pemilih per kelas/kelompok.
 
 ---
 
-### Langkah 4: Cetak Kartu Kredensial (NIS + TOKEN) per Kelas
+### Langkah 4: Cetak Kartu Kredensial (NIS/ID + TOKEN) per Kelas & Kelompok
 
 > ⚠️ **PERINGATAN KERAS:**
-> **Cetak Kartu Kelas HANYA SEKALI per kelas. Mengklik ulang akan menghanguskan token SEMUA kartu kelas itu yang belum dipakai, termasuk yang sudah dibagikan. Untuk satu siswa gunakan Cetak Ulang.**
+> **Cetak Kartu Kelas HANYA SEKALI per kelas/kelompok. Mengklik ulang akan menghanguskan token SEMUA kartu kelas itu yang belum dipakai, termasuk yang sudah dibagikan. Untuk satu orang gunakan Cetak Ulang.**
 
 1. **Waktu Pencetakan**: Lakukan pencetakan kartu pada **H-1 sore atau pagi hari H** (bukan H-3).
-2. Pada tabel ringkasan kelas, klik tombol **🖨️ Cetak Kartu Kelas** pada tiap kelas.
+2. Pada tabel ringkasan kelas, klik tombol **🖨️ Cetak** pada tiap kelas dan kelompok **GURU & STAF**.
 3. File PDF akan terunduh otomatis:
-   - Berisi 10 kartu per lembar A4 (tabel 2 kolom x 5 baris).
-   - Setiap kartu berisi: **Nama Sekolah**, **Judul Periode**, **Nama Siswa**, **Kelas**, **NIS**, dan **Kode Token** (format `ABCD-EFGH`).
+   - Format hemat kertas: **24 kartu per lembar A4 portrait** (tabel 3 kolom x 8 baris).
+   - Diurutkan alfabetis A-Z agar mudah dibagikan.
+   - Setiap kartu berisi: **Nama Sekolah - Judul Periode**, **Nama Pemilih**, **NIS / NIP / ID**, **Kelas / Kelompok**, dan **Kode Token** (format `ABCD-EFGH`).
    - **Catatan Penting**: Kertas ini **TIDAK** memuat PIN siswa. Kredensial hanya berupa NIS dan Token.
 4. **Verifikasi & Kerahasiaan Dokumen**:
    - Buka file PDF hasil unduhan dan pastikan semua kartu terbaca jelas sebelum dibagikan.
@@ -83,11 +84,11 @@
 
 ---
 
-### Langkah 3: Alur Siswa di Bilik Suara
-1. **Pemeriksaan Fisik**: Siswa menunjukkan kartu kertas token kepada panitia di pintu bilik.
+### Langkah 3: Alur Pemilih di Bilik Suara
+1. **Pemeriksaan Fisik**: Pemilih menunjukkan kartu kertas token kepada panitia di pintu bilik.
 2. **Login di Bilik**:
-   - Siswa duduk di bilik suara.
-   - Siswa mengetik **NIS** dan **Kode Token** pada layar.
+   - Pemilih duduk di bilik suara.
+   - Pemilih mengetik **NIS / NIP / ID** dan **Kode Token** pada layar.
    - Klik **Buka Lembar Suara**.
 3. **Pemberian Suara (Batas waktu: 3 Menit)**:
    - Siswa melihat kartu suara digital berisi foto, nomor, dan nama pasangan calon.

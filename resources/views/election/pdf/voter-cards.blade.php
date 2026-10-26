@@ -135,7 +135,11 @@
                                     {{ $card['name'] }}
                                 </div>
                                 <div class="card-meta">
-                                    NIS {{ $card['nis'] }} - Kelas {{ $card['class_name'] }}
+                                    @if($card['class_name'] === 'GURU & STAF')
+                                        ID {{ $card['nis'] }} &bull; GURU &amp; STAF
+                                    @else
+                                        NIS {{ $card['nis'] }} &bull; Kelas {{ $card['class_name'] }}
+                                    @endif
                                 </div>
                                 <div class="token-box">
                                     <div class="token-label">TOKEN</div>

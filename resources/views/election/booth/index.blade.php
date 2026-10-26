@@ -61,7 +61,7 @@
                 </div>
                 <h2 class="text-xl font-bold text-white">Silakan Masuk Pemilih</h2>
                 <p class="text-xs text-slate-400 mt-1">
-                    Ketikkan NIS dan Kode Token yang tertera pada kartu kertas Anda.
+                    Ketikkan NIS / NIP / ID dan Kode Token yang tertera pada kartu kertas Anda.
                 </p>
             </div>
 
@@ -79,14 +79,14 @@
                   }">
                 @csrf
 
-                {{-- Input NIS --}}
+                {{-- Input NIS / NIP / ID --}}
                 <div>
                     <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                        Nomor Induk Siswa (NIS)
+                        Nomor Induk (NIS / NIP / ID)
                     </label>
                     <input type="text" name="nis" required autofocus
                            value="{{ old('nis') }}"
-                           placeholder="Contoh: 20241001"
+                           placeholder="Contoh: 20241001 atau NIP/ID"
                            autocomplete="off"
                            class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white font-mono text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
                 </div>

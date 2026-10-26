@@ -51,9 +51,15 @@
                 @foreach($summary as $row)
                     <div class="p-3 border border-slate-200 dark:border-slate-700 rounded-lg flex items-center justify-between bg-slate-50 dark:bg-slate-900/40">
                         <div>
-                            <div class="font-bold text-sm text-slate-800 dark:text-white">{{ $row->class_name ?? 'Tanpa Kelas' }}</div>
+                            <div class="font-bold text-sm text-slate-800 dark:text-white">
+                                @if($row->class_name === 'GURU & STAF')
+                                    👨‍🏫 {{ $row->class_name }}
+                                @else
+                                    {{ $row->class_name ?? 'Tanpa Kelas' }}
+                                @endif
+                            </div>
                             <div class="text-xs text-slate-500">
-                                {{ $row->total }} siswa &bull;
+                                {{ $row->total }} {{ $row->class_name === 'GURU & STAF' ? 'orang' : 'siswa' }} &bull;
                                 @if($row->printed > 0)
                                     <span class="text-green-600 font-medium">{{ $row->printed }} dicetak</span>
                                 @else
@@ -61,8 +67,8 @@
                                 @endif
                             </div>
                         </div>
-                        @if($period->status !== 'closed' && $row->class_id)
-                            <form method="POST" action="{{ route('admin.pilketos.periods.cards.class', [$period, $row->class_id]) }}" class="no-loading">
+                        @if($period->status !== 'closed' && ($row->class_id !== null || $row->class_name === 'GURU & STAF'))
+                            <form method="POST" action="{{ route('admin.pilketos.periods.cards.class', [$period, $row->class_id ?? 0]) }}" class="no-loading">
                                 @csrf
                                 <button type="submit"
                                         class="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 text-xs font-semibold rounded transition">
@@ -82,9 +88,9 @@
             <thead class="bg-slate-50 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300 border-b border-slate-100 dark:border-slate-700">
                 <tr>
                     <th class="px-5 py-3 font-semibold">#</th>
-                    <th class="px-5 py-3 font-semibold">Nama Siswa</th>
-                    <th class="px-5 py-3 font-semibold">NIS</th>
-                    <th class="px-5 py-3 font-semibold">Kelas</th>
+                    <th class="px-5 py-3 font-semibold">Nama Pemilih</th>
+                    <th class="px-5 py-3 font-semibold">NIS / NIP / ID</th>
+                    <th class="px-5 py-3 font-semibold">Kelas / Kelompok</th>
                     <th class="px-5 py-3 font-semibold text-center">Status Kartu</th>
                     <th class="px-5 py-3 font-semibold text-center">Hak Suara</th>
                     <th class="px-5 py-3 font-semibold text-right">Aksi</th>

@@ -56,13 +56,13 @@ class ElectionService
     {
         $eligibleClassIds = $period->eligible_class_ids; // null = semua kelas
 
-        $query = User::aktif()->where('role', 'student')->with('classroom');
+        $studentQuery = User::aktif()->where('role', 'student')->with('classroom');
 
         if (! empty($eligibleClassIds)) {
-            $query->whereIn('class_id', $eligibleClassIds);
+            $studentQuery->whereIn('class_id', $eligibleClassIds);
         }
 
-        // Ambil NIS yang sudah ada agar tidak duplikat
+        // Ambil NIS/identifier yang sudah ada agar tidak duplikat
         $existingNis = DB::table('election_voters')
             ->where('period_id', $period->id)
             ->pluck('nis')
@@ -71,7 +71,8 @@ class ElectionService
         $inserted     = 0;
         $skippedNoNis = 0;
 
-        $query->chunk(500, function ($students) use ($period, $existingNis, &$inserted, &$skippedNoNis) {
+        // 1. Siswa aktif
+        $studentQuery->chunk(500, function ($students) use ($period, &$existingNis, &$inserted, &$skippedNoNis) {
             $rows = [];
             foreach ($students as $student) {
                 if (empty($student->nis)) {
@@ -81,18 +82,66 @@ class ElectionService
                 if ($existingNis->has($student->nis)) {
                     continue;
                 }
+                $existingNis->put($student->nis, true);
                 $rows[] = [
-                    'period_id'    => $period->id,
-                    'student_id'   => $student->id,
-                    'nis'          => $student->nis,
-                    'student_name' => $student->name,
-                    'class_id'     => $student->class_id,
-                    'class_name'   => $student->classroom?->name,
-                    'token_hash'   => null,
-                    'token_version' => 0,
+                    'period_id'        => $period->id,
+                    'student_id'       => $student->id,
+                    'nis'              => $student->nis,
+                    'student_name'     => $student->name,
+                    'class_id'         => $student->class_id,
+                    'class_name'       => $student->classroom?->name,
+                    'token_hash'       => null,
+                    'token_version'    => 0,
                     'token_printed_at' => null,
-                    'has_voted'    => false,
-                    'voted_at'     => null,
+                    'has_voted'        => false,
+                    'voted_at'         => null,
+                ];
+                $inserted++;
+            }
+            if (! empty($rows)) {
+                DB::table('election_voters')->insert($rows);
+            }
+        });
+
+        // 2. Guru dan Staf (role: teacher, tu, principal)
+        $staffQuery = User::aktif()->whereIn('role', ['teacher', 'tu', 'principal']);
+
+        $staffQuery->chunk(500, function ($staffMembers) use ($period, &$existingNis, &$inserted, &$skippedNoNis) {
+            $rows = [];
+            foreach ($staffMembers as $staff) {
+                // Tentukan identifier unik: NIP > NIY > NIS > Email
+                $identifier = ! empty(trim($staff->nip ?? ''))
+                    ? trim($staff->nip)
+                    : (! empty(trim($staff->niy ?? ''))
+                        ? trim($staff->niy)
+                        : (! empty(trim($staff->nis ?? ''))
+                            ? trim($staff->nis)
+                            : trim($staff->email ?? '')));
+
+                if (empty($identifier)) {
+                    $skippedNoNis++;
+                    continue;
+                }
+
+                if ($existingNis->has($identifier)) {
+                    continue;
+                }
+                $existingNis->put($identifier, true);
+
+                $fullName = trim(($staff->title_ahead ? $staff->title_ahead . ' ' : '') . $staff->name . ($staff->title_behind ? ', ' . $staff->title_behind : ''));
+
+                $rows[] = [
+                    'period_id'        => $period->id,
+                    'student_id'       => $staff->id,
+                    'nis'              => $identifier,
+                    'student_name'     => $fullName ?: $staff->name,
+                    'class_id'         => 0,
+                    'class_name'       => 'GURU & STAF',
+                    'token_hash'       => null,
+                    'token_version'    => 0,
+                    'token_printed_at' => null,
+                    'has_voted'        => false,
+                    'voted_at'         => null,
                 ];
                 $inserted++;
             }
@@ -102,7 +151,7 @@ class ElectionService
         });
 
         ElectionAuditLog::record('voters.generated', $period->id, auth()->id(), [
-            'inserted'      => $inserted,
+            'inserted'       => $inserted,
             'skipped_no_nis' => $skippedNoNis,
         ]);
 

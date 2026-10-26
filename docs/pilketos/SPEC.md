@@ -99,10 +99,10 @@ UNIQUE (period_id, vice_id)
 id                      BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY
 period_id               BIGINT UNSIGNED NOT NULL FK election_periods.id CASCADE ON DELETE
 student_id              BIGINT UNSIGNED NULL FK users.id NULL ON DELETE
-nis                     VARCHAR(30) NOT NULL
+nis                     VARCHAR(100) NOT NULL          -- NIS siswa atau NIP/NIY/Email guru & staf
 student_name            VARCHAR(191) NOT NULL
-class_id                BIGINT UNSIGNED NULL           -- tanpa FK agar aman saat migrasi kelas
-class_name              VARCHAR(100) NULL
+class_id                BIGINT UNSIGNED NULL           -- ID kelas atau 0 untuk GURU & STAF
+class_name              VARCHAR(100) NULL              -- Nama kelas atau 'GURU & STAF'
 token_hash              CHAR(64) NULL                  -- sha256 hex
 token_version           INT UNSIGNED DEFAULT 0
 token_printed_at        TIMESTAMP NULL
@@ -277,4 +277,22 @@ Rute publik di luar grup middleware bilik suara (`ElectionBoothAccess`), tanpa a
   - Memilih periode terbaru dengan status wajib `closed` dan `results_published = true`. Jika status masih `open`, query secara otomatis tidak akan menampilkan data hasil pemilihan.
   - Hasil di-cache selama 10 menit menggunakan `Cache::remember('pilketos_public_results_{id}', 600, ...)` untuk mengantisipasi lonjakan akses bersamaan. Cache langsung di-flush ketika hasil ditarik atau periode dibuka kembali.
   - Menampilkan banner pemenang (atau banner hasil seri jika draw), perolehan suara tiap paslon, bar visual persentase (warna kuning/amber menonjol untuk suara terbanyak), dan statistik DPT serta tingkat partisipasi. Tidak melakukan auto-refresh.
+
+---
+
+## BAGIAN 10 — KEIKUTSERTAAN GURU & STAF (TENAGA KEPENDIDIKAN)
+
+### 1. Hak Pilih & DPT
+- Seluruh dewan guru (`teacher`), tenaga kependidikan (`tu`), dan kepala sekolah (`principal`) yang berstatus **Aktif** diikutsertakan ke dalam DPT (Daftar Pemilih Tetap) saat sinkronisasi/generate pemilih.
+- Dikelompokkan ke dalam kategori khusus `class_name = 'GURU & STAF'` (`class_id = 0`).
+
+### 2. Kredensial & Identitas Login
+- Menggunakan identifikasi prioritas bertingkat: **NIP** &rarr; **NIY** &rarr; **NIS** &rarr; **Email**.
+- Kolom `nis` pada `election_voters` dilebarkan menjadi `VARCHAR(100)` untuk menampung alamat email/NIP panjang.
+- Form login bilik suara menerima input *"Nomor Induk (NIS / NIP / ID)"* dan kode token pemilih.
+
+### 3. Distribusi Kartu Pemilih
+- Kartu pemilih untuk kelompok Guru & Staf dapat dicetak secara khusus melalui panel admin (tombol cetak pada baris `GURU & STAF`).
+- Format kartu menyesuaikan label identitas: `ID {nip/niy/email} • GURU & STAF`.
+- Tata letak tetap menggunakan format hemat kertas A4 3 kolom x 8 baris (24 kartu per halaman).
 

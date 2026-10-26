@@ -45,14 +45,20 @@ class ElectionVoterController extends Controller
             return back()->with('error', 'Tidak bisa cetak kartu setelah pemilihan ditutup.');
         }
 
-        $voters = ElectionVoter::where('period_id', $period->id)
-            ->where('class_id', $classId)
-            ->where('has_voted', false)
-            ->orderBy('student_name')
-            ->get();
+        $query = ElectionVoter::where('period_id', $period->id)->where('has_voted', false);
+
+        if ((string)$classId === '0') {
+            $query->where(function ($q) {
+                $q->where('class_id', 0)->orWhere('class_name', 'GURU & STAF');
+            });
+        } else {
+            $query->where('class_id', $classId);
+        }
+
+        $voters = $query->orderBy('student_name')->get();
 
         if ($voters->isEmpty()) {
-            return back()->with('error', 'Tidak ada pemilih yang bisa dicetak di kelas ini (semua sudah memilih atau kelas kosong).');
+            return back()->with('error', 'Tidak ada pemilih yang bisa dicetak di kelompok/kelas ini (semua sudah memilih atau kosong).');
         }
 
         try {
@@ -63,7 +69,7 @@ class ElectionVoterController extends Controller
             return back()->with('error', 'Gagal render PDF: ' . $e->getMessage());
         }
 
-        $className = $voters->first()->class_name ?? "kelas-{$classId}";
+        $className = $voters->first()->class_name ?? ((string)$classId === '0' ? 'GURU & STAF' : "kelas-{$classId}");
         $filename  = 'kartu-' . str($period->title)->slug() . '-' . str($className)->slug() . '.pdf';
 
         return response($pdf, 200, [

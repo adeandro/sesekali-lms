@@ -497,7 +497,7 @@
                         @if(in_array($period->status, ['draft', 'ready']))
                             <form method="POST" action="{{ route('admin.pilketos.periods.generate-voters', $period) }}" class="no-loading">
                                 @csrf
-                                <button type="submit" onclick="return confirm('Generate / sinkronkan pemilih dari siswa aktif?')"
+                                <button type="submit" onclick="return confirm('Generate / sinkronkan pemilih (siswa aktif & guru/staf)?')"
                                         class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-xs font-medium rounded-lg transition">
                                     👥 Generate / Sinkron Pemilih
                                 </button>
@@ -519,8 +519,8 @@
                         <table class="w-full text-xs text-left">
                             <thead class="bg-slate-50 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300 border-b border-slate-100 dark:border-slate-700">
                                 <tr>
-                                    <th class="px-4 py-2.5 font-semibold">Kelas</th>
-                                    <th class="px-4 py-2.5 font-semibold text-center">Total Siswa</th>
+                                    <th class="px-4 py-2.5 font-semibold">Kelas / Kelompok</th>
+                                    <th class="px-4 py-2.5 font-semibold text-center">Total Pemilih</th>
                                     <th class="px-4 py-2.5 font-semibold text-center">Kartu Dicetak</th>
                                     <th class="px-4 py-2.5 font-semibold text-center">Sudah Memilih</th>
                                     <th class="px-4 py-2.5 font-semibold text-right">Aksi</th>
@@ -530,7 +530,11 @@
                                 @foreach($voterSummary as $row)
                                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30">
                                         <td class="px-4 py-2.5 font-medium text-slate-800 dark:text-white">
-                                            {{ $row->class_name ?? 'Tanpa Kelas' }}
+                                            @if($row->class_name === 'GURU & STAF')
+                                                👨‍🏫 {{ $row->class_name }}
+                                            @else
+                                                {{ $row->class_name ?? 'Tanpa Kelas' }}
+                                            @endif
                                         </td>
                                         <td class="px-4 py-2.5 text-center text-slate-600 dark:text-slate-400">
                                             {{ $row->total }}
@@ -546,12 +550,12 @@
                                             {{ $row->voted }}
                                         </td>
                                         <td class="px-4 py-2.5 text-right">
-                                            @if($period->status !== 'closed' && $row->class_id)
-                                                <form method="POST" action="{{ route('admin.pilketos.periods.cards.class', [$period, $row->class_id]) }}" class="inline no-loading">
+                                            @if($period->status !== 'closed' && ($row->class_id !== null || $row->class_name === 'GURU & STAF'))
+                                                <form method="POST" action="{{ route('admin.pilketos.periods.cards.class', [$period, $row->class_id ?? 0]) }}" class="inline no-loading">
                                                     @csrf
                                                     <button type="submit"
                                                             class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 font-medium rounded transition">
-                                                        🖨️ Cetak Kartu Kelas
+                                                        🖨️ Cetak Kartu {{ $row->class_name === 'GURU & STAF' ? 'Guru & Staf' : 'Kelas' }}
                                                     </button>
                                                 </form>
                                             @endif
