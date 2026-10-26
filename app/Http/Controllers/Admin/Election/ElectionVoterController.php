@@ -48,6 +48,7 @@ class ElectionVoterController extends Controller
         $voters = ElectionVoter::where('period_id', $period->id)
             ->where('class_id', $classId)
             ->where('has_voted', false)
+            ->orderBy('student_name')
             ->get();
 
         if ($voters->isEmpty()) {

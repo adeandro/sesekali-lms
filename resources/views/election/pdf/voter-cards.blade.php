@@ -2,152 +2,158 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <title>Kartu Pemilih — {{ $period->title }}</title>
     <style>
         @page {
             size: A4 portrait;
-            margin: 8mm 6mm;
+            margin: 0.7cm;
         }
-        body {
-            font-family: 'DejaVu Sans', Arial, sans-serif;
+        html, body {
             margin: 0;
             padding: 0;
-            color: #1e293b;
+            font-family: 'DejaVu Sans', Arial, sans-serif;
+            color: #0f172a;
+            background: #ffffff;
         }
         table.page-table {
             width: 100%;
-            border-collapse: separate;
-            border-spacing: 4mm 3mm;
+            border-collapse: collapse;
             table-layout: fixed;
-        }
-        .card-cell {
-            width: 50%;
-            vertical-align: top;
+            margin: 0;
             padding: 0;
         }
-        .card-box {
-            border: 1.5px dashed #64748b;
-            border-radius: 6px;
-            padding: 8px 10px;
-            background: #ffffff;
-            box-sizing: border-box;
-            height: 52mm;
+        .card-row {
+            height: 3.5cm;
         }
-        .header {
-            border-bottom: 1px solid #cbd5e1;
-            padding-bottom: 4px;
-            margin-bottom: 6px;
+        .card-cell {
+            width: 33.333%;
+            height: 3.5cm;
+            vertical-align: top;
+            padding: 0;
+            border: 0.5pt dashed #94a3b8;
         }
-        .school-name {
-            font-size: 8px;
-            font-weight: bold;
-            color: #475569;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+        .empty-cell {
+            border: 0.5pt dashed transparent;
         }
-        .period-title {
-            font-size: 10px;
-            font-weight: bold;
-            color: #1e1b4b;
+        .card-inner {
+            padding: 0.15cm;
+            height: 3.2cm;
+            overflow: hidden;
         }
-        .student-name {
-            font-size: 11px;
-            font-weight: bold;
-            color: #0f172a;
+        .card-header {
+            font-size: 6.5pt;
+            color: #64748b;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            line-height: 1.1;
+            margin-bottom: 0.8mm;
         }
-        .student-meta {
-            font-size: 9px;
-            color: #475569;
-            margin-top: 2px;
-            margin-bottom: 6px;
+        .card-name {
+            font-size: 9pt;
+            font-weight: bold;
+            color: #0f172a;
+            line-height: 1.15;
+            height: 6.8mm;
+            overflow: hidden;
+            word-wrap: break-word;
+            margin-bottom: 0.8mm;
+        }
+        .card-name.name-sm {
+            font-size: 8pt;
+            line-height: 1.15;
+        }
+        .card-meta {
+            font-size: 7.5pt;
+            color: #334155;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.1;
+            margin-bottom: 1mm;
         }
         .token-box {
-            background: #0f172a;
-            border-radius: 4px;
-            padding: 6px 4px;
+            border: 0.5pt solid #94a3b8;
+            border-radius: 2px;
+            background: #f8fafc;
+            padding: 1.2mm 0.5mm;
             text-align: center;
-            margin-bottom: 5px;
+            margin-bottom: 1mm;
         }
         .token-label {
-            font-size: 7px;
-            color: #94a3b8;
+            font-size: 5.5pt;
+            color: #64748b;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 1px;
+            letter-spacing: 0.8pt;
+            line-height: 1;
+            margin-bottom: 0.5mm;
         }
         .token-code {
-            font-size: 15px;
+            font-family: 'DejaVu Sans Mono', monospace;
+            font-size: 15pt;
             font-weight: bold;
-            color: #ffffff;
-            font-family: 'Courier New', monospace;
-            letter-spacing: 3px;
+            color: #0f172a;
+            letter-spacing: 1.2pt;
+            line-height: 1;
         }
-        .footer-note {
-            font-size: 7px;
+        .card-footer {
+            font-size: 5.5pt;
             color: #64748b;
             text-align: center;
-            line-height: 1.2;
-            font-style: italic;
-        }
-        .page-break {
-            page-break-after: always;
+            white-space: nowrap;
+            overflow: hidden;
+            line-height: 1;
         }
     </style>
 </head>
 <body>
 
-    @php
-        // 10 kartu per halaman (2 kolom x 5 baris)
-        $chunkedCards = $cards->chunk(10);
-    @endphp
+@php
+    $cols = 3;
+    $rows = 8;
+    $perPage = $cols * $rows;
 
-    @foreach($chunkedCards as $pageIndex => $pageCards)
-        <table class="page-table">
-            @php
-                $rows = $pageCards->chunk(2);
-            @endphp
-            @foreach($rows as $row)
-                <tr>
-                    @foreach($row as $card)
+    // Urutkan kartu A-Z case-insensitive
+    $sortedCards = $cards->sortBy(fn($c) => mb_strtolower($c['name'] ?? ''))->values();
+    $pages = $sortedCards->chunk($perPage);
+@endphp
+
+@foreach($pages as $pageIndex => $pageCards)
+    <table class="page-table" style="{{ !$loop->last ? 'page-break-after: always;' : '' }}">
+        @for($r = 0; $r < $rows; $r++)
+            <tr class="card-row">
+                @for($c = 0; $c < $cols; $c++)
+                    @php
+                        $cardIndex = $r * $cols + $c;
+                        $card = $pageCards->get($cardIndex);
+                    @endphp
+                    @if($card)
                         <td class="card-cell">
-                            <div class="card-box">
-                                <div class="header">
-                                    <div class="school-name">{{ $schoolName }}</div>
-                                    <div class="period-title">{{ $period->title }} &bull; KARTU PEMILIH</div>
+                            <div class="card-inner">
+                                <div class="card-header">{{ $schoolName }} - {{ $period->title }}</div>
+                                <div class="card-name {{ mb_strlen($card['name'] ?? '') > 24 ? 'name-sm' : '' }}">
+                                    {{ $card['name'] }}
                                 </div>
-
-                                <div class="student-name">{{ $card['name'] }}</div>
-                                <div class="student-meta">
-                                    NIS: <strong>{{ $card['nis'] }}</strong> &bull; Kelas: <strong>{{ $card['class_name'] }}</strong>
+                                <div class="card-meta">
+                                    NIS {{ $card['nis'] }} - Kelas {{ $card['class_name'] }}
                                 </div>
-
                                 <div class="token-box">
-                                    <div class="token-label">KODE TOKEN BILIK SUARA</div>
+                                    <div class="token-label">TOKEN</div>
                                     <div class="token-code">{{ $card['token'] }}</div>
                                 </div>
-
-                                <div class="footer-note">
-                                    Rahasia &bull; Sekali pakai &bull; Serahkan kertas ini ke panitia setelah memilih
+                                <div class="card-footer">
+                                    Rahasia - sekali pakai - serahkan ke panitia
                                 </div>
                             </div>
                         </td>
-                    @endforeach
-
-                    @if($row->count() === 1)
-                        <td class="card-cell"></td>
+                    @else
+                        <td class="card-cell empty-cell"></td>
                     @endif
-                </tr>
-            @endforeach
-        </table>
-
-        @if(!$loop->last)
-            <div class="page-break"></div>
-        @endif
-    @endforeach
+                @endfor
+            </tr>
+        @endfor
+    </table>
+@endforeach
 
 </body>
 </html>
