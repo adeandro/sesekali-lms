@@ -774,3 +774,79 @@ Route::prefix('gallery')
             ->where('filePath', '.*');
     });
 
+
+// ── Pilketos Admin ────────────────────────────────────────────────────────
+Route::middleware([\App\Http\Middleware\EnsureElectionManager::class])
+    ->prefix('admin/pilketos')
+    ->name('admin.pilketos.')
+    ->group(function () {
+        // Periods
+        Route::resource('periods', \App\Http\Controllers\Admin\Election\ElectionPeriodController::class)
+            ->except(['show']);
+        Route::get('periods/{period}', [\App\Http\Controllers\Admin\Election\ElectionPeriodController::class, 'show'])
+            ->name('periods.show');
+        Route::post('periods/{period}/transition', [\App\Http\Controllers\Admin\Election\ElectionPeriodController::class, 'transition'])
+            ->name('periods.transition');
+        Route::post('periods/{period}/set-pin', [\App\Http\Controllers\Admin\Election\ElectionPeriodController::class, 'setPin'])
+            ->name('periods.set-pin');
+        Route::post('periods/{period}/revoke-sessions', [\App\Http\Controllers\Admin\Election\ElectionPeriodController::class, 'revokeBoothSessions'])
+            ->name('periods.revoke-sessions');
+        Route::post('periods/{period}/generate-voters', [\App\Http\Controllers\Admin\Election\ElectionPeriodController::class, 'generateVoters'])
+            ->name('periods.generate-voters');
+        Route::get('periods/{period}/results', [\App\Http\Controllers\Admin\Election\ElectionPeriodController::class, 'results'])
+            ->name('periods.results');
+        Route::post('periods/{period}/collected-cards', [\App\Http\Controllers\Admin\Election\ElectionPeriodController::class, 'updateCollectedCards'])
+            ->name('periods.collected-cards');
+        Route::post('periods/{period}/publish-candidates', [\App\Http\Controllers\Admin\Election\ElectionPeriodController::class, 'publishCandidates'])
+            ->name('periods.publish-candidates');
+        Route::post('periods/{period}/publish-results', [\App\Http\Controllers\Admin\Election\ElectionPeriodController::class, 'publishResults'])
+            ->name('periods.publish-results');
+
+        // Candidates (Ketua + Wakil)
+        Route::get('candidates/search-students', [\App\Http\Controllers\Admin\Election\ElectionCandidateController::class, 'searchStudents'])
+            ->name('candidates.search-students');
+        Route::resource('periods/{period}/candidates', \App\Http\Controllers\Admin\Election\ElectionCandidateController::class)
+            ->names('periods.candidates')
+            ->except(['index', 'show']);
+
+        // Voters
+        Route::get('periods/{period}/voters', [\App\Http\Controllers\Admin\Election\ElectionVoterController::class, 'index'])
+            ->name('periods.voters.index');
+        Route::post('periods/{period}/cards/class/{classId}', [\App\Http\Controllers\Admin\Election\ElectionVoterController::class, 'printClass'])
+            ->name('periods.cards.class');
+        Route::post('periods/{period}/cards/voter/{voter}', [\App\Http\Controllers\Admin\Election\ElectionVoterController::class, 'printOne'])
+            ->name('periods.cards.voter');
+        Route::get('periods/{period}/voters/export', [\App\Http\Controllers\Admin\Election\ElectionVoterController::class, 'exportExcel'])
+            ->name('periods.voters.export');
+
+        // Results export
+        Route::get('periods/{period}/results/export', [\App\Http\Controllers\Admin\Election\ElectionResultController::class, 'exportExcel'])
+            ->name('periods.results.export');
+    });
+
+// ── Pilketos Bilik Suara & Publik ──────────────────────────────────────────
+Route::prefix('pilketos')
+    ->name('election.')
+    ->group(function () {
+        // Halaman Publik (tanpa login, tanpa booth PIN/access)
+        Route::middleware([\App\Http\Middleware\ElectionNoCache::class])->group(function () {
+            Route::get('kandidat', [\App\Http\Controllers\Election\PublicController::class, 'candidates'])->name('candidates');
+            Route::get('hasil', [\App\Http\Controllers\Election\PublicController::class, 'results'])->name('results');
+        });
+
+        Route::get('closed', [\App\Http\Controllers\Election\BoothController::class, 'closed'])
+            ->name('closed');
+
+        Route::middleware([
+            \App\Http\Middleware\ElectionNoCache::class,
+            \App\Http\Middleware\ElectionBoothAccess::class,
+        ])->group(function () {
+            Route::get('/', [\App\Http\Controllers\Election\BoothController::class, 'index'])->name('index');
+            Route::post('pin', [\App\Http\Controllers\Election\BoothController::class, 'pinPost'])->name('pin.post');
+            Route::post('verify', [\App\Http\Controllers\Election\BoothController::class, 'verify'])->name('verify');
+            Route::get('lembar', [\App\Http\Controllers\Election\BoothController::class, 'lembar'])->name('lembar');
+            Route::post('pilih', [\App\Http\Controllers\Election\BoothController::class, 'pilih'])->name('pilih');
+            Route::get('selesai', [\App\Http\Controllers\Election\BoothController::class, 'selesai'])->name('selesai');
+        });
+    });
+

@@ -625,6 +625,32 @@
                 </div>
                 @endif
 
+                {{-- ── PILKETOS ── --}}
+                @if(Auth::user()->role === 'superadmin')
+                <div x-data="{ open: {{ request()->is('admin/pilketos*') ? 'true' : 'false' }} }">
+                    <button @click="open = !open"
+                            class="nav-item w-full text-left flex items-center justify-between {{ request()->is('admin/pilketos*') ? 'menu-item-active' : '' }}">
+                        <div class="flex items-center">
+                            <i class="fas fa-vote-yea w-5 text-lg mr-3"></i>
+                            <span>Pilketos</span>
+                        </div>
+                        <svg class="w-4 h-4 transition-transform duration-200" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                    <div x-show="open" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" class="pl-8 space-y-1 mt-1">
+                        <a href="{{ route('admin.pilketos.periods.index') }}"
+                           class="nav-item py-2 text-sm {{ request()->routeIs('admin.pilketos.periods.index') ? 'menu-item-active' : '' }}">
+                            <i class="fas fa-list w-4 mr-2"></i><span>Daftar Periode</span>
+                        </a>
+                        <a href="{{ route('admin.pilketos.periods.create') }}"
+                           class="nav-item py-2 text-sm {{ request()->routeIs('admin.pilketos.periods.create') ? 'menu-item-active' : '' }}">
+                            <i class="fas fa-plus-circle w-4 mr-2"></i><span>Buat Periode</span>
+                        </a>
+                    </div>
+                </div>
+                @endif
+
                 {{-- ── 11. AKUN ── --}}
                 @if(Auth::user()->role === 'superadmin')
                     <a href="{{ route('admin.settings.index') }}" 
