@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  phpunit-ct.xml — PHPUnit configuration for CT module tests.
+  Uses the real MySQL database (which has CT tables migrated).
+  Run with: php artisan test tests/Feature/CtVaultFlowTest.php tests/Unit/CaseGeneratorTest.php
+  Or: php8.4 vendor/bin/phpunit -c phpunit-ct.xml
+-->
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+>
+    <testsuites>
+        <testsuite name="CT">
+            <file>tests/Unit/CaseGeneratorTest.php</file>
+            <file>tests/Feature/CtVaultFlowTest.php</file>
+            <file>tests/Feature/CtAdminTest.php</file>
+            <file>tests/Feature/CtHintLeaderboardTest.php</file>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory>app</directory>
+        </include>
+    </source>
+    <php>
+        <env name="APP_ENV" value="testing"/>
+        <env name="APP_MAINTENANCE_DRIVER" value="file"/>
+        <env name="BCRYPT_ROUNDS" value="4"/>
+        <env name="BROADCAST_CONNECTION" value="null"/>
+        <env name="CACHE_STORE" value="array"/>
+        <!-- Use real MySQL so CT tables (and existing migrations) work -->
+        <env name="DB_CONNECTION" value="mysql"/>
+        <env name="MAIL_MAILER" value="array"/>
+        <env name="QUEUE_CONNECTION" value="sync"/>
+        <env name="SESSION_DRIVER" value="array"/>
+        <env name="CT_ENABLED" value="true"/>
+        <env name="PULSE_ENABLED" value="false"/>
+        <env name="TELESCOPE_ENABLED" value="false"/>
+        <env name="NIGHTWATCH_ENABLED" value="false"/>
+    </php>
+</phpunit>
