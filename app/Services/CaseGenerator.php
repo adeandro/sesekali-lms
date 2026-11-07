@@ -67,13 +67,31 @@ class CaseGenerator
      * Throws RuntimeException if unable to find a unique code after max retries.
      *
      * @param  int|null  $existingTeamId  Exclude this team when checking uniqueness (for regeneration)
+     * @param  array|int|null  $classOrUsedPositions  CtClass ID or array of already used perpetrator positions
      */
-    public function generate(?int $existingTeamId = null): array
+    public function generate(?int $existingTeamId = null, array|int|null $classOrUsedPositions = null): array
     {
+        $usedPositions = [];
+        if (is_int($classOrUsedPositions)) {
+            $existingTeams = CtTeam::where('ct_class_id', $classOrUsedPositions)
+                ->when($existingTeamId, fn ($q) => $q->where('id', '!=', $existingTeamId))
+                ->get();
+            foreach ($existingTeams as $t) {
+                if (is_array($t->params)) {
+                    $pos = $this->getPerpetratorIndex($t->params);
+                    if ($pos !== null) {
+                        $usedPositions[] = $pos;
+                    }
+                }
+            }
+        } elseif (is_array($classOrUsedPositions)) {
+            $usedPositions = $classOrUsedPositions;
+        }
+
         $maxRetries = config('ct.max_gen_retries', 50);
 
         for ($attempt = 0; $attempt < $maxRetries; $attempt++) {
-            $params = $this->buildParams();
+            $params = $this->buildParams($usedPositions);
             $code   = $this->deriveCode($params);
             $hash   = hash_hmac('sha256', $code, config('app.key'));
 
@@ -109,11 +127,18 @@ class CaseGenerator
     }
 
     /**
-     * Render the server log lines for Stage 1 (sorted, perpetrator last).
+     * Render the server log lines for Stage 1.
+     * Uses saved $params['log_lines'] if available, otherwise generates fallback.
      * Returns array of formatted strings ready for display.
      */
     public function renderLog(array $params): array
     {
+        if (! empty($params['log_lines'])) {
+            return array_map(function ($line) {
+                return is_array($line) ? $this->formatLogLine($line) : $line;
+            }, $params['log_lines']);
+        }
+
         $lines = [];
 
         // Add the 7 noise lines
@@ -210,15 +235,20 @@ class CaseGenerator
     }
 
     /**
-     * Render Stage 3 folder file list (soal_* files + decoy files, interleaved).
+     * Render Stage 3 folder file list.
+     * Uses saved $params['folder_files'] if available, otherwise generates fallback.
      */
     public function renderFolderFiles(array $params): array
     {
+        if (! empty($params['folder_files'])) {
+            return $params['folder_files'];
+        }
+
         $subjects     = array_slice($params['subjects'], 0, $params['files_count']);
         $soalFiles    = array_map(fn ($s) => "soal_{$s}.pdf", $subjects);
         $decoyFiles   = $params['decoy_files'];
 
-        // Interleave: 2 soal, 1 decoy, repeat
+        // Interleave: 2 soal, 1 decoy, repeat (legacy fallback)
         $result = [];
         $si     = 0;  // soal index
         $di     = 0;  // decoy index
@@ -236,12 +266,58 @@ class CaseGenerator
     }
 
     /**
+     * Check if a log entry matches the perpetrator criteria:
+     * account: admin_lama, action: UNDUH, hour: 00-05 (real_time).
+     */
+    public function isPerpetratorLine(string|array $line): bool
+    {
+        if (is_array($line)) {
+            [$time, $account, $action] = $line;
+            $hour = (int) substr(trim($time), 0, 2);
+
+            return trim($account) === 'admin_lama'
+                && trim($action) === 'UNDUH'
+                && $hour >= 0 && $hour <= 5;
+        }
+
+        if (! str_contains($line, 'admin_lama') || ! str_contains($line, 'UNDUH')) {
+            return false;
+        }
+
+        $hour = (int) substr(trim($line), 0, 2);
+
+        return $hour >= 0 && $hour <= 5;
+    }
+
+    /**
+     * Get the 0-based index of the perpetrator line in the rendered log.
+     */
+    public function getPerpetratorIndex(array $params): ?int
+    {
+        $log = $this->renderLog($params);
+        foreach ($log as $idx => $line) {
+            if ($this->isPerpetratorLine($line)) {
+                return $idx;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Full key data for teacher answer sheet.
      */
     public function answerKey(array $params): array
     {
         $log           = $this->renderLog($params);
-        $perpetrator   = end($log);  // last line is always the perpetrator
+        $perpetrator   = null;
+        foreach ($log as $line) {
+            if ($this->isPerpetratorLine($line)) {
+                $perpetrator = $line;
+                break;
+            }
+        }
+        $perpetrator   = $perpetrator ?? end($log);
         $cipher        = $this->renderCipher($params);
         $folderFiles   = $this->renderFolderFiles($params);
         $soalFileCount = count(array_filter($folderFiles, fn ($f) => str_starts_with($f, 'soal_')));
@@ -250,6 +326,7 @@ class CaseGenerator
         return [
             'perpetrator_line'   => $perpetrator,
             'perpetrator_time'   => $params['real_time'],
+            'perpetrator_index'  => $this->getPerpetratorIndex($params),
             'minute'             => $params['minute'],
             'shift'              => $params['shift'],
             'n'                  => $params['n'],
@@ -277,7 +354,7 @@ class CaseGenerator
     /**
      * Build a fresh random parameter set (no uniqueness check here).
      */
-    private function buildParams(): array
+    private function buildParams(array $usedPerpetratorPositions = []): array
     {
         // real_time: hour 1–3
         $realHour   = random_int(1, 3);
@@ -327,7 +404,7 @@ class CaseGenerator
         // minute string (2-digit, zero-padded)
         $minute = sprintf('%02d', $realMinute);
 
-        return [
+        $params = [
             'real_time'       => $realTime,
             'decoy_ok_time'   => $decoyOkTime,
             'decoy_fail_time' => $decoyFailTime,
@@ -340,6 +417,67 @@ class CaseGenerator
             'decoy_files'     => $decoyFiles,
             'minute'          => $minute,
         ];
+
+        $content = $this->buildShuffledContent($params, $usedPerpetratorPositions);
+        $params['log_lines']    = $content['log_lines'];
+        $params['folder_files'] = $content['folder_files'];
+
+        return $params;
+    }
+
+    /**
+     * Build randomized log_lines and folder_files based on given parameters.
+     */
+    public function buildShuffledContent(array $params, array $usedPerpetratorPositions = []): array
+    {
+        $subject = $params['subjects'][0];
+        $perpetratorLine = [$params['real_time'], 'admin_lama', 'UNDUH', "soal_{$subject}.pdf"];
+
+        $otherEntries = [];
+        foreach ($params['noise'] as $entry) {
+            $otherEntries[] = $entry;
+        }
+        $otherEntries[] = [$params['decoy_fail_time'], 'admin_lama', 'LOGIN', 'gagal'];
+        $otherEntries[] = [$params['decoy_ok_time'],   'admin_lama', 'LOGIN', 'berhasil'];
+        $otherEntries[] = [$params['guru_dl_time'],     'guru_mtk',  'UNDUH', 'soal_latihan.pdf'];
+
+        $allPositions = range(0, 10);
+        $availablePositions = array_values(array_diff($allPositions, $usedPerpetratorPositions));
+
+        if (! empty($availablePositions)) {
+            $perpPosition = $availablePositions[array_rand($availablePositions)];
+        } else {
+            $perpPosition = random_int(0, 10);
+        }
+
+        shuffle($otherEntries);
+        array_splice($otherEntries, $perpPosition, 0, [$perpetratorLine]);
+
+        $logLines = array_map([$this, 'formatLogLine'], $otherEntries);
+
+        // Stage 3: fully randomize folder files (soal_* and decoy files)
+        $subjects    = array_slice($params['subjects'], 0, $params['files_count']);
+        $soalFiles   = array_map(fn ($s) => "soal_{$s}.pdf", $subjects);
+        $decoyFiles  = $params['decoy_files'];
+        $folderFiles = array_merge($soalFiles, $decoyFiles);
+        shuffle($folderFiles);
+
+        return [
+            'log_lines'    => $logLines,
+            'folder_files' => $folderFiles,
+        ];
+    }
+
+    /**
+     * Rebuild log_lines and folder_files for existing params without altering other parameters.
+     */
+    public function reshuffleParams(array $params, array $usedPerpetratorPositions = []): array
+    {
+        $content = $this->buildShuffledContent($params, $usedPerpetratorPositions);
+        $params['log_lines']    = $content['log_lines'];
+        $params['folder_files'] = $content['folder_files'];
+
+        return $params;
     }
 
     /**
@@ -409,8 +547,7 @@ class CaseGenerator
 
         return match ($level) {
             1 => "Petunjuk 1: Perhatikan entri log yang paling mencurigakan — "
-               . "baris terakhir bukan dalam urutan waktu normal. "
-               . "Fokus pada akun yang melakukan UNDUH file soal.",
+               . "cari aktivitas akun admin_lama yang melakukan aksi UNDUH file soal di luar jam kerja normal.",
 
             2 => "Petunjuk 2: Jam unduhan yang mencurigakan terjadi antara jam 01.00 dan 03.59. "
                . "Dua digit menit dari jam tersebut adalah dua digit pertama kode (MM).",

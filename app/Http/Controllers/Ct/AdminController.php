@@ -137,22 +137,13 @@ class AdminController extends Controller
 
         for ($i = 1; $i <= $count; $i++) {
             try {
-                $params   = $generator->generate();
-                $code     = $generator->deriveCode($params);
-                $codeHash = hash_hmac('sha256', $code, config('app.key'));
-
-                // Ensure uniqueness
-                if (CtTeam::where('code_hash', $codeHash)->exists()) {
-                    // Retry once
-                    $params   = $generator->generate();
-                    $code     = $generator->deriveCode($params);
-                    $codeHash = hash_hmac('sha256', $code, config('app.key'));
-                }
+                $params   = $generator->generate(null, $ctClass->id);
+                $codeHash = $params['code_hash'];
 
                 $ctClass->teams()->create([
-                    'number'     => $i,
-                    'params'     => $params,
-                    'code_hash'  => $codeHash,
+                    'number'      => $i,
+                    'params'      => $params,
+                    'code_hash'   => $codeHash,
                     'wrong_count' => 0,
                     'hint_count'  => 0,
                 ]);

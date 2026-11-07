@@ -82,7 +82,7 @@ class CtGenerate extends Command
 
             DB::beginTransaction();
             try {
-                $params = $this->generator->generate($existing?->id);
+                $params = $this->generator->generate($existing?->id, $class->id);
                 $data   = [
                     'ct_class_id' => $class->id,
                     'number'      => $number,

@@ -372,4 +372,43 @@ class CtAdminTest extends TestCase
             ])
             ->assertSessionHasErrors('names');
     }
+
+    // ── 11. Artisan ct:reshuffle ─────────────────────────────────────────────
+
+    /** @test */
+    public function artisan_reshuffle_updates_unopened_teams_and_skips_opened(): void
+    {
+        // ctTeam is unopened
+        $codeBefore = $this->gen->deriveCode($this->ctTeam->params);
+
+        // Create an opened team in the same class
+        $openedParams = $this->gen->generate();
+        $openedTeam = CtTeam::create([
+            'ct_class_id'    => $this->ctClass->id,
+            'number'         => 2,
+            'params'         => $openedParams,
+            'code_hash'      => $openedParams['code_hash'],
+            'opened_at'      => now(),
+            'member_names'   => ['Satu', 'Dua', 'Tiga', 'Empat'],
+            'certificate_no' => 'CT-2611-OPENED01',
+        ]);
+
+        $this->artisan('ct:reshuffle', ['kelas' => $this->ctClass->name])
+            ->expectsOutputToContain('Berhasil me-reshuffle 1 kelompok')
+            ->expectsOutputToContain('Dilewati')
+            ->assertSuccessful();
+
+        $this->ctTeam->refresh();
+        $this->assertArrayHasKey('log_lines', $this->ctTeam->params);
+        $this->assertArrayHasKey('folder_files', $this->ctTeam->params);
+
+        // Code and hash unchanged
+        $codeAfter = $this->gen->deriveCode($this->ctTeam->params);
+        $this->assertSame($codeBefore, $codeAfter);
+        $this->assertTrue($this->ctTeam->verifyCode($codeBefore));
+
+        // Opened team params untouched
+        $openedTeam->refresh();
+        $this->assertEquals($openedParams, $openedTeam->params);
+    }
 }

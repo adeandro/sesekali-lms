@@ -4,10 +4,13 @@
 <meta charset="UTF-8">
 <title>Lembar Kasus CT — Tim {{ $ctTeam->number }}</title>
 <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    @page {
+        size: A4 portrait;
+        margin: 10mm 14mm 10mm 14mm;
+    }
     body {
         font-family: 'DejaVu Sans', sans-serif;
-        font-size: 10pt;
+        font-size: 9.5pt;
         color: #1a1a1a;
         word-wrap: break-word;
         overflow-wrap: break-word;
@@ -15,8 +18,6 @@
 
     /* ── Page layout ── */
     .page {
-        width: 100%;
-        padding: 1cm 1.2cm;
         page-break-after: always;
     }
     .page:last-child { page-break-after: auto; }
@@ -24,8 +25,8 @@
     /* ── Header ── */
     .page-header {
         border-bottom: 2pt solid #1e3a5f;
-        padding-bottom: 8pt;
-        margin-bottom: 12pt;
+        padding-bottom: 6pt;
+        margin-bottom: 8pt;
     }
     .page-header .label {
         font-size: 7pt;
@@ -35,7 +36,7 @@
         letter-spacing: 1pt;
     }
     .page-header h1 {
-        font-size: 15pt;
+        font-size: 14pt;
         font-weight: bold;
         color: #1e3a5f;
         margin-top: 2pt;
@@ -43,41 +44,41 @@
     .page-header .meta {
         font-size: 8pt;
         color: #6b7280;
-        margin-top: 3pt;
+        margin-top: 2pt;
     }
     .team-badge {
         display: inline-block;
         background: #1e3a5f;
         color: white;
-        font-size: 9pt;
+        font-size: 8.5pt;
         font-weight: bold;
-        padding: 2pt 10pt;
+        padding: 1.5pt 8pt;
         border-radius: 20pt;
     }
 
     /* ── Section ── */
-    .section { margin-bottom: 14pt; }
+    .section { margin-bottom: 8pt; }
     .section-title {
-        font-size: 9pt;
+        font-size: 8.5pt;
         font-weight: bold;
         text-transform: uppercase;
         letter-spacing: 1pt;
         color: #1e3a5f;
         border-left: 3pt solid #1e3a5f;
-        padding-left: 6pt;
-        margin-bottom: 7pt;
+        padding-left: 5pt;
+        margin-bottom: 5pt;
     }
     .stage-title {
-        font-size: 11pt;
+        font-size: 10pt;
         font-weight: bold;
         color: #1e3a5f;
-        margin-bottom: 4pt;
+        margin-bottom: 3pt;
     }
     .instruction {
-        font-size: 9pt;
+        font-size: 8.5pt;
         color: #374151;
-        line-height: 1.5;
-        margin-bottom: 6pt;
+        line-height: 1.45;
+        margin-bottom: 5pt;
         word-wrap: break-word;
         overflow-wrap: break-word;
     }
@@ -87,21 +88,21 @@
         width: 100%;
         border-collapse: collapse;
         font-family: 'DejaVu Sans Mono', monospace;
-        font-size: 8.5pt;
+        font-size: 8pt;
         table-layout: fixed;
     }
     .log-table th {
         background: #f3f4f6;
         text-align: left;
-        padding: 4pt 6pt;
-        font-size: 7.5pt;
+        padding: 3pt 5pt;
+        font-size: 7pt;
         color: #6b7280;
         font-family: 'DejaVu Sans', sans-serif;
         font-weight: bold;
         border-bottom: 1pt solid #e5e7eb;
     }
     .log-table td {
-        padding: 3pt 6pt;
+        padding: 2.5pt 5pt;
         border-bottom: 0.5pt dotted #e5e7eb;
         vertical-align: top;
         word-wrap: break-word;
@@ -109,29 +110,28 @@
     }
     .log-table tr.last-row td {
         border-bottom: 0;
-        background: #fff7ed;
     }
 
     /* ── Cipher examples ── */
     .cipher-table {
         width: 100%;
         border-collapse: collapse;
-        font-size: 9pt;
+        font-size: 8.5pt;
     }
     .cipher-table td {
-        padding: 2.5pt 8pt;
+        padding: 2pt 6pt;
         border: 0.5pt solid #e5e7eb;
     }
     .cipher-table .plain { font-family: 'DejaVu Sans Mono', monospace; color: #374151; }
-    .cipher-table .arrow { text-align: center; color: #9ca3af; width: 20pt; }
+    .cipher-table .arrow { text-align: center; color: #9ca3af; width: 16pt; }
     .cipher-table .enc { font-family: 'DejaVu Sans Mono', monospace; font-weight: bold; color: #1e3a5f; }
 
     /* ── Folder / file list ── */
     .file-list { list-style: none; }
     .file-list li {
         font-family: 'DejaVu Sans Mono', monospace;
-        font-size: 9pt;
-        padding: 2pt 6pt;
+        font-size: 8.5pt;
+        padding: 1.5pt 5pt;
         border-bottom: 0.5pt dotted #e5e7eb;
     }
     .file-list li:nth-child(even) { background: #f9fafb; }
@@ -140,41 +140,41 @@
     .answer-box {
         display: inline-block;
         border: 1pt solid #d1d5db;
-        min-width: 60pt;
-        padding: 4pt 8pt;
-        font-size: 9pt;
+        min-width: 50pt;
+        padding: 3pt 6pt;
+        font-size: 8.5pt;
         color: #9ca3af;
         font-style: italic;
-        margin-top: 4pt;
+        margin-top: 3pt;
     }
 
     /* ── Code box ── */
     .code-box {
         border: 2pt solid #1e3a5f;
         text-align: center;
-        padding: 10pt 20pt;
-        margin-top: 8pt;
+        padding: 8pt 16pt;
+        margin-top: 6pt;
         border-radius: 4pt;
     }
     .code-box .code-label {
-        font-size: 8pt;
+        font-size: 7.5pt;
         font-weight: bold;
         color: #6b7280;
         text-transform: uppercase;
         letter-spacing: 1pt;
-        margin-bottom: 4pt;
+        margin-bottom: 3pt;
     }
     .code-box .code-value {
         font-family: 'DejaVu Sans Mono', monospace;
-        font-size: 32pt;
+        font-size: 28pt;
         font-weight: bold;
-        letter-spacing: 8pt;
+        letter-spacing: 6pt;
         color: #1e3a5f;
     }
     .code-box .code-hint {
         font-size: 7pt;
         color: #9ca3af;
-        margin-top: 4pt;
+        margin-top: 3pt;
     }
 
     /* ── Info box ── */
@@ -182,18 +182,18 @@
         background: #eff6ff;
         border: 0.5pt solid #bfdbfe;
         border-radius: 4pt;
-        padding: 8pt 10pt;
-        font-size: 8.5pt;
+        padding: 6pt 8pt;
+        font-size: 8pt;
         color: #1e40af;
-        margin-bottom: 10pt;
+        margin-bottom: 7pt;
         word-wrap: break-word;
         overflow-wrap: break-word;
     }
 
     /* ── Footer ── */
     .page-footer {
-        margin-top: 16pt;
-        padding-top: 6pt;
+        margin-top: 10pt;
+        padding-top: 4pt;
         border-top: 0.5pt solid #e5e7eb;
         font-size: 7pt;
         color: #9ca3af;
@@ -202,15 +202,15 @@
 
     /* ── Two column via table (dompdf-safe) ── */
     .two-col { display: table; width: 100%; table-layout: fixed; }
-    .col-left { display: table-cell; width: 58%; padding-right: 10pt; vertical-align: top; word-wrap: break-word; overflow-wrap: break-word; }
-    .col-right { display: table-cell; width: 42%; vertical-align: top; word-wrap: break-word; overflow-wrap: break-word; }
+    .col-left { display: table-cell; width: 54%; padding-right: 12pt; vertical-align: top; word-wrap: break-word; overflow-wrap: break-word; }
+    .col-right { display: table-cell; width: 46%; vertical-align: top; word-wrap: break-word; overflow-wrap: break-word; }
 
-    .member-lines { margin-top: 6pt; }
+    .member-lines { margin-top: 4pt; }
     .member-line {
         border-bottom: 0.5pt solid #d1d5db;
-        margin-bottom: 12pt;
+        margin-bottom: 8pt;
         padding-bottom: 2pt;
-        font-size: 9pt;
+        font-size: 8.5pt;
         color: #9ca3af;
     }
     .member-line::before {
@@ -218,7 +218,7 @@
         font-size: 7pt;
         color: #d1d5db;
         display: block;
-        margin-bottom: 2pt;
+        margin-bottom: 1pt;
     }
 </style>
 </head>
@@ -270,9 +270,7 @@
     <div class="section">
         <div class="stage-title">🔎 Tahap 1 — Analisis Log Server</div>
         <div class="instruction">
-            Perhatikan log aktivitas server di bawah. Temukan <strong>satu entri mencurigakan</strong>:
-            akun lama yang mengunduh soal ujian di luar jam kebiasaan (tengah malam / subuh).
-            Catat <strong>2 digit menit</strong> dari jam unduhan tersebut.
+            Server sekolah mencatat aktivitas dari beberapa sumber, jadi urutan baris tidak selalu menurut jam. Format: jam | akun | aksi | berkas atau status. Sebagian besar baris hanyalah noise. Temukan satu baris milik pelaku.
         </div>
 
         {{-- Log table --}}
@@ -366,7 +364,7 @@
                 </div>
 
                 <div style="margin-top:8pt;">
-                    <strong style="font-size:9pt">Jawaban Tahap 2 — Angka dalam pesan asli:</strong>
+                    <strong style="font-size:8.5pt; display:block; margin-bottom:3pt">Jawaban Tahap 2 — Angka dalam pesan asli:</strong>
                     <div class="answer-box" style="min-width:40pt">__</div>
                     <span style="font-size:8pt; color:#6b7280; margin-left:8pt">(sebut <strong>N</strong>)</span>
                 </div>
@@ -390,7 +388,7 @@
                 </ul>
 
                 <div style="margin-top:8pt;">
-                    <strong style="font-size:9pt">Jawaban Tahap 3 — Jumlah file soal:</strong>
+                    <strong style="font-size:8.5pt; display:block; margin-bottom:3pt">Jawaban Tahap 3 — Jumlah file soal:</strong>
                     <div class="answer-box" style="min-width:30pt">__</div>
                     <span style="font-size:8pt; color:#6b7280; margin-left:8pt">(sebut <strong>F</strong>)</span>
                 </div>

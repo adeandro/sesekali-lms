@@ -212,8 +212,10 @@ class CaseGeneratorTest extends TestCase
             $params = $this->gen->generate();
             $log    = $this->gen->renderLog($params);
 
-            $lastLine = end($log);
-            $timeStr  = substr($lastLine, 0, 5);
+            $perpIndex = $this->gen->getPerpetratorIndex($params);
+            $this->assertNotNull($perpIndex);
+            $perpLine = $log[$perpIndex];
+            $timeStr  = substr($perpLine, 0, 5);
             $minute   = substr($timeStr, 3, 2);
 
             $this->assertSame($params['minute'], $minute,
@@ -379,6 +381,130 @@ class CaseGeneratorTest extends TestCase
         // Routes are registered only if ct.enabled is true at service provider boot.
         // We can verify the config works correctly here.
         $this->assertFalse(config('ct.enabled'));
+    }
+
+    // ── 10. Shuffled order & Reshuffle rules ──────────────────────────
+
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function perpetrator_position_varies_over_200_teams(): void
+    {
+        $positions = [];
+        for ($i = 0; $i < 200; $i++) {
+            $params = $this->gen->generate();
+            $idx    = $this->gen->getPerpetratorIndex($params);
+            $this->assertNotNull($idx);
+            $this->assertGreaterThanOrEqual(0, $idx);
+            $this->assertLessThanOrEqual(10, $idx);
+            $positions[] = $idx;
+        }
+
+        // Not all should be at the last position (index 10)
+        $lastCount = count(array_filter($positions, fn ($p) => $p === 10));
+        $this->assertLessThan(200, $lastCount, "Perpetrator line must not always be at the last position");
+
+        // Should see substantial diversity across the 11 possible positions (0..10)
+        $uniqueCount = count(array_unique($positions));
+        $this->assertGreaterThanOrEqual(8, $uniqueCount, "Expected at least 8 unique positions across 200 teams, got {$uniqueCount}");
+
+        // First position (0) should also be possible
+        $this->assertContains(0, $positions, "Position 0 (very first line) should be possible for perpetrator");
+    }
+
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function perpetrator_positions_differ_within_same_class_when_possible(): void
+    {
+        // For 11 teams in a single class, all 11 positions (0..10) should be uniquely assigned
+        $usedPositions = [];
+        $classPositions = [];
+
+        for ($i = 0; $i < 11; $i++) {
+            $params = $this->gen->generate(null, $usedPositions);
+            $idx    = $this->gen->getPerpetratorIndex($params);
+            $this->assertNotNull($idx);
+            $this->assertNotContains($idx, $usedPositions, "Team {$i} picked already-used position {$idx}");
+            $usedPositions[]  = $idx;
+            $classPositions[] = $idx;
+        }
+
+        $this->assertCount(11, array_unique($classPositions));
+    }
+
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function rendering_twice_produces_identical_order(): void
+    {
+        for ($i = 0; $i < 10; $i++) {
+            $params = $this->gen->generate();
+
+            $log1 = $this->gen->renderLog($params);
+            $log2 = $this->gen->renderLog($params);
+            $this->assertSame($log1, $log2, "renderLog must return identical line ordering across multiple calls");
+
+            $files1 = $this->gen->renderFolderFiles($params);
+            $files2 = $this->gen->renderFolderFiles($params);
+            $this->assertSame($files1, $files2, "renderFolderFiles must return identical order across multiple calls");
+        }
+    }
+
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function exactly_one_log_line_matches_perpetrator_criteria(): void
+    {
+        for ($i = 0; $i < 50; $i++) {
+            $params = $this->gen->generate();
+            $log    = $this->gen->renderLog($params);
+
+            $matches = array_filter($log, function ($line) {
+                return $this->isPerpetratorLine($line);
+            });
+
+            $this->assertCount(
+                1,
+                $matches,
+                "Exactly one line in log must satisfy (admin_lama, UNDUH, jam 00-05).\nLog:\n" . implode("\n", $log)
+            );
+        }
+    }
+
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function soal_file_count_strictly_equals_files_count(): void
+    {
+        for ($i = 0; $i < 50; $i++) {
+            $params      = $this->gen->generate();
+            $folderFiles = $this->gen->renderFolderFiles($params);
+
+            $soalFiles = array_filter($folderFiles, fn ($f) => str_starts_with($f, 'soal_'));
+            $this->assertSame(
+                $params['files_count'],
+                count($soalFiles),
+                "Number of soal_* files must strictly equal files_count ({$params['files_count']})"
+            );
+        }
+    }
+
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function code_does_not_change_after_reshuffle(): void
+    {
+        for ($i = 0; $i < 30; $i++) {
+            $paramsOriginal = $this->gen->generate();
+            $codeOriginal   = $this->gen->deriveCode($paramsOriginal);
+
+            $paramsReshuffled = $this->gen->reshuffleParams($paramsOriginal);
+            $codeReshuffled   = $this->gen->deriveCode($paramsReshuffled);
+
+            $this->assertSame($codeOriginal, $codeReshuffled, "Derived code must not change after reshuffle");
+            $this->assertSame($paramsOriginal['code_hash'], $paramsReshuffled['code_hash']);
+            $this->assertSame($paramsOriginal['minute'], $paramsReshuffled['minute']);
+            $this->assertSame($paramsOriginal['n'], $paramsReshuffled['n']);
+            $this->assertSame($paramsOriginal['files_count'], $paramsReshuffled['files_count']);
+
+            // log_lines and folder_files are now populated
+            $this->assertArrayHasKey('log_lines', $paramsReshuffled);
+            $this->assertArrayHasKey('folder_files', $paramsReshuffled);
+            $this->assertCount(11, $paramsReshuffled['log_lines']);
+            $this->assertCount(
+                $paramsReshuffled['files_count'] + count($paramsReshuffled['decoy_files']),
+                $paramsReshuffled['folder_files']
+            );
+        }
     }
 
     // ── Helpers ────────────────────────────────────────────────────────
