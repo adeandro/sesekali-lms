@@ -20,14 +20,18 @@
 
 Alur bilik suara publik (`/pilketos` tanpa parameter ID pada URL):
 1. **Inisialisasi Bilik**: Panitia memasukkan **PIN BILIK** di komputer bilik (dilakukan sekali di awal sesi komputer, bukan per siswa).
-2. **Pengecekan Fisik**: Panitia mengecek kertas kredensial siswa secara fisik (kertas memuat **NIS + TOKEN**).
-3. **Login Pemilih**: Siswa mengetikkan **NIS + TOKEN** dalam satu form login di bilik.
-4. **Lembar Suara**: Siswa melihat daftar pasangan calon (nomor, foto, nama ketua & wakil beserta kelas, visi, misi). Seluruh pemilih wajib menentukan pilihan paslon.
-5. **Konfirmasi & Kirim**: Siswa memilih, mengonfirmasi pilihan pada modal, lalu suara tersimpan. Layar menampilkan ucapan terima kasih dan otomatis kembali ke halaman awal dalam 6 detik.
-6. **Koleksi Kertas**: Kertas token diserahkan kembali kepada panitia untuk dihitung dalam rekonsiliasi akhir.
+2. **Pengecekan Fisik**: Panitia mengecek kartu pemilih siswa secara fisik (kartu memuat nama, NIS/ID, kelas, dan **TOKEN**).
+3. **Login Pemilih (Hanya Token)**: Siswa hanya mengetikkan **TOKEN** pada form di bilik (autofocus, uppercase, format `ABCD-EFGH`). Form tidak mengirim/menerima NIS.
+4. **Layar Konfirmasi Identitas**: Bilik menampilkan nama pemilih (ukuran besar), kelas, dan NIS dengan instruksi *"Cocokkan dengan kartu pemilih."*.
+   - Jika bukan miliknya: Siswa klik tombol merah **Bukan, batalkan** &rarr; sesi voter dibatalkan, form kembali ke awal, token tetap aktif.
+   - Jika sesuai: Siswa klik tombol hijau **Ya, sesuai kartu** &rarr; sesi voter berstatus `confirmed=true` dan diarahkan ke lembar suara.
+5. **Lembar Suara**: Siswa melihat daftar pasangan calon (nomor, foto, nama ketua & wakil beserta kelas, visi, misi). Seluruh pemilih wajib menentukan pilihan paslon.
+6. **Konfirmasi Pilihan Paslon & Kirim**: Siswa memilih, mengonfirmasi pilihan pada modal, lalu suara tersimpan. Layar menampilkan ucapan terima kasih dan otomatis kembali ke halaman awal dalam 6 detik.
+7. **Koleksi Kertas**: Kertas token diserahkan kembali kepada panitia untuk dihitung dalam rekonsiliasi akhir.
 
 ### Prinsip Keamanan & Desain Inti:
-- **TIDAK ADA PIN PER PEMILIH**. Satu-satunya PIN adalah PIN bilik milik panitia. Kartu fisik pemilih HANYA memuat NIS dan TOKEN (format `ABCD-EFGH`).
+- **TIDAK ADA PIN PER PEMILIH & TIDAK ADA INPUT NIS DI BILIK**. Satu-satunya PIN adalah PIN bilik milik panitia. Di bilik siswa hanya memasukkan Token.
+- **Konfirmasi Identitas Sebelum Memilih**: Mencegah suara tertukar bila kartu tertukar antar-siswa. Token tidak pernah ditampilkan di layar konfirmasi.
 - **Hanya 1 Periode Aktif**: Hanya SATU periode yang boleh berstatus `ready` atau `open` pada satu waktu di sistem.
 - **Buka/Tutup Manual**: Buka dan tutup pemilihan dilakukan sepenuhnya secara manual oleh admin/panitia melalui tombol transisi. Tidak ada penutupan otomatis berbasis jam.
 - **Kerahasiaan Total**: Tabel suara tidak memuat kolom identitas pemilih, tidak memiliki relasi balik ke siswa, dan tidak ada log per suara yang dicatat.
@@ -44,7 +48,7 @@ Alur bilik suara publik (`/pilketos` tanpa parameter ID pada URL):
 | **Siklus Token** | Token baru di-generate saat cetak kartu kelas/voter. Hash baru di-commit ke DB **SETELAH** PDF berhasil dibuat. Cetak ulang otomatis menaikkan `token_version` dan menghanguskan token lama. |
 | **PIN Bilik Suara** | Disimpan dengan `Hash::make()`, diverifikasi via `Hash::check()`. Pergantian PIN atau tombol "Cabut Sesi" menaikkan `booth_session_version` yang otomatis mengeluarkan seluruh komputer bilik. |
 | **Sesi Pemilih di Bilik** | Dibatasi maksimal **3 menit**. Setelah 3 menit tanpa submit, sesi kadaluwarsa dan otomatis kembali ke halaman login pemilih. |
-| **Anti Brute-Force** | PIN bilik: 10x gagal / 5 menit per IP. NIS/Token: 5x gagal / 5 menit per NIS + 60x gagal / 10 menit per IP. Pesan kesalahan selalu generik: *"NIS atau token tidak sesuai."* |
+| **Anti Brute-Force** | PIN bilik: 10x gagal / 5 menit per IP. Token bilik: 20x gagal / 5 menit per $boothKey (hash sesi bilik) + 100x gagal / 10 menit per IP. Pesan kesalahan selalu generik: *"Token tidak sesuai."* Terkunci: *"Terlalu banyak percobaan. Hubungi panitia."* Log audit `booth.verify_fail` dan `booth.verify_locked` dicatat TANPA token, TANPA nis, TANPA nama. |
 | **Privasi Audit Log** | **TIDAK PERNAH** mencatat log saat suara dikirim (tidak ada `vote.cast` atau `vote.submitted`). Audit log hanya mencatat aksi administratif (buat periode, ganti status, cetak kartu, ganti PIN). |
 | **Cache & SEO** | Seluruh rute bilik suara mengirim header: `Cache-Control: no-store, no-cache, must-revalidate`, `Pragma: no-cache`, `Expires: 0`, dan `X-Robots-Tag: noindex`. |
 
@@ -110,6 +114,7 @@ has_voted               BOOLEAN DEFAULT FALSE
 voted_at                TIMESTAMP NULL                 -- dibulatkan ke awal jam (startOfHour)
 
 UNIQUE (period_id, nis)
+UNIQUE (period_id, token_hash)
 INDEX (period_id, class_id)
 INDEX (period_id, has_voted)
 ```
@@ -145,15 +150,19 @@ created_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 2. **`issueTokens(Collection $voters)` & `commitTokens(array $issued)`**:
    - Plaintext token disimpan HANYA dalam memori.
    - Voter yang sudah `has_voted = true` tidak dapat diberi token baru.
+   - Memastikan hash tiap token unik dalam periode (cek terhadap DB periode itu kecuali voter yang sama, serta batch saat ini). Jika bentrok, regenerate maksimal 10x lalu throw `ElectionException`.
    - Hash token di-commit ke database dalam satu DB transaction **SETELAH** output PDF berhasil digenerate. Jika pembuatan PDF gagal, token di DB tidak berubah.
 3. **`printVoterCards(ElectionPeriod $period, Collection $voters)`**:
-   - Merender PDF kartu pemilih (maksimal 1 kelas per file, 10 kartu per halaman, tabel 2x5, font DejaVu Sans).
-   - Setiap kartu berisi: Nama Sekolah (`Setting::pluck`), Judul Periode, Nama Siswa, NIS, Kelas, Token (`ABCD-EFGH`), dan instruksi kerahasiaan.
-4. **`verifyCredentials(ElectionPeriod $period, string $nis, string $rawToken, string $ip)`**:
-   - Normalisasi token (uppercase, strip karakter non-alfanumerik).
-   - Validasi rate limit (5x/5m per NIS, 60x/10m per IP).
-   - Menggunakan `hash_equals` untuk perbandingan konstan.
-   - Jika kredensial sesuai tetapi pemilih sudah berstatus memilih (`has_voted = true`), melempar `ElectionException('Anda sudah menggunakan hak pilih.')`.
+   - Merender PDF kartu pemilih (maksimal 1 kelas per file, 24 kartu per halaman A4, tabel 3x8, font DejaVu Sans).
+   - Setiap kartu berisi: Nama Sekolah (`Setting::pluck`), Judul Periode, Nama Siswa, NIS, Kelas, Token (`ABCD-EFGH`), dan instruksi: *"Masukkan TOKEN ini di bilik. Rahasia - sekali pakai - serahkan ke panitia."*.
+4. **`verifyToken(ElectionPeriod $period, string $rawToken, string $boothKey, string $ip)`**:
+   - Normalisasi token (uppercase, strip karakter non-alfanumerik); panjang wajib 8 karakter.
+   - Validasi rate limit (20x/5m per $boothKey, 100x/10m per IP). Terkunci &rarr; throw `ElectionException('Terlalu banyak percobaan. Hubungi panitia.')` + log `booth.verify_locked` (tanpa token).
+   - Pencarian voter langsung berdasarkan `period_id` + `token_hash = hashToken(norm)`.
+   - Jika token tidak ditemukan / null &rarr; hit rate limiter &rarr; log `booth.verify_fail` tanpa token/nis/nama &rarr; throw `ElectionException('Token tidak sesuai.')`.
+   - Jika sudah memilih (`has_voted = true`) &rarr; throw `ElectionException('Kartu ini sudah digunakan untuk memilih.')`.
+   - Jika siswa tidak aktif &rarr; throw `ElectionException('Siswa tidak aktif.')`.
+   - Sukses &rarr; `RateLimiter::clear($boothLimiterKey)` dan return voter.
 5. **`castVote(ElectionPeriod $period, int $voterId, ?int $candidateId)`**:
    - Menggunakan `DB::transaction()` dengan `lockForUpdate()` pada record pemilih dan periode.
    - Memastikan periode masih berstatus `open` dan voter belum pernah memilih.
@@ -201,9 +210,12 @@ created_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 - `GET    /periods/{period}/results/export` &rarr; `ElectionResultController@exportExcel` (hanya `closed`)
 
 ### Bilik Suara Publik (`prefix: pilketos`, middleware: `ElectionNoCache`, `ElectionBoothAccess`)
-- `GET    /` &rarr; `BoothController@index` (Form PIN bilik atau Form NIS+Token)
+- `GET    /` &rarr; `BoothController@index` (Form PIN bilik atau Form Token)
 - `POST   /pin` &rarr; `BoothController@pinPost` (Buka kunci komputer bilik)
-- `POST   /verify` &rarr; `BoothController@verify` (Verifikasi NIS + Token pemilih)
+- `POST   /verify` &rarr; `BoothController@verify` (Verifikasi Token pemilih)
+- `GET    /konfirmasi` &rarr; `BoothController@confirm` (`election.confirm` - Tampilan konfirmasi identitas)
+- `POST   /konfirmasi` &rarr; `BoothController@confirm` (`election.confirm` - Konfirmasi Ya, sesuai kartu)
+- `POST   /batal` &rarr; `BoothController@cancel` (`election.cancel` - Batalkan konfirmasi & reset sesi voter)
 - `GET    /lembar` &rarr; `BoothController@lembar` (Tampilan kartu suara digital)
 - `POST   /pilih` &rarr; `BoothController@pilih` (Kirim pilihan & rekam suara)
 - `GET    /selesai` &rarr; `BoothController@selesai` (Terima kasih & auto-redirect 6s)
@@ -214,13 +226,15 @@ created_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ## BAGIAN 7 — CHECKLIST IMPLEMENTASI & HASIL PENGUJIAN
 
 - [x] Skema database 5 tabel direvisi dan dimigrasikan ulang secara bersih.
+- [x] Unique index `(period_id, token_hash)` ditambahkan pada tabel `election_voters`.
 - [x] Model `ElectionPeriod`, `ElectionCandidate`, `ElectionVoter`, `ElectionVote` disesuaikan.
-- [x] `ElectionService` mengimplementasikan token in-memory, cetak kartu kelas/voter, verifikasi kredensial, rekonsiliasi, dan tally hanya saat closed.
+- [x] `ElectionService` mengimplementasikan token in-memory, cetak kartu kelas/voter, verifikasi kredensial token-only, rekonsiliasi, dan tally hanya saat closed.
 - [x] Middleware `EnsureElectionManager` dibatasi eksklusif untuk superadmin (`role === 'superadmin'`).
 - [x] Sidebar navigation hanya muncul untuk superadmin.
-- [x] Bilik suara menggunakan URL publik tunggal `/pilketos` dengan sesi bilik berbasis PIN dan sesi voter 3 menit.
+- [x] Bilik suara menggunakan URL publik tunggal `/pilketos` dengan sesi bilik berbasis PIN dan verifikasi token tunggal.
+- [x] Layar konfirmasi identitas `/pilketos/konfirmasi` memastikan nama dan kartu sesuai sebelum masuk lembar suara.
 - [x] Paslon mendukung pasangan calon Ketua + Wakil Ketua dengan pencarian live siswa aktif.
-- [x] Kartu PDF memuat NIS dan Token tanpa PIN pemilih (10 kartu per halaman A4, tabel 2x5).
+- [x] Kartu PDF memuat NIS dan Token tanpa PIN pemilih (24 kartu per halaman A4, tabel 3x8).
 - [x] Halaman hasil memblokir akses saat pemilihan belum ditutup, memuat rekonsiliasi suara, dan opsi ekspor Excel.
 - [x] Seluruh file PHP lolos `php -l` dengan 0 syntax error.
 
@@ -234,6 +248,7 @@ created_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 | 2 | Format Token | `ABCD-EFGH` | Diinput dengan otomatis menambahkan tanda strip pemisah via Alpine.js di halaman bilik; normalisasi di server membuang karakter strip sebelum hashing HMAC-SHA256. |
 | 3 | Akses Hasil | Hanya saat `closed` | Dicek di level controller `ElectionPeriodController@results` (`abort(403)` jika bukan closed), level service `ElectionService::tally()`, dan rute ekspor Excel `ElectionResultController@exportExcel`. |
 | 4 | Kerahasiaan Suara | Tanpa log per suara | Dihapus seluruh event/log yang berpotensi melacak waktu persis pengiriman suara dengan identitas pemilih. `voted_at` pada pemilih dibulatkan ke awal jam (`startOfHour()`). |
+| 5 | Login Bilik Cukup Token | Input Bilik: Token Saja | Menghapus input NIS di bilik dan menambahkan layar konfirmasi identitas (`/pilketos/konfirmasi`) agar alur siswa lebih cepat, minim kesalahan ketik NIS, namun tetap aman dan terverifikasi secara visual terhadap kartu fisik. |
 
 ---
 

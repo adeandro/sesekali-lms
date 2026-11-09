@@ -35,7 +35,7 @@ class BoothController extends Controller
 
         // Jika sesi bilik belum valid, tampilkan form PIN bilik
         if (! $this->hasValidBoothSession($request, $period)) {
-            $request->session()->forget(['booth_voter_id', 'booth_period_id']);
+            $this->clearVoterSession($request);
             return view('election.booth.index', [
                 'period'    => $period,
                 'step'      => 'pin',
@@ -43,7 +43,7 @@ class BoothController extends Controller
             ]);
         }
 
-        // Sesi bilik valid — tampilkan form NIS + token
+        // Sesi bilik valid — tampilkan form token
         return view('election.booth.index', [
             'period'   => $period,
             'step'     => 'verify',
@@ -83,7 +83,7 @@ class BoothController extends Controller
         return redirect()->route('election.index');
     }
 
-    // ── POST /pilketos/verify — verifikasi NIS + token ───────────────────────
+    // ── POST /pilketos/verify — verifikasi token ─────────────────────────────
 
     public function verify(Request $request)
     {
@@ -95,30 +95,77 @@ class BoothController extends Controller
         }
 
         $request->validate([
-            'nis'   => 'required|string|max:30',
             'token' => 'required|string|max:20',
         ]);
 
+        $boothKey = hash('sha256', $request->session()->getId());
+
         try {
-            $voter = $this->service->verifyCredentials(
+            $voter = $this->service->verifyToken(
                 $period,
-                $request->nis,
                 $request->token,
+                $boothKey,
                 $request->ip()
             );
         } catch (ElectionException $e) {
             return back()->with('error', $e->getMessage());
         }
 
-        if (! $voter) {
-            return back()->with('error', 'NIS atau token tidak sesuai.');
-        }
-
-        // Simpan voter ID + waktu kadaluwarsa (3 menit)
+        // Simpan sesi voter: [voter_id, period_id, confirmed=false, expires_at=now+3 menit]
         $request->session()->put('booth_voter_id', $voter->id);
+        $request->session()->put('booth_voter_period_id', $period->id);
+        $request->session()->put('booth_voter_confirmed', false);
         $request->session()->put('booth_voter_expires', now()->addMinutes(3)->timestamp);
 
-        return redirect()->route('election.lembar');
+        return redirect()->route('election.confirm');
+    }
+
+    // ── GET/POST /pilketos/konfirmasi — layar konfirmasi pemilih ─────────────
+
+    public function confirm(Request $request)
+    {
+        $period = $this->period($request);
+
+        if (! $this->hasValidBoothSession($request, $period)) {
+            $this->clearVoterSession($request);
+            return redirect()->route('election.index');
+        }
+
+        $voterId  = $request->session()->get('booth_voter_id');
+        $periodId = $request->session()->get('booth_voter_period_id');
+        $expires  = $request->session()->get('booth_voter_expires', 0);
+
+        if (! $voterId || $periodId !== $period->id || now()->timestamp > $expires) {
+            $this->clearVoterSession($request);
+            return redirect()->route('election.index')
+                ->with('error', 'Sesi sudah kadaluwarsa. Silakan masukkan kembali token.');
+        }
+
+        $voter = ElectionVoter::find($voterId);
+        if (! $voter || $voter->has_voted || $voter->period_id !== $period->id) {
+            $msg = ($voter && $voter->has_voted) ? 'Kartu ini sudah digunakan untuk memilih.' : 'Sesi tidak valid.';
+            $this->clearVoterSession($request);
+            return redirect()->route('election.index')->with('error', $msg);
+        }
+
+        // POST /pilketos/konfirmasi: set confirmed=true dan perbarui expires_at = now+3 menit
+        if ($request->isMethod('post')) {
+            $request->session()->put('booth_voter_confirmed', true);
+            $request->session()->put('booth_voter_expires', now()->addMinutes(3)->timestamp);
+            return redirect()->route('election.lembar');
+        }
+
+        // GET /pilketos/konfirmasi: tampilkan NAMA (besar), KELAS, NIS
+        $settings = Setting::pluck('value', 'key')->toArray();
+        return view('election.booth.konfirmasi', compact('period', 'voter', 'settings'));
+    }
+
+    // ── POST /pilketos/batal — batalkan konfirmasi pemilih ────────────────────
+
+    public function cancel(Request $request)
+    {
+        $this->clearVoterSession($request);
+        return redirect()->route('election.index');
     }
 
     // ── GET /pilketos/lembar — kartu suara ───────────────────────────────────
@@ -131,22 +178,22 @@ class BoothController extends Controller
             return redirect()->route('election.index');
         }
 
-        // Cek sesi voter dan kadaluwarsa
-        $voterId  = $request->session()->get('booth_voter_id');
-        $expires  = $request->session()->get('booth_voter_expires', 0);
+        // Cek sesi voter: WAJIB confirmed=true dan belum kadaluwarsa
+        $voterId   = $request->session()->get('booth_voter_id');
+        $confirmed = $request->session()->get('booth_voter_confirmed');
+        $periodId  = $request->session()->get('booth_voter_period_id');
+        $expires   = $request->session()->get('booth_voter_expires', 0);
 
-        if (! $voterId || now()->timestamp > $expires) {
-            $request->session()->forget(['booth_voter_id', 'booth_voter_expires']);
-            return redirect()->route('election.index')
-                ->with('error', 'Sesi sudah kadaluwarsa. Silakan masukkan kembali NIS dan token.');
+        if (! $voterId || ! $confirmed || $periodId !== $period->id || now()->timestamp > $expires) {
+            $this->clearVoterSession($request);
+            return redirect()->route('election.index');
         }
 
         $voter = ElectionVoter::find($voterId);
         if (! $voter || $voter->has_voted || $voter->period_id !== $period->id) {
-            $msg = ($voter && $voter->has_voted) ? 'Anda sudah menggunakan hak pilih.' : 'Sesi tidak valid.';
-            $request->session()->forget(['booth_voter_id', 'booth_voter_expires']);
-            return redirect()->route('election.index')
-                ->with('error', $msg);
+            $msg = ($voter && $voter->has_voted) ? 'Kartu ini sudah digunakan untuk memilih.' : 'Sesi tidak valid.';
+            $this->clearVoterSession($request);
+            return redirect()->route('election.index')->with('error', $msg);
         }
 
         $candidates = ElectionCandidate::with(['chairman', 'vice'])
@@ -168,13 +215,14 @@ class BoothController extends Controller
             return redirect()->route('election.index');
         }
 
-        $voterId = $request->session()->get('booth_voter_id');
-        $expires = $request->session()->get('booth_voter_expires', 0);
+        $voterId   = $request->session()->get('booth_voter_id');
+        $confirmed = $request->session()->get('booth_voter_confirmed');
+        $periodId  = $request->session()->get('booth_voter_period_id');
+        $expires   = $request->session()->get('booth_voter_expires', 0);
 
-        if (! $voterId || now()->timestamp > $expires) {
-            $request->session()->forget(['booth_voter_id', 'booth_voter_expires']);
-            return redirect()->route('election.index')
-                ->with('error', 'Sesi kadaluwarsa. Silakan mulai ulang.');
+        if (! $voterId || ! $confirmed || $periodId !== $period->id || now()->timestamp > $expires) {
+            $this->clearVoterSession($request);
+            return redirect()->route('election.index');
         }
 
         $request->validate([
@@ -188,11 +236,12 @@ class BoothController extends Controller
         try {
             $this->service->castVote($period, (int) $voterId, $candidateId);
         } catch (ElectionException $e) {
+            $this->clearVoterSession($request);
             return redirect()->route('election.index')->with('error', $e->getMessage());
         }
 
         // Hapus sesi voter (sesi bilik tetap aktif untuk pemilih berikutnya)
-        $request->session()->forget(['booth_voter_id', 'booth_voter_expires']);
+        $this->clearVoterSession($request);
 
         return redirect()->route('election.selesai');
     }
@@ -220,5 +269,17 @@ class BoothController extends Controller
     {
         return $request->session()->get('booth_period_id') === $period->id
             && $request->session()->get('booth_session_version') === $period->booth_session_version;
+    }
+
+    // ── Helper: hapus sesi voter ──────────────────────────────────────────────
+
+    private function clearVoterSession(Request $request): void
+    {
+        $request->session()->forget([
+            'booth_voter_id',
+            'booth_voter_period_id',
+            'booth_voter_confirmed',
+            'booth_voter_expires',
+        ]);
     }
 }

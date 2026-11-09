@@ -53,7 +53,7 @@
 4. **Verifikasi & Kerahasiaan Dokumen**:
    - Buka file PDF hasil unduhan dan pastikan semua kartu terbaca jelas sebelum dibagikan.
    - File PDF berisi token pemilih adalah **dokumen rahasia**; segera hapus file PDF dari folder Downloads dan bersihkan antrean printer (print queue) setelah kartu selesai dicetak.
-5. Gunting kartu per siswa dan bagikan kepada siswa pada hari pemilihan atau sesaat sebelum masuk bilik.
+5. Gunting kartu per siswa dan bagikan kartu per kelas lewat wali kelas pada hari pemilihan atau sesaat sebelum masuk bilik.
 6. *Jika ada siswa yang kartunya rusak/hilang sebelum memilih*: Buka menu **Semua Pemilih**, cari nama siswa, lalu klik **🖨️ Cetak Ulang**. Cetak ulang akan otomatis menghanguskan kode token yang lama tanpa mengganggu siswa lain di kelas tersebut.
 
 ---
@@ -85,22 +85,27 @@
 ---
 
 ### Langkah 3: Alur Pemilih di Bilik Suara
-1. **Pemeriksaan Fisik**: Pemilih menunjukkan kartu kertas token kepada panitia di pintu bilik.
-2. **Login di Bilik**:
-   - Pemilih duduk di bilik suara.
-   - Pemilih mengetik **NIS / NIP / ID** dan **Kode Token** pada layar.
-   - Klik **Buka Lembar Suara**.
-3. **Pemberian Suara (Batas waktu: 3 Menit)**:
+1. **Pemeriksaan Fisik**: Panitia memeriksa kartu dan identitas siswa sebelum siswa masuk bilik.
+2. **Login di Bilik (Cukup Token)**:
+   - Siswa duduk di bilik suara.
+   - Siswa hanya mengetikkan **TOKEN** pada layar (autofocus, format otomatis `ABCD-EFGH`).
+   - Tekan Enter atau klik **Lanjut ke Konfirmasi**.
+3. **Layar Konfirmasi Identitas**:
+   - Layar menampilkan **Nama Pemilih** (ukuran besar), **Kelas**, dan **NIS**.
+   - Panitia / siswa mencocokkan nama dengan kartu fisik ("Cocokkan dengan kartu pemilih.").
+   - **Jika nama bukan namanya (kartu tertukar)**: Siswa/panitia menekan tombol merah **Bukan, batalkan**. Sesi dibatalkan, form kembali ke awal, dan token yang sama tetap berlaku. Panitia menyelesaikan kartu yang tertukar sebelum siswa memilih.
+   - **Jika sesuai**: Siswa menekan tombol hijau **Ya, sesuai kartu** untuk membuka lembar suara.
+4. **Pemberian Suara (Batas waktu: 3 Menit)**:
    - Siswa melihat kartu suara digital berisi foto, nomor, dan nama pasangan calon.
    - Siswa menekan kartu paslon pilihannya hingga muncul tanda centang/highlight.
    - Klik **Lanjut Konfirmasi Pilihan**.
-4. **Konfirmasi & Selesai**:
-   - Muncul modal konfirmasi pilihan.
+5. **Konfirmasi Pilihan & Selesai**:
+   - Muncul modal konfirmasi pilihan paslon.
    - Siswa menekan **✓ Ya, Kirim Suara**.
    - Layar menampilkan ucapan terima kasih bahwa suara telah dicatat secara anonim.
    - Dalam **6 detik**, layar bilik akan otomatis kembali bersih ke halaman login pemilih berikutnya.
-5. **Pengumpulan Kertas Token**:
-   - Siswa keluar bilik dan **menyerahkan kertas tokennya ke kotak pengumpulan panitia** sebagai tanda fisik bahwa siswa telah menggunakan hak pilihnya.
+6. **Pengumpulan Kertas Token**:
+   - Siswa keluar bilik dan **menyerahkan kertas tokennya ke panitia** sebagai tanda fisik bahwa siswa telah menggunakan hak pilihnya.
 
 ---
 

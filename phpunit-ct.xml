@@ -17,6 +17,12 @@
             <file>tests/Feature/CtAdminTest.php</file>
             <file>tests/Feature/CtHintLeaderboardTest.php</file>
         </testsuite>
+        <testsuite name="Pilketos">
+            <file>tests/Feature/ElectionBoothTokenTest.php</file>
+        </testsuite>
+        <testsuite name="StudentPhoto">
+            <file>tests/Feature/StudentPhotoAndProtectionTest.php</file>
+        </testsuite>
     </testsuites>
     <source>
         <include>

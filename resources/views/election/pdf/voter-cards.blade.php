@@ -146,7 +146,7 @@
                                     <div class="token-code">{{ $card['token'] }}</div>
                                 </div>
                                 <div class="card-footer">
-                                    Rahasia - sekali pakai - serahkan ke panitia
+                                    Masukkan TOKEN ini di bilik. Rahasia - sekali pakai - serahkan ke panitia.
                                 </div>
                             </div>
                         </td>

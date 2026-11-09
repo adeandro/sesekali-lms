@@ -4,9 +4,12 @@
 <meta charset="UTF-8">
 <title>Lembar Kasus CT — Tim {{ $ctTeam->number }}</title>
 <style>
+    * {
+        box-sizing: border-box;
+    }
     @page {
         size: A4 portrait;
-        margin: 10mm 14mm 10mm 14mm;
+        margin: 12mm 15mm 12mm 15mm;
     }
     body {
         font-family: 'DejaVu Sans', sans-serif;
@@ -18,9 +21,14 @@
 
     /* ── Page layout ── */
     .page {
-        page-break-after: always;
+        width: 100%;
     }
-    .page:last-child { page-break-after: auto; }
+    .page-break {
+        page-break-after: always;
+        height: 0;
+        line-height: 0;
+        font-size: 0;
+    }
 
     /* ── Header ── */
     .page-header {
@@ -202,8 +210,8 @@
 
     /* ── Two column via table (dompdf-safe) ── */
     .two-col { display: table; width: 100%; table-layout: fixed; }
-    .col-left { display: table-cell; width: 54%; padding-right: 12pt; vertical-align: top; word-wrap: break-word; overflow-wrap: break-word; }
-    .col-right { display: table-cell; width: 46%; vertical-align: top; word-wrap: break-word; overflow-wrap: break-word; }
+    .col-left { display: table-cell; width: 50%; padding-right: 8pt; vertical-align: top; word-wrap: break-word; overflow-wrap: break-word; }
+    .col-right { display: table-cell; width: 50%; padding-left: 8pt; vertical-align: top; word-wrap: break-word; overflow-wrap: break-word; }
 
     .member-lines { margin-top: 4pt; }
     .member-line {
@@ -268,7 +276,7 @@
 
     {{-- Tahap 1 --}}
     <div class="section">
-        <div class="stage-title">🔎 Tahap 1 — Analisis Log Server</div>
+        <div class="stage-title">Tahap 1 — Analisis Log Server</div>
         <div class="instruction">
             Server sekolah mencatat aktivitas dari beberapa sumber, jadi urutan baris tidak selalu menurut jam. Format: jam | akun | aksi | berkas atau status. Sebagian besar baris hanyalah noise. Temukan satu baris milik pelaku.
         </div>
@@ -277,10 +285,10 @@
         <table class="log-table">
             <thead>
                 <tr>
-                    <th style="width:48pt">JAM</th>
-                    <th style="width:68pt">AKUN</th>
-                    <th style="width:36pt">AKSI</th>
-                    <th>DETAIL</th>
+                    <th style="width:14%">JAM</th>
+                    <th style="width:24%">AKUN</th>
+                    <th style="width:14%">AKSI</th>
+                    <th style="width:48%">DETAIL</th>
                 </tr>
             </thead>
             <tbody>
@@ -298,9 +306,9 @@
         </table>
 
         <div style="margin-top:10pt;">
-            <strong style="font-size:9pt">Jawaban Tahap 1 — 2 digit menit dari jam unduhan mencurigakan:</strong>
+            <strong style="font-size:8.5pt">Jawaban Tahap 1 — 2 digit menit:</strong>
             <div class="answer-box">__ __</div>
-            <span style="font-size:8pt; color:#6b7280; margin-left:8pt">(tulis di sini, sebut <strong>MM</strong>)</span>
+            <span style="font-size:8pt; color:#6b7280; margin-left:6pt">(sebut <strong>MM</strong>)</span>
         </div>
     </div>
 
@@ -308,6 +316,8 @@
         CT Escape Room · Kelas {{ $ctTeam->ctClass->name }} · Kelompok {{ $ctTeam->number }} · Hal. 1/2
     </div>
 </div>
+
+<div class="page-break"></div>
 
 {{-- ═══════════════════════════════════════════════════════
      PAGE 2 — Tahap 2 + Tahap 3 + Kode
@@ -330,7 +340,7 @@
 
             {{-- Tahap 2 --}}
             <div class="section">
-                <div class="stage-title">🔐 Tahap 2 — Dekripsi Pesan</div>
+                <div class="stage-title">Tahap 2 — Dekripsi Pesan</div>
                 <div class="instruction">
                     Dalam folder cadangan ditemukan pesan terenkripsi menggunakan <strong>sandi Caesar</strong>.
                     Gunakan tabel contoh di bawah untuk mencari pola pergeseran, lalu dekripsi pesan berikut.
@@ -364,9 +374,9 @@
                 </div>
 
                 <div style="margin-top:8pt;">
-                    <strong style="font-size:8.5pt; display:block; margin-bottom:3pt">Jawaban Tahap 2 — Angka dalam pesan asli:</strong>
-                    <div class="answer-box" style="min-width:40pt">__</div>
-                    <span style="font-size:8pt; color:#6b7280; margin-left:8pt">(sebut <strong>N</strong>)</span>
+                    <strong style="font-size:8.5pt">Jawaban Tahap 2 — Angka:</strong>
+                    <div class="answer-box" style="min-width:30pt">__</div>
+                    <span style="font-size:8pt; color:#6b7280; margin-left:6pt">(sebut <strong>N</strong>)</span>
                 </div>
             </div>
 
@@ -375,7 +385,7 @@
 
             {{-- Tahap 3 --}}
             <div class="section">
-                <div class="stage-title">📁 Tahap 3 — Hitung File</div>
+                <div class="stage-title">Tahap 3 — Hitung File</div>
                 <div class="instruction">
                     Berikut isi folder bukti yang diunduh tersangka.
                     Hitung hanya file soal ujian (<code>soal_*.pdf</code>). Abaikan file lain.
@@ -388,9 +398,9 @@
                 </ul>
 
                 <div style="margin-top:8pt;">
-                    <strong style="font-size:8.5pt; display:block; margin-bottom:3pt">Jawaban Tahap 3 — Jumlah file soal:</strong>
+                    <strong style="font-size:8.5pt">Jawaban Tahap 3 — File:</strong>
                     <div class="answer-box" style="min-width:30pt">__</div>
-                    <span style="font-size:8pt; color:#6b7280; margin-left:8pt">(sebut <strong>F</strong>)</span>
+                    <span style="font-size:8pt; color:#6b7280; margin-left:6pt">(sebut <strong>F</strong>)</span>
                 </div>
             </div>
 
@@ -399,7 +409,7 @@
 
     {{-- Kode final --}}
     <div class="section" style="margin-top:4pt">
-        <div class="stage-title">🔑 Kode Brankas</div>
+        <div class="stage-title">Kode Brankas</div>
         <div class="instruction">
             Gabungkan jawaban ketiga tahap menjadi kode 4 digit:<br>
             <strong>Kode = MM + N + F</strong>

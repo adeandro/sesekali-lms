@@ -48,24 +48,105 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="lg:col-span-2 space-y-6">
+
+                @if(session('photo_report'))
+                    @php $rep = session('photo_report'); @endphp
+                    <div class="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-4">
+                        <h4 class="font-bold text-gray-900 flex items-center gap-2 text-base">
+                            <i class="fas fa-clipboard-list text-indigo-600"></i> Laporan Hasil Sinkronisasi Foto
+                        </h4>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                            <div class="p-3 bg-emerald-50 rounded-2xl border border-emerald-100">
+                                <span class="text-xs text-emerald-600 font-semibold block">Berhasil Diperbarui</span>
+                                <span class="text-2xl font-black text-emerald-700">{{ $rep['berhasil'] ?? 0 }}</span>
+                            </div>
+                            <div class="p-3 bg-amber-50 rounded-2xl border border-amber-100">
+                                <span class="text-xs text-amber-600 font-semibold block">Tidak Ditemukan</span>
+                                <span class="text-2xl font-black text-amber-700">{{ count($rep['tidak_ditemukan'] ?? []) }}</span>
+                            </div>
+                            <div class="p-3 bg-orange-50 rounded-2xl border border-orange-100">
+                                <span class="text-xs text-orange-600 font-semibold block">Nama Ambigu</span>
+                                <span class="text-2xl font-black text-orange-700">{{ count($rep['ambigu'] ?? []) }}</span>
+                            </div>
+                            <div class="p-3 bg-rose-50 rounded-2xl border border-rose-100">
+                                <span class="text-xs text-rose-600 font-semibold block">Gagal / Dilewati</span>
+                                <span class="text-2xl font-black text-rose-700">{{ count($rep['gagal'] ?? []) + count($rep['dilewati'] ?? []) }}</span>
+                            </div>
+                        </div>
+
+                        @if(!empty($rep['ambigu']))
+                            <div class="p-4 bg-orange-50 border border-orange-200 rounded-2xl text-xs space-y-2">
+                                <span class="font-bold text-orange-900 flex items-center gap-1.5">
+                                    <i class="fas fa-question-circle"></i> Berkas Ambigu (Terdapat lebih dari 1 siswa aktif dengan nama yang sama):
+                                </span>
+                                <ul class="list-disc list-inside text-orange-800 space-y-1">
+                                    @foreach($rep['ambigu'] as $item)
+                                        <li><span class="font-mono font-bold">{{ $item }}</span></li>
+                                    @endforeach
+                                </ul>
+                                <p class="text-[11px] text-orange-700 italic">Solusi: Beri nama file menggunakan <b>NIS siswa</b> agar dapat diidentifikasi secara unik.</p>
+                            </div>
+                        @endif
+
+                        @if(!empty($rep['tidak_ditemukan']))
+                            <div class="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-xs space-y-2">
+                                <span class="font-bold text-amber-900 flex items-center gap-1.5">
+                                    <i class="fas fa-user-slash"></i> Berkas Tidak Ditemukan Siswanya (Tidak disimpan):
+                                </span>
+                                <div class="max-h-40 overflow-y-auto space-y-1 pr-2 text-amber-800 font-mono">
+                                    @foreach($rep['tidak_ditemukan'] as $fn)
+                                        <div class="inline-block bg-white px-2 py-0.5 rounded border border-amber-200 mr-1 mb-1 text-[11px]">{{ $fn }}</div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+
+                        @if(!empty($rep['gagal']))
+                            <div class="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-xs space-y-1">
+                                <span class="font-bold text-rose-900 flex items-center gap-1.5">
+                                    <i class="fas fa-times-circle"></i> Berkas Gagal Diproses:
+                                </span>
+                                <ul class="list-disc list-inside text-rose-800">
+                                    @foreach($rep['gagal'] as $item)
+                                        <li>{{ $item }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+
+                        @if(!empty($rep['dilewati']))
+                            <div class="p-4 bg-gray-50 border border-gray-200 rounded-2xl text-xs space-y-1">
+                                <span class="font-bold text-gray-800 flex items-center gap-1.5">
+                                    <i class="fas fa-forward"></i> Berkas Dilewati:
+                                </span>
+                                <ul class="list-disc list-inside text-gray-700">
+                                    @foreach($rep['dilewati'] as $item)
+                                        <li>{{ $item }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+                    </div>
+                @endif
+
                 <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
                     <div class="p-8">
-                        <div class="mb-8 p-6 bg-amber-50 border border-amber-100 rounded-2xl">
-                            <h3 class="font-bold text-amber-900 mb-2 flex items-center">
-                                <i class="fas fa-exclamation-triangle mr-2"></i> Aturan Penting Masal Post
+                        <div class="mb-8 p-6 bg-indigo-50/60 border border-indigo-100 rounded-2xl">
+                            <h3 class="font-bold text-indigo-900 mb-2 flex items-center">
+                                <i class="fas fa-info-circle mr-2 text-indigo-600"></i> Petunjuk Penamaan Berkas Foto
                             </h3>
-                            <ul class="space-y-2 text-xs text-amber-800 leading-relaxed">
+                            <ul class="space-y-2 text-xs text-indigo-950 leading-relaxed">
                                 <li class="flex items-start gap-2">
-                                    <span class="mt-1 w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span>
-                                    <span>Nama file di dalam ZIP <b>harus sama persis</b> dengan NIS siswa (misal: <code class="bg-white/50 px-1 rounded font-mono">12345.jpg</code>).</span>
+                                    <span class="mt-1 w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0"></span>
+                                    <span><b>Nama file = nama lengkap siswa (huruf besar/kecil bebas) atau NIS</b>, mis. <code class="bg-white px-1.5 py-0.5 rounded border border-indigo-200 font-mono font-bold text-indigo-700">AHMAD AKHIT MAULANA.jpg</code> atau <code class="bg-white px-1.5 py-0.5 rounded border border-indigo-200 font-mono font-bold text-indigo-700">2324100698.jpg</code>.</span>
                                 </li>
                                 <li class="flex items-start gap-2">
-                                    <span class="mt-1 w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span>
-                                    <span>Format file didukung: <b>JPG, JPEG, PNG, WEBP</b>.</span>
+                                    <span class="mt-1 w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0"></span>
+                                    <span>Format file didukung: <b>JPG, JPEG, PNG, WEBP</b> (maksimal 500 gambar per arsip ZIP).</span>
                                 </li>
                                 <li class="flex items-start gap-2">
-                                    <span class="mt-1 w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span>
-                                    <span>Batas maksimal ukuran ZIP: <b>{{ $effectiveMaxMB }} MB</b>.</span>
+                                    <span class="mt-1 w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0"></span>
+                                    <span>Batas maksimal ukuran arsip ZIP: <b>{{ $effectiveMaxMB }} MB</b> (maksimal 8 MB per file foto).</span>
                                 </li>
                             </ul>
                         </div>

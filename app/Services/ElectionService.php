@@ -39,6 +39,11 @@ class ElectionService
         return hash_hmac('sha256', strtoupper($token), config('app.key'));
     }
 
+    public function normalizeToken(string $token): string
+    {
+        return strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $token));
+    }
+
     /** Format token untuk tampil: ABCD-EFGH */
     public function formatToken(string $token): string
     {
@@ -163,22 +168,79 @@ class ElectionService
     /**
      * Siapkan token plaintext di memori untuk kumpulan voter.
      * Voter yang has_voted=true dilewati (tidak bisa dapat token baru).
+     * Pastikan hash tiap token unik dalam periode (DB + batch ini).
      * Return: array of ['voter_id' => n, 'token' => '...', 'token_hash' => '...']
      */
     public function issueTokens(Collection $voters): array
     {
         $issued = [];
+        $periodIds = $voters->pluck('period_id')->filter()->unique();
+
+        // Ambil token_hash yang sudah ada di DB untuk setiap periode: [token_hash => voter_id]
+        $existingHashesByPeriod = [];
+        foreach ($periodIds as $pId) {
+            $existingHashesByPeriod[$pId] = DB::table('election_voters')
+                ->where('period_id', $pId)
+                ->whereNotNull('token_hash')
+                ->pluck('id', 'token_hash')
+                ->toArray();
+        }
+
+        $batchHashes = []; // [period_id => [token_hash => true]]
+
         foreach ($voters as $voter) {
             if ($voter->has_voted) {
                 continue; // sudah memilih, tidak bisa cetak ulang
             }
-            $token = $this->generateToken();
+
+            $pId = $voter->period_id;
+            if (! isset($batchHashes[$pId])) {
+                $batchHashes[$pId] = [];
+            }
+
+            $attempts = 0;
+            $found = false;
+            $token = null;
+            $tokenHash = null;
+
+            while ($attempts < 10) {
+                $attempts++;
+                $candidateToken = $this->generateToken();
+                $candidateHash  = $this->hashToken($candidateToken);
+
+                // Cek terhadap batch ini
+                if (isset($batchHashes[$pId][$candidateHash])) {
+                    continue;
+                }
+
+                // Cek terhadap DB periode itu (kecuali baris voter yang sama)
+                if (isset($existingHashesByPeriod[$pId][$candidateHash])) {
+                    $ownerId = $existingHashesByPeriod[$pId][$candidateHash];
+                    if ((int) $ownerId !== (int) $voter->id) {
+                        continue;
+                    }
+                }
+
+                $token = $candidateToken;
+                $tokenHash = $candidateHash;
+                $found = true;
+                break;
+            }
+
+            if (! $found) {
+                throw new ElectionException('Gagal menghasilkan token unik setelah 10 percobaan.');
+            }
+
+            $batchHashes[$pId][$tokenHash] = true;
+            $existingHashesByPeriod[$pId][$tokenHash] = $voter->id;
+
             $issued[] = [
                 'voter_id'   => $voter->id,
                 'token'      => $token,
-                'token_hash' => $this->hashToken($token),
+                'token_hash' => $tokenHash,
             ];
         }
+
         return $issued;
     }
 
@@ -257,53 +319,75 @@ class ElectionService
         return $pdfContent;
     }
 
-    // ── Verify Credentials ─────────────────────────────────────────────────
+    // ── Verify Token ───────────────────────────────────────────────────────
 
     /**
-     * Verifikasi NIS + token untuk bilik suara.
-     * Return ElectionVoter jika valid, null jika tidak.
-     * Limiter: 5x/5 menit per NIS + 60x/10 menit per IP.
+     * Verifikasi token untuk bilik suara.
+     * Return ElectionVoter jika valid, throw ElectionException jika gagal.
+     * Limiter: 20 per 5 menit per $boothKey, 100 per 10 menit per IP.
      */
-    public function verifyCredentials(
+    public function verifyToken(
         ElectionPeriod $period,
-        string $nis,
         string $rawToken,
+        string $boothKey,
         string $ip
-    ): ?ElectionVoter {
-        $nisKey = 'booth-nis-' . $nis;
-        $ipKey  = 'booth-ip-' . $ip;
+    ): ElectionVoter {
+        $boothLimiterKey = 'booth-key-' . $boothKey;
+        $ipLimiterKey    = 'booth-ip-' . $ip;
 
-        if (RateLimiter::tooManyAttempts($nisKey, 5)) {
-            throw new ElectionException('Terlalu banyak percobaan untuk NIS ini. Coba lagi dalam ' . RateLimiter::availableIn($nisKey) . ' detik.');
-        }
-        if (RateLimiter::tooManyAttempts($ipKey, 60)) {
-            throw new ElectionException('Terlalu banyak percobaan dari perangkat ini. Coba lagi dalam ' . RateLimiter::availableIn($ipKey) . ' detik.');
+        if (RateLimiter::tooManyAttempts($boothLimiterKey, 20) || RateLimiter::tooManyAttempts($ipLimiterKey, 100)) {
+            ElectionAuditLog::record('booth.verify_locked', $period->id, null, [
+                'ip'        => $ip,
+                'booth_key' => $boothKey,
+            ]);
+            throw new ElectionException('Terlalu banyak percobaan. Hubungi panitia.');
         }
 
-        // Normalisasi token: uppercase, buang non-alphanumeric
-        $normalized = strtoupper(preg_replace('/[^A-Z0-9]/i', '', $rawToken));
-        $tokenHash  = $this->hashToken($normalized);
+        // normalizeToken() (uppercase, buang non-alfanumerik); jika panjang != 8 hitung sebagai gagal
+        $norm = $this->normalizeToken($rawToken);
+        if (strlen($norm) !== 8) {
+            RateLimiter::hit($boothLimiterKey, 300); // 5 menit
+            RateLimiter::hit($ipLimiterKey, 600);    // 10 menit
+            ElectionAuditLog::record('booth.verify_fail', $period->id, null, [
+                'ip'        => $ip,
+                'booth_key' => $boothKey,
+            ]);
+            throw new ElectionException('Token tidak sesuai.');
+        }
+
+        $tokenHash = $this->hashToken($norm);
 
         $voter = DB::table('election_voters')
             ->where('period_id', $period->id)
-            ->where('nis', $nis)
+            ->where('token_hash', $tokenHash)
             ->first();
 
-        // 1. Cek apakah pemilih terdaftar dan token sesuai
-        if (! $voter || $voter->token_hash === null || ! hash_equals($voter->token_hash, $tokenHash)) {
-            RateLimiter::hit($nisKey, 300);  // 5 menit
-            RateLimiter::hit($ipKey, 600);   // 10 menit
-            return null;
+        // Tidak ada / token_hash null -> hit limiter -> audit log tanpa token, nis, nama
+        if (! $voter || $voter->token_hash === null) {
+            RateLimiter::hit($boothLimiterKey, 300);
+            RateLimiter::hit($ipLimiterKey, 600);
+            ElectionAuditLog::record('booth.verify_fail', $period->id, null, [
+                'ip'        => $ip,
+                'booth_key' => $boothKey,
+            ]);
+            throw new ElectionException('Token tidak sesuai.');
         }
 
-        // 2. Kredensial valid — bersihkan limiter
-        RateLimiter::clear($nisKey);
-        RateLimiter::clear($ipKey);
-
-        // 3. Jika sudah memilih, beri pesan spesifik
+        // has_voted -> pesan yang sudah ada
         if ($voter->has_voted) {
-            throw new ElectionException('Anda sudah menggunakan hak pilih.');
+            throw new ElectionException('Kartu ini sudah digunakan untuk memilih.');
         }
+
+        // Siswa tidak aktif (jika student_id ada) -> pesan yang sudah ada
+        if ($voter->student_id) {
+            $student = User::find($voter->student_id);
+            if ($student && $student->status !== 'Aktif') {
+                throw new ElectionException('Siswa tidak aktif.');
+            }
+        }
+
+        // Sukses -> RateLimiter::clear untuk boothKey; return voter
+        RateLimiter::clear($boothLimiterKey);
 
         return ElectionVoter::find($voter->id);
     }

@@ -45,10 +45,10 @@
                                 <span>Atur Ulang Password</span>
                             </button>
                             <hr class="my-2 border-gray-100">
-                            <button type="button" onclick="confirmDeleteAllStudents()" class="w-full text-left px-4 py-2 text-sm text-rose-600 hover:bg-rose-50 font-bold flex items-center gap-3 transition-colors">
+                            <a href="{{ route('admin.students.deleteAll.confirm') }}" class="w-full text-left px-4 py-2 text-sm text-rose-600 hover:bg-rose-50 font-bold flex items-center gap-3 transition-colors">
                                 <i class="fas fa-trash-alt w-5 text-center"></i>
                                 <span>Hapus Semua Siswa</span>
-                            </button>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -56,7 +56,6 @@
         </div>
 
         <form id="resetAllPasswordsForm" action="{{ route('admin.students.resetAllPasswords') }}" method="POST" class="hidden no-loading">@csrf</form>
-        <form id="deleteAllStudentsForm" action="{{ route('admin.students.deleteAll') }}" method="POST" class="hidden no-loading">@csrf @method('DELETE')</form>
 
         {{-- ── Status Tabs ──────────────────────────────────────────────── --}}
         <div class="flex items-center gap-1 bg-white rounded-2xl border border-gray-100 shadow-sm p-1.5 w-fit">
@@ -324,24 +323,6 @@
                 if (result.isConfirmed) {
                     document.getElementById('loading-overlay').style.display = 'block';
                     document.getElementById('resetAllPasswordsForm').submit();
-                }
-            });
-        }
-
-        function confirmDeleteAllStudents() {
-            Swal.fire({
-                title: 'HAPUS SEMUA SISWA?',
-                html: 'Tindakan ini akan menghapus <b>SELURUH</b> data siswa dan riwayat ujian mereka selamanya!',
-                icon: 'error',
-                showCancelButton: true,
-                confirmButtonColor: '#be123c',
-                cancelButtonColor: '#64748b',
-                confirmButtonText: 'HAPUS SELAMANYA',
-                cancelButtonText: 'Batal'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    document.getElementById('loading-overlay').style.display = 'block';
-                    document.getElementById('deleteAllStudentsForm').submit();
                 }
             });
         }

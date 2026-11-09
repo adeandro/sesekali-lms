@@ -487,6 +487,7 @@ Route::middleware('auth')->group(function () {
             Route::get('students/export', [StudentController::class, 'export'])->name('students.export');
             Route::post('students/{student}/reset-password', [StudentController::class, 'resetPassword'])->name('students.resetPassword');
             Route::post('students/reset-all-passwords', [StudentController::class, 'resetAllPasswords'])->name('students.resetAllPasswords');
+            Route::get('students/delete-all/confirm', [StudentController::class, 'confirmDeleteAllStudents'])->name('students.deleteAll.confirm');
             Route::delete('students/delete-all', [StudentController::class, 'deleteAllStudents'])->name('students.deleteAll');
             Route::post('students/{student}/toggle-active', [StudentController::class, 'toggleActive'])->name('students.toggleActive');
             Route::get('students/upload-photos', [StudentController::class, 'uploadPhotosForm'])->name('students.upload-photos');
@@ -844,6 +845,8 @@ Route::prefix('pilketos')
             Route::get('/', [\App\Http\Controllers\Election\BoothController::class, 'index'])->name('index');
             Route::post('pin', [\App\Http\Controllers\Election\BoothController::class, 'pinPost'])->name('pin.post');
             Route::post('verify', [\App\Http\Controllers\Election\BoothController::class, 'verify'])->name('verify');
+            Route::match(['get', 'post'], 'konfirmasi', [\App\Http\Controllers\Election\BoothController::class, 'confirm'])->name('confirm');
+            Route::post('batal', [\App\Http\Controllers\Election\BoothController::class, 'cancel'])->name('cancel');
             Route::get('lembar', [\App\Http\Controllers\Election\BoothController::class, 'lembar'])->name('lembar');
             Route::post('pilih', [\App\Http\Controllers\Election\BoothController::class, 'pilih'])->name('pilih');
             Route::get('selesai', [\App\Http\Controllers\Election\BoothController::class, 'selesai'])->name('selesai');
