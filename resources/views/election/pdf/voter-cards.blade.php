@@ -41,13 +41,25 @@
             overflow: hidden;
         }
         .card-header {
-            font-size: 6.5pt;
+            font-size: 6pt;
             color: #64748b;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            line-height: 1.1;
+            line-height: 1.2;
             margin-bottom: 0.8mm;
+            overflow: hidden;
+            max-height: 9mm; /* cukup 2 baris × ~4.5mm */
+        }
+        .card-header-school {
+            font-size: 6pt;
+            font-weight: bold;
+            color: #475569;
+            line-height: 1.2;
+            overflow: hidden;
+        }
+        .card-header-period {
+            font-size: 6pt;
+            color: #64748b;
+            line-height: 1.2;
+            overflow: hidden;
         }
         .card-name {
             font-size: 9pt;
@@ -113,6 +125,23 @@
     $rows = 8;
     $perPage = $cols * $rows;
 
+    // Tanggal pemilihan (hanya jika event_date ada)
+    $eventDateStr = '';
+    if (!empty($period->event_date)) {
+        try {
+            \Carbon\Carbon::setLocale('id');
+            $eventDateStr = \Carbon\Carbon::parse($period->event_date)->translatedFormat('j F Y');
+        } catch (\Throwable $e) {
+            $eventDateStr = '';
+        }
+    }
+
+    // Header baris 2: "Judul Periode" + " — tanggal" jika ada
+    $periodLine = $period->title;
+    if ($eventDateStr) {
+        $periodLine .= ' — ' . $eventDateStr;
+    }
+
     // Urutkan kartu A-Z case-insensitive
     $sortedCards = $cards->sortBy(fn($c) => mb_strtolower($c['name'] ?? ''))->values();
     $pages = $sortedCards->chunk($perPage);
@@ -126,13 +155,18 @@
                     @php
                         $cardIndex = $r * $cols + $c;
                         $card = $pageCards->get($cardIndex);
+                        $cardName = mb_strtoupper($card['name'] ?? '', 'UTF-8');
                     @endphp
                     @if($card)
                         <td class="card-cell">
                             <div class="card-inner">
-                                <div class="card-header">{{ $schoolName }} - {{ $period->title }}</div>
+                                {{-- Header 2 baris: nama sekolah + judul periode + tanggal --}}
+                                <div class="card-header">
+                                    <div class="card-header-school">{{ $schoolName }}</div>
+                                    <div class="card-header-period">{{ $periodLine }}</div>
+                                </div>
                                 <div class="card-name {{ mb_strlen($card['name'] ?? '') > 24 ? 'name-sm' : '' }}">
-                                    {{ $card['name'] }}
+                                    {{ $cardName }}
                                 </div>
                                 <div class="card-meta">
                                     @if($card['class_name'] === 'GURU & STAF')
@@ -146,7 +180,7 @@
                                     <div class="token-code">{{ $card['token'] }}</div>
                                 </div>
                                 <div class="card-footer">
-                                    Masukkan TOKEN ini di bilik. Rahasia - sekali pakai - serahkan ke panitia.
+                                    Rahasia - sekali pakai - serahkan ke panitia
                                 </div>
                             </div>
                         </td>

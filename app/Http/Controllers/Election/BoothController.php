@@ -11,6 +11,7 @@ use App\Models\Setting;
 use App\Services\ElectionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Storage;
 
 class BoothController extends Controller
 {
@@ -155,9 +156,17 @@ class BoothController extends Controller
             return redirect()->route('election.lembar');
         }
 
-        // GET /pilketos/konfirmasi: tampilkan NAMA (besar), KELAS, NIS
+        // GET /pilketos/konfirmasi: tampilkan NAMA (besar), KELAS, NIS + foto (jika ada)
         $settings = Setting::pluck('value', 'key')->toArray();
-        return view('election.booth.konfirmasi', compact('period', 'voter', 'settings'));
+
+        // Hitung photoUrl: dari relasi student (bukan accessor avatar/gamifikasi)
+        $photoUrl = null;
+        $student = $voter->student; // BelongsTo User via student_id (nullable)
+        if ($student && $student->photo && Storage::disk('public')->exists('profiles/' . $student->photo)) {
+            $photoUrl = asset('storage/profiles/' . rawurlencode($student->photo));
+        }
+
+        return view('election.booth.konfirmasi', compact('period', 'voter', 'settings', 'photoUrl'));
     }
 
     // ── POST /pilketos/batal — batalkan konfirmasi pemilih ────────────────────

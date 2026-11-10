@@ -311,3 +311,32 @@ Rute publik di luar grup middleware bilik suara (`ElectionBoothAccess`), tanpa a
 - Format kartu menyesuaikan label identitas: `ID {nip/niy/email} • GURU & STAF`.
 - Tata letak tetap menggunakan format hemat kertas A4 3 kolom x 8 baris (24 kartu per halaman).
 
+---
+
+## BAGIAN 11 — REVISI TAMPILAN: LAYAR KONFIRMASI BILIK & KARTU PEMILIH
+
+### 1. Layar Konfirmasi Bilik (`GET /pilketos/konfirmasi`)
+- **Foto Siswa**: Dihitung on-the-fly di `BoothController::confirm()` via relasi `$voter->student` (nullable):
+  `$student && $student->photo && Storage::disk('public')->exists('profiles/' . $student->photo)` menghasilkan URL `asset('storage/profiles/' . rawurlencode($student->photo))`.
+  - Tidak menggunakan accessor gamifikasi/avatar `User.php`.
+  - Tidak menyimpan URL foto di sesi (`session`).
+- **Tampilan Foto & Inisial**:
+  - Ukuran foto besar: ±220px lebar, rasio 3:4, `object-cover object-top`, sudut membulat (`rounded-2xl`).
+  - Jika foto belum ada atau gambar gagal dimuat (`onerror`), digantikan dengan **lingkaran inisial besar** dan teks bantu otomatis berganti menjadi: *"Foto belum tersedia. Cocokkan nama dengan kartu dan identitas siswa."*
+  - Jika foto berhasil dimuat, teks bantu menampilkan: *"Cocokkan wajah dan nama dengan kartu serta orang di bilik."*
+- **Identitas Pemilih**:
+  - Nama ditampilkan kapital (`mb_strtoupper(..., 'UTF-8')`), ukuran besar dan jelas.
+  - Kelas dan NIS/ID diambil murni dari snapshot `election_voters`.
+  - Token **TIDAK PERNAH** ditampilkan di layar maupun HTML sumber.
+- **Tombol Navigasi**: Tetap *"Ya, sesuai kartu"* (hijau) dan *"Bukan, batalkan"* (merah).
+
+### 2. Template PDF Kartu Pemilih (`voter-cards.blade.php`)
+- **Header 2 Baris**:
+  - Baris 1: Nama Sekolah (diambil via `Setting::pluck`, bukan `app('configs')`), font 6pt tebal.
+  - Baris 2: Judul Periode Pemilihan (font 6pt), disertai tanggal pemilihan jika `period->event_date` terisi (format Carbon locale `id` `translatedFormat('j F Y')`, contoh: *"Pemilihan 16 November 2026"*). Jika `event_date` kosong, tidak menampilkan teks tanggal.
+- **Nama Siswa**: Dicetak huruf kapital (`mb_strtoupper`), font otomatis mengecil (`name-sm`) jika nama > 24 karakter.
+- **Footer Kartu**: Teks standar *"Rahasia - sekali pakai - serahkan ke panitia"* tanpa klaim tanggal kedaluwarsa sistem.
+- **Kemandirian Data**: Tidak ada query tambahan per kartu (menggunakan data snapshot `election_voters`).
+- **Format Cetak**: 3 kolom × 8 baris (24 kartu/halaman), 45 kartu tepat 2 halaman tanpa error memori.
+
+

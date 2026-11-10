@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class ElectionBoothTokenTest extends TestCase
@@ -122,10 +123,10 @@ class ElectionBoothTokenTest extends TestCase
         ]))->get(route('election.confirm'));
 
         $confirmResponse->assertOk();
-        $confirmResponse->assertSee('Siti Aisyah');
+        $confirmResponse->assertSee('SITI AISYAH');
         $confirmResponse->assertSee('X-RPL-1');
         $confirmResponse->assertSee('2024001');
-        $confirmResponse->assertSee('Cocokkan dengan kartu pemilih.');
+        $confirmResponse->assertSee('Foto belum tersedia. Cocokkan nama dengan kartu dan identitas siswa.');
         $confirmResponse->assertSee('Ya, sesuai kartu');
         $confirmResponse->assertSee('Bukan, batalkan');
         // JANGAN tampilkan token di layar konfirmasi
@@ -465,5 +466,206 @@ class ElectionBoothTokenTest extends TestCase
         $kandidatResponse = $this->get(route('election.candidates'));
         $kandidatResponse->assertOk();
         $kandidatResponse->assertSee('Calon Ketua 1');
+    }
+
+    /**
+     * Test 12: Layar konfirmasi siswa dengan foto -> menampilkan foto, nama kapital, kelas, NIS
+     */
+    public function test_confirmation_screen_with_student_photo(): void
+    {
+        Storage::fake('public');
+        Storage::disk('public')->put('profiles/photo_ani.jpg', 'fake-image-bytes');
+
+        $student = User::factory()->create([
+            'role'   => 'student',
+            'status' => 'Aktif',
+            'photo'  => 'photo_ani.jpg',
+        ]);
+
+        $voter = ElectionVoter::create([
+            'period_id'     => $this->period->id,
+            'student_id'    => $student->id,
+            'nis'           => '88001',
+            'student_name'  => 'Ani Suryani',
+            'class_id'      => 1,
+            'class_name'    => 'XII-IPA-1',
+            'token_hash'    => null,
+            'token_version' => 0,
+            'has_voted'     => false,
+        ]);
+
+        $issued = $this->service->issueTokens(collect([$voter]));
+        $this->service->commitTokens($issued);
+        $rawToken = $issued[0]['token'];
+
+        $response = $this->withSession($this->boothSession([
+            'booth_voter_id'        => $voter->id,
+            'booth_voter_period_id' => $this->period->id,
+            'booth_voter_confirmed' => false,
+            'booth_voter_expires'   => now()->addMinutes(3)->timestamp,
+        ]))->get(route('election.confirm'));
+
+        $response->assertOk();
+        $response->assertSee('ANI SURYANI');
+        $response->assertSee('XII-IPA-1');
+        $response->assertSee('88001');
+        $response->assertSee('storage/profiles/photo_ani.jpg');
+        $response->assertSee('Cocokkan wajah dan nama dengan kartu serta orang di bilik.');
+        $response->assertDontSee($rawToken);
+    }
+
+    /**
+     * Test 13: Layar konfirmasi siswa tanpa foto -> inisial + teks belum tersedia, tombol tetap aktif
+     */
+    public function test_confirmation_screen_without_student_photo(): void
+    {
+        Storage::fake('public');
+
+        $student = User::factory()->create([
+            'role'   => 'student',
+            'status' => 'Aktif',
+            'photo'  => null,
+        ]);
+
+        $voter = ElectionVoter::create([
+            'period_id'     => $this->period->id,
+            'student_id'    => $student->id,
+            'nis'           => '88002',
+            'student_name'  => 'Bambang Pamungkas',
+            'class_id'      => 2,
+            'class_name'    => 'XI-IPS-2',
+            'token_hash'    => null,
+            'token_version' => 0,
+            'has_voted'     => false,
+        ]);
+
+        $issued = $this->service->issueTokens(collect([$voter]));
+        $this->service->commitTokens($issued);
+        $rawToken = $issued[0]['token'];
+
+        $response = $this->withSession($this->boothSession([
+            'booth_voter_id'        => $voter->id,
+            'booth_voter_period_id' => $this->period->id,
+            'booth_voter_confirmed' => false,
+            'booth_voter_expires'   => now()->addMinutes(3)->timestamp,
+        ]))->get(route('election.confirm'));
+
+        $response->assertOk();
+        $response->assertSee('BAMBANG PAMUNGKAS');
+        $response->assertSee('BP'); // Inisial
+        $response->assertSee('XI-IPS-2');
+        $response->assertSee('88002');
+        $response->assertSee('Foto belum tersedia. Cocokkan nama dengan kartu dan identitas siswa.');
+        $response->assertSee('Ya, sesuai kartu');
+        $response->assertSee('Bukan, batalkan');
+        $response->assertDontSee($rawToken);
+    }
+
+    /**
+     * Test 14: Siswa yang akunnya terhapus (student_id NULL) -> data dari snapshot, tanpa error
+     */
+    public function test_confirmation_screen_with_deleted_student_id_null(): void
+    {
+        $voter = ElectionVoter::create([
+            'period_id'     => $this->period->id,
+            'student_id'    => null, // Akun siswa sudah terhapus
+            'nis'           => '88003',
+            'student_name'  => 'Cahyono Snapshot',
+            'class_id'      => 3,
+            'class_name'    => 'X-TKJ-1',
+            'token_hash'    => null,
+            'token_version' => 0,
+            'has_voted'     => false,
+        ]);
+
+        $issued = $this->service->issueTokens(collect([$voter]));
+        $this->service->commitTokens($issued);
+        $rawToken = $issued[0]['token'];
+
+        $response = $this->withSession($this->boothSession([
+            'booth_voter_id'        => $voter->id,
+            'booth_voter_period_id' => $this->period->id,
+            'booth_voter_confirmed' => false,
+            'booth_voter_expires'   => now()->addMinutes(3)->timestamp,
+        ]))->get(route('election.confirm'));
+
+        $response->assertOk();
+        $response->assertSee('CAHYONO SNAPSHOT');
+        $response->assertSee('CS'); // Inisial
+        $response->assertSee('X-TKJ-1');
+        $response->assertSee('88003');
+        $response->assertSee('Foto belum tersedia. Cocokkan nama dengan kartu dan identitas siswa.');
+        $response->assertDontSee($rawToken);
+    }
+
+    /**
+     * Test 15: Kartu PDF memuat header 2 baris (nama sekolah + judul & tanggal), nama kapital, dan 45 kartu 2 halaman
+     */
+    public function test_voter_cards_pdf_generation_and_layout(): void
+    {
+        $this->period->update([
+            'title'      => 'Pemilihan OSIS 2026',
+            'event_date' => '2026-11-16',
+        ]);
+
+        // Buat 45 pemilih
+        $voters = collect();
+        for ($i = 1; $i <= 45; $i++) {
+            $voters->push(ElectionVoter::create([
+                'period_id'     => $this->period->id,
+                'student_id'    => null,
+                'nis'           => 'NIS' . str_pad($i, 4, '0', STR_PAD_LEFT),
+                'student_name'  => 'Siswa Nomor ' . $i,
+                'class_id'      => 1,
+                'class_name'    => 'X-A',
+                'token_hash'    => null,
+                'token_version' => 0,
+                'has_voted'     => false,
+            ]));
+        }
+
+        $pdfBytes = $this->service->printVoterCards($this->period, $voters);
+        $this->assertNotEmpty($pdfBytes);
+        $this->assertStringStartsWith('%PDF', $pdfBytes);
+        $pageCount = preg_match_all('/\/Type\s*\/Page\b/', $pdfBytes);
+        $this->assertEquals(2, $pageCount); // 45 kartu = 2 halaman (24/hal)
+
+        // Render blade view secara langsung untuk memeriksa teks yang dihasilkan
+        $renderedHtml = view('election.pdf.voter-cards', [
+            'period'     => $this->period,
+            'cards'      => $voters->map(fn($v) => [
+                'name'       => $v->student_name,
+                'class_name' => $v->class_name,
+                'nis'        => $v->nis,
+                'token'      => 'ABCD-1234',
+            ]),
+            'schoolName' => 'SMK Negeri 1 Test',
+        ])->render();
+
+        // 1. Nama sekolah baris 1
+        $this->assertStringContainsString('SMK Negeri 1 Test', $renderedHtml);
+        // 2. Baris 2 memuat judul & tanggal '16 November 2026'
+        $this->assertStringContainsString('16 November 2026', $renderedHtml);
+        // 3. Nama siswa kapital
+        $this->assertStringContainsString('SISWA NOMOR 1', $renderedHtml);
+        // 4. Footer standar tanpa klaim tanggal
+        $this->assertStringContainsString('Rahasia - sekali pakai - serahkan ke panitia', $renderedHtml);
+        $this->assertStringNotContainsString('hanya berlaku tanggal', $renderedHtml);
+
+        // Jika event_date kosong: tanggal tidak muncul
+        $this->period->update(['event_date' => null]);
+        $renderedNoDate = view('election.pdf.voter-cards', [
+            'period'     => $this->period,
+            'cards'      => collect([[
+                'name'       => 'Test No Date',
+                'class_name' => 'X-A',
+                'nis'        => '1234',
+                'token'      => 'TOKEN-TEST',
+            ]]),
+            'schoolName' => 'SMK Test',
+        ])->render();
+
+        $this->assertStringNotContainsString('16 November 2026', $renderedNoDate);
+        $this->assertStringContainsString('TEST NO DATE', $renderedNoDate);
     }
 }
