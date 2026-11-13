@@ -69,7 +69,7 @@
             height: 6.8mm;
             overflow: hidden;
             word-wrap: break-word;
-            margin-bottom: 0.8mm;
+            margin-bottom: 0.5mm;
         }
         .card-name.name-sm {
             font-size: 8pt;
@@ -82,15 +82,15 @@
             overflow: hidden;
             text-overflow: ellipsis;
             line-height: 1.1;
-            margin-bottom: 1mm;
+            margin-bottom: 0.8mm;
         }
         .token-box {
             border: 0.5pt solid #94a3b8;
             border-radius: 2px;
             background: #f8fafc;
-            padding: 1.2mm 0.5mm;
+            padding: 0.8mm 0.5mm;
             text-align: center;
-            margin-bottom: 1mm;
+            margin-bottom: 0.8mm;
         }
         .token-label {
             font-size: 5.5pt;
@@ -98,14 +98,14 @@
             text-transform: uppercase;
             letter-spacing: 0.8pt;
             line-height: 1;
-            margin-bottom: 0.5mm;
+            margin-bottom: 0.4mm;
         }
         .token-code {
             font-family: 'DejaVu Sans Mono', monospace;
-            font-size: 15pt;
+            font-size: 13pt;
             font-weight: bold;
             color: #0f172a;
-            letter-spacing: 1.2pt;
+            letter-spacing: 1pt;
             line-height: 1;
         }
         .card-footer {
