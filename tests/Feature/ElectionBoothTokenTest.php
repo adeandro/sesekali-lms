@@ -668,4 +668,32 @@ class ElectionBoothTokenTest extends TestCase
         $this->assertStringNotContainsString('16 November 2026', $renderedNoDate);
         $this->assertStringContainsString('TEST NO DATE', $renderedNoDate);
     }
+
+    /**
+     * Test 16: Tampilan proyektor kandidat mendukung Mode Sandingan dan toggle Visi-Misi
+     */
+    public function test_candidates_slide_and_sandingan_mode(): void
+    {
+        $this->period->update(['candidates_published' => true]);
+
+        // 1. Akses mode slide proyektor biasa
+        $resSlide = $this->get(route('election.candidates', ['tampilan' => 'slide']));
+        $resSlide->assertOk();
+        $resSlide->assertSee('Mode Sandingan');
+        $resSlide->assertSee('Slide (1 Paslon)');
+        $resSlide->assertSee('Visi-Misi');
+        $resSlide->assertSee('Calon Ketua 1');
+        $resSlide->assertSee('Calon Ketua 2');
+
+        // 2. Akses langsung mode sandingan via query parameter
+        $resSandingan = $this->get(route('election.candidates', ['tampilan' => 'slide', 'mode' => 'sandingan']));
+        $resSandingan->assertOk();
+        $resSandingan->assertSee("initialMode: 'sandingan'", false);
+        $resSandingan->assertSee('Mode Sandingan Paslon');
+
+        // 3. Akses mode sandingan dengan visimisi dimatikan (default)
+        $resNoVisi = $this->get(route('election.candidates', ['tampilan' => 'slide', 'mode' => 'sandingan', 'visimisi' => 0]));
+        $resNoVisi->assertOk();
+        $resNoVisi->assertSee("initialVisiMisi: false", false);
+    }
 }

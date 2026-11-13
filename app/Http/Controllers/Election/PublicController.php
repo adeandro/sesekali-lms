@@ -36,8 +36,19 @@ class PublicController extends Controller
             ->get();
 
         $isSlide = $request->query('tampilan') === 'slide';
+        $initialMode = $request->query('mode', 'slide');
+        $initialVisiMisi = $request->has('visimisi')
+            ? $request->boolean('visimisi')
+            : ($initialMode !== 'sandingan');
 
-        return view('election.public.candidates', compact('period', 'candidates', 'settings', 'isSlide'));
+        return view('election.public.candidates', compact(
+            'period',
+            'candidates',
+            'settings',
+            'isSlide',
+            'initialMode',
+            'initialVisiMisi'
+        ));
     }
 
     public function results(Request $request)

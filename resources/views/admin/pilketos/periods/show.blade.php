@@ -282,10 +282,18 @@
                         </button>
                     </div>
 
-                    <a href="{{ url('/pilketos/kandidat?tampilan=slide') }}" target="_blank"
-                       class="inline-flex items-center justify-center gap-1.5 w-full py-1.5 px-3 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 text-xs font-semibold hover:bg-indigo-100 transition">
-                        📽️ Buka Tampilan Proyektor (Slide)
-                    </a>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                        <a href="{{ url('/pilketos/kandidat?tampilan=slide') }}" target="_blank"
+                           class="inline-flex items-center justify-center gap-1.5 w-full py-1.5 px-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 text-[11px] font-semibold hover:bg-indigo-100 transition text-center"
+                           title="Tayang bergantian 1 paslon per layar">
+                            📽️ Mode Slide (1 Paslon)
+                        </a>
+                        <a href="{{ url('/pilketos/kandidat?tampilan=slide&mode=sandingan') }}" target="_blank"
+                           class="inline-flex items-center justify-center gap-1.5 w-full py-1.5 px-2 rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-[11px] font-semibold hover:bg-amber-100 transition text-center"
+                           title="Berdampingan semua paslon: Foto & Nama tanpa visi-misi">
+                            👥 Mode Sandingan Paslon
+                        </a>
+                    </div>
                 </div>
 
                 {{-- B. Publikasi Hasil --}}

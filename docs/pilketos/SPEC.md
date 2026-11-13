@@ -287,7 +287,11 @@ Rute publik di luar grup middleware bilik suara (`ElectionBoothAccess`), tanpa a
   - Memilih periode terbaru yang berstatus `ready|open|closed` dengan `candidates_published = true`.
   - Jika belum ada publikasi: menampilkan `election.public.empty` dengan pesan netral *"Belum ada informasi yang dipublikasikan."*
   - **Tampilan Grid**: Daftar paslon berukuran seragam, nomor urut kontras tinggi, foto ketua & wakil berdampingan, nama & kelas, visi & misi berformat rapi. Tidak memuat tautan ke bilik suara dan tidak menampilkan angka suara.
-  - **Tampilan Proyektor (`?tampilan=slide`)**: Mode tayang aula/layar proyektor 1 paslon per layar, transisi otomatis 20 detik, navigasi keyboard panah kiri/kanan, tombol spasi untuk jeda/lanjut, dot indikator paslon, tipografi besar terbaca dari jarak jauh.
+  - **Tampilan Proyektor (`?tampilan=slide`)**: Mode tayang aula/layar proyektor dengan 2 pilihan mode:
+    1. **Mode Slide (1 Paslon)**: Tayang bergantian 1 paslon per layar, transisi otomatis 20 detik, navigasi keyboard panah kiri/kanan, tombol spasi untuk jeda/lanjut, dot indikator paslon. Jika visi-misi disembunyikan, menampilkan foto besar dan nama paslon terpusat.
+    2. **Mode Sandingan (`?mode=sandingan`)**: Menampilkan seluruh pasangan calon berdampingan (side-by-side) secara bersamaan (Nomor Urut, Foto, Nama & Kelas tanpa visi-misi) untuk kemudahan komparasi langsung di panggung/aula.
+    3. **Opsi Visi-Misi (Tombol / Shortcut `V`)**: Memungkinkan panitia menyembunyikan atau menampilkan teks visi & misi secara instan.
+    4. **Shortcut Keyboard**: Spasi (Jeda/Lanjut), Panah Kiri/Kanan (Navigasi), `V` (Toggle Visi-Misi), `M` (Toggle Mode Slide/Sandingan).
 - `GET /pilketos/hasil` (`election.results`):
   - Memilih periode terbaru dengan status wajib `closed` dan `results_published = true`. Jika status masih `open`, query secara otomatis tidak akan menampilkan data hasil pemilihan.
   - Hasil di-cache selama 10 menit menggunakan `Cache::remember('pilketos_public_results_{id}', 600, ...)` untuk mengantisipasi lonjakan akses bersamaan. Cache langsung di-flush ketika hasil ditarik atau periode dibuka kembali.
