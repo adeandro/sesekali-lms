@@ -19,6 +19,7 @@
         </testsuite>
         <testsuite name="Pilketos">
             <file>tests/Feature/ElectionBoothTokenTest.php</file>
+            <file>tests/Feature/ElectionVoterFilterTest.php</file>
         </testsuite>
         <testsuite name="StudentPhoto">
             <file>tests/Feature/StudentPhotoAndProtectionTest.php</file>
